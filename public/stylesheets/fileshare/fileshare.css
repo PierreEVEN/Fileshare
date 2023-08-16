@@ -39,4 +39,5 @@ div.explorer {
 div.folder_list {
     background-color: aquamarine;
     margin-left: 1em;
+    height: 80%;
 }

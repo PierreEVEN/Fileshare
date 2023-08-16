@@ -15,25 +15,35 @@ async function get() {
     let connection;
     try {
         if (!initialized) {
-            console.log("A")
             connection = await pool.getConnection();
 
-            console.log("B")
             // Create Personal database if needed
             if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'Personal'")).length === 0) {
                 await connection.query("CREATE DATABASE Personal");
             }
 
-            console.log("C")
             // Create Accounts table if needed
             if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Accounts'")).length === 0) {
                 await connection.query("CREATE TABLE Personal.Accounts (id int AUTO_INCREMENT PRIMARY KEY, email varchar(200) UNIQUE, username varchar(200) UNIQUE, password_hash BINARY(64) DEFAULT false);")
             }
 
-            console.log("B")
+            // Create Accounts table if needed
+            if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Repos'")).length === 0) {
+                await connection.query("CREATE TABLE Personal.Repos (id int AUTO_INCREMENT PRIMARY KEY, name varchar(200) UNIQUE NOT NULL, owner int NOT NULL, status ENUM('private', 'hidden', 'public'), access_key BINARY(64) NOT NULL, FOREIGN KEY(owner) REFERENCES Personal.Accounts(id));")
+            }
+
+            // Create Accounts table if needed
+            if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'AccountRepos'")).length === 0) {
+                await connection.query("CREATE TABLE Personal.AccountRepos (owner int, repos int, FOREIGN KEY(owner) REFERENCES Personal.Accounts(id),  PRIMARY KEY(OWNER, repos), FOREIGN KEY(repos) REFERENCES Personal.Repos(id));")
+            }
+
+            // Create Accounts table if needed
+            if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Storage'")).length === 0) {
+                await connection.query("CREATE TABLE Personal.Storage (id int PRIMARY KEY, repos int NOT NULL, owner int NOT NULL, name varchar(200) NOT NULL, description varchar(1200), virtual_path varchar(200) NOT NULL, size int NOT NULL, mimetype varchar(200)  NOT NULL, virtual_folder varchar(200) NOT NULL, FOREIGN KEY(repos) REFERENCES Personal.Repos(id), FOREIGN KEY(owner) REFERENCES Personal.Accounts(id));")
+            }
+
             await connection.end();
             initialized = true;
-            console.log("C")
         }
     } catch (err) {
         throw err;

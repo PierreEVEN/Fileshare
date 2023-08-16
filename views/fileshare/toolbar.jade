@@ -5,4 +5,7 @@ div.top-bar
     div.filters
         button Filtres
     div.account-button
-        button(onclick="window.location.href = './fileshare/signin'") Compte
+        if (locals.user)
+            button(onclick="window.location.href = 'fileshare/account'") #{user.username}
+        else
+            button(onclick="window.location.href = 'fileshare/signin'") Connexion

@@ -1,0 +1,25 @@
+extends ../layout
+
+block content
+    div.toolbar
+        include ./toolbar.jade
+    div.explorer
+        include ./explorer.jade
+    div.login
+        h1 Nouveau dépot
+        form(action="create-repos", method="post")
+            label(for='name')
+            input(type="text", name="name", placeholder="Nom", id="name", required)
+            label(for='type')
+            select(name="type", onChange="", id="type")
+                option Invisible
+                option Publique
+                option Privé
+
+            a(href="./forgot-password") mot de passe oublié
+
+            if (locals.error)
+                p.error #{error}
+
+            div.bottom-button
+                input(type="submit", value="Nouveau dépot")
