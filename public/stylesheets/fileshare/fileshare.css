@@ -1,4 +1,11 @@
 
+div.fileshare {
+    display:flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+
 div.toolbar {
     display: flex;
     background-color: cadetblue;
@@ -6,21 +13,26 @@ div.toolbar {
     height: 5vh;
 }
 
-div.top-bar {
-    width: 90%;
-    display: flex;
+div.home-button {
+    width: 100%;
+    height: 5vh;
 }
 
-div.home-button {
-    width: 10%;
+.fileshare .content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 div.filters {
-    width: 100%
+    float:right;
 }
 
 div.account-button {
-    width: 5%;
+    margin-left: auto;
+    margin-right: 0;
+    display: flex;
     align-content: center;
     justify-content: center;
 }

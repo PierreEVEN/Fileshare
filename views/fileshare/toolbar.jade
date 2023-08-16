@@ -4,8 +4,10 @@ div.home-button
 div.top-bar
     div.filters
         button Filtres
+        p contact:
+        a(href="mailto: evenpierre@orange.fr") evenpierre@orange.fr
     div.account-button
         if (locals.user)
-            button(onclick="window.location.href = 'fileshare/account'") #{user.username}
+            button(onclick="window.location.href = '/fileshare/account'") #{user.username}
         else
-            button(onclick="window.location.href = 'fileshare/signin'") Connexion
+            button(onclick="window.location.href = '/fileshare/signin'") Connexion

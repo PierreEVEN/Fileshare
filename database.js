@@ -29,7 +29,7 @@ async function get() {
 
             // Create Accounts table if needed
             if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Repos'")).length === 0) {
-                await connection.query("CREATE TABLE Personal.Repos (id int AUTO_INCREMENT PRIMARY KEY, name varchar(200) UNIQUE NOT NULL, owner int NOT NULL, status ENUM('private', 'hidden', 'public'), access_key BINARY(64) NOT NULL, FOREIGN KEY(owner) REFERENCES Personal.Accounts(id));")
+                await connection.query("CREATE TABLE Personal.Repos (id int AUTO_INCREMENT PRIMARY KEY, name varchar(200) UNIQUE NOT NULL, owner int NOT NULL, status ENUM('private', 'hidden', 'public'), access_key varchar(32) NOT NULL UNIQUE, FOREIGN KEY(owner) REFERENCES Personal.Accounts(id));")
             }
 
             // Create Accounts table if needed

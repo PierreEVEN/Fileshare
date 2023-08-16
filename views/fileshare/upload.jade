@@ -1,0 +1,14 @@
+extends ../layout
+
+block content
+    div.login
+        h1 Connexion
+        form(action="upload?test", method="post")
+            label(for='file')
+            input(type="file", name="file", placeholder="Nom / e-mail", id="file", required)
+
+            if (locals.error)
+                p.error #{error}
+
+            div.bottom-button
+                input(type="submit", value="Envoyer")

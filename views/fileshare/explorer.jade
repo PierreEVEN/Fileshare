@@ -1,11 +1,2 @@
 
-div.folder
-    p Mes depots
-    div.folder_list
-        if (locals.user)
-            each item in user.my_repos
-                button #{item.name}
 
-    if (locals.user)
-        div
-            button(onclick="window.location.href = 'fileshare/create-repos'") Nouveau depot

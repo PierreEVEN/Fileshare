@@ -1,7 +1,44 @@
 extends ../layout
 
 block content
-    div.toolbar
-        include ./toolbar.jade
-    div.explorer
-        include ./explorer.jade
+    div.fileshare
+        div.explorer
+            div.home-button
+                button Fileshare
+            div.folder
+                if (locals.user)
+                    p Mes depots
+                    div.folder_list
+                        each item in user.my_repos
+                            button(onclick="window.location.href = '/fileshare/?repos=#{item.access_key}'") #{item.name}
+
+                if (locals.user)
+                    div
+                        button(onclick="window.location.href = '/fileshare/create-repos'") Nouveau depot
+
+        div.content
+            div.toolbar
+                div.filters
+                    select(name="Filtre", onChange="", id="filter")
+                        option Par auteur
+                        option Par date
+                        option Par type
+                        option Par nom
+
+                    input(type="text", name="search", placeholder="recherche", id="search")
+
+                div.account-button
+                    p contact:
+                    a(href="mailto: evenpierre@orange.fr") evenpierre@orange.fr
+                    if (locals.user)
+                        button(onclick="window.location.href = '/fileshare/account'") #{user.username}
+                    else
+                        button(onclick="window.location.href = '/fileshare/signin'") Connexion
+
+            div.browser
+                if (locals.repos)
+                    div
+                        each item in repos.by_author(repos)
+                            p Name = #{item.name} // Size:#{item.size} // path : #{item.virtual_folder}
+                    div
+                        button(onclick="window.location.href = '/fileshare/upload?repos=#{repos.access_key}'") Déposer un fichier

@@ -5,14 +5,49 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 
 /* GET users listing. */
-router.get('/', function (req, res, next) {
-    console.log(req.session.user)
-    res.render('fileshare/fileshare', {
-        title: 'FileShare',
-        user: req.session.user,
-    });
+router.get('/', async function (req, res, next) {
+
+    if (req.query.repos) {
+        const connection = await db()
+        let repos = await connection.query('SELECT * FROM Personal.repos WHERE access_key = ? AND (NOT status = \'private\' OR id IN (SELECT repos FROM accountrepos WHERE owner = ?))', [req.query.repos, req.session.user ? req.session.user.id : -1]);
+
+        if (Object.values(repos).length > 0) {
+            repos = repos[0]
+        }
+
+        if (repos) {
+            repos.content = await connection.query('SELECT * FROM Personal.storage WHERE repos = ?', [repos.id]);
+        }
+
+        console.log(repos)
+        repos.by_author = () => {
+            repos.content.sort((a, b) => {
+                return a.owner - b.owner
+            })
+
+            console.log("Content : ", repos.content)
+
+
+            return Object.values(repos.content)
+        }
+
+        await connection.end()
+
+        res.render('fileshare/fileshare', {
+            title: 'FileShare',
+            user: req.session.user,
+            repos: repos
+        });
+    }
+    else {
+        res.render('fileshare/fileshare', {
+            title: 'FileShare',
+            user: req.session.user
+        });
+    }
 });
 
+router.use('/upload/', require("./upload"));
 router.use('/create-repos/', require("../fileshare/create-repos"));
 router.use('/signin/', require("../account/signin"));
 router.use('/signup/', require("../account/signup"));
@@ -160,6 +195,13 @@ router.post('/create-repos', async function (request, response) {
             error: 'Veuillez remplir tous les champs requis'
         });
     }
+});
+
+router.post('/upload', async function (request, response) {
+    // Capture the input fields
+    let file = request.body.file;
+    console.log(file);
+    response.redirect('/fileshare');
 });
 
 module.exports = router;
