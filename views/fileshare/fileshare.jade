@@ -38,7 +38,8 @@ block content
             div.browser
                 if (locals.repos)
                     div
-                        each item in repos.by_author(repos)
-                            p Name = #{item.name} // Size:#{item.size} // path : #{item.virtual_folder}
-                    div
                         button(onclick="window.location.href = '/fileshare/upload?repos=#{repos.access_key}'") Déposer un fichier
+
+
+                    each item in repos.by_author(repos)
+                        a(href="/fileshare/download?file=#{item.id}") Name = #{item.name} // Size:#{item.size} // path : #{item.virtual_folder}

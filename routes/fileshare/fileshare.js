@@ -199,7 +199,6 @@ router.post('/create-repos', async function (request, response) {
 
 router.post('/upload', async function (request, response) {
 
-
     const form = new formidable.IncomingForm();
 
     if (!request.session.current_repos) {
@@ -216,8 +215,8 @@ router.post('/upload', async function (request, response) {
             if(!files.hasOwnProperty(file)) continue;
             const old = file_data.filepath;
 
-            if (!fs.existsSync('./saved_files/')){
-                fs.mkdirSync('./saved_files/');
+            if (!fs.existsSync('./data_storage/')){
+                fs.mkdirSync('./data_storage/');
             }
 
             const connection = await db();
@@ -228,7 +227,7 @@ router.post('/upload', async function (request, response) {
             }
             while (Object.entries(await connection.query('SELECT * FROM Personal.storage WHERE storage_path = ?', [`/data_storage/${file_path}`])).length > 0);
 
-            const upd = `./saved_files/${file_path}`;
+            const upd = `./data_storage/${file_path}`;
             fs.rename(old, upd, function (error) {
                 if (error) throw error;
             });
@@ -250,5 +249,26 @@ router.post('/upload', async function (request, response) {
         response.redirect('/fileshare');
     });
 });
+
+
+router.get('/download', async function (request, response) {
+
+    if (!request.query.file) {
+        return;
+    }
+
+
+    const connection = await db();
+    let file = Object.values(await connection.query('SELECT * FROM Personal.storage WHERE id = ?', [request.query.file]));
+    await connection.end()
+
+    if (file.length > 0) {
+        file = file[0]
+        const file_path = `./${file.storage_path}`
+        if (fs.existsSync(file_path)) {
+            response.download(file_path, file.name); // Set disposition and send it.
+        }
+    }
+})
 
 module.exports = router;

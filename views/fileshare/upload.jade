@@ -44,6 +44,11 @@ block content
             }
             last_request = req;
             last_file_upload_measure = {size: 0, timestamp: performance.now()}
+            req.onreadystatechange = function () {
+                if (this.readyState === this.DONE) {
+                    window.location.href = this.responseURL;
+                }
+            };
             req.send(form);
         }
 
