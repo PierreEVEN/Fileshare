@@ -39,7 +39,7 @@ async function get() {
 
             // Create Accounts table if needed
             if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Storage'")).length === 0) {
-                await connection.query("CREATE TABLE Personal.Storage (id int PRIMARY KEY, repos int NOT NULL, owner int NOT NULL, name varchar(200) NOT NULL, description varchar(1200), virtual_path varchar(200) NOT NULL, size int NOT NULL, mimetype varchar(200)  NOT NULL, virtual_folder varchar(200) NOT NULL, FOREIGN KEY(repos) REFERENCES Personal.Repos(id), FOREIGN KEY(owner) REFERENCES Personal.Accounts(id));")
+                await connection.query("CREATE TABLE Personal.Storage (id int AUTO_INCREMENT PRIMARY KEY, repos int NOT NULL, owner int NOT NULL, name varchar(200) NOT NULL, description varchar(1200), storage_path varchar(200) NOT NULL UNIQUE, size int NOT NULL, mimetype varchar(200)  NOT NULL, virtual_folder varchar(200) NOT NULL, FOREIGN KEY(repos) REFERENCES Personal.Repos(id), FOREIGN KEY(owner) REFERENCES Personal.Accounts(id));")
             }
 
             await connection.end();

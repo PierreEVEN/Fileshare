@@ -3,6 +3,8 @@ let router = express.Router();
 let db = require("../../database")
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const formidable = require("formidable");
+const fs = require("fs");
 
 /* GET users listing. */
 router.get('/', async function (req, res, next) {
@@ -19,19 +21,16 @@ router.get('/', async function (req, res, next) {
             repos.content = await connection.query('SELECT * FROM Personal.storage WHERE repos = ?', [repos.id]);
         }
 
-        console.log(repos)
         repos.by_author = () => {
             repos.content.sort((a, b) => {
                 return a.owner - b.owner
             })
 
-            console.log("Content : ", repos.content)
-
-
             return Object.values(repos.content)
         }
 
         await connection.end()
+        req.session.current_repos = repos
 
         res.render('fileshare/fileshare', {
             title: 'FileShare',
@@ -40,6 +39,7 @@ router.get('/', async function (req, res, next) {
         });
     }
     else {
+        req.session.current_repos = null;
         res.render('fileshare/fileshare', {
             title: 'FileShare',
             user: req.session.user
@@ -198,10 +198,57 @@ router.post('/create-repos', async function (request, response) {
 });
 
 router.post('/upload', async function (request, response) {
-    // Capture the input fields
-    let file = request.body.file;
-    console.log(file);
-    response.redirect('/fileshare');
+
+
+    const form = new formidable.IncomingForm();
+
+    if (!request.session.current_repos) {
+        console.log("error - not connected");
+        response.redirect('/fileshare');
+        return;
+    }
+
+    await form.parse(request, async function(err, fields, files){
+
+        for(const file in files) {
+            const file_data = files[file][0];
+            //console.log("file : ", file_data)
+            if(!files.hasOwnProperty(file)) continue;
+            const old = file_data.filepath;
+
+            if (!fs.existsSync('./saved_files/')){
+                fs.mkdirSync('./saved_files/');
+            }
+
+            const connection = await db();
+
+            let file_path = null;
+            do {
+                file_path = crypto.randomBytes(16).toString("hex");
+            }
+            while (Object.entries(await connection.query('SELECT * FROM Personal.storage WHERE storage_path = ?', [`/data_storage/${file_path}`])).length > 0);
+
+            const upd = `./saved_files/${file_path}`;
+            fs.rename(old, upd, function (error) {
+                if (error) throw error;
+            });
+
+            const repos_id = request.session.current_repos.id;
+
+            let valid_repos = await connection.query('SELECT * FROM Personal.repos WHERE id = ? AND (status != \'private\' OR id IN (SELECT repos FROM accountrepos WHERE owner = ?))', [repos_id, request.session.user.id])
+            if (Object.entries(valid_repos).length === 0) {
+                console.log("error 2");
+                return
+            }
+            console.log("received", file_data.originalFilename, "saved to", upd)
+
+            await connection.query('INSERT INTO Personal.storage (repos, owner, name, description, storage_path, size, mimetype, virtual_folder) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [request.session.current_repos.id, request.session.user.id, file_data.originalFilename, "Aucune", `/data_storage/${file_path}`, file_data.size, file_data.mimetype, "/"]
+            );
+            await connection.end();
+        }
+        response.redirect('/fileshare');
+    });
 });
 
 module.exports = router;

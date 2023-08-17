@@ -2,13 +2,139 @@ extends ../layout
 
 block content
     div.login
-        h1 Connexion
-        form(action="upload?test", method="post")
-            label(for='file')
-            input(type="file", name="file", placeholder="Nom / e-mail", id="file", required)
+        h1 Envoyer un fichier
+        label(for='uploaded_file')
+        input(type="file", name="file", placeholder="Nom / e-mail", id="uploaded_file", required)
 
-            if (locals.error)
-                p.error #{error}
+        if (locals.error)
+            p.error #{error}
 
-            div.bottom-button
-                input(type="submit", value="Envoyer")
+        div.bottom-button
+            input(type="submit", value="Envoyer", onclick='send_file()')
+            input(type="button", value="Annuler", onclick='reset_all()')
+
+        p(id='progress-text')
+        div.upload_content
+            div(id='progress-bar')
+
+    script.
+
+        const progress = document.getElementById('progress-bar')
+        const progress_text = document.getElementById('progress-text')
+        let last_request = null;
+        let deltas = []
+        let last_file_upload_measure = null
+
+        function cancel_upload() {
+            reset_all();
+        }
+
+        function send_file() {
+
+            const files = document.getElementById("uploaded_file").files;
+
+            cancel_upload()
+
+            const req = new XMLHttpRequest();
+            req.upload.addEventListener("progress", updateProgress);
+            req.open("POST", "./upload");
+            const form = new FormData();
+            for (let file = 0; file < files.length; file++) {
+                form.append("file" + file, files[file], files[file].name);
+            }
+            last_request = req;
+            last_file_upload_measure = {size: 0, timestamp: performance.now()}
+            req.send(form);
+        }
+
+        function humanFileSize(bytes) {
+            const thresh = 1024;
+
+            if (Math.abs(bytes) < thresh) {
+                return bytes + ' B';
+            }
+
+            const units = ['ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
+            let u = -1;
+            const r = 10;
+
+            do {
+                bytes /= thresh;
+                ++u;
+            } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+
+
+            return bytes.toFixed(1) + ' ' + units[u];
+        }
+
+        function seconds_to_str(in_seconds) {
+            const milliseconds = in_seconds * 1000;
+
+            function numberEnding(number) {
+                return (number > 1) ? 's' : '';
+            }
+
+            let temp = Math.floor(milliseconds / 1000);
+            const years = Math.floor(temp / 31536000);
+            if (years) {
+                return years + ' années' + numberEnding(years);
+            }
+            //TODO: Months! Maybe weeks?
+            const days = Math.floor((temp %= 31536000) / 86400);
+            if (days) {
+                return days + ' jours' + numberEnding(days);
+            }
+            const hours = Math.floor((temp %= 86400) / 3600);
+            if (hours) {
+                return hours + ' heures' + numberEnding(hours);
+            }
+            const minutes = Math.floor((temp %= 3600) / 60);
+            if (minutes) {
+                return minutes + ' minutes' + numberEnding(minutes);
+            }
+            const seconds = temp % 60;
+            if (seconds) {
+                return seconds + ' secondes' + numberEnding(seconds);
+            }
+            return '0s';
+        }
+
+        function updateProgress(e) {
+
+            let mean_speed = 0;
+            if (last_file_upload_measure) {
+                const time_delta = (performance.now() - last_file_upload_measure.timestamp) / 1000;
+                const size_delta = e.loaded - last_file_upload_measure.size;
+
+                //console.log(e)
+                deltas.push(size_delta / time_delta)
+
+
+                last_file_upload_measure.size = e.loaded;
+                last_file_upload_measure.timestamp = performance.now();
+
+                if (deltas.length > 20) {
+                    deltas.splice(0, 1);
+                }
+
+                for (const delta of deltas)
+                    mean_speed += delta;
+                mean_speed /= deltas.length
+            }
+
+            const remaining = (e.total - e.loaded) / mean_speed
+
+            progress_text.innerText = `${Math.round(e.loaded / e.total * 100)}% (${humanFileSize(e.loaded)} / ${humanFileSize(e.total)}) - ${humanFileSize(mean_speed)}/s (~${seconds_to_str(remaining)})`
+            progress.style.width = (((e.loaded / e.total) * 100)) + "%";
+        }
+
+        function reset_all() {
+
+            if (last_request)
+                last_request.abort();
+            last_request = null;
+            deltas = [];
+            last_file_upload_measure = null;
+            progress_text.innerText = '';
+            progress.style.width = '0%';
+        }

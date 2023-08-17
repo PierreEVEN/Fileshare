@@ -1,0 +1,12 @@
+
+.upload_content {
+    width: 100%;
+    height: 20px;
+    background-color: #5b6574;
+}
+
+#progress-bar {
+    width: 0;
+    height: 100%;
+    background-color: aquamarine;
+}
