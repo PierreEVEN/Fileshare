@@ -6,7 +6,7 @@ block content
             div.home-button
                 button Fileshare
             div.folder
-                if (locals.user)
+                if (locals.user && locals.user.my_repos)
                     p Mes depots
                     div.folder_list
                         each item in user.my_repos

@@ -1,152 +1,70 @@
 let express = require('express');
 let router = express.Router();
 let db = require("../../database")
-const bcrypt = require("bcrypt");
-const crypto = require("crypto");
 const formidable = require("formidable");
+const crypto = require("crypto");
 const fs = require("fs");
+const Repos = require('../../src/database/tables/repos')
+const session_utils = require("../../src/session_utils");
 
 /* GET users listing. */
 router.get('/', async function (req, res, next) {
-
-    if (req.query.repos) {
-        const connection = await db()
-        let repos = await connection.query('SELECT * FROM Personal.repos.js WHERE access_key = ? AND (NOT status = \'private\' OR id IN (SELECT repos.js FROM accountrepos WHERE owner = ?))', [req.query.repos, req.session.user ? req.session.user.id : -1]);
-
-        if (Object.values(repos).length > 0) {
-            repos = repos[0]
-        }
-
-        if (repos) {
-            repos.content = await connection.query('SELECT * FROM Personal.file.js WHERE repos.js = ?', [repos.id]);
-        }
-
-        repos.by_author = () => {
-            repos.content.sort((a, b) => {
-                return a.owner - b.owner
-            })
-
-            return Object.values(repos.content)
-        }
-
-        await connection.end()
-        req.session.current_repos = repos
-
-        res.render('fileshare/fileshare', {
-            title: 'FileShare',
-            user: req.session.user,
-            repos: repos
-        });
-    }
-    else {
-        req.session.current_repos = null;
-        res.render('fileshare/fileshare', {
-            title: 'FileShare',
-            user: req.session.user
-        });
-    }
+    res.render('fileshare/fileshare', {
+        title: 'FileShare',
+        user: req.session.user,
+    });
 });
 
-router.use('/upload/', require("./upload"));
-router.use('/create-repos.js/', require("../fileshare/create-repos"));
-router.use('/signin/', require("../account/signin"));
-router.use('/signup/', require("../account/signup"));
+/* GET users listing. */
+router.get('/repos/:repos', async function (req, res, next) {
+    const found_repos = await Repos.create_access_key(req.params.repos);
+    if (!found_repos) {
+        // render the error page
+        res.status(404);
+        return res.render('error', {
+            message: "Ce dépot n'existe pas",
+            title: "404 - Not found",
+            error: req.app.get('env')
+        })
+    }
+
+    const owner = await found_repos.get_owner();
+    if (await found_repos.get_status() === 'private') {
+        if (session_utils.require_connection(req, res))
+            return;
+
+        if (owner.get_id() !== req.session.user.id) {
+            res.status(403);
+            return res.render('error', {
+                message: "Ce dépot n'est pas accessible'",
+                title: "403 - Forbidden",
+                error: req.app.get('env')
+            })
+        }
+
+    }
+
+    res.render('fileshare/fileshare', {
+        title: 'FileShare',
+        user: req.session.user,
+    });
+});
+
+const upload = require("./upload");
+router.get('/repos/:repos/upload', upload.view)
+router.post('/repos/:repos/upload', upload.post_upload);
+
+const signin = require('../account/signin')
+router.get('/signin', signin.view);
+router.post('/signin', signin.post_signin);
+
+const signup = require('../account/signup')
+router.get('/signup', signup.view);
+router.post('/signup', signup.post_signup);
+
+router.use('/create-repos/', require("../fileshare/create-repos"));
 router.use('/forgot-password/', require("../account/forgot-password"));
 router.use('/account/', require("../account/account"));
-
-async function signin(user, connection, request) {
-    let repos = Object.values(await connection.query('SELECT * FROM Personal.repos.js WHERE id IN (SELECT repos.js FROM Personal.accountrepos WHERE owner = ?)', [user.id]));
-    // Authenticate the user
-    request.session.user = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        my_repos: repos
-    };
-}
-
-router.post('/signin', async function (request, response) {
-    // Capture the input fields
-    let username = request.body.username;
-    let password = request.body.password;
-    // Ensure the input fields exists and are not empty
-    if (username && password) {
-
-        const connection = await db()
-        const res = await connection.query('SELECT * FROM Personal.database WHERE username = ? OR email = ?', [username, username]);
-        let found_user = null;
-        for (let user of res) {
-            if (bcrypt.compare(user.password_hash, password)) {
-                found_user = user;
-                break;
-            }
-        }
-
-        // If the account exists
-        if (found_user) {
-            await signin(found_user, connection, request);
-            // Redirect to home page
-            response.redirect('/fileshare');
-        } else {
-            response.render('account/signin', {
-                title: 'Connexion - Mauvais identifiants',
-                error: 'Identifiants ou mot de passe invalide'
-            });
-        }
-        await connection.end();
-    } else {
-        response.render('account/signin', {
-            title: 'Connexion - Pas d\'identifiants',
-            error: 'Veuillez fournir un identifiant et un mot de passe valide'
-        });
-    }
-});
-
-router.post('/signup', async function (request, response) {
-    // Capture the input fields
-    let username = request.body.username;
-    let email = request.body.email;
-    let password = await bcrypt.hash(request.body.password, 10);
-
-    // Ensure the input fields exists and are not empty
-    if (username && password && email) {
-
-        const connection = await db();
-
-        if (Object.entries(await connection.query('SELECT * FROM Personal.database WHERE username = ?', [username])).length !== 0) {
-            response.render('account/signup', {
-                title: 'Connexion - Utilisateur existe',
-                error: 'Ce nom est déjà pris'
-            });
-            await connection.end();
-            return;
-        }
-
-        if (Object.entries(await connection.query('SELECT * FROM Personal.database WHERE email = ?', [email])).length !== 0) {
-            response.render('account/signup', {
-                title: 'Connexion - Email existe',
-                error: 'Un compte utilisant cet e-mail existe déjà'
-            });
-            await connection.end();
-            return;
-        }
-
-        const res = await connection.query('INSERT INTO Personal.database (username, password_hash, email) VALUES (?, ?, ?)', [username, password, email]);
-        let found_user = Object.values(await connection.query('SELECT * FROM Personal.database WHERE id = ?', [res.insertId]));
-        // If the account exists
-        if (found_user.length > 0) {
-            await signin(found_user[0], connection, request);
-            // Redirect to home page
-            response.redirect('/fileshare');
-        }
-        await connection.end();
-    } else {
-        response.render('account/signup', {
-            title: 'Nouveau compte - Missing fields',
-            error: 'Veuillez remplir tous les champs requis'
-        });
-    }
-});
 
 router.post('/create-repos', async function (request, response) {
     // Capture the input fields
@@ -197,61 +115,6 @@ router.post('/create-repos', async function (request, response) {
     }
 });
 
-router.post('/upload', async function (request, response) {
-
-    const form = new formidable.IncomingForm();
-
-    if (!request.session.current_repos) {
-        console.log("error - not connected");
-        response.redirect('/fileshare');
-        return;
-    }
-    console.log("envoie d'un fichier")
-    await form.parse(request, async function(err, fields, files){
-
-        for(const file in files) {
-            const file_data = files[file][0];
-            //console.log("file : ", file_data)
-            if(!files.hasOwnProperty(file)) continue;
-            const old = file_data.filepath;
-
-            if (!fs.existsSync('./data_storage/')){
-                fs.mkdirSync('./data_storage/');
-            }
-
-            const connection = await db();
-
-            let file_path = null;
-            do {
-                file_path = crypto.randomBytes(16).toString("hex");
-            }
-            while (Object.entries(await connection.query('SELECT * FROM Personal.file.js WHERE storage_path = ?', [`/data_storage/${file_path}`])).length > 0);
-
-            const upd = `./data_storage/${file_path}`;
-            fs.rename(old, upd, function (error) {
-                if (error) throw error;
-            });
-
-            const repos_id = request.session.current_repos.id;
-
-            console.log("requete valide")
-            let valid_repos = await connection.query('SELECT * FROM Personal.repos.js WHERE id = ? AND (status != \'private\' OR id IN (SELECT repos.js FROM accountrepos WHERE owner = ?))', [repos_id, request.session.user.id])
-            if (Object.entries(valid_repos).length === 0) {
-                console.log("error 2");
-                return
-            }
-            console.log("received", file_data.originalFilename, "saved to", upd)
-
-            console.log("fichier valide")
-            await connection.query('INSERT INTO Personal.file.js (repos.js, owner, name, description, storage_path, size, mimetype, virtual_folder) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [request.session.current_repos.id, request.session.user.id, file_data.originalFilename, "Aucune", `/data_storage/${file_path}`, file_data.size, file_data.mimetype, "/"]
-            );
-            await connection.end();
-        }
-        response.redirect('/fileshare');
-    });
-});
-
 
 router.get('/download', async function (request, response) {
 
@@ -261,7 +124,7 @@ router.get('/download', async function (request, response) {
 
 
     const connection = await db();
-    let file = Object.values(await connection.query('SELECT * FROM Personal.file.js WHERE id = ?', [request.query.file]));
+    let file = Object.values(await connection.query('SELECT * FROM Personal.files.js WHERE id = ?', [request.query.file]));
     await connection.end()
 
     if (file.length > 0) {

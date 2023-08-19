@@ -1,10 +1,23 @@
-let express = require('express');
-let router = express.Router();
+const User = require('../../src/database/tables/user')
+const {get_user_private_data} = require("../../src/session_utils");
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-    // Render login template
+function view(req, res) {
     res.render('account/signin', {title: "Connexion"});
-});
+}
 
-module.exports = router;
+async function post_signin(req, res) {
+    const found_user = await User.find_with_credentials(req.body.username, req.body.password);
+    if (found_user) {
+        req.session.user = await get_user_private_data(found_user);
+        res.redirect( req.session.last_url ?  req.session.last_url : '/fileshare');
+        req.session.last_url = null;
+    }
+    else {
+        res.render('account/signin', {
+            title: 'Connexion - Mauvais identifiants',
+            error: 'Aucun compte ne correspond à ces identifiants'
+        });
+    }
+}
+
+module.exports = {view, post_signin};

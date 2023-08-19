@@ -46,14 +46,4 @@ app.use(function (err, req, res, next) {
     res.render('error');
 });
 
-const File = require('./src/database/tables/file')
-
-const storage = File.create(1);
-
-console.log("A:", storage);
-storage.get_name()
-    .then(name => {
-        console.log("B:", storage);
-    })
-
 module.exports = app;

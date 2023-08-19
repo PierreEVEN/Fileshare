@@ -3,7 +3,7 @@ extends ../layout
 block content
     div.login
         h1 Connexion
-        form(action="signin", method="post")
+        form(action="/fileshare/signin", method="post")
             label(for='username')
             input(type="text", name="username", placeholder="Nom / e-mail", id="username", required)
             label(for='password')
