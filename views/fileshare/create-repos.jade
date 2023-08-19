@@ -7,7 +7,7 @@ block content
         include ./explorer.jade
     div.login
         h1 Nouveau dépot
-        form(action="create-repos.js", method="post")
+        form(action="create-repos", method="post")
             label(for='name')
             input(type="text", name="name", placeholder="Nom", id="name", required)
             label(for='type')

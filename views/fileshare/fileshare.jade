@@ -10,11 +10,11 @@ block content
                     p Mes depots
                     div.folder_list
                         each item in user.my_repos
-                            button(onclick="window.location.href = '/fileshare/?repos.js=#{item.access_key}'") #{item.name}
+                            button(onclick="window.location.href = '/fileshare/?repos=#{item.access_key}'") #{item.name}
 
                 if (locals.user)
                     div
-                        button(onclick="window.location.href = '/fileshare/create-repos.js'") Nouveau depot
+                        button(onclick="window.location.href = '/fileshare/create-repos'") Nouveau depot
 
         div.content
             div.toolbar
@@ -38,7 +38,7 @@ block content
             div.browser
                 if (locals.repos)
                     div
-                        button(onclick="window.location.href = '/fileshare/upload?repos.js=#{repos.access_key}'") Déposer un fichier
+                        button(onclick="window.location.href = '/fileshare/upload?repos=#{repos.access_key}'") Déposer un fichier
 
 
                     each item in repos.by_author(repos)

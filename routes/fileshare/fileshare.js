@@ -62,59 +62,11 @@ const signup = require('../account/signup')
 router.get('/signup', signup.view);
 router.post('/signup', signup.post_signup);
 
-router.use('/create-repos/', require("../fileshare/create-repos"));
-router.use('/forgot-password/', require("../account/forgot-password"));
+const create_repos = require("../fileshare/create-repos")
+router.get('/create-repos/', create_repos.view);
+router.post('/create-repos/', create_repos.post_create_repos);
+
 router.use('/account/', require("../account/account"));
-
-router.post('/create-repos', async function (request, response) {
-    // Capture the input fields
-    let name = request.body.name;
-    let type = request.body.type;
-
-    // Ensure the input fields exists and are not empty
-    if (name && type) {
-
-        const connection = await db();
-
-        if (Object.entries(await connection.query('SELECT * FROM Personal.repos.js WHERE name = ?', [name])).length !== 0) {
-            response.render('fileshare/create-repos.js', {
-                title: 'Nouveau dépot - Nom déjà pris',
-                error: 'Ce nom est déjà pris'
-            });
-            await connection.end();
-            return;
-        }
-
-        let status = 'hidden'
-        switch (type) {
-            case 'invisible':
-                status = 'hidden';
-                break;
-            case 'Privé':
-                status = 'private';
-                break;
-            case 'Publique':
-                status = 'public';
-                break;
-        }
-
-        const res = await connection.query('INSERT INTO Personal.repos.js (name, owner, status, access_key) VALUES (?, ?, ?, ?)', [name, request.session.user.id, status, crypto.randomBytes(16).toString("hex")]);
-        await connection.query('INSERT INTO Personal.accountrepos (owner, repos.js) VALUES (?, ?)', [request.session.user.id, res.insertId]);
-
-        // If the account exists
-        if (Object.entries(res).length > 0) {
-            request.session.user.my_repos.push(Object.values(await connection.query('SELECT * FROM Personal.repos.js WHERE id = ?', [res.insertId]))[0])
-            response.redirect('/fileshare');
-        }
-        await connection.end();
-    } else {
-        response.render('account/signup', {
-            title: 'Nouveau compte - Missing fields',
-            error: 'Veuillez remplir tous les champs requis'
-        });
-    }
-});
-
 
 router.get('/download', async function (request, response) {
 
