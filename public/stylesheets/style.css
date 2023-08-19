@@ -11,4 +11,13 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    color: #dee0e4;
+}
+
+a:link {
+    color: aquamarine;
+}
+
+a:visited {
+    color: aqua;
 }

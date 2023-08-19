@@ -11,7 +11,7 @@ router.get('/', function (req, res, next) {
     }
 
 
-    res.render('fileshare/create-repos', {
+    res.render('fileshare/create-repos.js', {
         title: 'Nouveau dépot',
         user: req.session.user
     });

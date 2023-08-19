@@ -11,14 +11,14 @@ router.get('/', async function (req, res, next) {
 
     if (req.query.repos) {
         const connection = await db()
-        let repos = await connection.query('SELECT * FROM Personal.repos WHERE access_key = ? AND (NOT status = \'private\' OR id IN (SELECT repos FROM accountrepos WHERE owner = ?))', [req.query.repos, req.session.user ? req.session.user.id : -1]);
+        let repos = await connection.query('SELECT * FROM Personal.repos.js WHERE access_key = ? AND (NOT status = \'private\' OR id IN (SELECT repos.js FROM accountrepos WHERE owner = ?))', [req.query.repos, req.session.user ? req.session.user.id : -1]);
 
         if (Object.values(repos).length > 0) {
             repos = repos[0]
         }
 
         if (repos) {
-            repos.content = await connection.query('SELECT * FROM Personal.storage WHERE repos = ?', [repos.id]);
+            repos.content = await connection.query('SELECT * FROM Personal.file.js WHERE repos.js = ?', [repos.id]);
         }
 
         repos.by_author = () => {
@@ -48,14 +48,14 @@ router.get('/', async function (req, res, next) {
 });
 
 router.use('/upload/', require("./upload"));
-router.use('/create-repos/', require("../fileshare/create-repos"));
+router.use('/create-repos.js/', require("../fileshare/create-repos"));
 router.use('/signin/', require("../account/signin"));
 router.use('/signup/', require("../account/signup"));
 router.use('/forgot-password/', require("../account/forgot-password"));
 router.use('/account/', require("../account/account"));
 
 async function signin(user, connection, request) {
-    let repos = Object.values(await connection.query('SELECT * FROM Personal.repos WHERE id IN (SELECT repos FROM Personal.accountrepos WHERE owner = ?)', [user.id]));
+    let repos = Object.values(await connection.query('SELECT * FROM Personal.repos.js WHERE id IN (SELECT repos.js FROM Personal.accountrepos WHERE owner = ?)', [user.id]));
     // Authenticate the user
     request.session.user = {
         id: user.id,
@@ -73,7 +73,7 @@ router.post('/signin', async function (request, response) {
     if (username && password) {
 
         const connection = await db()
-        const res = await connection.query('SELECT * FROM Personal.accounts WHERE username = ? OR email = ?', [username, username]);
+        const res = await connection.query('SELECT * FROM Personal.database WHERE username = ? OR email = ?', [username, username]);
         let found_user = null;
         for (let user of res) {
             if (bcrypt.compare(user.password_hash, password)) {
@@ -113,7 +113,7 @@ router.post('/signup', async function (request, response) {
 
         const connection = await db();
 
-        if (Object.entries(await connection.query('SELECT * FROM Personal.accounts WHERE username = ?', [username])).length !== 0) {
+        if (Object.entries(await connection.query('SELECT * FROM Personal.database WHERE username = ?', [username])).length !== 0) {
             response.render('account/signup', {
                 title: 'Connexion - Utilisateur existe',
                 error: 'Ce nom est déjà pris'
@@ -122,7 +122,7 @@ router.post('/signup', async function (request, response) {
             return;
         }
 
-        if (Object.entries(await connection.query('SELECT * FROM Personal.accounts WHERE email = ?', [email])).length !== 0) {
+        if (Object.entries(await connection.query('SELECT * FROM Personal.database WHERE email = ?', [email])).length !== 0) {
             response.render('account/signup', {
                 title: 'Connexion - Email existe',
                 error: 'Un compte utilisant cet e-mail existe déjà'
@@ -131,8 +131,8 @@ router.post('/signup', async function (request, response) {
             return;
         }
 
-        const res = await connection.query('INSERT INTO Personal.accounts (username, password_hash, email) VALUES (?, ?, ?)', [username, password, email]);
-        let found_user = Object.values(await connection.query('SELECT * FROM Personal.accounts WHERE id = ?', [res.insertId]));
+        const res = await connection.query('INSERT INTO Personal.database (username, password_hash, email) VALUES (?, ?, ?)', [username, password, email]);
+        let found_user = Object.values(await connection.query('SELECT * FROM Personal.database WHERE id = ?', [res.insertId]));
         // If the account exists
         if (found_user.length > 0) {
             await signin(found_user[0], connection, request);
@@ -158,8 +158,8 @@ router.post('/create-repos', async function (request, response) {
 
         const connection = await db();
 
-        if (Object.entries(await connection.query('SELECT * FROM Personal.repos WHERE name = ?', [name])).length !== 0) {
-            response.render('fileshare/create-repos', {
+        if (Object.entries(await connection.query('SELECT * FROM Personal.repos.js WHERE name = ?', [name])).length !== 0) {
+            response.render('fileshare/create-repos.js', {
                 title: 'Nouveau dépot - Nom déjà pris',
                 error: 'Ce nom est déjà pris'
             });
@@ -180,12 +180,12 @@ router.post('/create-repos', async function (request, response) {
                 break;
         }
 
-        const res = await connection.query('INSERT INTO Personal.repos (name, owner, status, access_key) VALUES (?, ?, ?, ?)', [name, request.session.user.id, status, crypto.randomBytes(16).toString("hex")]);
-        await connection.query('INSERT INTO Personal.accountrepos (owner, repos) VALUES (?, ?)', [request.session.user.id, res.insertId]);
+        const res = await connection.query('INSERT INTO Personal.repos.js (name, owner, status, access_key) VALUES (?, ?, ?, ?)', [name, request.session.user.id, status, crypto.randomBytes(16).toString("hex")]);
+        await connection.query('INSERT INTO Personal.accountrepos (owner, repos.js) VALUES (?, ?)', [request.session.user.id, res.insertId]);
 
         // If the account exists
         if (Object.entries(res).length > 0) {
-            request.session.user.my_repos.push(Object.values(await connection.query('SELECT * FROM Personal.repos WHERE id = ?', [res.insertId]))[0])
+            request.session.user.my_repos.push(Object.values(await connection.query('SELECT * FROM Personal.repos.js WHERE id = ?', [res.insertId]))[0])
             response.redirect('/fileshare');
         }
         await connection.end();
@@ -206,7 +206,7 @@ router.post('/upload', async function (request, response) {
         response.redirect('/fileshare');
         return;
     }
-
+    console.log("envoie d'un fichier")
     await form.parse(request, async function(err, fields, files){
 
         for(const file in files) {
@@ -225,7 +225,7 @@ router.post('/upload', async function (request, response) {
             do {
                 file_path = crypto.randomBytes(16).toString("hex");
             }
-            while (Object.entries(await connection.query('SELECT * FROM Personal.storage WHERE storage_path = ?', [`/data_storage/${file_path}`])).length > 0);
+            while (Object.entries(await connection.query('SELECT * FROM Personal.file.js WHERE storage_path = ?', [`/data_storage/${file_path}`])).length > 0);
 
             const upd = `./data_storage/${file_path}`;
             fs.rename(old, upd, function (error) {
@@ -234,14 +234,16 @@ router.post('/upload', async function (request, response) {
 
             const repos_id = request.session.current_repos.id;
 
-            let valid_repos = await connection.query('SELECT * FROM Personal.repos WHERE id = ? AND (status != \'private\' OR id IN (SELECT repos FROM accountrepos WHERE owner = ?))', [repos_id, request.session.user.id])
+            console.log("requete valide")
+            let valid_repos = await connection.query('SELECT * FROM Personal.repos.js WHERE id = ? AND (status != \'private\' OR id IN (SELECT repos.js FROM accountrepos WHERE owner = ?))', [repos_id, request.session.user.id])
             if (Object.entries(valid_repos).length === 0) {
                 console.log("error 2");
                 return
             }
             console.log("received", file_data.originalFilename, "saved to", upd)
 
-            await connection.query('INSERT INTO Personal.storage (repos, owner, name, description, storage_path, size, mimetype, virtual_folder) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            console.log("fichier valide")
+            await connection.query('INSERT INTO Personal.file.js (repos.js, owner, name, description, storage_path, size, mimetype, virtual_folder) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 [request.session.current_repos.id, request.session.user.id, file_data.originalFilename, "Aucune", `/data_storage/${file_path}`, file_data.size, file_data.mimetype, "/"]
             );
             await connection.end();
@@ -259,7 +261,7 @@ router.get('/download', async function (request, response) {
 
 
     const connection = await db();
-    let file = Object.values(await connection.query('SELECT * FROM Personal.storage WHERE id = ?', [request.query.file]));
+    let file = Object.values(await connection.query('SELECT * FROM Personal.file.js WHERE id = ?', [request.query.file]));
     await connection.end()
 
     if (file.length > 0) {
