@@ -1,0 +1,62 @@
+if !locals.user
+    link(rel='stylesheet', href='/stylesheets/fileshare/login-buttons.css')
+
+    div.login-buttons
+        button(onclick = 'open_modale_signin()') Connexion
+        button(onclick = 'open_modale_signup()') Nouveau Compte
+
+    script.
+
+        // open_modale_signin()
+        function open_modale_signin() {
+            const login_content = document.createElement('div')
+            login_content.classList.add('login')
+            login_content.innerHTML = `
+            <h1>Connexion</h1>
+            <form action="/fileshare/signin" method="post">
+                <div class="field">
+                    <label for='username'>
+                    <input type="text" name="username" placeholder="Nom / e-mail" id="username" required>
+                </div>
+                <div class="field">
+                    <label for='password'>
+                    <input type="password" name="password" placeholder="Mot de passe" id="password" required>
+                </div>
+
+                <input type="submit" value="Se connecter">
+                <a id="forgot-password" href="mailto: evenpierre@orange.fr">mot de passe oublié</a>
+                <div class="separator"></div>
+                <div class='bottom-button'>
+                    <p>Pas encore de compte ?</p> <a href="javascript:open_modale_signup();">Créer un compte</a>
+                </div>
+            </form>`
+            open_modale(login_content, '500px', '450px');
+        }
+
+        function open_modale_signup() {
+            const login_content = document.createElement('div')
+            login_content.classList.add('login')
+            login_content.innerHTML = `
+            <h1>Créer un compte</h1>
+            <form action="/fileshare/signup" method="post">
+                <div class="field">
+                    <label for='username'>
+                    <input type="text" name="username" placeholder="Nom / e-mail" id="username" required>
+                </div>
+                <div class="field">
+                    <label for='email'>
+                    <input type="email" name="email" placeholder="e-mail" id="email" required>
+                </div>
+                <div class="field">
+                    <label for='password'>
+                    <input type="password" name="password" placeholder="Mot de passe" id="password" required>
+                </div>
+
+                <input type="submit" value="Créer un compte">
+            </form>`
+            open_modale(login_content, '500px', '450px');
+        }
+
+if locals.force_login
+    script.open_modale_signin()
+        open_modale_signin()

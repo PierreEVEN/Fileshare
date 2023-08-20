@@ -1,0 +1,136 @@
+body {
+    width: 100%;
+    height: 100vh;
+    background-color: #181c25;
+    display:table;
+    flex-direction: row;
+    margin: 0;
+    padding: 0;
+    color: #ffffff;
+    font-family: Bahnschrift, sans-serif;
+}
+
+/* ############################################################## BUTTONS ############################################################## */
+
+.login-buttons {
+    display: flex;
+    height: 100%;
+    justify-content: right;
+    align-content: center;
+    padding-right: 50px ;
+}
+
+button {
+    color: #ffffff;
+    background-color: rgb(33, 128, 255);
+    border: 0;
+    box-sizing: border-box;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 300;
+    height: 40px;
+    min-width: 140px;
+    padding: 0 17px;
+    transition: all .15s;
+}
+
+button:focus {
+    color: rgb(97, 229, 170);
+    background-color: rgb(4, 97, 224);
+}
+
+button:hover {
+    background-color: rgb(0, 82, 185);
+}
+
+button:active {
+    background-color: #3385ff;
+}
+
+/* ############################################################## A ############################################################## */
+a {
+    text-decoration: none;
+    color: #50b7f1;
+    transition-duration: 0.1s;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #e1a35c;
+}
+
+a:visited {
+    color: #509bf1;
+    text-decoration: none;
+}
+
+/* ############################################################## INPUTS ############################################################## */
+
+input[type='text'], input[type='password'], input[type='email']  {
+    width: 310px;
+    height: 50px;
+    border: 0;
+    border-bottom: 2px solid #282f3d;
+    background-color: rgba(18,21,28,1);
+    margin-bottom: 20px;
+    padding: 0 15px;
+    color: white;
+}
+
+::placeholder {
+    color: #888d9c;
+}
+
+:-ms-input-placeholder { /* Internet Explorer 10-11 */
+    color: #888d9c;
+}
+
+input:-webkit-autofill {
+    -webkit-box-shadow: inset 0 0 0px 9999px #5a5b49;
+}
+
+input[type="submit"], input[type="button"] {
+    width: 50%;
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #3274d6;
+    border: 0;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ffffff;
+    transition: background-color 0.2s;
+}
+input[type="submit"]:hover, input[type="button"]:hover  {
+    background-color: #2868c7;
+    transition: background-color 0.2s;
+}
+
+/* ############################################################## OTHER ############################################################## */
+
+div.left-panel {
+    background-color: #282f3d;
+    width: 200px;
+    display:table-cell;
+}
+
+div.viewport {
+    height: 100%;
+    width: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+div.toolbar {
+    height: 80px;
+    background-color: #0070f0;
+    display: flex;
+}
+
+div.title {
+    flex-grow: 1;
+    height: 100%;
+    font-weight: 1200;
+    font-size: 25px;
+    margin-left: 40px;
+}

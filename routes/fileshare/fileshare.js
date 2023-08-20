@@ -1,8 +1,6 @@
 let express = require('express');
 let router = express.Router();
 let db = require("../../database")
-const formidable = require("formidable");
-const crypto = require("crypto");
 const fs = require("fs");
 const Repos = require('../../src/database/tables/repos')
 const session_utils = require("../../src/session_utils");
@@ -44,11 +42,12 @@ router.get('/repos/:repos', async function (req, res, next) {
 
     }
 
-    res.render('fileshare/fileshare', {
-        title: 'FileShare',
+    res.render('fileshare/repos', {
+        title: `FileShare - ${await found_repos.get_name()}`,
         user: req.session.user,
     });
 });
+
 
 const upload = require("./upload");
 router.get('/repos/:repos/upload', upload.view)
@@ -67,6 +66,12 @@ router.get('/create-repos/', create_repos.view);
 router.post('/create-repos/', create_repos.post_create_repos);
 
 router.use('/account/', require("../account/account"));
+
+router.post('/logout', (req, res) => {
+    req.session.user = null;
+    req.session.last_url = null;
+    res.redirect('/fileshare');
+});
 
 router.get('/download', async function (request, response) {
 

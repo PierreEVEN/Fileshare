@@ -12,12 +12,20 @@ function require_connection(req, res) {
 }
 
 async function get_user_private_data(user) {
-    const repos = []
+    const my_repos = []
+
+    for (const found_repos of await Repos.find_user(user))
+        my_repos.push(await found_repos.public_data())
+
+    const tracked_repos = []
     for (const user_repos of await UserRepos.find_user(user))
-        repos.push(await user_repos.get_repos().public_data())
+        tracked_repos.push(await user_repos.get_repos().public_data())
+
 
     return {
-        repos: repos,
+        my_repos: my_repos,
+        tracked_repos: tracked_repos,
+        public_repos: [],
         id: user.get_id(),
         username: await user.get_username(),
         email: await user.get_email(),

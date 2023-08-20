@@ -1,0 +1,29 @@
+doctype html
+html
+    head
+        title= title
+        block css
+        link(rel='stylesheet', href='/stylesheets/fileshare/layout.css')
+    body
+        include modale
+
+        div.left-panel
+            if (locals.user)
+                p Bonjour #{user.username}
+                button(onclick="logout()") Déconnexion
+                script.
+                    function logout() {
+                        const logout_form = document.createElement('form');
+                        logout_form.setAttribute('method', 'post');
+                        logout_form.setAttribute('action', '/fileshare/logout');
+                        logout_form.style.display = 'hidden';
+                        document.body.appendChild(logout_form)
+                        logout_form.submit();
+                    }
+
+        div.viewport
+            div.toolbar
+                div.title
+                    p FileShare
+                include login-buttons
+            block content

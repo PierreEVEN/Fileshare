@@ -2,7 +2,7 @@ const User = require('../../src/database/tables/user')
 const {get_user_private_data} = require("../../src/session_utils");
 
 function view(req, res) {
-    res.render('account/signin', {title: "Connexion"});
+    res.render('fileshare/fileshare', {title: "Connexion", force_login: true});
 }
 
 async function post_signin(req, res) {
@@ -13,7 +13,7 @@ async function post_signin(req, res) {
         req.session.last_url = null;
     }
     else {
-        res.render('account/signin', {
+        res.render('fileshare/signin', {
             title: 'Connexion - Mauvais identifiants',
             error: 'Aucun compte ne correspond à ces identifiants'
         });

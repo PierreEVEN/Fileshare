@@ -1,0 +1,32 @@
+#modale {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+}
+
+.modale-closed {
+    background-color: rgba(0,0,0,0);
+    pointer-events: none;
+    opacity: 0;
+    transition-duration: 0.25s;
+}
+
+.modale-open {
+    background-color: rgba(0,0,0,0.5);
+    opacity: 100%;
+    pointer-events: all;
+    transition-duration: 0.1s;
+}
+
+#modale .modale-box {
+    background-color: rgba(30,35,47,100);
+    width: 800px;
+    height: 300px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px #363b48 solid;
+    border-radius: 5px;
+}
+

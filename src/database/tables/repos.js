@@ -103,7 +103,7 @@ const table_created = init_table();
 /**
  * @return {Repos}
  */
-async function create(id) {
+async function find(id) {
     return await table_created.then(async () => {
         let repos = repos_storage_id.find(id);
         if (!repos) {
@@ -156,8 +156,25 @@ async function insert(name, owner, status, custom_access_key = null) {
         const result = await connection.query('INSERT INTO personal.repos (name, owner, status, access_key) VALUES (?, ?, ?, ?)', [name, owner.get_id(), status, access_key]);
         await connection.end();
 
-        return create(result.insertId);
+        return find(result.insertId);
     })
 }
 
-module.exports = {find: create, create_access_key, insert};
+
+/**
+ * @return {Promise<[Repos]>}
+ */
+async function find_user(user) {
+    return await table_created.then(async () => {
+        const connection = await db();
+        const user_repos = []
+        for (const entry of Object.values(await connection.query("SELECT * FROM Personal.Repos WHERE owner = ?", [await user.get_id()]))) {
+            user_repos.push(await find(entry.id))
+        }
+        await connection.end();
+        return user_repos;
+    })
+}
+
+
+module.exports = {find, create_access_key, insert, find_user};

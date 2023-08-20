@@ -1,45 +1,28 @@
-extends ../layout
+extends layout
 
 block content
-    div.fileshare
-        div.explorer
-            div.home-button
-                button Fileshare
-            div.folder
-                if (locals.user && locals.user.my_repos)
-                    p Mes depots
-                    div.folder_list
-                        each item in user.my_repos
-                            button(onclick="window.location.href = '/fileshare/?repos=#{item.access_key}'") #{item.name}
+    if (!locals.user)
+        p Bienvenue sur FileShare
+    else
+        link(rel='stylesheet', href='/stylesheets/fileshare/user-viewport.css')
+        div.user-viewport
+            div.repos-view
+                p Mes dépôts
+                div.repos-list
+                    each repos in user.my_repos
+                        button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
 
-                if (locals.user)
-                    div
-                        button(onclick="window.location.href = '/fileshare/create-repos'") Nouveau depot
+                p Dépôts suivis
+                div.repos-list
+                    each repos in user.tracked_repos
+                        button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
 
-        div.content
-            div.toolbar
-                div.filters
-                    select(name="Filtre", onChange="", id="filter")
-                        option Par auteur
-                        option Par date
-                        option Par type
-                        option Par nom
+                p Dépôts publiques
+                div.repos-list
+                    each repos in user.public_repos
+                        button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
 
-                    input(type="text", name="search", placeholder="recherche", id="search")
-
-                div.account-button
-                    p contact:
-                    a(href="mailto: evenpierre@orange.fr") evenpierre@orange.fr
-                    if (locals.user)
-                        button(onclick="window.location.href = '/fileshare/account'") #{user.username}
-                    else
-                        button(onclick="window.location.href = '/fileshare/signin'") Connexion
-
-            div.browser
-                if (locals.repos)
-                    div
-                        button(onclick="window.location.href = '/fileshare/upload?repos=#{repos.access_key}'") Déposer un fichier
-
-
-                    each item in repos.by_author(repos)
-                        a(href="/fileshare/download?file=#{item.id}") Name = #{item.name} // Size:#{item.size} // path : #{item.virtual_folder}
+            div.file-view
+                p Chemin : '/'
+                div.file-list
+                    block files

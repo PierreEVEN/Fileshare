@@ -1,0 +1,59 @@
+
+.login-buttons button {
+    margin: 20px 0 0 1px;
+}
+
+.login {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+}
+
+.login h1 {
+    text-align: center;
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 100;
+    margin-bottom: 25px;
+    margin-top: 50px;
+}
+
+.login form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+#forgot-password {
+    margin-top: 25px;
+    margin-bottom: 40px;
+}
+
+.login p {
+    font-weight: lighter;
+    font-size: 15px;
+    color: #5b6574;
+}
+.login a {
+    margin-left: 8px;
+}
+
+.separator {
+    width: 95%;
+    height: 1px;
+    background-color: #3b3d56;
+}
+
+.login form input[type="button"] {
+    color: black;
+    background-color: #eeeeee;
+}
+.login form input[type="button"]:hover {
+    background-color: #c7ddff;
+}
+.login .bottom-button {
+    align-items: center;
+    display: flex;
+}

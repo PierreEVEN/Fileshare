@@ -1,0 +1,31 @@
+link(rel='stylesheet', href='/stylesheets/fileshare/modale.css')
+
+div(id='modale').modale-closed
+    div.modale-box(id='modale-content')
+
+
+script.
+    const modale = document.getElementById('modale');
+    const modale_content = document.getElementById('modale-content');
+
+    modale.addEventListener('click', (e) => {
+        if (e.target.id === 'modale') {
+            close_modale();
+        }
+    })
+
+    function close_modale() {
+        modale.classList.remove('modale-open')
+        modale.classList.add('modale-closed')
+    }
+
+    function open_modale(content, custom_width = '800px', custom_height = '300px') {
+        modale.classList.remove('modale-closed')
+        modale.classList.add('modale-open')
+        if (custom_width)
+            modale_content.style.width = custom_width;
+        if (custom_height)
+            modale_content.style.height = custom_height;
+        modale_content.innerHTML = ""
+        modale_content.append(content);
+    }
