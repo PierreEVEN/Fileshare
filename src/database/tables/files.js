@@ -165,7 +165,7 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         fs.renameSync(old_file_path, storage_path)
 
         await connection.end();
-        return find(res.insertId);
+        return find(Number(res.insertId));
     })
 }
 

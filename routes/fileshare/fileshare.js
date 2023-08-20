@@ -15,7 +15,7 @@ router.get('/', async function (req, res, next) {
 
 /* GET users listing. */
 router.get('/repos/:repos', async function (req, res, next) {
-    const found_repos = await Repos.create_access_key(req.params.repos);
+    const found_repos = await Repos.find_access_key(req.params.repos);
     if (!found_repos) {
         // render the error page
         res.status(404);
@@ -45,6 +45,7 @@ router.get('/repos/:repos', async function (req, res, next) {
     res.render('fileshare/repos', {
         title: `FileShare - ${await found_repos.get_name()}`,
         user: req.session.user,
+        current_repos: await found_repos.public_data(),
     });
 });
 
@@ -64,6 +65,7 @@ router.post('/signup', signup.post_signup);
 const create_repos = require("../fileshare/create-repos")
 router.get('/create-repos/', create_repos.view);
 router.post('/create-repos/', create_repos.post_create_repos);
+router.post('/delete-repos/:repos', create_repos.post_delete_repos);
 
 router.use('/account/', require("../account/account"));
 

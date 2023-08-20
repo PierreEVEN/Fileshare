@@ -5,6 +5,10 @@ class Storage {
         this.content = {}
     }
 
+    clear(id) {
+        delete this.content[id]
+    }
+
     find(id) {
         const found = this.content[id]
         if (found) {

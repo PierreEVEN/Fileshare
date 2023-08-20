@@ -7,11 +7,11 @@
 }
 
 .repos-view {
-    border: 1px #5b6574 solid;
     display: flex;
     width: 200px;
     height: 100%;
     flex-direction: column;
+    background-color: #181c25;
 }
 
 .repos-list {
@@ -20,7 +20,7 @@
 }
 
 .file-view {
-    border: 1px #5b6574 solid;
+    background-color: rgb(40, 47, 61);
     display: flex;
     flex-grow: 1;
     height: 100%;
@@ -36,9 +36,88 @@
 
 .repos-list button:hover {
     background-color: rgba(58, 68, 98, 0.76);
-    border-right: 2px #0070f0 solid;
-    border-left: 2px #0070f0 solid;
+    border-right: 4px #0070f0 solid;
+    border-left: 4px #0070f0 solid;
 }
 
-.file-list {
+.separator {
+    background-color: rgba(59,159,50,0);
+    border-bottom: 1px #5b6574 solid;
+    width: 100%;
+}
+
+.create-repos {
+    background-color: #329f9f;
+    margin-bottom: 10%;
+}
+
+.repos-list .selected-repos {
+    background-color: rgba(0, 111, 238, 0.37);
+    border: 1px #0070f0 dashed;
+}
+
+.last-separator {
+    flex-grow: 1;
+}
+
+.repos-toolbar {
+    display: flex;
+    flex-direction: row;
+}
+
+.repos-toolbar p {
+    flex-grow: 1;
+}
+
+.repos-toolbar button {
+    height: 100%;
+    background-color: #9f1000;
+}
+
+.repos-toolbar button:hover {
+    height: 100%;
+    background-color: #4d0801;
+}
+
+.login .delete-repos {
+    display: flex;
+    flex-direction: row;
+}
+
+.login .delete-repos input[type="button"] {
+    background-color: #9f1000;
+    color: white;
+    font-size: 20px;
+}
+
+.login .delete-repos input[type="button"]:hover {
+    background-color: #6b0b00;
+}
+
+.delete-repos input[type="submit"] {
+    background-color: #d98000;
+    color: #e0e0e0;
+    font-size: 20px;
+}
+.delete-repos input[type="submit"]:hover {
+    background-color: #b97200;
+}
+
+.delete-repos input[type="submit"]:disabled {
+    background-color: #696666;
+    color: #e0e0e0;
+    font-size: 20px;
+    cursor: progress;
+}
+
+.delete-repos-progress {
+    width: 100%;
+    height: 5px;
+    background-color: #000000;
+}
+
+.delete-repos-progress div {
+    background-color: #00ff04;
+    height: 5px;
+    width: 0;
 }

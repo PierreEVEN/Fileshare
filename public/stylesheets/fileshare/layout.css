@@ -1,13 +1,47 @@
 body {
     width: 100%;
     height: 100vh;
-    background-color: #181c25;
+    background-color: #282f3d;
     display:table;
-    flex-direction: row;
     margin: 0;
     padding: 0;
     color: #ffffff;
     font-family: Bahnschrift, sans-serif;
+}
+
+.app-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+div.left-panel {
+    background-color: #282f3d;
+    width: 200px;
+    display:table-cell;
+    flex-grow: 1;
+}
+
+div.viewport {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+div.toolbar {
+    height: 80px;
+    background-color: #0070f0;
+    display: flex;
+}
+
+div.title {
+    flex-grow: 1;
+    height: 100%;
+    font-weight: 1200;
+    font-size: 25px;
+    margin-left: 40px;
 }
 
 /* ############################################################## BUTTONS ############################################################## */
@@ -107,30 +141,3 @@ input[type="submit"]:hover, input[type="button"]:hover  {
 }
 
 /* ############################################################## OTHER ############################################################## */
-
-div.left-panel {
-    background-color: #282f3d;
-    width: 200px;
-    display:table-cell;
-}
-
-div.viewport {
-    height: 100%;
-    width: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-div.toolbar {
-    height: 80px;
-    background-color: #0070f0;
-    display: flex;
-}
-
-div.title {
-    flex-grow: 1;
-    height: 100%;
-    font-weight: 1200;
-    font-size: 25px;
-    margin-left: 40px;
-}

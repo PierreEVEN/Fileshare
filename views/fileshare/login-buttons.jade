@@ -1,9 +1,9 @@
-if !locals.user
-    link(rel='stylesheet', href='/stylesheets/fileshare/login-buttons.css')
+link(rel='stylesheet', href='/stylesheets/fileshare/login-buttons.css')
 
+if !locals.user
     div.login-buttons
-        button(onclick = 'open_modale_signin()') Connexion
         button(onclick = 'open_modale_signup()') Nouveau Compte
+        button(onclick = 'open_modale_signin()') Connexion
 
     script.
 
@@ -56,6 +56,20 @@ if !locals.user
             </form>`
             open_modale(login_content, '500px', '450px');
         }
+else
+    div.login-buttons
+        p.Username Bonjour #{user.username} !
+        button(onclick="logout()") Déconnexion
+        script.
+            function logout() {
+                const logout_form = document.createElement('form');
+                logout_form.setAttribute('method', 'post');
+                logout_form.setAttribute('action', '/fileshare/logout');
+                logout_form.style.display = 'hidden';
+                document.body.appendChild(logout_form)
+                logout_form.submit();
+            }
+
 
 if locals.force_login
     script.open_modale_signin()

@@ -6,7 +6,6 @@ const crypto = require("crypto");
 const repos_storage_id = new Storage();
 const repos_storage_key = new Storage();
 
-
 class Repos {
     constructor(id) {
         this._id = id;
@@ -71,6 +70,17 @@ class Repos {
         }
     }
 
+    async delete() {
+        const connection = await db();
+        await connection.query("DELETE FROM Personal.Files WHERE repos = ?", [this._id]);
+        await connection.query("DELETE FROM Personal.UserRepos WHERE repos = ?", [this._id]);
+        await connection.query("DELETE FROM Personal.Repos WHERE id = ?", [this._id]);
+        await connection.end();
+
+        repos_storage_id.clear(this._id);
+        repos_storage_key.clear(this._access_key);
+    }
+
     async public_data() {
         if (!this._owner) {
             await this._update_data_internal()
@@ -116,9 +126,9 @@ async function find(id) {
 }
 
 /**
- * @return {Repos}
+ * @return {Promise<Repos>}
  */
-async function create_access_key(access_key) {
+async function find_access_key(access_key) {
     return await table_created.then(async () => {
         let repos = repos_storage_key.find(access_key);
         if (!repos) {
@@ -156,7 +166,7 @@ async function insert(name, owner, status, custom_access_key = null) {
         const result = await connection.query('INSERT INTO personal.repos (name, owner, status, access_key) VALUES (?, ?, ?, ?)', [name, owner.get_id(), status, access_key]);
         await connection.end();
 
-        return find(result.insertId);
+        return find(Number(result.insertId));
     })
 }
 
@@ -177,4 +187,4 @@ async function find_user(user) {
 }
 
 
-module.exports = {find, create_access_key, insert, find_user};
+module.exports = {find, find_access_key, insert, find_user};
