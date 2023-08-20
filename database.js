@@ -2,7 +2,7 @@ const mariadb = require("mariadb");
 require('dotenv').config();
 
 const pool = mariadb.createPool({
-    host: 'localhost',
+    host: '127.0.0.1',
     user: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
     connectionLimit: 5,
@@ -10,7 +10,7 @@ const pool = mariadb.createPool({
 });
 
 async function get() {
-    return pool.getConnection()
+    return await pool.getConnection()
 }
 
 module.exports = get

@@ -118,7 +118,6 @@ class File {
 async function init_table() {
 
     const connection = await db();
-
     // Create Accounts table if needed
     if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Files'")).length === 0) {
         await connection.query("CREATE TABLE Personal.Files (id varchar(200) PRIMARY KEY, repos int NOT NULL, owner int NOT NULL, name varchar(200) NOT NULL, description varchar(1200), storage_path varchar(200) NOT NULL UNIQUE, size int NOT NULL, mimetype varchar(200)  NOT NULL, virtual_folder varchar(200) NOT NULL, FOREIGN KEY(Repos) REFERENCES Personal.Repos(id), FOREIGN KEY(owner) REFERENCES Personal.Users(id));")
