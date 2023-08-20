@@ -28,7 +28,7 @@ if (fs.existsSync(process.env.SSL_CERTIFICATE) && fs.existsSync(process.env.SSL_
         res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
         res.end();
     }).listen(80, function(err) {
-        console.log("Node.js Express HTTPS Server Listening on Port 80");
+        console.log("Created redirect server on port 80");
     });
 
     port = normalizePort(process.env.PORT || '443');
