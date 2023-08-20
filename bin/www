@@ -20,7 +20,16 @@ const fs = require('fs')
 
 let server = null;
 let port = null;
+let redirect_server = null;
 if (fs.existsSync(process.env.SSL_CERTIFICATE) && fs.existsSync(process.env.SSL_PRIVATE_KEY) && fs.existsSync(process.env.SSL_CHAIN) ) {
+
+    // Enable redirection to https
+    redirect_server = http.createServer(function(req,res){
+        res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+        res.end();
+    }).listen(80, function(err) {
+        console.log("Node.js Express HTTPS Server Listening on Port 80");
+    });
 
     port = normalizePort(process.env.PORT || '443');
     app.set('port', port);
