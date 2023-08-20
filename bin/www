@@ -14,31 +14,35 @@ const fs = require('fs')
  * Get port from environment and store in Express.
  */
 
-let port = normalizePort(process.env.PORT || '80');
-app.set('port', port);
-
 /**
  * Create HTTP server.
  */
 
-let server = http.createServer(app);
+let server = null;
 if (fs.existsSync(process.env.SSL_CERTIFICATE) && fs.existsSync(process.env.SSL_PRIVATE_KEY) && fs.existsSync(process.env.SSL_CHAIN) ) {
+
+    let port = normalizePort(process.env.PORT || '443');
+    app.set('port', port);
+
     const privateKey = fs.readFileSync(process.env.SSL_PRIVATE_KEY, 'utf8');
     const certificate = fs.readFileSync(process.env.SSL_CERTIFICATE, 'utf8');
     const ca = fs.readFileSync(process.env.SSL_CHAIN, 'utf8');
-    https_server = https.createServer({key: privateKey, cert: certificate, ca: ca}, app);
+    server = https.createServer({key: privateKey, cert: certificate, ca: ca}, app);
+    console.info("Start secured server on port 443")
+} else {
 
+    let port = normalizePort(process.env.PORT || '80');
+    app.set('port', port);
 
-    https_server.listen(443);
-    https_server.on('error', onError);
-    https_server.on('listening', onListening);
+    server = http.createServer(app);
+    console.info("Start development server on port 80")
 }
 
 /**
  * Listen on provided port, on all network interfaces.
  */
 
-server.listen(80);
+server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
