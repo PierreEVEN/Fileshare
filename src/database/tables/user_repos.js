@@ -73,7 +73,7 @@ async function find_repos(repos) {
 async function insert(user, repos) {
     return await table_created.then(async () => {
         const connection = await db();
-        await connection.query('INSERT INTO personal.UserRepos (owner, repos) VALUES (?, ?)', [await user.get_id(), await repos.get_id()]);
+        await connection.query('INSERT INTO Personal.UserRepos (owner, repos) VALUES (?, ?)', [await user.get_id(), await repos.get_id()]);
         await connection.end();
         return new UserRepos(user, repos);
     })

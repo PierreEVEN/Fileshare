@@ -56,7 +56,7 @@ class Repos {
 
     async _update_data_internal() {
         const connection = await db();
-        const result = await connection.query('SELECT * FROM personal.repos WHERE id = ?', [this._id])
+        const result = await connection.query('SELECT * FROM Personal.Repos WHERE id = ?', [this._id])
         await connection.end();
 
         if (Object.values(result).length > 0) {
@@ -160,10 +160,10 @@ async function insert(name, owner, status, custom_access_key = null) {
             do {
                 access_key = crypto.randomBytes(16).toString("hex");
             }
-            while (Object.entries(await connection.query('SELECT * FROM Personal.repos WHERE access_key = ?', [access_key])).length > 0);
+            while (Object.entries(await connection.query('SELECT * FROM Personal.Repos WHERE access_key = ?', [access_key])).length > 0);
         }
 
-        const result = await connection.query('INSERT INTO personal.repos (name, owner, status, access_key) VALUES (?, ?, ?, ?)', [name, owner.get_id(), status, access_key]);
+        const result = await connection.query('INSERT INTO Personal.Repos (name, owner, status, access_key) VALUES (?, ?, ?, ?)', [name, owner.get_id(), status, access_key]);
         await connection.end();
 
         return find(Number(result.insertId));

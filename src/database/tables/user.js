@@ -48,7 +48,7 @@ class User {
 
     async _update_data_internal() {
         const connection = await db();
-        const result = await connection.query('SELECT * FROM personal.Users WHERE id = ?', [this._id])
+        const result = await connection.query('SELECT * FROM Personal.Users WHERE id = ?', [this._id])
         await connection.end();
 
         if (Object.values(result).length > 0) {
@@ -125,7 +125,7 @@ async function find_with_identifiers(login, email) {
 async function insert(email, username, password) {
     return await table_created.then(async () => {
         const connection = await db();
-        const result = await connection.query('INSERT INTO personal.Users (email, username, password_hash) VALUES (?, ?, ?)', [email, username, await bcrypt.hash(password, 10)]);
+        const result = await connection.query('INSERT INTO Personal.Users (email, username, password_hash) VALUES (?, ?, ?)', [email, username, await bcrypt.hash(password, 10)]);
         await connection.end();
         return find(Number(result.insertId));
     })

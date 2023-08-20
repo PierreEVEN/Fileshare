@@ -10,7 +10,7 @@ const pool = mariadb.createPool({
 });
 
 async function get() {
-    return await pool.getConnection()
+    return pool.getConnection()
 }
 
 module.exports = get

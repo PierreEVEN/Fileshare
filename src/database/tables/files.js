@@ -95,7 +95,7 @@ class File {
 
     async _update_data_internal() {
         const connection = await db();
-        const result = await connection.query('SELECT * FROM personal.files WHERE id = ?', [this._id]);
+        const result = await connection.query('SELECT * FROM Personal.Files WHERE id = ?', [this._id]);
         await connection.end();
 
         if (Object.values(result).length > 0) {
@@ -155,11 +155,11 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         do {
             file_id = crypto.randomBytes(16).toString("hex");
         }
-        while (Object.entries(await connection.query('SELECT * FROM Personal.files WHERE id = ?', [file_id])).length > 0);
+        while (Object.entries(await connection.query('SELECT * FROM Personal.Files WHERE id = ?', [file_id])).length > 0);
         const storage_path = `./data_storage/${file_id}`
 
         const file_data = fs.statSync(old_file_path)
-        const res = await connection.query('INSERT INTO personal.files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), name, description, storage_path, file_data.size, mimetype, virtual_folder]);
+        const res = await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), name, description, storage_path, file_data.size, mimetype, virtual_folder]);
 
         fs.renameSync(old_file_path, storage_path)
 

@@ -83,7 +83,7 @@ router.get('/download', async function (request, response) {
 
 
     const connection = await db();
-    let file = Object.values(await connection.query('SELECT * FROM Personal.files.js WHERE id = ?', [request.query.file]));
+    let file = Object.values(await connection.query('SELECT * FROM Personal.Files.js WHERE id = ?', [request.query.file]));
     await connection.end()
 
     if (file.length > 0) {
