@@ -19,9 +19,10 @@ const fs = require('fs')
  */
 
 let server = null;
+let port = null;
 if (fs.existsSync(process.env.SSL_CERTIFICATE) && fs.existsSync(process.env.SSL_PRIVATE_KEY) && fs.existsSync(process.env.SSL_CHAIN) ) {
 
-    let port = normalizePort(process.env.PORT || '443');
+    port = normalizePort(process.env.PORT || '443');
     app.set('port', port);
 
     const privateKey = fs.readFileSync(process.env.SSL_PRIVATE_KEY, 'utf8');
@@ -31,7 +32,7 @@ if (fs.existsSync(process.env.SSL_CERTIFICATE) && fs.existsSync(process.env.SSL_
     console.info("Start secured server on port 443")
 } else {
 
-    let port = normalizePort(process.env.PORT || '80');
+    port = normalizePort(process.env.PORT || '80');
     app.set('port', port);
 
     server = http.createServer(app);
