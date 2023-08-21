@@ -1,4 +1,26 @@
 extends fileshare
 
 block files
-    button Ma photo.jpg
+
+    - function humanFileSize(bytes) {
+    - const thresh = 1024;
+
+    - if (Math.abs(bytes) < thresh) {
+    -     return bytes + ' B';
+    - }
+
+    - const units = ['ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
+    - let u = -1;
+    - const r = 10;
+    - do {
+    -     bytes /= thresh;
+    -     ++u;
+    - } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+    - return bytes.toFixed(1) + ' ' + units[u];
+    - }
+
+    each file in locals.current_repos.content
+        button.object-button= file.name + " - " + humanFileSize(file.size)
+
+    script.
+

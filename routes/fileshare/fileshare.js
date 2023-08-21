@@ -45,7 +45,7 @@ router.get('/repos/:repos', async function (req, res, next) {
     res.render('fileshare/repos', {
         title: `FileShare - ${await found_repos.get_name()}`,
         user: req.session.user,
-        current_repos: await found_repos.public_data(),
+        current_repos: await found_repos.public_data(true),
     });
 });
 

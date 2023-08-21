@@ -81,11 +81,32 @@ class Repos {
         repos_storage_key.clear(this._access_key);
     }
 
-    async public_data() {
+    async public_data(include_content = false) {
         if (!this._owner) {
             await this._update_data_internal()
         }
+
+        const content = []
+        if (include_content) {
+
+            const connection = await db();
+            const files = Object.values(await connection.query("SELECT * FROM Personal.Files WHERE repos = ?", [this.get_id()]))
+            await connection.end()
+            const found_files = []
+            for (const file of files) {
+                content.push({
+                    id: file.id,
+                    name: file.name,
+                    size: file.size,
+                    mimetype: file.mimetype,
+                    description: file.description,
+                    virtual_folder: file.virtual_folder,
+                })
+            }
+        }
+
         return {
+            content: include_content ? content : null,
             id: this._id,
             owner: await this._owner.public_data(),
             name: this._name,

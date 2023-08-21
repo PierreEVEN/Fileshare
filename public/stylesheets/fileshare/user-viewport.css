@@ -121,3 +121,68 @@
     height: 5px;
     width: 0;
 }
+
+.upload-file-list {
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    flex-grow: .95;
+    background-color: #14171e;
+    overflow: auto;
+    border: 1px #4b4b4b solid;
+}
+
+.file-item {
+    width: 100%;
+    height: 40px;
+    background-color: #25272c;
+    display: flex;
+    transition-duration: 0.15s;
+}
+
+.upload-file-list + button {
+
+    min-height: 50px;
+}
+
+.file-item:hover {
+    background-color: #5b6574;
+}
+
+.file-item p {
+    margin-left: 20px;
+    color: white;
+    flex-grow: 1;
+}
+
+.file-item button {
+    min-width: 50px;
+    width: 50px;
+    background-color: #4d0801;
+}
+
+.file-item button:hover {
+    background-color: #910c00;
+}
+
+.progress-container {
+    width: 90%;
+    height: 10px;
+    background-color: black;
+}
+
+#progress-bar {
+    width: 0%;
+    height: 100%;
+    background-color: #60f341;
+}
+
+.send-buttons {
+    display: flex;
+}
+
+.object-button {
+    height: 100px;
+    margin: 10px;
+    background-color: #3b3d56;
+}

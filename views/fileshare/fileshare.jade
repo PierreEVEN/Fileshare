@@ -41,9 +41,11 @@ block content
                 button(onclick='open_create_repos_modale()').create-repos Nouveau dépot
 
             if locals.current_repos
-                div.file-view
+                div(id="current-repos", repos="#{current_repos.access_key}")
+                div.file-view(id="drop_zone", ondrop="dropHandler(event);", ondragover="dragOverHandler(event);", ondragenter="dragStartEvent(event);", ondragleave="dragStopEvent(event);")
                     div.repos-toolbar
                         p #{locals.current_repos.name}/
+                        button.delete(onclick=`open_upload_modale_for_files(new Map())`) Ajouter
                         button.delete(onclick=`delete_repos(this)`, repos='#{current_repos.access_key}') Supprimer
                     div.separator
                     div.file-list
@@ -51,6 +53,219 @@ block content
 
 
     script.
+        let files_to_upload = new Map();
+
+        function dragStartEvent(ev) {
+            ev.originalTarget.style.cursor = 'copy'
+            ev.originalTarget.style.border = '5px yellow dashed'
+            ev.originalTarget.style['border-radius'] = '20px'
+            ev.preventDefault();
+        }
+
+        function dragStopEvent(ev) {
+            console.log("test")
+            ev.originalTarget.style.cursor = 'cursor'
+            ev.originalTarget.style.border = '0'
+            ev.originalTarget.style['border-radius'] = '0'
+            ev.preventDefault();
+        }
+
+        function dragOverHandler(ev) {
+            ev.preventDefault();
+        }
+
+        function dropHandler(ev) {
+            dragStopEvent(ev)
+            ev.preventDefault();
+            if (ev.dataTransfer.items) {
+                [...ev.dataTransfer.items].forEach((item, i) => {
+                    // If dropped items aren't files, reject them
+                    if (item.kind === "file") {
+                        const entry = "getAsEntry" in DataTransferItem.prototype ? item.getAsEntry() : item.webkitGetAsEntry();
+                        if (entry.isDirectory) return;
+                        const file = item.getAsFile();
+                        files_to_upload.set(file.name, file);
+                    }
+                });
+            } else {
+                // Use DataTransfer interface to access the file(s)
+                [...ev.dataTransfer.files].forEach((file, i) => {
+                    files_to_upload.set(file.name, file);
+                });
+            }
+
+            open_upload_modale_for_files(files_to_upload)
+        }
+
+        const modale_item =  document.getElementById('modale')
+        modale_item.addEventListener('drop', dropHandler)
+        modale_item.addEventListener('dragover', dragOverHandler)
+
+
+        function humanFileSize(bytes) {
+            const thresh = 1024;
+
+            if (Math.abs(bytes) < thresh) {
+                return bytes + ' B';
+            }
+
+            const units = ['ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
+            let u = -1;
+            const r = 10;
+
+            do {
+                bytes /= thresh;
+                ++u;
+            } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+
+
+            return bytes.toFixed(1) + ' ' + units[u];
+        }
+
+        function seconds_to_str(in_seconds) {
+            const milliseconds = in_seconds * 1000;
+
+            function numberEnding(number) {
+                return (number > 1) ? 's' : '';
+            }
+
+            let temp = Math.floor(milliseconds / 1000);
+            const years = Math.floor(temp / 31536000);
+            if (years) {
+                return years + ' années' + numberEnding(years);
+            }
+            //TODO: Months! Maybe weeks?
+            const days = Math.floor((temp %= 31536000) / 86400);
+            if (days) {
+                return days + ' jours' + numberEnding(days);
+            }
+            const hours = Math.floor((temp %= 86400) / 3600);
+            if (hours) {
+                return hours + ' heures' + numberEnding(hours);
+            }
+            const minutes = Math.floor((temp %= 3600) / 60);
+            if (minutes) {
+                return minutes + ' minutes' + numberEnding(minutes);
+            }
+            const seconds = temp % 60;
+            if (seconds) {
+                return seconds + ' secondes' + numberEnding(seconds);
+            }
+            return '0s';
+        }
+
+        function open_upload_modale_for_files(files) {
+            files_to_upload = files;
+            const send_files = document.createElement('div')
+            send_files.classList.add('login')
+
+            let files_code = ''
+            for (const value of files_to_upload.values()) {
+                files_code += `
+                <div class="file-item">
+                    <p>${value.name} (${humanFileSize(value.size)})</p>
+                    <button onclick="files_to_upload.delete('${value.name}'); open_upload_modale_for_files(files_to_upload)">DEL</button>
+                </div>
+                `
+            }
+
+            send_files.innerHTML = `
+            <h1>Envoyer des fichiers</h1>
+            <div class="upload-file-list">
+            ${files_code}
+            <input type="file" name="Ajouter un fichier"">
+            </div>
+            <div class="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+            <p id="progress-text"></p>
+            <div class="send-buttons">
+                <button onclick="upload_files()">Envoyer</button>
+                <button onclick="cancel_upload(); files_to_upload = new Map(); close_modale()">Annuler</button>
+            </div>
+            `
+            open_modale(send_files, '500px', '80%');
+        }
+        
+        let progress = document.getElementById('progress-bar')
+        let progress_text = document.getElementById('progress-text')
+        let last_request = null;
+        let deltas = []
+        let last_file_upload_measure = null
+
+        function cancel_upload() {
+            reset_all();
+        }
+
+        function upload_files() {
+
+            progress = document.getElementById('progress-bar')
+            progress_text = document.getElementById('progress-text')
+            cancel_upload()
+
+            const req = new XMLHttpRequest();
+            req.upload.addEventListener("progress", updateProgress);
+            const current_repos = document.getElementById('current-repos').attributes.repos.value
+            console.log(current_repos)
+            req.open("POST", `/fileshare/repos/${current_repos}/upload`);
+            const form = new FormData();
+            for (const file of files_to_upload.values())
+                form.append("file" + file.name, file, file.name);
+
+            last_request = req;
+            last_file_upload_measure = {size: 0, timestamp: performance.now()}
+            req.onreadystatechange = function () {
+                if (this.readyState === this.DONE) {
+                    window.location.href = this.responseURL;
+                }
+            };
+            req.send(form);
+        }
+
+        function updateProgress(e) {
+
+            let mean_speed = 0;
+            if (last_file_upload_measure) {
+                const time_delta = (performance.now() - last_file_upload_measure.timestamp) / 1000;
+                const size_delta = e.loaded - last_file_upload_measure.size;
+
+                //console.log(e)
+                deltas.push(size_delta / time_delta)
+
+
+                last_file_upload_measure.size = e.loaded;
+                last_file_upload_measure.timestamp = performance.now();
+
+                if (deltas.length > 20) {
+                    deltas.splice(0, 1);
+                }
+
+                for (const delta of deltas)
+                    mean_speed += delta;
+                mean_speed /= deltas.length
+            }
+
+            const remaining = (e.total - e.loaded) / mean_speed
+
+            progress_text.innerText = `${Math.round(e.loaded / e.total * 100)}% (${humanFileSize(e.loaded)} / ${humanFileSize(e.total)}) - ${humanFileSize(mean_speed)}/s (~${seconds_to_str(remaining)})`
+            progress.style.width = (((e.loaded / e.total) * 100)) + "%";
+        }
+
+
+
+        function reset_all() {
+
+            if (last_request)
+                last_request.abort();
+            last_request = null;
+            deltas = [];
+            last_file_upload_measure = null;
+            if (progress_text)
+                progress_text.innerText = '';
+            if (progress)
+                progress.style.width = '0%';
+        }
+
         function delete_repos(e) {
             const delete_repos_modale = document.createElement('div')
             delete_repos_modale.classList.add('login')
@@ -109,3 +324,7 @@ block content
     if locals.force_open_create_repos
         script.
             open_create_repos_modale();
+
+    if locals.forcer_show_upload
+        script.
+            open_upload_modale_for_files(files_to_upload);
