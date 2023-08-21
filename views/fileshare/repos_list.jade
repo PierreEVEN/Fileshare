@@ -1,21 +1,22 @@
 link(rel='stylesheet', href='/stylesheets/fileshare/repos_list.css')
 
 div.repos-view
-    div.separator
-    p Mes dépôts
-    div.separator
-    div.repos-list
-        each repos in user.my_repos
-            if locals.current_repos && locals.current_repos.id === repos.id
-                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'").selected-repos #{repos.name}
-            else
-                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
+    if (session_data.user)
+        div.separator
+        p Mes dépôts
+        div.separator
+        div.repos-list
+            each repos in session_data.user.repos
+                if locals.current_repos && locals.current_repos.id === repos.id
+                    button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'").selected-repos #{repos.name}
+                else
+                    button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
 
     div.separator
     p Dépôts suivis
     div.separator
     div.repos-list
-        each repos in user.tracked_repos
+        each repos in session_data.tracked_repos
             if locals.current_repos && locals.current_repos.id === repos.id
                 button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'", class='selected-repos') #{repos.name}
             else
@@ -25,17 +26,18 @@ div.repos-view
     p Dépôts publiques
     div.separator
     div.repos-list
-        each repos in user.public_repos
+        each repos in public_data.get_repos_list()
             if locals.current_repos && locals.current_repos.id === repos.id
                 button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'").selected-repos #{repos.name}
             else
                 button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
 
     div.separator.last-separator
-    button(onclick='open_create_repos_modale()').create-repos Nouveau dépot
+
+    if session_data.user && session_data.user.repos_edit_rights
+        button(onclick='open_create_repos_modale()').create-repos Nouveau dépot
 
 script.
-
     function open_create_repos_modale() {
         const create_repos_content = document.createElement('div')
         create_repos_content.classList.add('login')

@@ -1,13 +1,10 @@
 extends layout
 
 block content
-    if (!locals.user)
-        p Bienvenue sur FileShare
-    else
-        link(rel='stylesheet', href='/stylesheets/fileshare/user-viewport.css')
-        div.user-viewport
-            include repos_list
-            include repos_viewport
+    link(rel='stylesheet', href='/stylesheets/fileshare/user-viewport.css')
+    div.user-viewport
+        include repos_list
+        include repos_viewport
 
     script.
         let files_to_upload = new Map();

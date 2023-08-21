@@ -1,6 +1,7 @@
-extends fileshare/layout
+extends fileshare/fileshare
 
 block content
   h1= message
-  h2= error.status
-  pre #{error.stack}
+  if locals.error && locals.error.status && locals.error.stack
+    h2= error.status
+    pre #{error.stack}

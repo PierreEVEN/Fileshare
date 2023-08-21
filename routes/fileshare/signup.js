@@ -1,5 +1,5 @@
 const User = require("../../src/database/tables/user");
-const {get_user_private_data} = require("../../src/session_utils");
+const {session_data} = require("../../src/session_utils");
 
 function view(req, res) {
     res.render('account/signup', {title: "Nouveau compte"});
@@ -13,22 +13,17 @@ async function post_signup(req, res) {
     if (username && password && email) {
 
         if (await User.find_with_identifiers(username, email)) {
-            return res.render('account/signup', {
-                title: 'Connexion - Utilisateur existe',
-                error: 'Nom ou email déjà pris'
-            });
+            return console.error("Not Handled - 58789879435");
         }
 
         const new_user = await User.insert(email, username, password);
 
-        req.session.user = await get_user_private_data(new_user);
-        res.redirect( req.session.last_url ?  req.session.last_url : '/fileshare');
+        await session_data(req).connect_user(new_user)
+
+        res.redirect(req.session.last_url ?  req.session.last_url : '/fileshare');
         req.session.last_url = null;
     } else {
-        res.render('account/signup', {
-            title: 'Nouveau compte - Missing fields',
-            error: 'Veuillez remplir tous les champs requis'
-        });
+        return console.error("Not Handled - 5648979846");
     }
 }
 

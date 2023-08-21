@@ -54,6 +54,33 @@ class Repos {
         return this._access_key;
     }
 
+    /**
+     * @return {Promise<int>}
+     */
+    async get_visitor_file_lifetime() {
+        if (!this._visitor_file_lifetime)
+            await this._update_data_internal()
+        return this._visitor_file_lifetime;
+    }
+
+    /**
+     * @return {Promise<int>}
+     */
+    async get_max_file_size() {
+        if (!this._max_file_size)
+            await this._update_data_internal()
+        return this._max_file_size;
+    }
+
+    /**
+     * @return {Promise<boolean>}
+     */
+    async does_allow_visitor_upload() {
+        if (!this._allow_visitor_upload)
+            await this._update_data_internal()
+        return this._allow_visitor_upload;
+    }
+
     async _update_data_internal() {
         const connection = await db();
         const result = await connection.query('SELECT * FROM Personal.Repos WHERE id = ?', [this._id])
@@ -65,6 +92,9 @@ class Repos {
             this._name = data.name;
             this._status = data.status;
             this._access_key = data.access_key;
+            this._max_file_size = data.max_file_size;
+            this._visitor_file_lifetime = data.visitor_file_lifetime;
+            this._allow_visitor_upload = data.allow_visitor_upload;
         } else {
             throw new Error(`Failed to get repos id '${this._id}'`);
         }
@@ -92,7 +122,6 @@ class Repos {
             const connection = await db();
             const files = Object.values(await connection.query("SELECT * FROM Personal.Files WHERE repos = ?", [this.get_id()]))
             await connection.end()
-            const found_files = []
             for (const file of files) {
                 content.push({
                     id: file.id,
@@ -116,14 +145,23 @@ class Repos {
     }
 }
 
-
 async function init_table() {
 
     const connection = await db();
 
     // Create Accounts table if needed
     if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Repos'")).length === 0) {
-        await connection.query("CREATE TABLE Personal.Repos (id int AUTO_INCREMENT PRIMARY KEY, name varchar(200) UNIQUE NOT NULL, owner int NOT NULL, status ENUM('private', 'hidden', 'public') NOT NULL, access_key varchar(32) NOT NULL UNIQUE, FOREIGN KEY(owner) REFERENCES Personal.Users(id));")
+        await connection.query(`CREATE TABLE Personal.Repos (
+            id int AUTO_INCREMENT PRIMARY KEY,
+            name varchar(200) UNIQUE NOT NULL,
+            owner int NOT NULL,
+            status ENUM('private', 'hidden', 'public') DEFAULT 'hidden' NOT NULL,
+            access_key varchar(32) NOT NULL UNIQUE,
+            max_file_size int DEFAULT 1048576000,
+            visitor_file_lifetime int,
+            allow_visitor_upload BOOLEAN DEFAULT false NOT NULL,
+            FOREIGN KEY(owner) REFERENCES Personal.Users(id)
+        );`)
     }
 
     await connection.end();

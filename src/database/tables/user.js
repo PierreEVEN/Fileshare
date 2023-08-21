@@ -35,6 +35,24 @@ class User {
         return this._email
     }
 
+    /**
+     * @return {Promise<string>}
+     */
+    async get_role() {
+        if (!this._role)
+            await this._update_data_internal()
+        return this._role
+    }
+
+    /**
+     * @return {Promise<boolean>}
+     */
+    async does_allow_contact() {
+        if (!this._allow_contact)
+            await this._update_data_internal()
+        return this._allow_contact
+    }
+
     async public_data() {
         if (!this._username) {
             await this._update_data_internal()
@@ -46,6 +64,10 @@ class User {
         }
     }
 
+    async can_edit_repos() {
+        return await this.get_role() === 'vip';
+    }
+
     async _update_data_internal() {
         const connection = await db();
         const result = await connection.query('SELECT * FROM Personal.Users WHERE id = ?', [this._id])
@@ -55,6 +77,8 @@ class User {
             const data = result[0];
             this._email = data.email;
             this._username = data.username;
+            this._role = data.role;
+            this._allow_contact = data.allow_contact
         } else {
             throw new Error(`Failed to get user id '${this._id}'`);
         }
@@ -68,7 +92,15 @@ async function init_table() {
 
     // Create Accounts table if needed
     if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Users'")).length === 0) {
-        await connection.query("CREATE TABLE Personal.Users (id int AUTO_INCREMENT PRIMARY KEY, email varchar(200) UNIQUE, username varchar(200) UNIQUE, password_hash BINARY(64) DEFAULT false);")
+        await connection.query(`
+            CREATE TABLE Personal.Users (
+                id int AUTO_INCREMENT PRIMARY KEY,
+                email varchar(200) UNIQUE,
+                username varchar(200) UNIQUE,
+                password_hash BINARY(64),
+                allow_contact BOOLEAN DEFAULT false NOT NULL,
+                role ENUM('visitor', 'guest', 'vip') DEFAULT 'visitor' NOT NULL,
+            );`)
     }
 
     await connection.end();

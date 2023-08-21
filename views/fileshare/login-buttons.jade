@@ -1,6 +1,6 @@
 link(rel='stylesheet', href='/stylesheets/fileshare/login-buttons.css')
 
-if !locals.user
+if !locals.session_data.user
     div.login-buttons
         button(onclick = 'open_modale_signup()') Nouveau Compte
         button(onclick = 'open_modale_signin()') Connexion
@@ -58,7 +58,7 @@ if !locals.user
         }
 else
     div.login-buttons
-        p.Username Bonjour #{user.username} !
+        p.Username Bonjour #{session_data.user.username} !
         button(onclick="logout()") Déconnexion
         script.
             function logout() {
