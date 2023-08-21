@@ -18,10 +18,8 @@
     transition-duration: 0.1s;
 }
 
-#modale .modale-box {
+#modale-box {
     background-color: rgba(30,35,47,100);
-    width: 800px;
-    height: 300px;
     position: absolute;
     left: 50%;
     top: 50%;
@@ -30,3 +28,40 @@
     border-radius: 5px;
 }
 
+#modale-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+#modale-close-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 30px;
+    height: 30px;
+    border: 1px #3b3d56 solid;
+    border-radius: 5px;
+    color: #c1c1c1;
+    transition-duration: 0.15s;
+}
+
+#modale-close-button:hover {
+    border: 1px #696666 solid;
+    border-radius: 3px;
+    background-color: #3b3d56;
+    color: white;
+}
+
+#modale-close-button:active {
+    border: 1px #696666 solid;
+    border-radius: 3px;
+    background-color: #050505;
+    color: white;
+}
+
+#modale-close-button p {
+    transform: translate(35%, -50%);
+    pointer-events: none;
+}

@@ -44,6 +44,12 @@ div.title {
     margin-left: 40px;
 }
 
+.separator {
+    background-color: rgba(59,159,50,0);
+    border-bottom: 1px #5b6574 solid;
+    width: 100%;
+}
+
 /* ############################################################## BUTTONS ############################################################## */
 
 .login-buttons {
@@ -110,6 +116,25 @@ input[type='text'], input[type='password'], input[type='email']  {
     margin-bottom: 20px;
     padding: 0 15px;
     color: white;
+}
+
+select {
+    width: 340px;
+    height: 50px;
+    border: 0;
+    background-color: rgba(18,21,28,1);
+    margin-bottom: 20px;
+    padding: 0 15px;
+    color: white;
+    transition-duration: 0.15s;
+}
+
+select:hover {
+    background-color: rgb(33, 38, 49);
+}
+
+select:active {
+    background-color: rgb(4, 4, 5);
 }
 
 ::placeholder {

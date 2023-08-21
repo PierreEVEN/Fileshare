@@ -6,51 +6,8 @@ block content
     else
         link(rel='stylesheet', href='/stylesheets/fileshare/user-viewport.css')
         div.user-viewport
-            div.repos-view
-                div.separator
-                p Mes dépôts
-                div.separator
-                div.repos-list
-                    each repos in user.my_repos
-                        if locals.current_repos && locals.current_repos.id === repos.id
-                            button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'").selected-repos #{repos.name}
-                        else
-                            button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
-
-                div.separator
-                p Dépôts suivis
-                div.separator
-                div.repos-list
-                    each repos in user.tracked_repos
-                        if locals.current_repos && locals.current_repos.id === repos.id
-                            button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'", class='selected-repos') #{repos.name}
-                        else
-                            button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
-
-                div.separator
-                p Dépôts publiques
-                div.separator
-                div.repos-list
-                    each repos in user.public_repos
-                        if locals.current_repos && locals.current_repos.id === repos.id
-                            button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'").selected-repos #{repos.name}
-                        else
-                            button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
-
-                div.separator.last-separator
-                button(onclick='open_create_repos_modale()').create-repos Nouveau dépot
-
-            if locals.current_repos
-                div(id="current-repos", repos="#{current_repos.access_key}")
-                div.file-view(id="drop_zone", ondrop="dropHandler(event);", ondragover="dragOverHandler(event);", ondragenter="dragStartEvent(event);", ondragleave="dragStopEvent(event);")
-                    div.repos-toolbar
-                        p #{locals.current_repos.name}/
-                        button.delete(onclick=`open_upload_modale_for_files(new Map())`) Ajouter
-                        button.delete(onclick=`delete_repos(this)`, repos='#{current_repos.access_key}') Supprimer
-                    div.separator
-                    div.file-list
-                        block files
-
+            include repos_list
+            include repos_viewport
 
     script.
         let files_to_upload = new Map();
@@ -84,12 +41,14 @@ block content
                         const entry = "getAsEntry" in DataTransferItem.prototype ? item.getAsEntry() : item.webkitGetAsEntry();
                         if (entry.isDirectory) return;
                         const file = item.getAsFile();
+                        if (file.size === 0) return;
                         files_to_upload.set(file.name, file);
                     }
                 });
             } else {
                 // Use DataTransfer interface to access the file(s)
                 [...ev.dataTransfer.files].forEach((file, i) => {
+                    if (file.size === 0) return;
                     files_to_upload.set(file.name, file);
                 });
             }
@@ -266,64 +225,6 @@ block content
                 progress.style.width = '0%';
         }
 
-        function delete_repos(e) {
-            const delete_repos_modale = document.createElement('div')
-            delete_repos_modale.classList.add('login')
-            delete_repos_modale.innerHTML = `
-                <h1>Supprimer ce dépôt et toutes ses données ?</h1>
-                <form action="/fileshare/delete-repos/${e.attributes.repos.value}" method="post" class="delete-repos">
-                    <input type="button" value="Annuler" onclick="close_modale()">
-                    <input type="submit" value="Oui : Supprimer" id="countdown-button">
-                </form>
-                <div class="delete-repos-progress">
-                    <div id="countdown-bar"></div>
-                </div>`
-            open_modale(delete_repos_modale, '500px', '170px');
-
-            let remaining_s = 5;
-            const coundown_bar = document.getElementById('countdown-bar');
-            const coundown_button = document.getElementById('countdown-button');
-            coundown_button.disabled = true;
-            const countdown = () => {
-                if (remaining_s > 0) {
-                    remaining_s -= 1 / 30;
-                    setTimeout(countdown, 1000 / 30);
-                } else {
-                    coundown_button.disabled = false;
-                }
-
-                coundown_bar.style.width = `${100 - remaining_s * 20}%`
-            }
-            countdown();
-        }
-
-        function open_create_repos_modale() {
-            const create_repos_content = document.createElement('div')
-            create_repos_content.classList.add('login')
-            create_repos_content.innerHTML = `
-            <h1>Nouveau dépôt</h1>
-            <form action="/fileshare/create-repos" method="post">
-                <div class="field">
-                    <label for='name'>
-                    <input type="text" name="name" placeholder="Nom" id="name" required>
-                </div>
-                <div class="field">
-                    <label for='type'>
-                    <select name="type" onChange="" id="type">
-                        <option>Invisible</option>
-                        <option>Publique</option>
-                        <option>Privé</option>
-                    </select>
-                </div>
-
-                <input type="submit" value="Nouveau dépot">
-            </form>`
-            open_modale(create_repos_content, '500px', '450px');
-        }
-
-    if locals.force_open_create_repos
-        script.
-            open_create_repos_modale();
 
     if locals.forcer_show_upload
         script.

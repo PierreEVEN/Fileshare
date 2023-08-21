@@ -1,0 +1,65 @@
+link(rel='stylesheet', href='/stylesheets/fileshare/repos_list.css')
+
+div.repos-view
+    div.separator
+    p Mes dépôts
+    div.separator
+    div.repos-list
+        each repos in user.my_repos
+            if locals.current_repos && locals.current_repos.id === repos.id
+                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'").selected-repos #{repos.name}
+            else
+                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
+
+    div.separator
+    p Dépôts suivis
+    div.separator
+    div.repos-list
+        each repos in user.tracked_repos
+            if locals.current_repos && locals.current_repos.id === repos.id
+                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'", class='selected-repos') #{repos.name}
+            else
+                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
+
+    div.separator
+    p Dépôts publiques
+    div.separator
+    div.repos-list
+        each repos in user.public_repos
+            if locals.current_repos && locals.current_repos.id === repos.id
+                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'").selected-repos #{repos.name}
+            else
+                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
+
+    div.separator.last-separator
+    button(onclick='open_create_repos_modale()').create-repos Nouveau dépot
+
+script.
+
+    function open_create_repos_modale() {
+        const create_repos_content = document.createElement('div')
+        create_repos_content.classList.add('login')
+        create_repos_content.innerHTML = `
+            <h1>Nouveau dépôt</h1>
+            <form action="/fileshare/create-repos" method="post">
+                <div class="field">
+                    <label for='name'>
+                    <input type="text" name="name" placeholder="Nom" id="name" required>
+                </div>
+                <div class="field">
+                    <label for='type'>
+                    <select name="type" onChange="" id="type">
+                        <option>Invisible</option>
+                        <option>Publique</option>
+                        <option>Privé</option>
+                    </select>
+                </div>
+
+                <input type="submit" value="Nouveau dépot">
+            </form>`
+        open_modale(create_repos_content, '500px', '350px');
+    }
+
+if locals.force_open_create_repos
+    script.
+        open_create_repos_modale()

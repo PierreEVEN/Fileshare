@@ -40,12 +40,6 @@
     margin-left: 8px;
 }
 
-.separator {
-    width: 95%;
-    height: 1px;
-    background-color: #3b3d56;
-}
-
 .login form input[type="button"] {
     color: black;
     background-color: #eeeeee;

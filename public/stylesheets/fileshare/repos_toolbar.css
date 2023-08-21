@@ -1,0 +1,62 @@
+
+.repos-toolbar {
+    display: flex;
+    flex-direction: row;
+}
+
+.repos-toolbar p {
+    flex-grow: 1;
+}
+
+.repos-toolbar button {
+    height: 100%;
+    background-color: #9f1000;
+}
+
+.repos-toolbar button:hover {
+    height: 100%;
+    background-color: #4d0801;
+}
+
+.login .delete-repos {
+    display: flex;
+    flex-direction: row;
+}
+
+.login .delete-repos input[type="button"] {
+    background-color: #9f1000;
+    color: white;
+    font-size: 20px;
+}
+
+.login .delete-repos input[type="button"]:hover {
+    background-color: #6b0b00;
+}
+
+.delete-repos input[type="submit"] {
+    background-color: #d98000;
+    color: #e0e0e0;
+    font-size: 20px;
+}
+.delete-repos input[type="submit"]:hover {
+    background-color: #b97200;
+}
+
+.delete-repos input[type="submit"]:disabled {
+    background-color: #696666;
+    color: #e0e0e0;
+    font-size: 20px;
+    cursor: progress;
+}
+
+.delete-repos-progress {
+    width: 100%;
+    height: 5px;
+    background-color: #000000;
+}
+
+.delete-repos-progress div {
+    background-color: #00ff04;
+    height: 5px;
+    width: 0;
+}

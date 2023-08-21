@@ -1,0 +1,39 @@
+link(rel='stylesheet', href='/stylesheets/fileshare/repos_toolbar.css')
+
+div.repos-toolbar
+    p #{locals.current_repos.name}/
+    button.delete(onclick=`open_upload_modale_for_files(new Map())`) Ajouter
+    button.delete(onclick=`delete_repos(this)`, repos='#{current_repos.access_key}') Supprimer
+
+script.
+
+    function delete_repos(e) {
+        const delete_repos_modale = document.createElement('div')
+        delete_repos_modale.classList.add('login')
+        delete_repos_modale.innerHTML = `
+            <h1>Supprimer ce dépôt et toutes ses données ?</h1>
+            <form action="/fileshare/delete-repos/${e.attributes.repos.value}" method="post" class="delete-repos">
+                <input type="button" value="Annuler" onclick="close_modale()">
+                <input type="submit" value="Oui : Supprimer" id="countdown-button">
+            </form>
+            <div class="delete-repos-progress">
+                <div id="countdown-bar"></div>
+            </div>`
+        open_modale(delete_repos_modale, '500px', '170px');
+
+        let remaining_s = 5;
+        const coundown_bar = document.getElementById('countdown-bar');
+        const coundown_button = document.getElementById('countdown-button');
+        coundown_button.disabled = true;
+        const countdown = () => {
+            if (remaining_s > 0) {
+                remaining_s -= 1 / 30;
+                setTimeout(countdown, 1000 / 30);
+            } else {
+                coundown_button.disabled = false;
+            }
+
+            coundown_bar.style.width = `${100 - remaining_s * 20}%`
+        }
+        countdown();
+    }
