@@ -159,7 +159,6 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         const storage_path = `./data_storage/${file_id}`
 
         const file_data = fs.statSync(old_file_path)
-        console.log([file_id, repos.get_id(), owner.get_id(), name, description, storage_path, file_data.size, mimetype, virtual_folder])
         const res = await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), name, description, storage_path, file_data.size, mimetype, virtual_folder]);
 
         fs.renameSync(old_file_path, storage_path)

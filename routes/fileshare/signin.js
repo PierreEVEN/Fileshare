@@ -1,8 +1,13 @@
 const User = require('../../src/database/tables/user')
-const {session_data} = require("../../src/session_utils");
+const {session_data, public_data} = require("../../src/session_utils");
 
-function view(req, res) {
-    res.render('fileshare/fileshare', {title: "Connexion", force_login: true});
+async function view(req, res) {
+    res.render('fileshare/fileshare', {
+        title: "Connexion",
+        force_login: true,
+        session_data: await session_data(req).client_data(),
+        public_data: await public_data().get(),
+    });
 }
 
 async function post_signin(req, res) {

@@ -7,7 +7,7 @@ div.repos-view
         div.separator
         div.repos-list
             each repos in session_data.user.repos
-                if locals.current_repos && locals.current_repos.id === repos.id
+                if locals.session_data.selected_repos && locals.session_data.selected_repos.id === repos.id
                     button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'").selected-repos #{repos.name}
                 else
                     button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
@@ -17,7 +17,7 @@ div.repos-view
     div.separator
     div.repos-list
         each repos in session_data.tracked_repos
-            if locals.current_repos && locals.current_repos.id === repos.id
+            if locals.session_data.selected_repos && locals.session_data.selected_repos.id === repos.id
                 button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'", class='selected-repos') #{repos.name}
             else
                 button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
@@ -26,8 +26,8 @@ div.repos-view
     p Dépôts publiques
     div.separator
     div.repos-list
-        each repos in public_data.get_repos_list()
-            if locals.current_repos && locals.current_repos.id === repos.id
+        each repos in public_data.repos_list
+            if locals.session_data.selected_repos && locals.session_data.selected_repos.id === repos.id
                 button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'").selected-repos #{repos.name}
             else
                 button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}

@@ -39,7 +39,7 @@ div.toolbar {
 div.title {
     flex-grow: 1;
     height: 100%;
-    font-weight: 1200;
+    font-weight: 600;
     font-size: 25px;
     margin-left: 40px;
 }
@@ -138,10 +138,6 @@ select:active {
 }
 
 ::placeholder {
-    color: #888d9c;
-}
-
-:-ms-input-placeholder { /* Internet Explorer 10-11 */
     color: #888d9c;
 }
 

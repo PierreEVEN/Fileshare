@@ -17,7 +17,6 @@ block content
         }
 
         function dragStopEvent(ev) {
-            console.log("test")
             ev.originalTarget.style.cursor = 'cursor'
             ev.originalTarget.style.border = '0'
             ev.originalTarget.style['border-radius'] = '0'
@@ -129,7 +128,7 @@ block content
             <h1>Envoyer des fichiers</h1>
             <div class="upload-file-list">
             ${files_code}
-            <input type="file" name="Ajouter un fichier"">
+            <input type="button" value="Ajouter un fichier" onclick="open_file_dialog()">
             </div>
             <div class="progress-container">
                 <div id="progress-bar"></div>
@@ -162,7 +161,6 @@ block content
             const req = new XMLHttpRequest();
             req.upload.addEventListener("progress", updateProgress);
             const current_repos = document.getElementById('current-repos').attributes.repos.value
-            console.log(current_repos)
             req.open("POST", `/fileshare/repos/${current_repos}/upload`);
             const form = new FormData();
             for (const file of files_to_upload.values())
@@ -185,7 +183,6 @@ block content
                 const time_delta = (performance.now() - last_file_upload_measure.timestamp) / 1000;
                 const size_delta = e.loaded - last_file_upload_measure.size;
 
-                //console.log(e)
                 deltas.push(size_delta / time_delta)
 
 
@@ -222,6 +219,17 @@ block content
                 progress.style.width = '0%';
         }
 
+        function open_file_dialog() {
+            const inputElement = document.createElement("input");
+            inputElement.type = "file";
+            inputElement.multiple = true;
+            inputElement.addEventListener("change", (e) => {
+                for (const file of e.target.files)
+                    files_to_upload.set(file.name, file);
+                open_upload_modale_for_files(files_to_upload);
+            })
+            inputElement.dispatchEvent(new MouseEvent("click"));
+        }
 
     if locals.forcer_show_upload
         script.

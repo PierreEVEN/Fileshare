@@ -3,7 +3,7 @@ const Repos = require("./database/tables/repos");
 const UserRepos = require("./database/tables/user_repos");
 
 function require_connection(req, res) {
-    if (!req.session.user) {
+    if (!session_data(req).connected_user) {
         req.session.last_url = req.originalUrl;
         res.redirect('/fileshare/signin');
         return true;
@@ -45,20 +45,20 @@ async function get_available_repos() {
     }
 }
 
-function error_404(req, res, custom_error = null) {
+async function error_404(req, res, custom_error = null) {
     res.status(404);
     res.render('error', {
         title: "404 - Not found",
-        user: req.session.user,
+        session_data: await session_data(req).client_data(),
         message: `404 - ${custom_error ? custom_error : 'Cette page n\'existe pas'}`
     })
 }
 
-function error_403(req, res, custom_error = null) {
+async function error_403(req, res, custom_error = null) {
     res.status(403);
     res.render('error', {
         title: "404 - Forbidden",
-        user: req.session.user,
+        session_data: await session_data(req).client_data(),
         message: `403 - ${custom_error ? custom_error : 'Cette page n\'est pas accessible'}`
     })
 }
@@ -111,7 +111,7 @@ class SessionData {
     }
 
     /**
-     * @param repos {Repos}
+     * @param repos {Repos|null}
      */
     select_repos(repos = null) {
         if (!repos && this.selected_repos) {
@@ -136,36 +136,55 @@ class SessionData {
 }
 
 events = {
-    on_delete_repos : (repos) => {
+    on_delete_repos: async (repos) => {
+        repos.delete();
         for (const session of Object.values(available_sessions)) {
-            for (const user_repos of session.connected_user.my_repos)
-                if (user_repos.id === repos.get_id())
-                    session.mark_dirty();
+            if (session.connected_user) {
+                for (const user_repos of (await session.client_data()).user.repos)
+                    if (user_repos.id === repos.get_id())
+                        session.mark_dirty();
+            }
 
-            for (const user_repos of session.public_repos.tracked_repos)
+            for (const user_repos of (await session.client_data()).tracked_repos)
                 if (user_repos.id === repos.get_id())
                     session.mark_dirty();
         }
 
         public_data().mark_dirty();
+    },
 
-        repos.delete();
-        console.error("supprimer les repos de l'user + ceux des autres connectés et aussi si c'es tpublique")
+    on_upload_file: async (repos) => {
+
+        for (const session of Object.values(available_sessions))
+            if (session.selected_repos && session.selected_repos.get_id() === repos.get_id())
+                session.mark_dirty();
     }
 }
 
 class PublicData {
 
     constructor() {
-        this.dirty = true;
+        this.repos_list = null;
     }
 
     mark_dirty() {
-        this.dirty = true;
+        this.repos_list = null;
     }
 
-    get_repos_list() {
-        return [{name: 'test', access_key:'none', id:'-1'}]
+    async get_repos_list() {
+        if (!this.repos_list) {
+            this.repos_list = [];
+            for (const repos of await Repos.find_public()) {
+                this.repos_list.push(await repos.public_data());
+            }
+        }
+        return this.repos_list;
+    }
+
+    async get() {
+        return {
+            repos_list: await this.get_repos_list()
+        }
     }
 }
 
@@ -185,7 +204,7 @@ function session_data(req) {
 
 const _public_data = new PublicData();
 
-async function public_data() {
+function public_data() {
     return _public_data;
 }
 

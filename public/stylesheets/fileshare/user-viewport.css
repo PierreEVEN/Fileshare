@@ -67,7 +67,18 @@
 }
 
 .object-button {
-    height: 100px;
+    height: auto;
+    min-height: 50px;
+    min-width: 50px;
     margin: 10px;
     background-color: #3b3d56;
+}
+
+.object-button img {
+    max-width: 100px;
+    max-height: 100px;
+    margin: 5px;
+}
+
+.object-button p {
 }

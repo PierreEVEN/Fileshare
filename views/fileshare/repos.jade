@@ -3,24 +3,43 @@ extends fileshare
 block files
 
     - function humanFileSize(bytes) {
-    - const thresh = 1024;
+    -   const thresh = 1024;
 
-    - if (Math.abs(bytes) < thresh) {
+    -   if (Math.abs(bytes) < thresh) {
     -     return bytes + ' B';
-    - }
+    -   }
 
-    - const units = ['ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
-    - let u = -1;
-    - const r = 10;
-    - do {
+    -   const units = ['ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
+    -   let u = -1;
+    -   const r = 10;
+    -   do {
     -     bytes /= thresh;
     -     ++u;
-    - } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-    - return bytes.toFixed(1) + ' ' + units[u];
+    -   } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+    -   return bytes.toFixed(1) + ' ' + units[u];
     - }
+    link(href="https://vjs.zencdn.net/8.5.2/video-js.css", rel="stylesheet")
+    each file in locals.session_data.selected_repos.content
+        button.object-button
+            if file.mimetype.startsWith('image/')
+                img(src="#{session_data.selected_repos.access_key}/file/#{file.id}", alt="#{file.name}")
+            else if file.mimetype === 'text/plain'
+                img(src="https://img.icons8.com/?size=512&id=12053", alt="document")
+            else if file.mimetype === 'application/octet-stream'
+                img(src="https://img.icons8.com/?size=512&id=38992", alt="document")
+            else if (file.mimetype.startsWith('video/'))
+                video(id="my-video", class="video-js", controls, preload="auto", width="100", height="100", poster="MY_VIDEO_POSTER.jpg", data-setup="{}")
+                    if (file.mimetype.startsWith('video/mp4'))
+                        source(src="#{session_data.selected_repos.access_key}/file/#{file.id}", type="video/mp4")
+                    if (file.mimetype.startsWith('video/webm'))
+                        source(src="#{session_data.selected_repos.access_key}/file/#{file.id}", type="video/webm")
+                    p(class="vjs-no-js") To view this video please enable JavaScript, and consider upgrading to a web browser that
+                    a(href="https://videojs.com/html5-video-support/", target="_blank") supports HTML5 video
+                script(src="https://vjs.zencdn.net/8.5.2/video.min.js")
 
-    each file in locals.current_repos.content
-        button.object-button= file.name + " - " + humanFileSize(file.size)
+            else
+                p #{file.name}
+                p #{file.mimetype}
 
-    script.
+
 

@@ -1,9 +1,10 @@
 link(rel='stylesheet', href='/stylesheets/fileshare/repos_toolbar.css')
 
 div.repos-toolbar
-    p #{locals.selected_repos.name}/
-    button.delete(onclick=`open_upload_modale_for_files(new Map())`) Ajouter
-    button.delete(onclick=`delete_repos(this)`, repos='#{selected_repos.access_key}') Supprimer
+    p #{locals.session_data.selected_repos.name}:/
+    if session_data.user && session_data.selected_repos.owner.id === session_data.user.id
+        button.delete(onclick=`open_upload_modale_for_files(new Map())`) Ajouter
+        button.delete(onclick=`delete_repos(this)`, repos='#{session_data.selected_repos.access_key}') Supprimer
 
 script.
 

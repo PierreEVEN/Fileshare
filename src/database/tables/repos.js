@@ -245,5 +245,19 @@ async function find_user(user) {
     })
 }
 
+/**
+ * @return {Promise<[Repos]>}
+ */
+async function find_public() {
+    return await table_created.then(async () => {
+        const connection = await db();
+        const user_repos = []
+        for (const entry of Object.values(await connection.query("SELECT * FROM Personal.Repos WHERE status = 'public'"))) {
+            user_repos.push(await find(entry.id))
+        }
+        await connection.end();
+        return user_repos;
+    })
+}
 
-module.exports = {find, find_access_key, insert, find_user};
+module.exports = {find, find_access_key, insert, find_user, find_public};

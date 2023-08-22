@@ -9,3 +9,7 @@
     height: 100%;
     flex-direction: column;
 }
+
+.file-list {
+    overflow: auto;
+}

@@ -1,7 +1,5 @@
 let express = require('express');
 let router = express.Router();
-let db = require("../../database")
-const fs = require("fs");
 
 router.use('/repos', require('./repos'))
 router.use('/account/', require("./account"));
@@ -14,7 +12,7 @@ router.get('/', async function (req, res, next) {
     res.render('fileshare/fileshare', {
         title: 'FileShare',
         session_data: await session_data(req).client_data(),
-        public_data: await public_data(),
+        public_data: await public_data().get(),
     });
 });
 

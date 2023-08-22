@@ -1,6 +1,6 @@
-if locals.selected_repos
+if session_data.selected_repos
     link(rel='stylesheet', href='/stylesheets/fileshare/repos_viewport.css')
-    div(id="current-repos", repos="#{selected_repos.access_key}")
+    div(id="current-repos", repos="#{session_data.selected_repos.access_key}")
         div.file-view(id="drop_zone", ondrop="dropHandler(event);", ondragover="dragOverHandler(event);", ondragenter="dragStartEvent(event);", ondragleave="dragStopEvent(event);")
             include repos_toolbar
             div.separator

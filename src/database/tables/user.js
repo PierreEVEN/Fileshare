@@ -99,7 +99,7 @@ async function init_table() {
                 username varchar(200) UNIQUE,
                 password_hash BINARY(64),
                 allow_contact BOOLEAN DEFAULT false NOT NULL,
-                role ENUM('visitor', 'guest', 'vip') DEFAULT 'visitor' NOT NULL,
+                role ENUM('visitor', 'guest', 'vip') DEFAULT 'visitor' NOT NULL
             );`)
     }
 

@@ -1,6 +1,6 @@
 link(rel='stylesheet', href='/stylesheets/fileshare/login-buttons.css')
 
-if !locals.session_data.user
+if !locals.session_data || !locals.session_data.user
     div.login-buttons
         button(onclick = 'open_modale_signup()') Nouveau Compte
         button(onclick = 'open_modale_signin()') Connexion
