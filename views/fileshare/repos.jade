@@ -21,8 +21,8 @@ block files
     link(href="https://vjs.zencdn.net/8.5.2/video-js.css", rel="stylesheet")
     link(href='/stylesheets/fileshare/item-preview.css', rel='stylesheet')
     each item in locals.session_data.selected_repos.content
+        - item.url = '/fileshare/repos/' + locals.session_data.selected_repos.access_key + '/file/' + item.id
         div.object-button(onclick='open_this_item(this, "' + item.name + '","' + item.url + '","' + item.size + '","' + item.mimetype + '")')
-            - item.url = '/fileshare/repos/' + locals.session_data.selected_repos.access_key + '/file/' + item.id
             include item-preview
 
     script(src="https://vjs.zencdn.net/8.5.2/video.min.js")

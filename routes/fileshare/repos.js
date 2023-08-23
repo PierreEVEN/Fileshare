@@ -29,7 +29,6 @@ router.get('/:repos', async function (req, res, next) {
     }
 
     session_data(req).select_repos(found_repos);
-
     res.render('fileshare/repos', {
         title: `FileShare - ${await found_repos.get_name()}`,
         session_data: await session_data(req).client_data(),
@@ -38,14 +37,13 @@ router.get('/:repos', async function (req, res, next) {
 });
 
 router.get('/:repos/file/:file/', async function (req, res) {
-
     if (!req.params.repos || !req.params.file) {
-        return error_404(req, res);
+        return error_404(req, res, "Paramètre manquant");
     }
 
     const found_repos = await Repos.find_access_key(req.params.repos);
     if (!found_repos)
-        return error_404(req, res);
+        return error_404(req, res, "Ce dépôt n'existe pas");
 
     // If repos is private, request connexion and ensure the user is the owner
     if (await found_repos.get_status() === 'private') {
@@ -57,18 +55,18 @@ router.get('/:repos/file/:file/', async function (req, res) {
         }
     }
 
-
     const file = await Files.find(req.params.file)
 
     if (!file)
-        return error_404(req, res);
+        return error_404(req, res, "Pas de fichier à cette adresse");
 
     const file_path = `./${await file.get_storage_path()}`
 
     if (fs.existsSync(file_path)) {
-        res.sendFile(path.resolve(file_path))
-        //res.download(file_path, file.name);
+        return res.sendFile(path.resolve(file_path))
     }
+    else
+        return error_404(req, res, "Document introuvable");
 })
 
 module.exports = router;
