@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon ./bin/www localhost 80"
+    "start": "nodemon ./bin/www localhost 80",
+    "run_production": "pm2 start ./bin/www"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
