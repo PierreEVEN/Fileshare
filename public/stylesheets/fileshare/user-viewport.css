@@ -2,40 +2,46 @@
 .user-viewport {
     display: flex;
     width: 100%;
+    overflow-x: auto;
     height: 100%;
     flex-direction: row;
 }
 
 
 .upload-file-list {
+    min-height: 40vh;
     width: 90%;
     display: flex;
     flex-direction: column;
     flex-grow: .95;
     background-color: #14171e;
-    overflow: auto;
+    max-height: 60vh;
+    overflow-x: auto;
     border: 1px #4b4b4b solid;
 }
 
 .file-item {
     width: 100%;
-    height: 40px;
+    height: 100px;
     background-color: #25272c;
     display: flex;
     transition-duration: 0.15s;
+    border-bottom: 1px #5b6574 solid;
+    border-top: 1px rgba(64,66,106,0) solid;
+    font-size: 12px;
 }
 
 .upload-file-list + button {
-
     min-height: 50px;
+    width: 100%;
 }
 
 .file-item:hover {
-    background-color: #5b6574;
+    border-bottom: 1px #0070f0 solid;
+    border-top: 1px #0070f0 solid;
 }
 
 .file-item p {
-    margin-left: 20px;
     color: white;
     flex-grow: 1;
 }
@@ -43,11 +49,54 @@
 .file-item button {
     min-width: 50px;
     width: 50px;
-    background-color: #4d0801;
+    background-color: rgba(64,66,106,0);
 }
 
 .file-item button:hover {
-    background-color: #910c00;
+    background-color: #ce0000;
+}
+
+.file-item img {
+    width: 20px;
+}
+
+.file-item .left-fields {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.file-item .right-fields {
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px;
+    width: 60px;
+}
+
+.file-item div div {
+    display: flex;
+    flex-direction: row;
+}
+
+.file-item input {
+    margin-bottom: 0;
+    width: 100%;
+}
+
+.file-item input.item-title {
+    height: 30px;
+}
+
+.left-fields p {
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+textarea {
+    flex-grow: 1;
+    height: 90%;
+    resize: none;
+    width: 95%;
 }
 
 .progress-container {
@@ -64,21 +113,35 @@
 
 .send-buttons {
     display: flex;
+    width: 80%;
+    margin-bottom: 30px;
 }
 
-.object-button {
-    height: auto;
-    min-height: 50px;
-    min-width: 50px;
-    margin: 10px;
-    background-color: #3b3d56;
+input.add-file-button {
+    margin-top: 0   ;
+    margin-right: auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: rgba(5,5,5,0);
+    border: 2px #5b6574 solid;
+    padding: 0;
+    font-size: 25px;
+    font-weight: 100;
 }
 
-.object-button img {
-    max-width: 100px;
-    max-height: 100px;
-    margin: 5px;
+input.add-file-button:hover {
+    background-color: #40426a;
+    border-color: #00ff04;
 }
 
-.object-button p {
+button.cancel-button {
+    background-color: rgba(64,66,106,0);
+    border: 2px #5b6574 solid;
+    margin-right: 20px;
+}
+
+button.cancel-button:hover {
+    background-color: rgb(91, 14, 0);
+    border-color: #9f1000;
 }

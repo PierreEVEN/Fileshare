@@ -93,6 +93,17 @@ class File {
         return this._virtual_folder;
     }
 
+    async delete() {
+
+        fs.unlinkSync(path.resolve(await this.get_storage_path()));
+
+        const connection = await db();
+        await connection.query("DELETE FROM Personal.Files WHERE id = ?", [this._id]);
+        await connection.end();
+
+        files_storage.clear(this._id);
+    }
+
     async _update_data_internal() {
         const connection = await db();
         const result = await connection.query('SELECT * FROM Personal.Files WHERE id = ?', [this._id]);

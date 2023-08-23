@@ -1,5 +1,5 @@
 #current-repos {
-    width: 100%;
+    flex-grow: 1;
 }
 
 .file-view {
@@ -11,5 +11,26 @@
 }
 
 .file-list {
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-auto-flow: dense;
+    gap: 10px;
 }
+
+.object-button {
+    background-color: rgba(64,66,106,0);
+    padding: 10px;
+    border-radius: 5px;
+    border: 2px rgba(64,66,106,0) solid;
+    transition-duration: 0.15s;
+}
+.object-button:hover {
+    border: 2px #5b6574 solid;
+}
+
+.object-button:active {
+    background-color: black;
+}
+

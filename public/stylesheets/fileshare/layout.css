@@ -14,6 +14,10 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+
+    position: absolute;
+    top: 0;
+    bottom: 0;
 }
 
 div.left-panel {
@@ -24,14 +28,12 @@ div.left-panel {
 }
 
 div.viewport {
-    width: 100%;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
 }
 
 div.toolbar {
-    height: 80px;
     background-color: #0070f0;
     display: flex;
 }
@@ -162,3 +164,13 @@ input[type="submit"]:hover, input[type="button"]:hover  {
 }
 
 /* ############################################################## OTHER ############################################################## */
+
+textarea {
+    width: 310px;
+    border: 0;
+    border-bottom: 2px solid #282f3d;
+    background-color: rgba(18,21,28,1);
+    margin-bottom: 20px;
+    padding: 0 15px;
+    color: white;
+}

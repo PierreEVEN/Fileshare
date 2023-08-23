@@ -102,7 +102,12 @@ class Repos {
 
     async delete() {
         const connection = await db();
-        await connection.query("DELETE FROM Personal.Files WHERE repos = ?", [this._id]);
+        for (const file of Object.values(await connection.query("SELECT * FROM Personal.Files WHERE repos = ?", [this._id]))) {
+            console.error("TODO : fix this : Recursive call with File.find")
+            const found_file = await File.find(file.id)
+            await found_file.delete();
+        }
+
         await connection.query("DELETE FROM Personal.UserRepos WHERE repos = ?", [this._id]);
         await connection.query("DELETE FROM Personal.Repos WHERE id = ?", [this._id]);
         await connection.end();

@@ -68,7 +68,7 @@ async function post_delete_repos(req, res) {
         return error_403(req, res, "Seul le propriétaire d'un dépôt peut le supprimer.");
 
     // Ensure connected user will refresh data
-    events.on_delete_repos(repos);
+    await events.on_delete_repos(repos);
 
     res.redirect(`/fileshare/`);
 }

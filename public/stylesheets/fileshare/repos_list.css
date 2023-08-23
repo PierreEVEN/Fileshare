@@ -9,7 +9,7 @@
 
 .repos-list {
     max-height: 35vh;
-    overflow: auto;
+    overflow-x: auto;
 }
 
 

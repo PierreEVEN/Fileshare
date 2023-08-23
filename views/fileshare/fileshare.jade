@@ -61,7 +61,7 @@ block content
             const thresh = 1024;
 
             if (Math.abs(bytes) < thresh) {
-                return bytes + ' B';
+                return bytes + ' o';
             }
 
             const units = ['ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
@@ -118,8 +118,21 @@ block content
             for (const value of files_to_upload.values()) {
                 files_code += `
                 <div class="file-item">
-                    <p>${value.name} (${humanFileSize(value.size)})</p>
-                    <button onclick="files_to_upload.delete('${value.name}'); open_upload_modale_for_files(files_to_upload)">DEL</button>
+                    <div class="left-fields">
+                        <div>
+                            <p>Titre</p>
+                            <input class="item-title" type="text" value="${value.name}"></p>
+                        </div>
+                        <div>
+                            <textarea class="item-description" placeholder="Description"></textarea>
+                        </div>
+                    </div>
+                    <div class="right-fields">
+                        <button onclick="files_to_upload.delete('${value.name}'); open_upload_modale_for_files(files_to_upload)">
+                            <img src="/images/icons/icons8-trash-52.png" alt="Trash icon">
+                        </button>
+                        <p>${humanFileSize(value.size)}</p>
+                    </div>
                 </div>
                 `
             }
@@ -128,15 +141,15 @@ block content
             <h1>Envoyer des fichiers</h1>
             <div class="upload-file-list">
             ${files_code}
-            <input type="button" value="Ajouter un fichier" onclick="open_file_dialog()">
             </div>
             <div class="progress-container">
                 <div id="progress-bar"></div>
             </div>
             <p id="progress-text"></p>
             <div class="send-buttons">
+                <input type="button" class="add-file-button" value="+" onclick="open_file_dialog()">
+                <button class="cancel-button" onclick="cancel_upload(); files_to_upload = new Map(); close_modale()">Annuler</button>
                 <button onclick="upload_files()">Envoyer</button>
-                <button onclick="cancel_upload(); files_to_upload = new Map(); close_modale()">Annuler</button>
             </div>
             `
             open_modale(send_files, '500px', '80%');

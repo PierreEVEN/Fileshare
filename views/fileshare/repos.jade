@@ -19,27 +19,72 @@ block files
     -   return bytes.toFixed(1) + ' ' + units[u];
     - }
     link(href="https://vjs.zencdn.net/8.5.2/video-js.css", rel="stylesheet")
-    each file in locals.session_data.selected_repos.content
-        button.object-button
-            if file.mimetype.startsWith('image/')
-                img(src="#{session_data.selected_repos.access_key}/file/#{file.id}", alt="#{file.name}")
-            else if file.mimetype === 'text/plain'
-                img(src="https://img.icons8.com/?size=512&id=12053", alt="document")
-            else if file.mimetype === 'application/octet-stream'
-                img(src="https://img.icons8.com/?size=512&id=38992", alt="document")
-            else if (file.mimetype.startsWith('video/'))
-                video(id="my-video", class="video-js", controls, preload="auto", width="100", height="100", poster="MY_VIDEO_POSTER.jpg", data-setup="{}")
-                    if (file.mimetype.startsWith('video/mp4'))
-                        source(src="#{session_data.selected_repos.access_key}/file/#{file.id}", type="video/mp4")
-                    if (file.mimetype.startsWith('video/webm'))
-                        source(src="#{session_data.selected_repos.access_key}/file/#{file.id}", type="video/webm")
-                    p(class="vjs-no-js") To view this video please enable JavaScript, and consider upgrading to a web browser that
-                    a(href="https://videojs.com/html5-video-support/", target="_blank") supports HTML5 video
-                script(src="https://vjs.zencdn.net/8.5.2/video.min.js")
+    link(href='/stylesheets/fileshare/item-preview.css', rel='stylesheet')
+    each item in locals.session_data.selected_repos.content
+        div.object-button(onclick='open_this_item(this, "' + item.name + '","' + item.url + '","' + item.size + '","' + item.mimetype + '")')
+            - item.url = '/fileshare/repos/' + locals.session_data.selected_repos.access_key + '/file/' + item.id
+            include item-preview
 
-            else
-                p #{file.name}
-                p #{file.mimetype}
+    script(src="https://vjs.zencdn.net/8.5.2/video.min.js")
 
 
+    script.
+        function open_this_item(div, name, url, size, mimetype) {
+            const new_div = document.createElement('div');
+            new_div.classList.add('item-plain')
+            if (div) {
+                new_div.style.width = div.getBoundingClientRect().width + 'px';
+                new_div.style.height = div.getBoundingClientRect().height + 'px';
+                new_div.style.left = div.getBoundingClientRect().x + 'px';
+                new_div.style.top = div.getBoundingClientRect().y + 'px';
+            } else {
+                new_div.style.width = '100%';
+                new_div.style.height = '100%';
+                new_div.style.left = '0';
+                new_div.style.top = '0';
+            }
 
+            if (document.last_selected_item)
+                document.last_selected_item.remove();
+
+            document.last_selected_item = new_div;
+            document.body.append(new_div)
+
+            new_div.innerHTML = gen_item(name, url, size, mimetype);
+            new_div.onclick = (e) => {
+                if (e.target === document.last_selected_item)
+                    close_item_plain();
+            }
+        }
+
+        document.onkeydown = (e) => {
+            if (e.key === "Escape") { // escape key maps to keycode `27`
+                close_item_plain();
+            }
+        }
+
+        function close_item_plain() {
+            if (document.last_selected_item)
+                document.last_selected_item.remove()
+            document.last_selected_item = null
+        }
+
+        function gen_item(name, url, size, mimetype) {
+            if (mimetype.startsWith('image/'))
+                return `<img src="${url}" alt="${name}">`
+            else if (mimetype === 'text/plain')
+                return `<img src="https://img.icons8.com/?size=512&id=12053" alt="document">`
+            else if (mimetype === 'application/pdf')
+                return `<img src="https://img.icons8.com/?size=512&id=13417" alt="document">`
+            else if (mimetype === 'application/octet-stream')
+                return `<img src="https://img.icons8.com/?size=512&id=38992" alt="document">`
+            else if (mimetype.startsWith('video/'))
+                return `<video id="my-video" class="video-js" controls width="100%" height="90%" preload="auto" data-setup="{}">
+                    <source src="${url}" type="${mimetype}">
+                    <p class="vjs-no-js"> To view this video please enable JavaScript, and consider upgrading to a web browser that
+                    </p>
+                    <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </video>`
+
+            return `<p>${name}</p>`
+        }

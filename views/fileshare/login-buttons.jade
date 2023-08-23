@@ -53,8 +53,13 @@ if !locals.session_data || !locals.session_data.user
                 </div>
 
                 <input type="submit" value="Créer un compte">
+                <a id="forgot-password" href="mailto: evenpierre@orange.fr"></a>
+                <div class="separator"></div>
+                 <div class='bottom-button'>
+                     <p>Déjà membre ?</p> <a href="javascript:open_modale_signin();">Se connecter à votre compte</a>
+                 </div>
             </form>`
-            open_modale(login_content, '500px', '450px');
+            open_modale(login_content, '500px', '500px');
         }
 else
     div.login-buttons
