@@ -48,21 +48,27 @@ async function post_upload(req, res) {
     await form.parse(req, async function(err, fields, files){
         for(const file in files) {
             const file_data = files[file][0];
+            let meta_data = fields['metadata_file' + file_data.originalFilename];
+            if (meta_data)
+                meta_data = JSON.parse(meta_data[0]);
+
             if(!files.hasOwnProperty(file)) continue;
 
             if (!fs.existsSync('./data_storage/'))
                 fs.mkdirSync('./data_storage/');
 
-            if (file_data.mimetype === 'video/mpeg') {
+            const mime_type = meta_data.mimetype ? meta_data.mimetype : file_data.mimetype;
+
+            if (mime_type === 'video/mpeg') {
                 conversion_queue.push_video(file_data.filepath, 'mp4', async (new_path) => {
-                    const result = await Files.insert(new_path, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, "not available", 'video/mp4', "/")
+                    const result = await Files.insert(new_path, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, meta_data ? meta_data.description : "", 'video/mp4', meta_data ? meta_data.virtual_path : "/")
                     if (!result)
                         console.warn(`A file with the same name already exists : ${file_data.originalFilename}`)
                     await events.on_upload_file(repos)
                 })
             }
             else {
-                const result = await Files.insert(file_data.filepath, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, "not available", file_data.mimetype, "/")
+                const result = await Files.insert(file_data.filepath, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, meta_data ? meta_data.description : "", mime_type, meta_data ? meta_data.virtual_path : "/")
                 if (!result)
                     console.warn(`A file with the same name already exists : ${file_data.originalFilename}`)
             }

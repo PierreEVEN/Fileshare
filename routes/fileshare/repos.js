@@ -31,11 +31,34 @@ router.get('/:repos', async function (req, res, next) {
     }
 
     session_data(req).select_repos(found_repos);
+
     res.render('fileshare/repos', {
         title: `FileShare - ${await found_repos.get_name()}`,
         session_data: await session_data(req).client_data(),
         public_data: await public_data().get(),
+        mime: require('mime')
     });
+});
+
+router.get('/:repos/content', async function (req, res, next) {
+
+    const found_repos = await Repos.find_access_key(req.params.repos);
+    if (!found_repos)
+        return error_404(req, res);
+
+    // If repos is private, request connexion and ensure the user is the owner
+    if (await found_repos.get_status() === 'private') {
+        if (session_utils.require_connection(req, res))
+            return;
+
+        if ((await found_repos.get_owner()).get_id() !== session_data(req).connected_user.get_id()) {
+            return error_403(req, res)
+        }
+    }
+
+    session_data(req).select_repos(found_repos);
+
+    res.json(await found_repos.public_data(true));
 });
 
 router.get('/:repos/file/:file/', async function (req, res) {

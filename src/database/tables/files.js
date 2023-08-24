@@ -103,8 +103,8 @@ class File {
     }
 
     async delete() {
-
-        fs.unlinkSync(path.resolve(await this.get_storage_path()));
+        if (fs.existsSync(await this.get_storage_path()))
+            fs.unlinkSync(path.resolve(await this.get_storage_path()));
 
         const connection = await db();
         await connection.query("DELETE FROM Personal.Files WHERE id = ?", [this._id]);
@@ -207,9 +207,13 @@ async function already_exists(file_path, file_hash) {
 
 
     /**
- * @return {Promise<File>}
+ * @return {Promise<File>|null}
  */
 async function insert(old_file_path, repos, owner, name, description, mimetype, virtual_folder) {
+
+
+    if (!fs.existsSync(old_file_path))
+        return null;
 
     const fileBuffer = fs.readFileSync(old_file_path);
     const hashSum = crypto.createHash('sha256');
@@ -238,6 +242,7 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         await connection.end();
         return find(Number(res.insertId));
     })
+        .catch(err => console.error(`Failed to insert file ${name} : err`, err))
 }
 
 

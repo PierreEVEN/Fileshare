@@ -1,12 +1,48 @@
 link(rel='stylesheet', href='/stylesheets/fileshare/repos_toolbar.css')
 
 div.repos-toolbar
-    p #{locals.session_data.selected_repos.name}:/
+    p(id="current-path") #{locals.session_data.selected_repos.name}:/
     if session_data.user && session_data.selected_repos.owner.id === session_data.user.id
         button.delete(onclick=`open_upload_modale_for_files(new Map())`) Ajouter
         button.delete(onclick=`delete_repos(this)`, repos='#{session_data.selected_repos.access_key}') Supprimer
 
 script.
+    const current_path = document.getElementById('current-path');
+
+    function update_top(new_folder) {
+        current_path.innerHTML = ''
+        let dir = new_folder;
+        const buttons = []
+        let last = new_folder;
+        while (dir)
+        {
+            const button = document.createElement('button')
+            button.innerText = dir.name;
+            const click_dir = dir;
+            button.onclick = () => {
+                view_folder(click_dir)
+            }
+            buttons.push(button)
+            if (dir.parent) {
+                const slash = document.createElement('p')
+                slash.innerText = '>'
+                buttons.push(slash)
+            }
+            last_folder = dir;
+            dir = dir.parent;
+        }
+
+        for (const button of buttons.reverse()) {
+            current_path.append(button);
+        }
+
+        if (new_folder.parent) {
+            const back_button = document.createElement('button');
+            back_button.innerHTML = `<img src="/images/icons/icons8-back-64.png" alt="Back">`
+            back_button.onclick = () => view_folder(new_folder.parent);
+            current_path.append(back_button);
+        }
+    }
 
     function delete_repos(e) {
         const delete_repos_modale = document.createElement('div')

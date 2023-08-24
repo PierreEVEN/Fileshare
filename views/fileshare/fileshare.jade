@@ -1,10 +1,17 @@
 extends layout
 
+
+
 block content
     link(rel='stylesheet', href='/stylesheets/fileshare/user-viewport.css')
-    div.user-viewport
+    div.user-viewport(id='mime_get_type')
         include repos_list
         include repos_viewport
+
+
+    script(type='module').
+        import mime from 'https://cdn.skypack.dev/mime';
+        document.getMimeType = mime.getType;
 
     script.
         let files_to_upload = new Map();
@@ -27,18 +34,58 @@ block content
             ev.preventDefault();
         }
 
+        let open_upload_modale_timeout = null;
+        function update_modale() {
+            if (open_upload_modale_timeout)
+                clearTimeout(open_upload_modale_timeout);
+            open_upload_modale_timeout = setTimeout(() => {
+                open_upload_modale_for_files(files_to_upload);
+                open_upload_modale_timeout = null;
+            }, 100);
+        }
+
         function dropHandler(ev) {
             dragStopEvent(ev)
             ev.preventDefault();
+
             if (ev.dataTransfer.items) {
                 [...ev.dataTransfer.items].forEach((item, i) => {
                     // If dropped items aren't files, reject them
                     if (item.kind === "file") {
                         const entry = "getAsEntry" in DataTransferItem.prototype ? item.getAsEntry() : item.webkitGetAsEntry();
-                        if (entry.isDirectory) return;
-                        const file = item.getAsFile();
-                        if (file.size === 0) return;
-                        files_to_upload.set(file.name, file);
+
+                        const iterate_over_dir = (dir, path) => {
+                            dir.readEntries((entries) => {
+                                for (const entry of entries) {
+                                    if (entry.isDirectory)
+                                        iterate_over_dir(entry.createReader(), path + '/' + entry.name);
+                                    else {
+
+                                        entry.file((file) => {
+                                            if (file.size === 0) return;
+                                            file.virtual_path = path;
+                                            file.mimetype = file.type;
+
+                                            if (file.type.length === 0 && document.getMimeType(file.name)) {
+                                                file.mimetype = document.getMimeType(file.name);
+                                            }
+
+                                            files_to_upload.set(file.name, file);
+
+                                            update_modale();
+                                        })
+                                    }
+                                }
+                            })
+                        }
+
+                        if (entry.isDirectory) {
+                            iterate_over_dir(entry.createReader(), entry.name)
+                        } else {
+                            const file = item.getAsFile();
+                            if (file.size === 0) return;
+                            files_to_upload.set(file.name, file);
+                        }
                     }
                 });
             } else {
@@ -49,10 +96,10 @@ block content
                 });
             }
 
-            open_upload_modale_for_files(files_to_upload)
+            update_modale();
         }
 
-        const modale_item =  document.getElementById('modale')
+        const modale_item = document.getElementById('modale')
         modale_item.addEventListener('drop', dropHandler)
         modale_item.addEventListener('dragover', dragOverHandler)
 
@@ -154,7 +201,7 @@ block content
             `
             open_modale(send_files, '500px', '80%');
         }
-        
+
         let progress = document.getElementById('progress-bar')
         let progress_text = document.getElementById('progress-text')
         let last_request = null;
@@ -176,8 +223,14 @@ block content
             const current_repos = document.getElementById('current-repos').attributes.repos.value
             req.open("POST", `/fileshare/repos/${current_repos}/upload`);
             const form = new FormData();
-            for (const file of files_to_upload.values())
+            for (const file of files_to_upload.values()) {
                 form.append("file" + file.name, file, file.name);
+                form.append("metadata_file" + file.name, JSON.stringify({
+                    virtual_path: file.virtual_path,
+                    description: "Pas de description",
+                    mimetype: file.mimetype ? file.mimetype : file.type
+                }));
+            }
 
             last_request = req;
             last_file_upload_measure = {size: 0, timestamp: performance.now()}
@@ -239,7 +292,8 @@ block content
             inputElement.addEventListener("change", (e) => {
                 for (const file of e.target.files)
                     files_to_upload.set(file.name, file);
-                open_upload_modale_for_files(files_to_upload);
+
+                update_modale();
             })
             inputElement.dispatchEvent(new MouseEvent("click"));
         }

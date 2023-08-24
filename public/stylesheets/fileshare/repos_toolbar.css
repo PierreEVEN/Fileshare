@@ -60,3 +60,34 @@
     height: 5px;
     width: 0;
 }
+
+#current-path {
+    display: flex;
+    margin: 0;
+}
+
+#current-path p {
+    display: flex;
+    flex-grow: 0;
+}
+
+#current-path button {
+    display: flex;
+    height: 52px;
+    min-width: 0;
+    border-radius: 0;
+    background-color: rgb(43, 48, 59);
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    padding: 0 8px ;
+}
+#current-path button img {
+    margin: 0 20px;
+    height: 30px;
+    width: 30px;
+}
+
+#current-path button:hover {
+    background-color: rgb(26, 30, 37);
+}

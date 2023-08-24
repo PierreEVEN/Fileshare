@@ -4,5 +4,4 @@ if session_data.selected_repos
         div.file-view(id="drop_zone", ondrop="dropHandler(event);", ondragover="dragOverHandler(event);", ondragenter="dragStartEvent(event);", ondragleave="dragStopEvent(event);")
             include repos_toolbar
             div.separator
-            div.file-list
-                block files
+            block files

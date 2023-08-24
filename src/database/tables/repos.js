@@ -101,9 +101,9 @@ class Repos {
     }
 
     async delete() {
+        const File = require('./files')
         const connection = await db();
         for (const file of Object.values(await connection.query("SELECT * FROM Personal.Files WHERE repos = ?", [this._id]))) {
-            console.error("TODO : fix this : Recursive call with File.find")
             const found_file = await File.find(file.id)
             await found_file.delete();
         }

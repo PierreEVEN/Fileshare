@@ -30,6 +30,14 @@
     max-width: 100px;
 }
 
+.folder {
+    display: flex;
+    flex-direction: column;
+}
+
+.folder p {
+    text-align: center;
+}
 
 /* ############## ITEM PLAIN ################ */
 
@@ -64,6 +72,6 @@
 }
 
 .video-js {
-    width: 100%;
+    width: 90%;
     height: 100%;
 }
