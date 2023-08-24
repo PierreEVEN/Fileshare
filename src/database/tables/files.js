@@ -93,6 +93,15 @@ class File {
         return this._virtual_folder;
     }
 
+    /**
+     * @return {Promise<string>}
+     */
+    async get_hash() {
+        if (!this._hash)
+            await this._update_data_internal()
+        return this._hash;
+    }
+
     async delete() {
 
         fs.unlinkSync(path.resolve(await this.get_storage_path()));
@@ -124,6 +133,7 @@ class File {
             this._size = result.size;
             this._mimetype = result.mimetype;
             this._virtual_folder = result.virtual_folder;
+            this._hash = result.hash;
         } else {
             throw new Error(`Failed to get files id '${this._id}'`);
         }
@@ -135,7 +145,20 @@ async function init_table() {
     const connection = await db();
     // Create Accounts table if needed
     if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Files'")).length === 0) {
-        await connection.query("CREATE TABLE Personal.Files (id varchar(200) PRIMARY KEY, repos int NOT NULL, owner int NOT NULL, name varchar(200) NOT NULL, description varchar(1200), storage_path varchar(200) NOT NULL UNIQUE, size int NOT NULL, mimetype varchar(200)  NOT NULL, virtual_folder varchar(200) NOT NULL, FOREIGN KEY(Repos) REFERENCES Personal.Repos(id), FOREIGN KEY(owner) REFERENCES Personal.Users(id));")
+        await connection.query(`CREATE TABLE Personal.Files (
+                id varchar(200) PRIMARY KEY,
+                repos int NOT NULL,
+                owner int NOT NULL,
+                name varchar(200) NOT NULL,
+                description varchar(1200),
+                storage_path varchar(200) NOT NULL UNIQUE,
+                size int NOT NULL,
+                mimetype varchar(200) NOT NULL,
+                virtual_folder varchar(200) NOT NULL,
+                hash varchar(64) NOT NULL,
+                FOREIGN KEY(Repos) REFERENCES Personal.Repos(id),
+                FOREIGN KEY(owner) REFERENCES Personal.Users(id)
+        );`)
     }
 
     await connection.end();
@@ -164,9 +187,38 @@ async function find(id) {
 }
 
 /**
+ * @return {Promise<boolean>}
+ */
+async function already_exists(file_path, file_hash) {
+    const connection = await db();
+    const file_with_same_hash = Object.values(await connection.query('SELECT * from Personal.Files WHERE hash = ?', [file_hash]));
+    await connection.end();
+
+    if (file_with_same_hash.length > 0) {
+        const tmp_buffer = fs.readFileSync(file_path);
+        const existing_buffer = fs.readFileSync(file_with_same_hash[0].storage_path);
+
+        return tmp_buffer.equals(existing_buffer);
+    }
+
+
+    return false;
+}
+
+
+    /**
  * @return {Promise<File>}
  */
 async function insert(old_file_path, repos, owner, name, description, mimetype, virtual_folder) {
+
+    const fileBuffer = fs.readFileSync(old_file_path);
+    const hashSum = crypto.createHash('sha256');
+    hashSum.update(fileBuffer);
+    const file_hash = hashSum.digest('hex');
+
+    if (await already_exists(old_file_path, file_hash))
+        return null;
+
     return await table_created.then(async () => {
         // Generate ID
         const connection = await db();
@@ -179,7 +231,7 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         const storage_path = `./data_storage/${file_id}`
 
         const file_data = fs.statSync(old_file_path)
-        const res = await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), name, description, storage_path, file_data.size, mimetype, virtual_folder]);
+        const res = await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), name, description, storage_path, file_data.size, mimetype, virtual_folder, file_hash]);
 
         fs.renameSync(old_file_path, storage_path)
 

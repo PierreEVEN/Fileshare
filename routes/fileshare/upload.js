@@ -55,12 +55,17 @@ async function post_upload(req, res) {
 
             if (file_data.mimetype === 'video/mpeg') {
                 conversion_queue.push_video(file_data.filepath, 'mp4', async (new_path) => {
-                    await Files.insert(new_path, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, "not available", 'video/mp4', "/")
+                    const result = await Files.insert(new_path, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, "not available", 'video/mp4', "/")
+                    if (!result)
+                        console.warn(`A file with the same name already exists : ${file_data.originalFilename}`)
                     await events.on_upload_file(repos)
                 })
             }
-            else
-                await Files.insert(file_data.filepath, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, "not available", file_data.mimetype, "/")
+            else {
+                const result = await Files.insert(file_data.filepath, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, "not available", file_data.mimetype, "/")
+                if (!result)
+                    console.warn(`A file with the same name already exists : ${file_data.originalFilename}`)
+            }
         }
         await events.on_upload_file(repos)
 
