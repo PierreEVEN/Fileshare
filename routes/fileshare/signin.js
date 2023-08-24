@@ -12,7 +12,6 @@ async function view(req, res) {
 
 async function post_signin(req, res) {
     const found_user = await User.find_with_credentials(req.body.username, req.body.password);
-
     await session_data(req).connect_user(found_user);
 
     if (found_user)

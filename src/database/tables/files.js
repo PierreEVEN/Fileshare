@@ -104,22 +104,26 @@ class File {
         files_storage.clear(this._id);
     }
 
-    async _update_data_internal() {
-        const connection = await db();
-        const result = await connection.query('SELECT * FROM Personal.Files WHERE id = ?', [this._id]);
-        await connection.end();
+    async _update_data_internal(query_result = null) {
+        let result = query_result;
 
-        if (Object.values(result).length > 0) {
-            const data = result[0];
+        if (!result) {
+            const connection = await db();
+            const found_data = Object.values(await connection.query('SELECT * FROM Personal.Files WHERE id = ?', [this._id]));
+            if (found_data.length > 0)
+                result = found_data[0];
+            await connection.end();
+        }
 
-            this._repos = repos.find(data.repos);
-            this._owner = user.find(data.owner);
-            this._name = data.name;
-            this._description = data.description;
-            this._storage_path = data.storage_path;
-            this._size = data.size;
-            this._mimetype = data.mimetype;
-            this._virtual_folder = data.virtual_folder;
+        if (result) {
+            this._repos = repos.find(result.repos);
+            this._owner = user.find(result.owner);
+            this._name = result.name;
+            this._description = result.description;
+            this._storage_path = result.storage_path;
+            this._size = result.size;
+            this._mimetype = result.mimetype;
+            this._virtual_folder = result.virtual_folder;
         } else {
             throw new Error(`Failed to get files id '${this._id}'`);
         }
@@ -143,12 +147,17 @@ const table_created = init_table();
  * @return {File}
  */
 async function find(id) {
-    return await table_created.then(() => {
-
+    return await table_created.then(async () => {
         let file = files_storage.find(id);
         if (!file) {
-            file = new File(id);
-            files_storage.add(id, file);
+            const connection = await db();
+            const new_result = Object.values(await connection.query('SELECT * FROM Personal.Files WHERE id = ?', [id]))
+            await connection.end();
+            if (new_result.length > 0) {
+                file = new File(id);
+                await file._update_data_internal(new_result[0]);
+                files_storage.add(id, file);
+            }
         }
         return file;
     });

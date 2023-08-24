@@ -4,6 +4,7 @@ const session_utils = require('../../src/session_utils')
 const Files = require('../../src/database/tables/files')
 const Repos = require('../../src/database/tables/repos')
 const {session_data, error_403, public_data, error_404} = require("../../src/session_utils");
+const conversion_queue = require("../../src/file-conversion");
 
 async function view(req, res) {
     if (session_utils.require_connection(req, res))
@@ -52,13 +53,19 @@ async function post_upload(req, res) {
             if (!fs.existsSync('./data_storage/'))
                 fs.mkdirSync('./data_storage/');
 
-            await Files.insert(file_data.filepath, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, "not available", file_data.mimetype, "/")
+            if (file_data.mimetype === 'video/mpeg') {
+                conversion_queue.push_video(file_data.filepath, 'mp4', async (new_path) => {
+                    await Files.insert(new_path, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, "not available", 'video/mp4', "/")
+                    await events.on_upload_file(repos)
+                })
+            }
+            else
+                await Files.insert(file_data.filepath, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, "not available", file_data.mimetype, "/")
         }
         await events.on_upload_file(repos)
 
         res.redirect(`/fileshare/repos/${req.params.repos}`);
     });
 }
-
 
 module.exports = {view, post_upload};

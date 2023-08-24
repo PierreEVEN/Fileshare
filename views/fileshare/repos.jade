@@ -78,13 +78,14 @@ block files
                 return `<img src="https://img.icons8.com/?size=512&id=13417" alt="document">`
             else if (mimetype === 'application/octet-stream')
                 return `<img src="https://img.icons8.com/?size=512&id=38992" alt="document">`
-            else if (mimetype.startsWith('video/'))
-                return `<video id="my-video" class="video-js" controls width="100%" height="90%" preload="auto" data-setup="{}">
+            else if (mimetype.startsWith('video/')) {
+                return `<video id="my-video" class="video-js" controls width="100%" height="90%" preload="auto" autoplay="true" data-setup="{}">
                     <source src="${url}" type="${mimetype}">
                     <p class="vjs-no-js"> To view this video please enable JavaScript, and consider upgrading to a web browser that
                     </p>
                     <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
                 </video>`
+            }
 
             return `<p>${name}</p>`
         }
