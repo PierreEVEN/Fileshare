@@ -28,7 +28,6 @@ app.use(session({
 app.use('/', indexRouter);
 app.use('/fileshare/', fileShare);
 app.use('/favicon.ico', express.static('public/images/favicon.ico'));
-app.use(express.static('public'));
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

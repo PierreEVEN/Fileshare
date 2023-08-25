@@ -4,9 +4,23 @@ html
         title= title
         block css
         link(rel='stylesheet', href='/stylesheets/fileshare/layout.css')
+        script(type='module', src='/scripts/index.js')
     body
         script.
-        include modale
+            const module = {}
+
+        if locals.session_data && locals.session_data.selected_repos
+            script.
+                const current_repos = {
+                name: `!{locals.session_data.selected_repos.name}`,
+                access_key: `!{locals.session_data.selected_repos.access_key}`
+                };
+        else
+            script.
+                const current_repos = null;
+
+
+        include modal
         div.app-container
             div.viewport
                 div.toolbar
