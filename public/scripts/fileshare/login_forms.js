@@ -2,7 +2,7 @@ import {open_modal} from "./modal.js";
 
 function open_modal_signin() {
     const login_content = document.createElement('div')
-    login_content.classList.add('login')
+    login_content.classList.add('modal-content')
     login_content.innerHTML = `
             <h1>Connexion</h1>
             <form action="/fileshare/signin" method="post">
@@ -27,7 +27,7 @@ function open_modal_signin() {
 
 function open_modal_signup() {
     const login_content = document.createElement('div')
-    login_content.classList.add('login')
+    login_content.classList.add('modal-content')
     login_content.innerHTML = `
             <h1>Créer un compte</h1>
             <form action="/fileshare/signup" method="post">

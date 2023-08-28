@@ -1,0 +1,102 @@
+
+
+input[type='text'], input[type='password'], input[type='email']  {
+    width: 310px;
+    height: 50px;
+    border: 0;
+    border-bottom: 2px solid #282f3d;
+    background-color: rgba(18,21,28,1);
+    margin-bottom: 20px;
+    padding: 0 15px;
+    color: white;
+}
+
+select {
+    width: 340px;
+    height: 50px;
+    border: 0;
+    background-color: rgba(18,21,28,1);
+    margin-bottom: 20px;
+    padding: 0 15px;
+    color: white;
+    transition-duration: 0.15s;
+}
+
+select:hover {
+    background-color: rgb(33, 38, 49);
+}
+
+select:active {
+    background-color: rgb(4, 4, 5);
+}
+
+::placeholder {
+    color: #888d9c;
+}
+
+input:-webkit-autofill {
+    -webkit-box-shadow: inset 0 0 0 9999px #5a5b49;
+}
+
+input[type="submit"], input[type="button"] {
+    min-width: 140px;
+    background-color: #3274d6;
+    border: 0;
+    height: 40px;
+    cursor: pointer;
+    color: #ffffff;
+    transition: background-color 0.2s;
+    border-radius: 2px;
+    font-weight: normal;
+}
+input[type="submit"]:hover, input[type="button"]:hover  {
+    background-color: #2868c7;
+    transition: background-color 0.2s;
+    border: 2px rgb(94, 175, 255) solid;
+}
+
+input[type="submit"]:active, input[type="button"]:active  {
+    background-color: #2259ab;
+    color: #00ff04;
+}
+
+input.plus-button {
+    margin-top: 0;
+    margin-right: auto;
+    min-width: 0;
+    width: 40px;
+    border-radius: 20px;
+    background-color: rgba(5,5,5,0);
+    border: 2px #5b6574 solid;
+    padding: 0;
+    font-size: 25px;
+    font-weight: 100;
+}
+
+input.plus-button:hover {
+    background-color: #40426a;
+    border-color: #00ff04;
+}
+
+input.plus-button:active {
+    background-color: #5b5e98;
+    border-color: #00ff9d;
+}
+
+
+input.cancel-button {
+    background-color: rgba(64,66,106,0);
+    border: 2px #5b6574 solid;
+}
+
+input.cancel-button:hover {
+    background-color: rgb(91, 14, 0);
+    border-color: #9f1000;
+}
+
+input.cancel-button:active {
+    background-color: rgb(63, 12, 0);
+    border-color: #720d01;
+    color: #ffc1c1;
+}
+

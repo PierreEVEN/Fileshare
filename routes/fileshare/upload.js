@@ -1,10 +1,13 @@
 const formidable = require("formidable");
-const fs= require("fs");
+const fs = require("fs");
 const session_utils = require('../../src/session_utils')
 const Files = require('../../src/database/tables/files')
 const Repos = require('../../src/database/tables/repos')
 const {session_data, error_403, public_data, error_404} = require("../../src/session_utils");
 const conversion_queue = require("../../src/file-conversion");
+const path = require("path");
+const os = require("os");
+const crypto = require("crypto");
 
 async function view(req, res) {
     if (session_utils.require_connection(req, res))
@@ -30,6 +33,24 @@ async function view(req, res) {
     });
 }
 
+const upload_in_progress = {};
+
+async function received_file(file_path, metadata, repos, user) {
+
+    if (metadata.mimetype === 'video/mpeg') {
+        conversion_queue.push_video(file_path, 'mp4', async (new_path) => {
+            const result = await Files.insert(new_path, repos, user, metadata.file_name, metadata.description, 'video/mp4', metadata.virtual_path)
+            if (!result)
+                console.warn(`Failed to insert file : ${metadata.file_name}`)
+            await events.on_upload_file(repos)
+        })
+    } else {
+        const result = await Files.insert(file_path, repos, user, metadata.file_name, metadata.description, metadata.mimetype, metadata.virtual_path)
+        if (!result)
+            console.warn(`Failed to insert file : ${metadata.file_name}`)
+    }
+}
+
 async function post_upload(req, res) {
     if (session_utils.require_connection(req, res))
         return
@@ -43,40 +64,50 @@ async function post_upload(req, res) {
     }
 
     session_data(req).select_repos(repos);
-    console.warn("todo : prevent max upload size")
-    const form = new formidable.IncomingForm({maxFileSize: 100000 * 1024 * 1024});
-    await form.parse(req, async function(err, fields, files){
-        for(const file in files) {
-            const file_data = files[file][0];
-            let meta_data = fields['metadata_file' + file_data.originalFilename];
-            if (meta_data)
-                meta_data = JSON.parse(meta_data[0]);
 
-            if(!files.hasOwnProperty(file)) continue;
+    const decode_header = (key) => {
+        return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
+    }
 
-            if (!fs.existsSync('./data_storage/'))
-                fs.mkdirSync('./data_storage/');
-
-            const mime_type = meta_data.mimetype ? meta_data.mimetype : file_data.mimetype;
-
-            if (mime_type === 'video/mpeg') {
-                conversion_queue.push_video(file_data.filepath, 'mp4', async (new_path) => {
-                    const result = await Files.insert(new_path, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, meta_data ? meta_data.description : "", 'video/mp4', meta_data ? meta_data.virtual_path : "/")
-                    if (!result)
-                        console.warn(`A file with the same name already exists : ${file_data.originalFilename}`)
-                    await events.on_upload_file(repos)
-                })
-            }
-            else {
-                const result = await Files.insert(file_data.filepath, await Repos.find_access_key(req.params.repos), session_data(req).connected_user, file_data.originalFilename, meta_data ? meta_data.description : "", mime_type, meta_data ? meta_data.virtual_path : "/")
-                if (!result)
-                    console.warn(`A file with the same name already exists : ${file_data.originalFilename}`)
+    let file_id = decode_header('file_id'); // null if this was the first chunk
+    let generated_file_id = false;
+    if (!file_id) {
+        do {
+            file_id = crypto.randomBytes(16).toString("hex");
+        } while (fs.existsSync(path.join(os.tmpdir(), file_id)))
+        generated_file_id = true;
+        upload_in_progress[file_id] = {
+            received_size: 0,
+            metadata: {
+                file_name: decode_header('file_name'),
+                file_size: decode_header('file_size'),
+                mimetype: decode_header('mimetype') || '',
+                virtual_path: decode_header('virtual_path') || '',
+                file_description: decode_header('file_description'),
+                file_id: file_id,
             }
         }
-        await events.on_upload_file(repos)
+        console.log("received :", upload_in_progress[file_id].metadata, req.headers['mimetype'], decode_header('mimetype'))
+    }
 
-        res.redirect(`/fileshare/repos/${req.params.repos}`);
-    });
+    const tmp_file_path = path.join(os.tmpdir(), file_id);
+
+    req.on('data', chunk => {
+        upload_in_progress[file_id].received_size += Buffer.byteLength(chunk);
+        fs.appendFileSync(tmp_file_path, chunk);
+    })
+
+    req.on('end', () => {
+        if (upload_in_progress[file_id].received_size >= upload_in_progress[file_id].metadata.file_size) {
+            res.status(202).send();
+
+            received_file(tmp_file_path, upload_in_progress[file_id].metadata, repos, session_data(req).connected_user)
+            delete upload_in_progress[file_id];
+        } else if (generated_file_id)
+            res.status(201).send(file_id);
+        else
+            res.status(200).send();
+    })
 }
 
 module.exports = {view, post_upload};

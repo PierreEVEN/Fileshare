@@ -1,3 +1,4 @@
+@import "global_design/inputs.css";
 @import "login-buttons.css";
 @import "user-viewport.css";
 @import "item-preview.css";
@@ -116,62 +117,6 @@ a:visited {
     text-decoration: none;
 }
 
-/* ############################################################## INPUTS ############################################################## */
-
-input[type='text'], input[type='password'], input[type='email']  {
-    width: 310px;
-    height: 50px;
-    border: 0;
-    border-bottom: 2px solid #282f3d;
-    background-color: rgba(18,21,28,1);
-    margin-bottom: 20px;
-    padding: 0 15px;
-    color: white;
-}
-
-select {
-    width: 340px;
-    height: 50px;
-    border: 0;
-    background-color: rgba(18,21,28,1);
-    margin-bottom: 20px;
-    padding: 0 15px;
-    color: white;
-    transition-duration: 0.15s;
-}
-
-select:hover {
-    background-color: rgb(33, 38, 49);
-}
-
-select:active {
-    background-color: rgb(4, 4, 5);
-}
-
-::placeholder {
-    color: #888d9c;
-}
-
-input:-webkit-autofill {
-    -webkit-box-shadow: inset 0 0 0px 9999px #5a5b49;
-}
-
-input[type="submit"], input[type="button"] {
-    width: 50%;
-    padding: 15px;
-    margin-top: 20px;
-    background-color: #3274d6;
-    border: 0;
-    cursor: pointer;
-    font-weight: bold;
-    color: #ffffff;
-    transition: background-color 0.2s;
-}
-input[type="submit"]:hover, input[type="button"]:hover  {
-    background-color: #2868c7;
-    transition: background-color 0.2s;
-}
-
 /* ############################################################## OTHER ############################################################## */
 
 textarea {
@@ -182,4 +127,28 @@ textarea {
     margin-bottom: 20px;
     padding: 0 15px;
     color: white;
+}
+
+.progress-container {
+    position: relative;
+    height: 10px;
+}
+
+.progress-bar {
+    width: 20%;
+    height: 100%;
+    background-color: #00ff04;
+    position: absolute;
+}
+
+button.trash {
+    width: 40px;
+    min-width: 0;
+    height: 40px;
+    margin-right: 0;
+    padding: 0;
+}
+button.trash img {
+    width: 20px;
+    height: 20px;
 }

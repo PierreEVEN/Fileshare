@@ -3,14 +3,15 @@
     margin: 20px 0 0 1px;
 }
 
-.login {
+.modal-content {
     display: flex;
     height: 100%;
+    max-height: 95vh;
     flex-direction: column;
     align-items: center;
 }
 
-.login h1 {
+.modal-content h1 {
     text-align: center;
     color: #ffffff;
     font-size: 24px;
@@ -19,7 +20,7 @@
     margin-top: 50px;
 }
 
-.login form {
+.modal-content form {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -31,23 +32,23 @@
     margin-bottom: 40px;
 }
 
-.login p {
+.modal-content p {
     font-weight: lighter;
     font-size: 15px;
     color: #5b6574;
 }
-.login a {
+.modal-content a {
     margin-left: 8px;
 }
 
-.login form input[type="button"] {
+.modal-content form input[type="button"] {
     color: black;
     background-color: #eeeeee;
 }
-.login form input[type="button"]:hover {
+.modal-content form input[type="button"]:hover {
     background-color: #c7ddff;
 }
-.login .bottom-button {
+.modal-content .bottom-button {
     align-items: center;
     display: flex;
 }

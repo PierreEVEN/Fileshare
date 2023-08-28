@@ -1,6 +1,6 @@
 function delete_repos(e) {
     const delete_repos_modal = document.createElement('div')
-    delete_repos_modal.classList.add('login')
+    delete_repos_modal.classList.add('modal-content')
     delete_repos_modal.innerHTML = `
             <h1>Supprimer ce dépôt et toutes ses données ?</h1>
             <form action="/fileshare/delete-repos/${e.attributes.repos.value}" method="post" class="delete-repos">

@@ -99,12 +99,6 @@ textarea {
     width: 95%;
 }
 
-.progress-container {
-    width: 90%;
-    height: 10px;
-    background-color: black;
-}
-
 #progress-bar {
     width: 0%;
     height: 100%;
@@ -117,18 +111,6 @@ textarea {
     margin-bottom: 30px;
 }
 
-input.add-file-button {
-    margin-top: 0   ;
-    margin-right: auto;
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
-    background-color: rgba(5,5,5,0);
-    border: 2px #5b6574 solid;
-    padding: 0;
-    font-size: 25px;
-    font-weight: 100;
-}
 
 input.add-file-button:hover {
     background-color: #40426a;

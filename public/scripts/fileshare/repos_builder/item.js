@@ -1,3 +1,37 @@
+function picture_from_mime_type(url, mimetype) {
+    if (mimetype.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.classList.add('item-thumbnail');
+        video.classList.add('video-js');
+        video.preload = 'auto'
+        video['data-setup'] = '{}';
+        const source = document.createElement('source');
+        source.src = url;
+        source.type = mimetype;
+        video.append(source);
+        return video;
+    }
+
+    const image = document.createElement('img');
+    image.onError = () => {
+        image.onError = null;
+        image.src = 'https://img.icons8.com/fluency/96/no-image.png'
+        console.log("no preview")
+    }
+    image.classList.add('item-thumbnail');
+    image.alt = 'No preview';
+    if (mimetype.startsWith('image/'))
+        image.src = url;
+    else if (mimetype === 'text/plain')
+        image.src = 'https://img.icons8.com/?size=512&id=12053';
+    else if (mimetype === 'application/pdf')
+        image.src = 'https://img.icons8.com/?size=512&id=13417';
+    else if (mimetype === 'application/octet-stream')
+        image.src = 'https://img.icons8.com/?size=512&id=38992';
+    else
+        image.src = 'https://img.icons8.com/external-vectorslab-outline-color-vectorslab/53/external-404-File-files-and-folders-vectorslab-outline-color-vectorslab.png'
+    return image;
+}
 
 function gen_item(name, url, size, mimetype, thumbnail) {
     if (mimetype.startsWith('image/'))
@@ -69,4 +103,4 @@ function close_item_plain() {
 }
 
 
-export {gen_item, open_this_item}
+export {gen_item, open_this_item, picture_from_mime_type}

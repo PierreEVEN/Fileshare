@@ -18,18 +18,18 @@
     background-color: #4d0801;
 }
 
-.login .delete-repos {
+.modal-content .delete-repos {
     display: flex;
     flex-direction: row;
 }
 
-.login .delete-repos input[type="button"] {
+.modal-content .delete-repos input[type="button"] {
     background-color: #9f1000;
     color: white;
     font-size: 20px;
 }
 
-.login .delete-repos input[type="button"]:hover {
+.modal-content .delete-repos input[type="button"]:hover {
     background-color: #6b0b00;
 }
 

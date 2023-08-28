@@ -36,5 +36,5 @@ div.repos-view
         button(onclick='module.create_repos.open_create_repos_modal()').create-repos Nouveau dépot
 
 if locals.force_open_create_repos
-    script.
+    script(type='module').
         module.create_repos.open_create_repos_modal()

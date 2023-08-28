@@ -2,7 +2,7 @@ import {open_modal} from "./modal.js";
 
 function open_create_repos_modal() {
     const create_repos_content = document.createElement('div')
-    create_repos_content.classList.add('login')
+    create_repos_content.classList.add('modal-content')
     create_repos_content.innerHTML = `
             <h1>Nouveau dépôt</h1>
             <form action="/fileshare/create-repos" method="post">

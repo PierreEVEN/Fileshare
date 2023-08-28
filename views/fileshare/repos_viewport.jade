@@ -50,9 +50,10 @@ if session_data.selected_repos
                 [...event.dataTransfer.items].forEach((item, i) => {
                     const process_entry = (entry, path) => {
                         if (entry.isDirectory) {
+                            path = `${path ? path : ''}/${entry.name}`;
                             entry.createReader().readEntries((entries) => {
                                 for (const new_entry of entries)
-                                    process_entry(new_entry, `${path}/${new_entry.name}`);
+                                    process_entry(new_entry, path);
                             })
                         } else {
                             entry.file(file => {
@@ -74,5 +75,5 @@ if session_data.selected_repos
         }
 
     if locals.forcer_show_upload
-        script.
+        script(type='module').
             module.upload.open_or_update_modal();

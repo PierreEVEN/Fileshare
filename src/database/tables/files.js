@@ -189,9 +189,9 @@ async function find(id) {
 /**
  * @return {Promise<boolean>}
  */
-async function already_exists(file_path, file_hash) {
+async function already_exists(file_path, file_hash, repos) {
     const connection = await db();
-    const file_with_same_hash = Object.values(await connection.query('SELECT * from Personal.Files WHERE hash = ?', [file_hash]));
+    const file_with_same_hash = Object.values(await connection.query('SELECT * from Personal.Files WHERE repos = ? AND hash = ?', [repos.get_id(), file_hash]));
     await connection.end();
 
     if (file_with_same_hash.length > 0) {
@@ -220,7 +220,7 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
     hashSum.update(fileBuffer);
     const file_hash = hashSum.digest('hex');
 
-    if (await already_exists(old_file_path, file_hash))
+    if (await already_exists(old_file_path, file_hash, repos))
         return null;
 
     return await table_created.then(async () => {
@@ -236,6 +236,9 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
 
         const file_data = fs.statSync(old_file_path)
         const res = await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), name, description, storage_path, file_data.size, mimetype, virtual_folder, file_hash]);
+
+        if (!fs.existsSync('./data_storage/'))
+            fs.mkdirSync('./data_storage/');
 
         fs.renameSync(old_file_path, storage_path)
 
