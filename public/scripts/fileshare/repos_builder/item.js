@@ -64,6 +64,7 @@ function gen_item(name, url, size, mimetype, thumbnail) {
             video.width = '90%';
             video.preload = 'auto';
             video.autoplay = true;
+            video.controls = true;
             video['data-setup'] = {};
 
             const source = document.createElement('source')
