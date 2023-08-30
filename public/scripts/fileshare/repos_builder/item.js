@@ -1,5 +1,26 @@
-function picture_from_mime_type(url, mimetype) {
+function picture_from_mime_type(url, mimetype, thumbnail = false) {
     if (mimetype.startsWith('video/')) {
+        if (url.endsWith('/thumbnail')) {
+            const div = document.createElement('div');
+            div.classList.add('item-preview');
+
+            const image = document.createElement('img');
+            image.onError = () => {
+                image.onError = null;
+                image.src = 'https://img.icons8.com/fluency/96/no-image.png'
+            }
+            image.alt = 'No preview';
+            image.src = url;
+            image.classList.add('item-thumbnail')
+            div.append(image);
+
+            const play_button = document.createElement('img');
+            play_button.src = '/images/icons/icons8-play-64.png'
+            div.append(play_button)
+
+            return div;
+        }
+
         const video = document.createElement('video');
         video.classList.add('item-thumbnail');
         video.classList.add('video-js');
@@ -33,35 +54,27 @@ function picture_from_mime_type(url, mimetype) {
 }
 
 function gen_item(name, url, size, mimetype, thumbnail) {
-    if (mimetype.startsWith('image/'))
-        if (thumbnail)
-            return `<img src="${url}/thumbnail" alt = "${name}">`
-        else
-            return `<img src="${url}" alt="${name}">`
-    else if (mimetype === 'text/plain')
-        return `<img src="https://img.icons8.com/?size=512&id=12053" alt="document">`
-    else if (mimetype === 'application/pdf')
-        return `<img src="https://img.icons8.com/?size=512&id=13417" alt="document">`
-    else if (mimetype === 'application/octet-stream')
-        return `<img src="https://img.icons8.com/?size=512&id=38992" alt="document">`
-    else if (mimetype.startsWith('video/')) {
-        if (thumbnail)
-            return `<img src="${url}/thumbnail" alt = "${name}">
-                            <img src="/images/icons/icons8-play-64.png" alt="play icon">`
-        else
-            return `<video id="my-video" class="video-js" controls width="100%" height="90%" preload="auto" autoplay="true" data-setup="{}">
-                    <source src="${url}" type="${mimetype}">
-                    <p class="vjs-no-js"> To view this video please enable JavaScript, and consider upgrading to a web browser that
-                    </p>
-                    <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                </video>`
-    }
+    if (mimetype.startsWith('video/') && !thumbnail) {
+        const video = document.createElement('video')
+        video.classList.add('video-js');
+        video.height = '100%';
+        video.width = '90%';
+        video.preload = 'auto';
+        video.autoplay = true;
+        video['data-setup'] = {};
 
-    return `<p>${name}</p>`
+        const source = document.createElement('source')
+        source.src = url;
+        source.type = mimetype;
+        video.append(source);
+        return video;
+    }
+    return picture_from_mime_type(url + (thumbnail ? '/thumbnail' : ''), mimetype, true);
 }
 
 
 let opened_item_div = null;
+
 function open_this_item(div, file) {
 
     const url = '/fileshare/repos/' + current_repos.access_key + '/file/' + file.id;
@@ -87,7 +100,8 @@ function open_this_item(div, file) {
         document.body.append(opened_item_div)
     }
 
-    opened_item_div.innerHTML = gen_item(file.name, url, file.size, file.mimetype, false);
+    opened_item_div.innerHTML = '';
+    opened_item_div.append(gen_item(file.name, url, file.size, file.mimetype, false));
     opened_item_div.onclick = (e) => {
         if (e.target === document.last_selected_item)
             close_item_plain();

@@ -135,18 +135,23 @@ router.get('/:repos/file/:file/thumbnail', async function (req, res) {
 
         if (!fs.existsSync(thumbnail_path)) {
             if ((await file.get_mimetype()).startsWith('image/')) {
-                sharp(file_path).resize(100, 100).toFile(thumbnail_path, async (err, resizeImage) => {
-                    if (err) {
-                        console.error(`failed to generate thumbnail for ${file.get_id()} (${await file.get_name()}) :`, err);
-                        return res.sendFile(path.resolve(file_path));
-                    } else {
-                        console.info(`generated thumbnail for ${file.get_id()} (${await file.get_name()})`);
-                        return res.sendFile(path.resolve(thumbnail_path));
-                    }
-                });
-            }
-            else if ((await file.get_mimetype()).startsWith('video/')) {
+                sharp(file_path).resize(100, 100, {
+                    fit: 'inside',
+                    withoutEnlargement: true,
+                    fastShrinkOnLoad: true,
+                }).withMetadata()
+                    .toFile(thumbnail_path, async (err, resizeImage) => {
+                        if (err) {
+                            console.error(`failed to generate thumbnail for ${file.get_id()} (${await file.get_name()}) :`, err);
+                            return res.sendFile(path.resolve(file_path));
+                        } else {
+                            console.info(`generated thumbnail for ${file.get_id()} (${await file.get_name()})`);
+                            return res.sendFile(path.resolve(thumbnail_path));
+                        }
+                    });
+            } else if ((await file.get_mimetype()).startsWith('video/')) {
                 let filename = null;
+
                 new ffmpeg(file_path)
                     .on('filenames', async (filenames) => {
                         filename = filenames[0]
@@ -163,14 +168,12 @@ router.get('/:repos/file/:file/thumbnail', async function (req, res) {
                     })
                     .takeScreenshots({
                         count: 1,
-                        timemarks: [ '0' ],
+                        timemarks: ['0'],
                         size: '100x100'
                     }, `data_storage/thumbnail/dir_${file.get_id()}`);
-            }
-            else
+            } else
                 return res.sendFile(path.resolve(file_path));
-        }
-        else
+        } else
             return res.sendFile(path.resolve(thumbnail_path));
     }
 )

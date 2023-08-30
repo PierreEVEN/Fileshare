@@ -112,3 +112,5 @@ function select_element(element) {
     if (is_item_opened() && selected_element)
         open_this_item(null, element);
 }
+
+export {select_element}

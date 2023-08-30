@@ -130,7 +130,7 @@ class Repos {
             for (const file of files) {
                 content.push({
                     id: file.id,
-                    name: file.name,
+                    name: decodeURIComponent(file.name),
                     size: file.size,
                     mimetype: file.mimetype,
                     description: file.description,
