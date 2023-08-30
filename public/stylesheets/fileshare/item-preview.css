@@ -42,6 +42,7 @@
 /* ############## ITEM PLAIN ################ */
 
 .item-plain {
+    overflow: hidden;
     position: absolute;
     background-color: rgba(0,0,0,0);
     height: 100vh;
@@ -82,5 +83,25 @@
 
 .details-panel {
     width: 400px;
-    background-color: #696666;
+    background-color: #0070f0;
+}
+
+.details-panel p, h1 {
+    width: 100%;
+    text-align: center;
+}
+
+@media (orientation:portrait) {
+    .item-plain {
+        flex-direction: column;
+    }
+
+    .details-panel {
+        width: 100%;
+    }
+
+    .item-plain img {
+        width: 100%;
+        height: auto;
+    }
 }
