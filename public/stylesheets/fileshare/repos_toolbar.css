@@ -2,6 +2,8 @@
 .repos-toolbar {
     display: flex;
     flex-direction: row;
+    display: flex;
+    align-items: center;
 }
 
 .repos-toolbar p {
@@ -9,13 +11,16 @@
 }
 
 .repos-toolbar button {
-    height: 100%;
-    background-color: #9f1000;
+    min-width: 0;
+    margin-left: 20px;
 }
 
-.repos-toolbar button:hover {
+.repos-toolbar .cancel-button {
     height: 100%;
-    background-color: #4d0801;
+}
+
+.repos-toolbar button img {
+    width: 30px;
 }
 
 .modal-content .delete-repos {

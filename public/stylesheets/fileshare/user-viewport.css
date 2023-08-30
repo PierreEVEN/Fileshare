@@ -120,7 +120,6 @@ input.add-file-button:hover {
 button.cancel-button {
     background-color: rgba(64,66,106,0);
     border: 2px #5b6574 solid;
-    margin-right: 20px;
 }
 
 button.cancel-button:hover {

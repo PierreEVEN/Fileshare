@@ -1,4 +1,5 @@
 @import "global_design/inputs.css";
+@import "global_design/modal.css";
 @import "login-buttons.css";
 @import "user-viewport.css";
 @import "item-preview.css";
@@ -8,6 +9,7 @@
 @import "repos_viewport.css";
 @import "upload.css";
 @import "message_box.css";
+@import "context_action.css";
 
 body {
     width: 100%;

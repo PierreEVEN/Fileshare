@@ -60,7 +60,7 @@ input[type="submit"]:active, input[type="button"]:active  {
     color: #00ff04;
 }
 
-input.plus-button {
+input.plus-button, button.plus-button  {
     margin-top: 0;
     margin-right: auto;
     min-width: 0;
@@ -73,12 +73,12 @@ input.plus-button {
     font-weight: 100;
 }
 
-input.plus-button:hover {
+input.plus-button:hover, button.plus-button:hover {
     background-color: #40426a;
     border-color: #00ff04;
 }
 
-input.plus-button:active {
+input.plus-button:active, button.plus-button:active {
     background-color: #5b5e98;
     border-color: #00ff9d;
 }

@@ -19,6 +19,7 @@
 }
 
 .object-button {
+    position: relative;
     background-color: rgba(64,66,106,0);
     padding: 10px;
     border-radius: 5px;
@@ -38,3 +39,20 @@
     border: 2px #888fb8 solid;
 }
 
+.open-context-button {
+    background-color: rgba(37, 37, 37, 0.58);
+    border: 1px #7e7e7e solid;
+    transform: translate(-2px, -8px);
+    right: 0;
+    position: absolute;
+    z-index: 2;
+    width: 40px;
+    min-width: 0;
+    height: 20px;
+    padding: 0;
+    opacity: 0;
+}
+
+.object-button:hover .open-context-button {
+    opacity: 100%;
+}

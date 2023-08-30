@@ -133,6 +133,10 @@ function open_this_item(div, file) {
             const filesize = document.createElement('p');
             opened_item_div.file_size = filesize;
             details_panel.append(filesize);
+
+            const mime_type = document.createElement('p');
+            opened_item_div.mime_type = mime_type;
+            details_panel.append(mime_type);
         }
         opened_item_div.append(details_panel);
 
@@ -149,6 +153,7 @@ function open_this_item(div, file) {
 
     opened_item_div.file_name.innerText = file.name;
     opened_item_div.file_size.innerText = humanFileSize(file.size);
+    opened_item_div.mime_type.innerText = file.mimetype;
 
     document.item_container.innerHTML = '';
     document.item_container.append(gen_item(file.name, url, file.size, file.mimetype, false));
