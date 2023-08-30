@@ -16,7 +16,6 @@ function picture_from_mime_type(url, mimetype) {
     image.onError = () => {
         image.onError = null;
         image.src = 'https://img.icons8.com/fluency/96/no-image.png'
-        console.log("no preview")
     }
     image.classList.add('item-thumbnail');
     image.alt = 'No preview';
@@ -62,29 +61,34 @@ function gen_item(name, url, size, mimetype, thumbnail) {
 }
 
 
-function open_this_item(div, file, url) {
-    const new_div = document.createElement('div');
-    new_div.classList.add('item-plain')
-    if (div) {
-        new_div.style.width = div.getBoundingClientRect().width + 'px';
-        new_div.style.height = div.getBoundingClientRect().height + 'px';
-        new_div.style.left = div.getBoundingClientRect().x + 'px';
-        new_div.style.top = div.getBoundingClientRect().y + 'px';
-    } else {
-        new_div.style.width = '100%';
-        new_div.style.height = '100%';
-        new_div.style.left = '0';
-        new_div.style.top = '0';
+let opened_item_div = null;
+function open_this_item(div, file) {
+
+    const url = '/fileshare/repos/' + current_repos.access_key + '/file/' + file.id;
+    if (!opened_item_div) {
+        opened_item_div = document.createElement('div');
+        opened_item_div.classList.add('item-plain')
+        if (div) {
+            opened_item_div.style.width = div.getBoundingClientRect().width + 'px';
+            opened_item_div.style.height = div.getBoundingClientRect().height + 'px';
+            opened_item_div.style.left = div.getBoundingClientRect().x + 'px';
+            opened_item_div.style.top = div.getBoundingClientRect().y + 'px';
+        } else {
+            opened_item_div.style.width = '100%';
+            opened_item_div.style.height = '100%';
+            opened_item_div.style.left = '0';
+            opened_item_div.style.top = '0';
+        }
+
+        if (document.last_selected_item)
+            document.last_selected_item.remove();
+
+        document.last_selected_item = opened_item_div;
+        document.body.append(opened_item_div)
     }
 
-    if (document.last_selected_item)
-        document.last_selected_item.remove();
-
-    document.last_selected_item = new_div;
-    document.body.append(new_div)
-
-    new_div.innerHTML = gen_item(file.name, url, file.size, file.mimetype, false);
-    new_div.onclick = (e) => {
+    opened_item_div.innerHTML = gen_item(file.name, url, file.size, file.mimetype, false);
+    opened_item_div.onclick = (e) => {
         if (e.target === document.last_selected_item)
             close_item_plain();
     }
@@ -99,8 +103,13 @@ document.onkeydown = (e) => {
 function close_item_plain() {
     if (document.last_selected_item)
         document.last_selected_item.remove()
-    document.last_selected_item = null
+    document.last_selected_item = null;
+    opened_item_div = null;
 }
 
 
-export {gen_item, open_this_item, picture_from_mime_type}
+function is_opened() {
+    return !!opened_item_div;
+}
+
+export {gen_item, open_this_item, picture_from_mime_type, is_opened, close_item_plain}

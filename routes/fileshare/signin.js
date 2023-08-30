@@ -16,8 +16,15 @@ async function post_signin(req, res) {
 
     if (found_user)
         res.redirect(req.session.last_url ?  req.session.last_url : '/fileshare');
-    else
-        console.error("Not Handled - 489745");
+    else {
+        res.status(401).send(JSON.stringify({
+            message: {
+                severity: 'error',
+                title: 'Erreur de connexion',
+                content: 'Identifiants ou mot de passe invalid'
+            }
+        }))
+    }
 }
 
 module.exports = {view, post_signin};

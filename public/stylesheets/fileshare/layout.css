@@ -7,6 +7,7 @@
 @import "repos_toolbar.css";
 @import "repos_viewport.css";
 @import "upload.css";
+@import "message_box.css";
 
 body {
     width: 100%;

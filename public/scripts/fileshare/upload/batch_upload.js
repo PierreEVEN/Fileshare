@@ -1,3 +1,5 @@
+import {parse_fetch_result, print_message} from "../utils.js";
+
 async function upload_batch(batch, on_progress) {
     for (const file of batch) {
         await send_file_by_chunks(file, (progress) => on_progress(file, progress));
@@ -18,7 +20,6 @@ async function send_file_by_chunks(file, on_progress) {
         file_description: file.description,
         file_id: null,
     };
-    console.log(metadata)
 
     do {
         const blob = file.slice(start, end);
@@ -36,13 +37,13 @@ async function send_file_by_chunks(file, on_progress) {
             start = end;
             end = Math.min(end + 200 * 1024 * 1024, file.size)
         } else if (res.status === 202) {
-            console.log("Finished")
             finished = true;
         } else {
-            console.log("Failed ! :", res)
+            await parse_fetch_result(res);
             finished = true;
         }
     } while (!finished);
+    console.log("fini");
 }
 
 async function try_send_chunk(data, metadata, index, on_progress) {
@@ -50,9 +51,10 @@ async function try_send_chunk(data, metadata, index, on_progress) {
     const req = new XMLHttpRequest();
     const result_promise = new Promise((resolve) => {
         req.onreadystatechange = () => {
-            if (req.readyState === 4 && req.status === 201) // message received (only for 201 response)
+            const is_quick = req.status === 200 || req.status === 202;
+            if (req.readyState === 2 && is_quick) // message received (only for 201 response)
                 resolve(req);
-            if (req.readyState === 2 && req.status !== 201) // header received
+            if (req.readyState === 4 && !is_quick) // header received
                 resolve(req);
         }
     })

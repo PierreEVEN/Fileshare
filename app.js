@@ -6,6 +6,7 @@ const logger = require('morgan');
 let indexRouter = require('./routes/index');
 let fileShare = require('./routes/fileshare/fileshare');
 const session = require('express-session');
+const bodyParser = require("express");
 require('dotenv').config();
 
 let app = express();

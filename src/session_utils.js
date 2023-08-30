@@ -11,40 +11,6 @@ function require_connection(req, res) {
     return false;
 }
 
-async function get_user_private_data(user) {
-    const my_repos = []
-
-    for (const found_repos of await Repos.find_user(user))
-        my_repos.push(await found_repos.public_data())
-
-    const tracked_repos = []
-    for (const user_repos of await UserRepos.find_user(user))
-        tracked_repos.push(await user_repos.get_repos().public_data())
-
-
-    return {
-        my_repos: my_repos,
-        tracked_repos: tracked_repos,
-        public_repos: [],
-        id: user.get_id(),
-        username: await user.get_username(),
-        email: await user.get_email(),
-    }
-}
-
-async function get_available_repos() {
-
-
-    const my_repos = []
-    const tracked_repos = []
-
-    return {
-        my_repos: my_repos,
-        tracked_repos: tracked_repos,
-        public_repos: [],
-    }
-}
-
 async function error_404(req, res, custom_error = null) {
     res.status(404);
     res.render('error', {
@@ -57,7 +23,7 @@ async function error_404(req, res, custom_error = null) {
 async function error_403(req, res, custom_error = null) {
     res.status(403);
     res.render('error', {
-        title: "404 - Forbidden",
+        title: "403 - Forbidden",
         session_data: await session_data(req).client_data(),
         message: `403 - ${custom_error ? custom_error : 'Cette page n\'est pas accessible'}`
     })
@@ -70,6 +36,8 @@ class SessionData {
         this.id = id;
         this.connected_user = null;
         this.last_data = null;
+        this.tracked_repos = new Set();
+        this.user_tracked_repos = new Set();
     }
 
     async connect_user(user_id = null) {
@@ -87,10 +55,29 @@ class SessionData {
         if (!this.last_data) {
 
             const user_repos = []
+            const tracked_repos = [];
+
+            for (const key of this.tracked_repos) {
+                const repos = await Repos.find_access_key(key)
+                if (repos) {
+                    tracked_repos.push({
+                        access_type: 'visitor',
+                        repos: await repos.public_data(false)
+                    });
+                }
+            }
 
             if (this.connected_user) {
                 for (const repos of await Repos.find_user(this.connected_user)) {
                     user_repos.push(await repos.public_data(false));
+                }
+
+                for (const user_repos of await UserRepos.find_user(this.connected_user)) {
+                    tracked_repos.push({
+                        access_type: user_repos.get_access(),
+                        repos: await user_repos.get_repos().public_data()
+                    })
+                    this.user_tracked_repos.add(await user_repos.get_repos().get_access_key())
                 }
             }
 
@@ -103,7 +90,7 @@ class SessionData {
                     repos: user_repos,
                 } : null,
 
-                tracked_repos: [],
+                tracked_repos: tracked_repos,
                 selected_repos: this.selected_repos ? await this.selected_repos.public_data(true) : null,
             }
         }
@@ -113,7 +100,7 @@ class SessionData {
     /**
      * @param repos {Repos|null}
      */
-    select_repos(repos = null) {
+    async select_repos(repos = null) {
         if (!repos && this.selected_repos) {
             this.selected_repos = null;
             this.mark_dirty();
@@ -126,6 +113,25 @@ class SessionData {
 
         if (repos && this.selected_repos && repos.get_id() !== this.selected_repos.get_id()) {
             this.selected_repos = repos;
+            this.mark_dirty();
+        }
+
+        if (repos)
+            await this.view_repos(repos);
+
+        return this;
+    }
+
+    async view_repos(repos) {
+        if (this.connected_user) {
+            if ((await repos.get_owner()).get_id() === this.connected_user.get_id())
+                return;
+        }
+
+        if (await repos.get_status() !== 'private' &&
+            !this.tracked_repos.has(await repos.get_access_key()) &&
+            !this.user_tracked_repos.has(await repos.get_access_key())) {
+            this.tracked_repos.add(await repos.get_access_key())
             this.mark_dirty();
         }
     }
@@ -146,7 +152,7 @@ events = {
             }
 
             for (const user_repos of (await session.client_data()).tracked_repos)
-                if (user_repos.id === repos.get_id())
+                if (user_repos.repos.id === repos.get_id())
                     session.mark_dirty();
         }
 
@@ -208,10 +214,8 @@ function public_data() {
     return _public_data;
 }
 
-
 module.exports = {
     require_connection,
-    get_user_private_data,
     error_404,
     error_403,
     session_data,

@@ -1,4 +1,4 @@
-import {gen_item, open_this_item} from "./item.js";
+import {gen_item, is_opened, open_this_item} from "./item.js";
 
 const div_file_list = document.getElementById('file-list')
 
@@ -16,19 +16,26 @@ function show_folder_content(hierarchy, on_click_directory) {
                                  <p>${folder.name}</p>`;
         object_button.append(div)
         div_file_list.append(object_button);
+        folder.div = object_button;
     }
 
     for (const file of hierarchy.files) {
         const url = '/fileshare/repos/' + current_repos.access_key + '/file/' + file.id;
         const object_button = document.createElement('div');
-        object_button.onclick = () => open_this_item(object_button, file, url);
+        object_button.onclick = () => open_this_item(object_button, file);
         object_button.classList.add('object-button')
         const div = document.createElement('div');
         div.classList.add('item-preview')
         div.innerHTML = gen_item(file.name, url, file.size, file.mimetype, true);
         object_button.append(div);
         div_file_list.append(object_button);
+        file.div = object_button;
     }
 }
 
-export {show_folder_content}
+
+function is_item_opened() {
+    return is_opened();
+}
+
+export {show_folder_content, is_item_opened}

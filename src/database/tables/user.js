@@ -65,7 +65,7 @@ class User {
     }
 
     async can_edit_repos() {
-        return await this.get_role() === 'vip';
+        return await this.get_role() === 'vip' || await this.get_role() === 'admin';
     }
 
     async _update_data_internal() {
@@ -99,7 +99,7 @@ async function init_table() {
                 username varchar(200) UNIQUE,
                 password_hash BINARY(64),
                 allow_contact BOOLEAN DEFAULT false NOT NULL,
-                role ENUM('visitor', 'guest', 'vip') DEFAULT 'visitor' NOT NULL
+                role ENUM('visitor', 'guest', 'vip', 'admin') DEFAULT 'visitor' NOT NULL
             );`)
     }
 

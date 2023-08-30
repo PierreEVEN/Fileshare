@@ -23,7 +23,7 @@ async function view(req, res) {
             return error_403(req, res, "Vous n'avez pas les droits pour mettre en ligne des fichiers sur ce dépôt");
     }
 
-    session_data(req).select_repos(repos);
+    await session_data(req).select_repos(repos);
 
     res.render('fileshare/repos', {
         title: 'Envoyer un fichier',
@@ -52,6 +52,9 @@ async function received_file(file_path, metadata, repos, user) {
 }
 
 async function post_upload(req, res) {
+    if (!session_data(req).connected_user)
+        return res.status(401).send('Not connected');
+
     if (session_utils.require_connection(req, res))
         return
 
@@ -60,10 +63,16 @@ async function post_upload(req, res) {
     // Or every connected user can upload to this repo, or only it's owner is allowed to
     if (!await repos.does_allow_visitor_upload()) {
         if ((await repos.get_owner()).get_id() !== session_data(req).connected_user.get_id())
-            return error_403(req, res, "Vous n'avez pas les droits pour mettre en ligne des fichiers sur ce dépôt");
+            return res.status(401).send(JSON.stringify({
+                message: {
+                    severity: 'error',
+                    title: `Impossible d'envoyer ce fichier`,
+                    content: 'Vous n\'avez pas les droits pour mettre en ligne des fichiers sur ce dépôt'
+                }
+            }))
     }
 
-    session_data(req).select_repos(repos);
+    await session_data(req).select_repos(repos);
 
     const decode_header = (key) => {
         return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
@@ -87,7 +96,6 @@ async function post_upload(req, res) {
                 file_id: file_id,
             }
         }
-        console.log("received :", upload_in_progress[file_id].metadata, req.headers['mimetype'], decode_header('mimetype'))
     }
 
     const tmp_file_path = path.join(os.tmpdir(), file_id);

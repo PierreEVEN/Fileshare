@@ -7,7 +7,7 @@ router.use('/account/', require("./account"));
 /* GET users listing. */
 router.get('/', async function (req, res, next) {
 
-    session_data(req).select_repos(null);
+    await session_data(req).select_repos(null);
 
     res.render('fileshare/fileshare', {
         title: 'FileShare',

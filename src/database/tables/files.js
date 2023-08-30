@@ -127,7 +127,7 @@ class File {
         if (result) {
             this._repos = repos.find(result.repos);
             this._owner = user.find(result.owner);
-            this._name = result.name;
+            this._name = decodeURIComponent(result.name);
             this._description = result.description;
             this._storage_path = result.storage_path;
             this._size = result.size;
@@ -143,6 +143,13 @@ class File {
 async function init_table() {
 
     const connection = await db();
+
+    const charset = Object.values(await connection.query(`SELECT default_character_set_name FROM information_schema.SCHEMATA S WHERE schema_name = "Personal";`))[0].default_character_set_name;
+    if (charset !== 'utf8mb4') {
+        await connection.query(`ALTER DATABASE Personal CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
+        console.warn('changed database default encoding to utf8mb4');
+    }
+
     // Create Accounts table if needed
     if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Files'")).length === 0) {
         await connection.query(`CREATE TABLE Personal.Files (
@@ -210,8 +217,7 @@ async function already_exists(file_path, file_hash, repos) {
  * @return {Promise<File>|null}
  */
 async function insert(old_file_path, repos, owner, name, description, mimetype, virtual_folder) {
-
-
+    console.info(`try insert file ${name}`)
     if (!fs.existsSync(old_file_path))
         return null;
 
@@ -235,7 +241,7 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         const storage_path = `./data_storage/${file_id}`
 
         const file_data = fs.statSync(old_file_path)
-        const res = await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), name, description, storage_path, file_data.size, mimetype, virtual_folder, file_hash]);
+        const res = await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), encodeURIComponent(name), description, storage_path, file_data.size, mimetype, virtual_folder, file_hash]);
 
         if (!fs.existsSync('./data_storage/'))
             fs.mkdirSync('./data_storage/');
@@ -243,6 +249,7 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         fs.renameSync(old_file_path, storage_path)
 
         await connection.end();
+        console.info('done');
         return find(Number(res.insertId));
     })
         .catch(err => console.error(`Failed to insert file ${name} : err`, err))

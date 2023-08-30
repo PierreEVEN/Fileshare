@@ -6,6 +6,7 @@ html
         link(rel='stylesheet', href='/stylesheets/fileshare/layout.css')
         script(type='module', src='/scripts/index.js')
     body
+        // ################################## Global available client modules ##################################
         script.
             const module = {}
 
@@ -20,11 +21,43 @@ html
                 const current_repos = null;
 
 
-        include modal
+        // ################################## MODAL ##################################
+        div(id='modal', onclick="if (event.target === this) module.modal.close_modal()").modal-closed
+            div(id='modal-box')
+                div(id='modal-content')
+                div(id="modal-close-button", onclick="module.modal.close_modal()")
+                    p X
+
+        // ################################## ERROR ##################################
+        div(id='message-box').message-box-close
+            div(id="message-box-close-button", onclick="module.utils.close_message()").cancel-button
+                p X
+            h1 Erreur
+            p(id='message-box-message') Le mot de passe fourni est trop long
+
+
+        // ################################## APP ##################################
         div.app-container
             div.viewport
                 div.toolbar
                     div.title
                         p FileShare
-                    include login-buttons
+                    if !locals.session_data || !locals.session_data.user
+                        div.login-buttons
+                            button(onclick = 'module.login_forms.open_modal_signup()') Nouveau Compte
+                            button(onclick = 'module.login_forms.open_modal_signin()') Connexion
+                    else
+                        div.login-buttons
+                            p.Username Bonjour #{session_data.user.username} !
+                            button(onclick='module.login_forms.logout()') Déconnexion
+
                 block content
+
+
+    if locals.force_login
+        script(type='module').
+            module.login_forms.open_modal_signin()
+
+    if locals.force_signin
+        script(type='module').
+            module.login_forms.open_modal_signup()

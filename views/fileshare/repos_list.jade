@@ -15,10 +15,10 @@ div.repos-view
     div.separator
     div.repos-list
         each repos in session_data.tracked_repos
-            if locals.session_data.selected_repos && locals.session_data.selected_repos.id === repos.id
-                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'", class='selected-repos') #{repos.name}
+            if locals.session_data.selected_repos && locals.session_data.selected_repos.id === repos.repos.id
+                button(onclick="window.location.href = '/fileshare/repos/#{repos.repos.access_key}'").selected-repos #{repos.repos.name}
             else
-                button(onclick="window.location.href = '/fileshare/repos/#{repos.access_key}'") #{repos.name}
+                button(onclick="window.location.href = '/fileshare/repos/#{repos.repos.access_key}'") #{repos.repos.name}
 
     div.separator
     p Dépôts publiques

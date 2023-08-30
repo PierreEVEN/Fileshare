@@ -19,5 +19,9 @@ function open_modal(content, custom_width = '800px', custom_height = '300px') {
     return modal_content;
 }
 
-module.modal = {open_modal, close_modal}
-export {open_modal, close_modal}
+function is_opened() {
+    return modal.classList.contains('modal-open')
+}
+
+module.modal = {open_modal, close_modal, is_opened}
+export {open_modal, close_modal, is_opened}

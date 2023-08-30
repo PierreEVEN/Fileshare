@@ -30,7 +30,7 @@ router.get('/:repos', async function (req, res, next) {
         }
     }
 
-    session_data(req).select_repos(found_repos);
+    await session_data(req).select_repos(found_repos);
 
     res.render('fileshare/repos', {
         title: `FileShare - ${await found_repos.get_name()}`,
@@ -56,7 +56,7 @@ router.get('/:repos/content', async function (req, res, next) {
         }
     }
 
-    session_data(req).select_repos(found_repos);
+    await session_data(req).select_repos(found_repos);
 
     res.json(await found_repos.public_data(true));
 });
