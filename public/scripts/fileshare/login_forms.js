@@ -48,7 +48,7 @@ function open_modal_signup() {
              <div class='bottom-button'>
                  <p>Déjà membre ?</p> <a href="javascript:module.login_forms.open_modal_signin();">Se connecter à votre compte</a>
              </div>`
-    module.utils.print_message('error', 'Erreur de connexion', 'Mot de passe déjà utilisé')
+    
     open_modal(login_content, '500px', '500px');
 }
 
