@@ -46,6 +46,8 @@ function picture_from_mime_type(url, mimetype, thumbnail = false) {
         image.src = 'https://img.icons8.com/?size=512&id=12053';
     else if (mimetype === 'application/pdf')
         image.src = 'https://img.icons8.com/?size=512&id=13417';
+    else if (mimetype.startsWith('audio/'))
+        image.src = '/images/icons/icons8-music-96.png';
     else if (mimetype === 'application/octet-stream')
         image.src = 'https://img.icons8.com/?size=512&id=38992';
     else
@@ -54,20 +56,27 @@ function picture_from_mime_type(url, mimetype, thumbnail = false) {
 }
 
 function gen_item(name, url, size, mimetype, thumbnail) {
-    if (mimetype.startsWith('video/') && !thumbnail) {
-        const video = document.createElement('video')
-        video.classList.add('video-js');
-        video.height = '100%';
-        video.width = '90%';
-        video.preload = 'auto';
-        video.autoplay = true;
-        video['data-setup'] = {};
+    if (!thumbnail) {
+        if (mimetype.startsWith('video/')) {
+            const video = document.createElement('video')
+            video.classList.add('video-js');
+            video.height = '100%';
+            video.width = '90%';
+            video.preload = 'auto';
+            video.autoplay = true;
+            video['data-setup'] = {};
 
-        const source = document.createElement('source')
-        source.src = url;
-        source.type = mimetype;
-        video.append(source);
-        return video;
+            const source = document.createElement('source')
+            source.src = url;
+            source.type = mimetype;
+            video.append(source);
+            return video;
+        } else if (mimetype.startsWith('audio/')) {
+            const audio = document.createElement('audio')
+            audio.controls = true;
+            audio.src = url;
+            return audio;
+        }
     }
     return picture_from_mime_type(url + (thumbnail ? '/thumbnail' : ''), mimetype, true);
 }
@@ -93,19 +102,25 @@ function open_this_item(div, file) {
             opened_item_div.style.top = '0';
         }
 
-        if (document.last_selected_item)
-            document.last_selected_item.remove();
+        if (document.item_container)
+            document.item_container.remove();
 
-        document.last_selected_item = opened_item_div;
+
+        const details_panel = document.createElement('div');
+        details_panel.classList.add('details-panel');
+        opened_item_div.append(details_panel);
+
+        const item_container = document.createElement('div');
+        opened_item_div.append(item_container);
         document.body.append(opened_item_div)
+
+        document.item_container = item_container;
     }
 
-    opened_item_div.innerHTML = '';
-    opened_item_div.append(gen_item(file.name, url, file.size, file.mimetype, false));
-    opened_item_div.onclick = (e) => {
-        if (e.target === document.last_selected_item)
-            close_item_plain();
-    }
+
+
+    document.item_container.innerHTML = '';
+    document.item_container.append(gen_item(file.name, url, file.size, file.mimetype, false));
 }
 
 document.onkeydown = (e) => {
@@ -115,8 +130,8 @@ document.onkeydown = (e) => {
 }
 
 function close_item_plain() {
-    if (document.last_selected_item)
-        document.last_selected_item.remove()
+    if (opened_item_div)
+        opened_item_div.remove()
     document.last_selected_item = null;
     opened_item_div = null;
 }

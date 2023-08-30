@@ -70,8 +70,12 @@ document.addEventListener('keydown', (event) => {
     if (event.key === 'Backspace' && current_directory.parent) {
         if (is_opened())
             close_item_plain()
-        else
+        else {
+            const last_dir = current_directory;
             select_directory(current_directory.parent)
+            if (current_directory !== last_dir)
+                select_element(last_dir);
+        }
     }
     if (event.key === 'ArrowRight') {
         const elements = is_item_opened() ? current_directory.files : Object.values(current_directory.folders).concat(current_directory.files);

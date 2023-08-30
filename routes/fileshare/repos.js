@@ -85,7 +85,7 @@ router.get('/:repos/file/:file/', async function (req, res) {
     if (!file)
         return error_404(req, res, "Pas de fichier à cette adresse");
 
-    res.setHeader('Content-Disposition', 'attachment; filename=' + await file.get_name());
+    res.setHeader('Content-Disposition', 'attachment; filename=' + encodeURIComponent(await file.get_name()));
 
     const file_path = `./${await file.get_storage_path()}`
 
