@@ -93,11 +93,12 @@ document.addEventListener('keydown', (event) => {
     }
 }, false);
 
-function select_directory(directory) {
+function select_directory(directory, update_history = true) {
     current_directory = directory;
     show_folder_content(directory, select_directory)
-    update_path(directory, select_directory);
+    update_path(directory, select_directory, update_history);
     selected_element = null;
+    close_item_plain();
 }
 
 function select_element(element) {
@@ -116,5 +117,20 @@ function select_element(element) {
     if (is_item_opened() && selected_element)
         open_this_item(null, element);
 }
+
+window.addEventListener('popstate', function(event) {
+    if (!event.state)
+        return;
+    let path = event.state.split('/').reverse();
+    let dir = repos_data.root;
+    while (path.length > 0 && path[0] !== '') {
+        const name = path.pop();
+        if (dir.folders[name])
+            dir = dir.folders[name];
+    }
+
+    select_directory(dir, false)
+
+}, false);
 
 export {select_element}

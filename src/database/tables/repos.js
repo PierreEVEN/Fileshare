@@ -131,7 +131,7 @@ class Repos {
                 content.push({
                     id: file.id,
                     name: decodeURIComponent(file.name),
-                    size: file.size,
+                    size: Number(file.size),
                     mimetype: file.mimetype,
                     description: file.description,
                     virtual_folder: file.virtual_folder,

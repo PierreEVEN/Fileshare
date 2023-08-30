@@ -1,6 +1,6 @@
 const current_path = document.getElementById('current-path');
 
-function update_path(current_folder, on_path_select_folder) {
+function update_path(current_folder, on_path_select_folder, update_state = true) {
     if (!current_path)
         return;
 
@@ -16,7 +16,7 @@ function update_path(current_folder, on_path_select_folder) {
         button.onclick = () => on_path_select_folder(clicked_folder);
         buttons.push(button)
 
-        full_path = full_path ? '/' + recurse_folder.name + full_path : '/';
+        full_path = full_path ? '/' + recurse_folder.name + full_path : '/' + recurse_folder.name;
 
         if (recurse_folder.parent) {
             // Add separator between directories
@@ -39,13 +39,8 @@ function update_path(current_folder, on_path_select_folder) {
         current_path.append(back_button);
     }
 
-    console.log(window.location.href)
-    window.history.pushState(full_path, null, `${window.location.href.split('?')[0]}?directory=${full_path}`);
+    if (update_state)
+        window.history.pushState(full_path, null, `${window.location.href.split('?')[0]}?directory=${full_path}`);
 }
-
-window.addEventListener('popstate', function(event) {
-    console.log('Change dir to :', event.state)
-
-}, false);
 
 export {update_path}

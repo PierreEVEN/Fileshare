@@ -150,10 +150,16 @@ function open_this_item(div, file) {
     opened_item_div.file_name.innerText = file.name;
     opened_item_div.file_size.innerText = humanFileSize(file.size);
 
-
     document.item_container.innerHTML = '';
     document.item_container.append(gen_item(file.name, url, file.size, file.mimetype, false));
 }
+
+window.addEventListener('resize', (result) => {
+    if (opened_item_div) {
+        opened_item_div.style.width = window.innerWidth + 'px';
+        opened_item_div.style.height = window.innerHeight + 'px';
+    }
+})
 
 
 function close_item_plain() {

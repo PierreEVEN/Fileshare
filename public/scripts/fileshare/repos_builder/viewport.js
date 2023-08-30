@@ -37,7 +37,6 @@ function show_folder_content(hierarchy, on_click_directory) {
     }
 }
 
-
 function is_item_opened() {
     return is_opened();
 }
