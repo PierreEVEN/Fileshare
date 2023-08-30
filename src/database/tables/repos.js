@@ -162,7 +162,7 @@ async function init_table() {
             owner int NOT NULL,
             status ENUM('private', 'hidden', 'public') DEFAULT 'hidden' NOT NULL,
             access_key varchar(32) NOT NULL UNIQUE,
-            max_file_size int DEFAULT 1048576000,
+            max_file_size BIGINT DEFAULT 1048576000,
             visitor_file_lifetime int,
             allow_visitor_upload BOOLEAN DEFAULT false NOT NULL,
             FOREIGN KEY(owner) REFERENCES Personal.Users(id)

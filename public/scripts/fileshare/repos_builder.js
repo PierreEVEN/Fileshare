@@ -67,7 +67,7 @@ function select_next_in(elements) {
 }
 
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'Backspace' && current_directory.parent) {
+    if ((event.key === 'Backspace' || event.key === 'Escape') && (current_directory.parent || is_opened())) {
         if (is_opened())
             close_item_plain()
         else {

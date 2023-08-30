@@ -6,6 +6,7 @@ const user = require('./user');
 const crypto = require("crypto");
 const fs = require('fs');
 const path = require('path')
+const fc = require('filecompare');
 
 const files_storage = new Storage();
 
@@ -159,7 +160,7 @@ async function init_table() {
                 name varchar(200) NOT NULL,
                 description varchar(1200),
                 storage_path varchar(200) NOT NULL UNIQUE,
-                size int NOT NULL,
+                size BIGINT NOT NULL,
                 mimetype varchar(200) NOT NULL,
                 virtual_folder varchar(200) NOT NULL,
                 hash varchar(64) NOT NULL,
@@ -202,10 +203,9 @@ async function already_exists(file_path, file_hash, repos) {
     await connection.end();
 
     if (file_with_same_hash.length > 0) {
-        const tmp_buffer = fs.readFileSync(file_path);
-        const existing_buffer = fs.readFileSync(file_with_same_hash[0].storage_path);
-
-        return tmp_buffer.equals(existing_buffer);
+        return await new Promise((resolve) => {
+            fc(file_path, file_with_same_hash[0].storage_path, (res) => resolve(res))
+        })
     }
 
 
@@ -213,7 +213,7 @@ async function already_exists(file_path, file_hash, repos) {
 }
 
 
-    /**
+/**
  * @return {Promise<File>|null}
  */
 async function insert(old_file_path, repos, owner, name, description, mimetype, virtual_folder) {
@@ -221,10 +221,17 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
     if (!fs.existsSync(old_file_path))
         return null;
 
-    const fileBuffer = fs.readFileSync(old_file_path);
-    const hashSum = crypto.createHash('sha256');
-    hashSum.update(fileBuffer);
-    const file_hash = hashSum.digest('hex');
+    const file_hash = await new Promise((resolve, reject) => {
+        const hashSum = crypto.createHash('sha256');
+        let s = fs.ReadStream(old_file_path)
+        s.on('data', function (data) {
+            hashSum.update(data)
+        })
+        s.on('end', function () {
+            const hash = hashSum.digest('hex')
+            return resolve(hash);
+        })
+    });
 
     if (await already_exists(old_file_path, file_hash, repos))
         return null;
