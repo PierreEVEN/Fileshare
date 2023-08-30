@@ -86,9 +86,10 @@
     background-color: #0070f0;
 }
 
-.details-panel p, h1 {
+.details-panel p, .details-panel h1 {
     width: 100%;
     text-align: center;
+    word-break: break-word;
 }
 
 @media (orientation:portrait) {
