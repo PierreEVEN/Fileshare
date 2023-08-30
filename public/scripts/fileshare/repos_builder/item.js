@@ -106,11 +106,18 @@ function open_this_item(div, file) {
             document.item_container.remove();
 
 
+        const close_button = document.createElement('button');
+        close_button.style.position = 'absolute';
+        close_button.innerText = 'Fermer';
+        close_button.onclick = () => close_item_plain()
+        opened_item_div.append(close_button);
+
         const details_panel = document.createElement('div');
         details_panel.classList.add('details-panel');
         opened_item_div.append(details_panel);
 
         const item_container = document.createElement('div');
+        item_container.style.flexGrow = '1';
         opened_item_div.append(item_container);
         document.body.append(opened_item_div)
 
