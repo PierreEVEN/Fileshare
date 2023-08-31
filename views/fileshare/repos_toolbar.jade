@@ -6,3 +6,6 @@ div.repos-toolbar
         button.delete(onclick=`module.upload.open_or_update_modal()`).plus-button +
         button(onclick=`module.delete_repos.delete_repos('${session_data.selected_repos.access_key}')`).cancel-button
             img(src='/images/icons/icons8-trash-52.png', alt='supprimer')
+
+    script(type='module').
+        import '/scripts/fileshare/views/repos_builder/path.js';

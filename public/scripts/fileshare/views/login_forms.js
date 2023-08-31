@@ -1,5 +1,5 @@
-import {open_modal} from "./modal.js";
-import {parse_fetch_result, print_message} from "./utils.js";
+import {open_modal} from "../widgets/modal.js";
+import {parse_fetch_result, print_message} from "../utils.js";
 
 function open_modal_signin() {
     const login_content = document.createElement('div')

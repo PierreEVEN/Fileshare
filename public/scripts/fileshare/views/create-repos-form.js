@@ -1,4 +1,4 @@
-import {open_modal} from "./modal.js";
+import {open_modal} from "../widgets/modal.js";
 
 function open_create_repos_modal() {
     const create_repos_content = document.createElement('div')

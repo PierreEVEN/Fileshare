@@ -1,4 +1,4 @@
-import {open_modal} from "./modal.js";
+import {open_modal} from "../widgets/modal.js";
 
 function delete_repos(e) {
     const delete_repos_modal = document.createElement('div')

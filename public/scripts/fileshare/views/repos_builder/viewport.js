@@ -1,13 +1,10 @@
 import {gen_item, is_opened, open_this_item} from "./item.js";
-import {select_element} from "../repos_builder.js";
-import {spawn_context_action} from "../context_action.js";
-import {close_modal, open_modal} from "../modal.js";
-import {print_message} from "../utils.js";
-
-const div_file_list = document.getElementById('file-list')
+import {spawn_context_action} from "../../widgets/context_action.js";
+import {close_modal, open_modal} from "../../widgets/modal.js";
+import {print_message} from "../../utils.js";
+import {selector} from "../../selector.js";
 
 function gen_context_action(item) {
-
     const object_button = document.createElement('button');
     object_button.onclick = () => {
         spawn_context_action([{
@@ -113,7 +110,7 @@ function show_folder_content(hierarchy, on_click_directory) {
             if (event.target.classList.contains('open-context-button'))
                 return
             open_this_item(object_button, file);
-            select_element(file);
+            selector.set_selected_item(file);
         }
         object_button.classList.add('object-button')
         const div = document.createElement('div');
@@ -130,4 +127,4 @@ function is_item_opened() {
     return is_opened();
 }
 
-export {show_folder_content, is_item_opened}
+export {show_folder_content, is_item_opened, gen_context_action}

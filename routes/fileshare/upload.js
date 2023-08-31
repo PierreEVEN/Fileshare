@@ -107,10 +107,9 @@ async function post_upload(req, res) {
 
     req.on('end', () => {
         if (upload_in_progress[file_id].received_size >= upload_in_progress[file_id].metadata.file_size) {
-            res.status(202).send();
-
             received_file(tmp_file_path, upload_in_progress[file_id].metadata, repos, session_data(req).connected_user)
             delete upload_in_progress[file_id];
+            res.status(202).send();
         } else if (generated_file_id)
             res.status(201).send(file_id);
         else

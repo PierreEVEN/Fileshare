@@ -1,8 +1,7 @@
-import {humanFileSize} from "../utils.js";
+import {humanFileSize} from "../../utils.js";
 
 function picture_from_mime_type(url, mimetype, thumbnail = false) {
     if (mimetype) {
-
         if (mimetype.startsWith('video/')) {
             if (url.endsWith('/thumbnail')) {
                 const div = document.createElement('div');
