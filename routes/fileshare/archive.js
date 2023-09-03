@@ -21,7 +21,7 @@ async function view(req, res) {
     const connection = await db();
     const found_files = await connection.query(`SELECT * FROM Personal.Files WHERE repos = ${repos.get_id()} AND virtual_folder LIKE '${directory}%';`);
     for (const file of Object.values(found_files))
-        archive.file(file.storage_path, {name: file.virtual_folder + '/' + file.name})
+        archive.file(file.storage_path, {name: file.virtual_folder + '/' + decodeURIComponent(file.name)})
     await connection.end();
 
     res.attachment(`${await repos.get_name()}.${directory.replaceAll('/', '.')}.zip`.replace(/([^:]\.)\.+/g, "$1"));
