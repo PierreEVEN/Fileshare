@@ -1,4 +1,4 @@
-import {gen_context_action, is_item_opened, show_folder_content} from "./viewport.js";
+import {gen_context_action, is_item_opened, spawn_item_context_action} from "./viewport.js";
 import {parse_fetch_result} from "../../utils.js";
 import {close_item_plain, gen_item, is_opened, open_this_item} from "./item.js";
 import {Filesystem} from "../../filesystem.js";
@@ -27,6 +27,11 @@ function add_directory_to_viewport(dir) {
         if (!event.target.classList.contains('open-context-button'))
             selector.set_current_dir(dir);
     }
+    object_button.addEventListener('contextmenu', event => {
+        spawn_item_context_action(dir);
+        event.preventDefault();
+    })
+
 
     /* CONTEXT ACTION BUTTON */
     object_button.append(gen_context_action(dir));
@@ -46,9 +51,18 @@ function add_directory_to_viewport(dir) {
     p.innerText = dir.name;
     div.append(p);
     object_button.append(div)
+    object_button.onmouseenter = () => {
+        selector.set_hover_item(dir);
+    }
+    object_button.onmouseleave = () => {
+        if (selector.get_hover_item() === dir)
+            selector.set_hover_item(null);
+    }
 
     viewport_container.append(object_button);
     dir.callback_removed = () => object_button.remove();
+    dir.div = object_button;
+    object_button.object = dir;
 }
 
 function add_file_to_viewport(file) {
@@ -60,6 +74,10 @@ function add_file_to_viewport(file) {
         open_this_item(object_button, file);
         selector.set_selected_item(file);
     }
+    object_button.addEventListener('contextmenu', event => {
+        spawn_item_context_action(file);
+        event.preventDefault();
+    })
 
     /* CONTEXT ACTION BUTTON */
     object_button.append(gen_context_action(file));
@@ -68,9 +86,18 @@ function add_file_to_viewport(file) {
     div.classList.add('item-preview')
     div.append(gen_item(file.name, '/fileshare/repos/' + current_repos.access_key + '/file/' + file.id, file.size, file.mimetype, true));
     object_button.append(div);
+    object_button.onmouseenter = () => {
+        selector.set_hover_item(file);
+    }
+    object_button.onmouseleave = () => {
+        if (selector.get_hover_item() === file)
+            selector.set_hover_item(null);
+    }
 
     viewport_container.append(object_button);
     file.callback_removed = () => object_button.remove();
+    file.div = object_button;
+    object_button.object = file;
 }
 
 function render_directory(directory) {
@@ -86,76 +113,83 @@ function render_directory(directory) {
 }
 
 selector.on_changed_dir((new_dir, old_dir) => {
+    selector.set_selected_item(null);
     render_directory(new_dir);
 })
 
 fetch_repos_content();
 
+selector.on_select_item((new_item, old_item) => {
+    if (old_item && old_item.div)
+        old_item.div.classList.remove("selected");
+    if (new_item && new_item.div) {
+        new_item.div.classList.add("selected");
+        new_item.div.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
+    }
+
+    if (is_item_opened() && new_item)
+        open_this_item(null, new_item);
+})
 
 function select_next_in(elements) {
+    if (!selector.get_selected_item())
+        selector.set_selected_item(selector.get_hover_item())
+
     let next = false;
     for (const item of elements) {
         if (next) {
-            select_element(item);
+            selector.set_selected_item(item);
             return;
         }
-        if (item === selected_element)
+        if (item === selector.get_selected_item())
             next = true;
     }
     if (elements.length > 0)
-        select_element(elements[0]);
+        selector.set_selected_item(elements[0]);
 }
 
 document.addEventListener('keydown', (event) => {
-    if ((event.key === 'Backspace' || event.key === 'Escape') && (current_directory.parent || is_opened())) {
+    if ((event.key === 'Backspace' || event.key === 'Escape') && (selector.get_current_directory().parent || is_opened())) {
         if (is_opened())
             close_item_plain()
         else {
-            const last_dir = current_directory;
-            select_directory(current_directory.parent)
-            if (current_directory !== last_dir)
-                select_element(last_dir);
+            const last_dir = selector.get_current_directory();
+            selector.set_current_dir(selector.get_current_directory().parent)
+            selector.set_selected_item(last_dir);
         }
     }
     if (event.key === 'ArrowRight') {
-        const elements = is_item_opened() ? current_directory.files : Object.values(current_directory.folders).concat(current_directory.files);
+        const elements = is_item_opened() ? selector.get_current_directory().files : Object.values(selector.get_current_directory().directories).concat(selector.get_current_directory().files);
         select_next_in([...elements])
     }
     if (event.key === 'ArrowLeft') {
-        const elements = is_item_opened() ? current_directory.files : Object.values(current_directory.folders).concat(current_directory.files);
+        const elements = is_item_opened() ? selector.get_current_directory().files : Object.values(selector.get_current_directory().directories).concat(selector.get_current_directory().files);
         select_next_in([...elements].reverse())
     }
-    if (event.key === 'Enter' && selected_element) {
-        if (selected_element.files)
-            select_directory(selected_element);
-        else
-            open_this_item(selected_element.div, selected_element);
+    if (event.key === 'Enter' && selector.get_current_directory()) {
+        if (!selector.get_selected_item())
+            selector.set_selected_item(selector.get_hover_item())
+
+        if (selector.get_selected_item()) {
+            if (selector.get_selected_item().is_directory)
+                selector.set_current_dir(selector.get_selected_item());
+            else
+                open_this_item(selector.get_selected_item().div, selector.get_selected_item());
+        }
     }
 }, false);
-
-function select_element(element) {
-    return;
-    if (element === selected_element)
-        return;
-
-    if (selected_element && selected_element.div) {
-        selected_element.div.classList.remove("selected");
-    }
-    if (selected_element.div) {
-        selected_element.div.classList.add("selected");
-        selected_element.div.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
-    }
-
-    if (is_item_opened() && selected_element)
-        open_this_item(null, element);
-}
 
 window.addEventListener('popstate', function (event) {
     if (!event.state)
         return;
-    let path = event.state.split('/').reverse();
 
-    const dir = filesystem.directory_from_path(path, false)
+    const dir = filesystem.directory_from_path(event.state, false)
     if (dir)
         selector.set_current_dir(dir);
 }, false);
+
+function get_viewport_filesystem() {
+    return filesystem;
+}
+
+export {get_viewport_filesystem}

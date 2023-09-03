@@ -7,6 +7,7 @@ const crypto = require("crypto");
 const fs = require('fs');
 const path = require('path')
 const fc = require('filecompare');
+const {gen_uhash} = require("../../uid_generator");
 
 const files_storage = new Storage();
 
@@ -126,8 +127,8 @@ class File {
         }
 
         if (result) {
-            this._repos = repos.find(result.repos);
-            this._owner = user.find(result.owner);
+            this._repos = await repos.find(result.repos);
+            this._owner = await user.find(result.owner);
             this._name = decodeURIComponent(result.name);
             this._description = result.description;
             this._storage_path = result.storage_path;
@@ -240,15 +241,13 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         // Generate ID
         const connection = await db();
 
-        let file_id = null;
-        do {
-            file_id = crypto.randomBytes(16).toString("hex");
-        }
-        while (Object.entries(await connection.query('SELECT * FROM Personal.Files WHERE id = ?', [file_id])).length > 0);
-        const storage_path = `./data_storage/${file_id}`
+
+        const file_id = await gen_uhash(async (entry) => Object.entries(await connection.query(`SELECT * FROM Personal.Files WHERE id = '${entry}'`)).length > 0);
+        const storage_path = path.posix.normalize(`./data_storage/${file_id}`)
+        const vp = path.posix.normalize(virtual_folder ? virtual_folder : '/');
 
         const file_data = fs.statSync(old_file_path)
-        const res = await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), encodeURIComponent(name), description, storage_path, file_data.size, mimetype, virtual_folder, file_hash]);
+        await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), encodeURIComponent(name), description, storage_path, file_data.size, mimetype, vp, file_hash]);
 
         if (!fs.existsSync('./data_storage/'))
             fs.mkdirSync('./data_storage/');
@@ -256,8 +255,7 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         fs.renameSync(old_file_path, storage_path)
 
         await connection.end();
-        console.info('done');
-        return find(Number(res.insertId));
+        return find(file_id);
     })
         .catch(err => console.error(`Failed to insert file ${name} : err`, err))
 }

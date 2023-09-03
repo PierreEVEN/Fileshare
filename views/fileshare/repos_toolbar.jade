@@ -1,7 +1,8 @@
 div.repos-toolbar
     p(id="current-path") #{locals.session_data.selected_repos.name}:/
-    button()
-        img(src='/images/icons/icons8-download-96.png', alt='download')
+    if session_data.selected_repos
+        button(onclick=`window.open('/fileshare/repos/${session_data.selected_repos.access_key}/archive/?directory=' + (module.selector.get_current_directory() ? module.selector.get_current_directory().absolute_path() : ''), '_blank').focus();`)
+            img(src='/images/icons/icons8-download-96.png', alt='download')
     if session_data.user && session_data.selected_repos.owner.id === session_data.user.id
         button.delete(onclick=`module.upload.open_or_update_modal()`).plus-button +
         button(onclick=`module.delete_repos.delete_repos('${session_data.selected_repos.access_key}')`).cancel-button

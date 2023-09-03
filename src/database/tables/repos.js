@@ -148,6 +148,28 @@ class Repos {
             access_key: this._access_key,
         }
     }
+
+    async can_user_read_repos(user) {
+        const access = await this.get_status();
+
+        if (access !== 'private')
+            return true;
+
+        if (!user)
+            return false;
+
+        if ((await this.get_owner()).get_id() === user.get_id())
+            return true;
+
+        const connection = await db();
+        const found = Object.values(await connection.query("SELECT * FROM Personal.UserRepos WHERE user = ? AND repos = ?", [user.get_id(), this.get_id()])).length !== 0;
+        await connection.end();
+        return found;
+    }
+
+    async can_user_edit_repos(user) {
+        return user && (await this.get_owner()).get_id() === user.get_id();
+    }
 }
 
 async function init_table() {

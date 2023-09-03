@@ -1,28 +1,40 @@
 import {close_modal, is_opened, open_modal} from '../widgets/modal.js'
-import {humanFileSize, seconds_to_str} from "../utils.js";
+import {humanFileSize, print_message, seconds_to_str} from "../utils.js";
 import {picture_from_mime_type} from "./repos_builder/item.js";
 import {Filesystem} from "../filesystem.js";
 import {FilesystemUpload} from "../filesystem_upload.js";
+import {get_viewport_filesystem} from "./repos_builder/repos_builder.js";
 
-const url = `/fileshare/repos/${current_repos.access_key}/upload`
-
-let filesystem = new Filesystem(current_repos.name);
-let filesystem_upload = new FilesystemUpload(filesystem, url);
+const url = current_repos ? `/fileshare/repos/${current_repos.access_key}/upload` : null;
+let filesystem = current_repos ? new Filesystem(current_repos.name) : null;
+const filesystem_upload = current_repos ? new FilesystemUpload(filesystem, url) : null;
 let stop_process = false;
 
 let add_file_button = null;
 let cancel_upload = null;
 let upload_button = null;
 let global_status_div = null;
-let global_progress_bar = null;
 let global_status_text = null;
 
+if (filesystem_upload) {
+    filesystem_upload.callback_finished = () => {
+        close_modal();
+        print_message('info', 'Tache terminée', 'Mise en ligne des fichiers terminée avec succès.')
+    }
+
+    filesystem_upload.callback_file_uploaded = (file, file_id) => {
+        get_viewport_filesystem().add_file({
+            name: file.name,
+            mimetype: file.mimetype,
+            size: file.size,
+            id: file_id
+        }, file.directory);
+    }
+}
 
 function add_file_to_upload(file, path) {
     if (!is_opened())
         open_upload_modal_for_files();
-
-    file.full_path = path + '/' + file.name;
     filesystem.add_file(file, path ? path : '/');
 }
 
@@ -189,8 +201,18 @@ function open_upload_modal_for_files() {
                 global_status_text.innerText = '1% (3.4Mo / 2.5Go) - 2.4Mo/s (~12 minutes)';
                 global_status_div.append(global_status_text);
 
-                global_progress_bar = document.createElement('div')
+                const global_progress_bar = document.createElement('div')
                 global_progress_bar.classList.add('progress-bar')
+
+                filesystem_upload.callback_global_state_changed = (progress, total, speed, remaining) => {
+                    global_progress_bar.style.width = `${progress / total * 100}%`;
+                    global_status_text.innerText =
+                        `${Math.round(progress / total * 100)}% (${humanFileSize(progress)} / ${humanFileSize(total)}) - ${humanFileSize(speed)}/s (~${seconds_to_str(remaining)})\n${filesystem_upload.file_in_process.name}`;
+                }
+
+                filesystem_upload.callback_file_state_changed = (file, progress) => {
+
+                }
                 global_status_div.append(global_progress_bar);
             }
             button_buttons.append(global_status_div);

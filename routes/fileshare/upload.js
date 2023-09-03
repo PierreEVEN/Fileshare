@@ -38,16 +38,25 @@ const upload_in_progress = {};
 async function received_file(file_path, metadata, repos, user) {
 
     if (metadata.mimetype === 'video/mpeg') {
-        conversion_queue.push_video(file_path, 'mp4', async (new_path) => {
-            const result = await Files.insert(new_path, repos, user, metadata.file_name, metadata.description, 'video/mp4', metadata.virtual_path)
-            if (!result)
-                console.warn(`Failed to insert file : ${metadata.file_name}`)
-            await events.on_upload_file(repos)
-        })
+        return await new Promise(resolve=> {
+
+            conversion_queue.push_video(file_path, 'mp4', async (new_path) => {
+                const result = await Files.insert(new_path, repos, user, metadata.file_name, metadata.description, 'video/mp4', metadata.virtual_path)
+                if (!result) {
+                    console.warn(`Failed to insert file : ${metadata.file_name}`)
+                    resolve(null);
+                }
+                else {
+                    await events.on_upload_file(repos)
+                    resolve(result);
+                }
+            });
+        });
     } else {
         const result = await Files.insert(file_path, repos, user, metadata.file_name, metadata.description, metadata.mimetype, metadata.virtual_path)
         if (!result)
             console.warn(`Failed to insert file : ${metadata.file_name}`)
+        return result;
     }
 }
 
@@ -105,11 +114,11 @@ async function post_upload(req, res) {
         fs.appendFileSync(tmp_file_path, chunk);
     })
 
-    req.on('end', () => {
+    req.on('end', async () => {
         if (upload_in_progress[file_id].received_size >= upload_in_progress[file_id].metadata.file_size) {
-            received_file(tmp_file_path, upload_in_progress[file_id].metadata, repos, session_data(req).connected_user)
+            const file = await received_file(tmp_file_path, upload_in_progress[file_id].metadata, repos, session_data(req).connected_user)
             delete upload_in_progress[file_id];
-            res.status(202).send();
+            res.status(202).send(file ? `${file.get_id()}` : '');
         } else if (generated_file_id)
             res.status(201).send(file_id);
         else

@@ -50,6 +50,9 @@ class Selector {
         return this.last_selected_item;
     }
 
+    /**
+     * @param callback {callback_directory_changed}
+     */
     on_select_item(callback) {
         this.selected_item_callbacks.push(callback)
     }
@@ -75,5 +78,7 @@ class Selector {
 }
 
 const selector = new Selector();
+
+module.selector = selector;
 
 export {selector}

@@ -6,11 +6,15 @@ const session_utils = require("../../src/session_utils");
 const path = require('path');
 const sharp = require('sharp');
 const ffmpeg = require("fluent-ffmpeg")
+const {error_404, error_403, session_data, public_data} = require("../../src/session_utils");
+const fs = require("fs");
+
+// Archive
+const archive = require("./archive");
+router.get('/:repos/archive', archive.view)
 
 // Upload
 const upload = require("./upload");
-const {error_404, error_403, session_data, public_data} = require("../../src/session_utils");
-const fs = require("fs");
 router.get('/:repos/upload', upload.view)
 router.post('/:repos/upload', upload.post_upload);
 

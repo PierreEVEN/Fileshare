@@ -13,13 +13,16 @@ class FilesystemUpload {
 
         this.total_content_size = this.filesystem.root.content_size;
         this.total_content_sent = 0;
-
         this.upload_in_progress_data_sent = 0;
 
         this.total_file_count = this.filesystem.root.content_files;
         this.total_file_sent = 0;
 
         /* CALLBACKS */
+        this.callback_global_state_changed = null;
+        this.callback_file_state_changed = null;
+        this.callback_finished = null;
+        this.callback_file_uploaded = null;
 
         this._request = new XMLHttpRequest();
         this._byte_sent = 0;
@@ -27,23 +30,29 @@ class FilesystemUpload {
         this._received_ack = true;
         const this_ref = this;
         this._request.onreadystatechange = () => {
-            const is_quick = this_ref._request.status === 200 || this_ref._request.status === 202;
+            const is_quick = this_ref._request.status === 200;
             if (this_ref._request.readyState === 2 && is_quick) { // message received (only for 202 and 200 response)
-                if (this_ref._request.status === 202)
-                    this_ref._receive_file_complete();
-                else
-                    this_ref._receive_chunk_ack();
+                this_ref._receive_chunk_ack();
             }
             if (this_ref._request.readyState === 4 && !is_quick) { // header received
                 if (this_ref._request.status === 201)
                     this_ref._receive_file_id(this_ref._request.response);
+                else if (this_ref._request.status === 202)
+                    this_ref._receive_file_complete(this_ref._request.response === '' ? null : this_ref._request.response);
                 else
                     this_ref._received_error(this_ref._request.status, this_ref._request.response);
             }
         }
 
         this._request.upload.addEventListener("progress", (event) => {
-            console.log('loaded', humanFileSize(event.loaded));
+            this.upload_in_progress_data_sent = event.loaded;
+
+            const total_sent = this_ref.total_content_sent + this_ref.upload_in_progress_data_sent + (this_ref._byte_sent ? this_ref._byte_sent : 0);
+
+            if (this_ref.callback_global_state_changed)
+                this_ref.callback_global_state_changed(total_sent, this_ref.total_content_size, 0, 0);
+            if (this_ref.callback_file_state_changed)
+                this_ref.callback_file_state_changed(this_ref.file_in_process + this_ref._byte_sent, this_ref.upload_in_progress_data_sent);
         });
 
     }
@@ -58,8 +67,13 @@ class FilesystemUpload {
 
         if (this.file_in_process)
             this._continue_current_file();
-        else
+        else {
+
+            this.total_content_sent = 0;
+            this.total_content_size = this.filesystem.root.content_size;
+
             this._process_new_file();
+        }
     }
 
     pause() {
@@ -75,11 +89,12 @@ class FilesystemUpload {
     }
 
     _receive_file_id(file_id) {
-        console.log('received file id :', file_id);
+        console.info('received file id :', file_id);
 
         if (this._received_ack)
             return;
 
+        this._byte_sent += this.max_batch_size;
         this._process_file_id = file_id;
         this._received_ack = true;
         if (this.is_running)
@@ -87,18 +102,20 @@ class FilesystemUpload {
     }
 
     _receive_chunk_ack() {
-        console.log('received chunk ack');
+        console.info(`received chunk ack`);
 
-        if (this._received_ack)
+        if (this._received_ack || !this._byte_sent)
             return;
+
+        this._byte_sent += this.max_batch_size;
 
         this._received_ack = true;
         if (this.is_running)
             this._continue_current_file();
     }
 
-    _receive_file_complete() {
-        console.log('received file complete');
+    _receive_file_complete(file_id) {
+        console.info(`received file complete : ${file_id}`);
 
         if (this._received_ack)
             return;
@@ -108,7 +125,10 @@ class FilesystemUpload {
         if (this.file_in_process) {
             this.total_file_sent += 1;
             this.total_content_sent += this.file_in_process.size;
-            this.filesystem.remove_file(this.file_in_process)
+            this.upload_in_progress_data_sent = 0;
+            if (this.callback_file_uploaded && file_id)
+                this.callback_file_uploaded(this.file_in_process, file_id);
+            this.filesystem.remove_file(this.file_in_process);
             this.file_in_process = null;
         }
 
@@ -129,8 +149,12 @@ class FilesystemUpload {
         this.upload_in_progress_data_sent = 0;
 
         this.file_in_process = this.filesystem.get_random_file();
-        if (!this.file_in_process)
+        if (!this.file_in_process) {
+            this.stop();
+            if (this.callback_finished)
+                this.callback_finished();
             return;
+        }
 
         this._byte_sent = 0;
         this._process_data(this.file_in_process.slice(0, Math.min(this.file_in_process.size, this.max_batch_size)));
@@ -145,7 +169,6 @@ class FilesystemUpload {
 
         const new_end = Math.min(this.file_in_process.size, this._byte_sent + this.max_batch_size);
         this._process_data(this.file_in_process.slice(this._byte_sent, new_end));
-        this._byte_sent += this.max_batch_size;
     }
 
     _process_data(data) {

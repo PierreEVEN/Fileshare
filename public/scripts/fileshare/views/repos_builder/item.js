@@ -45,20 +45,24 @@ function picture_from_mime_type(url, mimetype, thumbnail = false) {
         image.alt = 'No preview';
         if (mimetype.startsWith('image/'))
             image.src = url;
-        else if (mimetype === 'text/plain')
-            image.src = 'https://img.icons8.com/?size=512&id=12053';
-        else if (mimetype === 'application/pdf')
-            image.src = 'https://img.icons8.com/?size=512&id=13417';
-        else if (mimetype.startsWith('audio/'))
-            image.src = '/images/icons/icons8-music-96.png';
-        else if (mimetype === 'application/octet-stream')
-            image.src = 'https://img.icons8.com/?size=512&id=38992';
+        else {
+            const image_name = mimetype.replace('/', '-');
+            image.src = `/images/icons/mimetypes/${image_name}.png`;
+            image.onerror = () => {
+                image.onerror = null;
+                image.src = '/images/icons/no-mime-icon.png'
+            }
+        }
         return image;
     }
     else {
         const image = document.createElement('img');
         image.classList.add('item-thumbnail');
         image.src = 'https://img.icons8.com/external-vectorslab-outline-color-vectorslab/53/external-404-File-files-and-folders-vectorslab-outline-color-vectorslab.png'
+        image.onError = () => {
+            image.onError = null;
+            image.src = '/images/icons/no-mime-icon.png'
+        }
         return image;
     }
 }
