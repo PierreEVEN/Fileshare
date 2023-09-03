@@ -71,7 +71,8 @@ function add_file_to_viewport(file) {
     object_button.onclick = (event) => {
         if (event.target.classList.contains('open-context-button'))
             return
-        open_this_item(object_button, file);
+        if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/'))
+            open_this_item(object_button, file);
         selector.set_selected_item(file);
     }
     object_button.addEventListener('contextmenu', event => {

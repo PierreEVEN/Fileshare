@@ -5,12 +5,15 @@ document.addEventListener('mousemove', event => {
 })
 
 document.addEventListener('click', () => {
-    last_context_action.remove();
+    if (last_context_action)
+        last_context_action.remove();
+    last_context_action = null;
 })
 
 document.oncontextmenu = () => {
     if (last_context_action)
         last_context_action.remove();
+    last_context_action = null;
 }
 
 let last_context_action = null;
