@@ -62,6 +62,17 @@ function mime_icon(mimetype) {
                 case 'x-pdf':
                 case 'pdf':
                     return '/images/icons/mime-icons/application/pdf.png';
+                case 'zip':
+                case 'bzip':
+                case 'bzip2':
+                case 'gzip':
+                    return '/images/icons/mime-icons/application/zip.png';
+                case 'x-gtar':
+                case 'x-tar':
+                    return '/images/icons/mime-icons/application/tar.png';
+                case 'rar':
+                case 'vnd.rar':
+                    return '/images/icons/mime-icons/application/rar.png';
                 case 'json':
                     return '/images/icons/mime-icons/application/json.png';
                 case 'javascript':
