@@ -1,5 +1,6 @@
 import {close_modal, is_opened, open_modal} from '../widgets/modal.js'
-import {humanFileSize, print_message, seconds_to_str} from "../utils.js";
+import {humanFileSize, seconds_to_str} from "../utils.js";
+import {print_message} from "../message_box.js";
 import {picture_from_mime_type} from "./repos_builder/item.js";
 import {Filesystem} from "../filesystem.js";
 import {FilesystemUpload} from "../filesystem_upload.js";

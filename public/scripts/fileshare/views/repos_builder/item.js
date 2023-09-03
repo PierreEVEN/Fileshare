@@ -1,70 +1,63 @@
-import {humanFileSize} from "../../utils.js";
+import {humanFileSize, mime_icon} from "../../utils.js";
+
+function make_standard_icon(mime_type) {
+    const image = document.createElement('img');
+    image.classList.add('item-thumbnail');
+    image.src = mime_icon(mime_type)
+    image.onError = () => {
+        image.onError = null;
+        image.src = '/images/icons/no-mime-icon.png'
+    }
+    return image;
+}
 
 function picture_from_mime_type(url, mimetype, thumbnail = false) {
-    if (mimetype) {
-        if (mimetype.startsWith('video/')) {
-            if (url.endsWith('/thumbnail')) {
-                const div = document.createElement('div');
-                div.classList.add('item-preview');
+    if (!mimetype)
+        return make_standard_icon(null);
 
-                const image = document.createElement('img');
-                image.onError = () => {
-                    image.onError = null;
-                    image.src = 'https://img.icons8.com/fluency/96/no-image.png'
-                }
-                image.alt = 'No preview';
-                image.src = url;
-                image.classList.add('item-thumbnail')
-                div.append(image);
+    if (mimetype.startsWith('video/')) {
+        if (url.endsWith('/thumbnail')) {
+            const div = document.createElement('div');
+            div.classList.add('item-preview');
 
-                const play_button = document.createElement('img');
-                play_button.src = '/images/icons/icons8-play-64.png'
-                div.append(play_button)
-
-                return div;
+            const image = document.createElement('img');
+            image.onError = () => {
+                image.onError = null;
+                image.src = 'https://img.icons8.com/fluency/96/no-image.png'
             }
-
-            const video = document.createElement('video');
-            video.classList.add('item-thumbnail');
-            video.classList.add('video-js');
-            video.preload = 'auto'
-            video['data-setup'] = '{}';
-            const source = document.createElement('source');
-            source.src = url;
-            source.type = mimetype;
-            video.append(source);
-            return video;
-        }
-
-        const image = document.createElement('img');
-        image.onError = () => {
-            image.onError = null;
-            image.src = 'https://img.icons8.com/fluency/96/no-image.png'
-        }
-        image.classList.add('item-thumbnail');
-        image.alt = 'No preview';
-        if (mimetype.startsWith('image/'))
+            image.alt = 'No preview';
             image.src = url;
-        else {
-            const image_name = mimetype.replace('/', '-');
-            image.src = `/images/icons/mimetypes/${image_name}.png`;
-            image.onerror = () => {
-                image.onerror = null;
-                image.src = '/images/icons/no-mime-icon.png'
-            }
+            image.classList.add('item-thumbnail')
+            div.append(image);
+
+            const play_button = document.createElement('img');
+            play_button.src = '/images/icons/icons8-play-64.png'
+            div.append(play_button)
+
+            return div;
         }
-        return image;
+
+        const video = document.createElement('video');
+        video.classList.add('item-thumbnail');
+        video.classList.add('video-js');
+        video.preload = 'auto'
+        video['data-setup'] = '{}';
+        const source = document.createElement('source');
+        source.src = url;
+        source.type = mimetype;
+        video.append(source);
+        return video;
     }
-    else {
-        const image = document.createElement('img');
-        image.classList.add('item-thumbnail');
-        image.src = 'https://img.icons8.com/external-vectorslab-outline-color-vectorslab/53/external-404-File-files-and-folders-vectorslab-outline-color-vectorslab.png'
-        image.onError = () => {
-            image.onError = null;
-            image.src = '/images/icons/no-mime-icon.png'
-        }
-        return image;
+
+    const image = document.createElement('img');
+    image.classList.add('item-thumbnail');
+    image.alt = url;
+    image.src = mimetype.startsWith('image/') ? url : mime_icon(mimetype);
+    image.onError = () => {
+        image.onError = null;
+        image.src = mime_icon(null)
     }
+    return image;
 }
 
 function gen_item(name, url, size, mimetype, thumbnail) {
@@ -91,6 +84,19 @@ function gen_item(name, url, size, mimetype, thumbnail) {
             return audio;
         }
     }
+    if (!mimetype.startsWith('video/') && !mimetype.startsWith('image/')) {
+
+        const div = document.createElement('div');
+        div.classList.add('item-preview');
+        div.append(picture_from_mime_type(url + (thumbnail ? '/thumbnail' : ''), mimetype, true));
+
+        const text_name = document.createElement('p');
+        text_name.innerText = name
+        div.append(text_name)
+
+        return div;
+    }
+
     return picture_from_mime_type(url + (thumbnail ? '/thumbnail' : ''), mimetype, true);
 }
 

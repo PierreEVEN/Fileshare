@@ -5,46 +5,53 @@ document.addEventListener('mousemove', event => {
 })
 
 document.addEventListener('click', () => {
-
+    last_context_action.remove();
 })
+
+document.oncontextmenu = () => {
+    if (last_context_action)
+        last_context_action.remove();
+}
 
 let last_context_action = null;
 
 function spawn_context_action(actions) {
-    if (last_context_action)
-        last_context_action.remove();
-    const modal = document.createElement('div')
-    modal.classList.add('context-action-box')
+    setTimeout(() => {
+        if (last_context_action)
+            last_context_action.remove();
+        const modal = document.createElement('div')
+        modal.classList.add('context-action-box')
 
-    modal.style.left = Math.min(window.innerWidth - 200, mouse_pos.x) + 'px';
-    modal.style.top = Math.min(window.innerHeight - 40 * actions.length, mouse_pos.y) + 'px';
+        modal.style.left = Math.min(window.innerWidth - 200, mouse_pos.x) + 'px';
+        modal.style.top = Math.min(window.innerHeight - 40 * actions.length, mouse_pos.y) + 'px';
 
-    for (const action of actions) {
-        const input = document.createElement('button')
-        input.type = 'button'
+        for (const action of actions) {
+            const input = document.createElement('button')
+            input.type = 'button'
 
-        if (action.image) {
-            const image = document.createElement('img')
-            image.src = action.image;
-            image.alt = action.title;
-            input.append(image)
+            if (action.image) {
+                const image = document.createElement('img')
+                image.src = action.image;
+                image.alt = action.title;
+                input.append(image)
+            }
+
+            const p = document.createElement('p')
+            p.innerText = action.title;
+            input.append(p)
+
+            input.onclick = e => {
+                if (last_context_action)
+                    last_context_action.remove();
+                last_context_action = null;
+                action.action(e);
+            }
+            modal.append(input)
         }
 
-        const p = document.createElement('p')
-        p.innerText = action.title;
-        input.append(p)
-
-        input.onclick = e => {
-            if (last_context_action)
-                last_context_action.remove();
-            last_context_action = null;
-            action.action(e);
-        }
-        modal.append(input)
-    }
-
-    last_context_action = modal;
-    document.body.append(modal)
+        last_context_action = modal;
+        document.body.append(modal)
+    }, 10);
 }
 
 

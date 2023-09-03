@@ -1,5 +1,5 @@
 import {gen_context_action, is_item_opened, spawn_item_context_action} from "./viewport.js";
-import {parse_fetch_result} from "../../utils.js";
+import {parse_fetch_result} from "../../message_box.js";
 import {close_item_plain, gen_item, is_opened, open_this_item} from "./item.js";
 import {Filesystem} from "../../filesystem.js";
 import {selector} from "../../selector.js";

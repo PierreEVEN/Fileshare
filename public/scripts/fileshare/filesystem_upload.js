@@ -1,4 +1,4 @@
-import {humanFileSize, print_message} from "./utils.js";
+import {print_message} from "./message_box.js";
 
 class FilesystemUpload {
     /**

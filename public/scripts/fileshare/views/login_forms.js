@@ -1,5 +1,5 @@
 import {open_modal} from "../widgets/modal.js";
-import {parse_fetch_result, print_message} from "../utils.js";
+import {print_message, parse_fetch_result} from "../message_box.js";
 
 function open_modal_signin() {
     const login_content = document.createElement('div')

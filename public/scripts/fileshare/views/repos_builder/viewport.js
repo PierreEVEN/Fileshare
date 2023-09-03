@@ -1,8 +1,7 @@
-import {gen_item, is_opened, open_this_item} from "./item.js";
+import {is_opened} from "./item.js";
 import {spawn_context_action} from "../../widgets/context_action.js";
 import {close_modal, open_modal} from "../../widgets/modal.js";
-import {print_message} from "../../utils.js";
-import {selector} from "../../selector.js";
+import {print_message} from "../../message_box.js";
 
 function spawn_item_context_action(item) {
     spawn_context_action([{
