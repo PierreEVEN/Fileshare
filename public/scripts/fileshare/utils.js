@@ -66,6 +66,7 @@ function mime_icon(mimetype) {
                 case 'bzip':
                 case 'bzip2':
                 case 'gzip':
+                case 'x-zip-compressed':
                     return '/images/icons/mime-icons/application/zip.png';
                 case 'x-gtar':
                 case 'x-tar':
