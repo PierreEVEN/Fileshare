@@ -44,12 +44,12 @@ html
                         p FileShare
                     if !locals.session_data || !locals.session_data.user
                         div.login-buttons
-                            button(onclick = 'module.login_forms.open_modal_signup()') Nouveau Compte
-                            button(onclick = 'module.login_forms.open_modal_signin()') Connexion
+                            button(onclick = 'module.auth.open_modal_signup()') Nouveau Compte
+                            button(onclick = 'module.auth.open_modal_signin()') Connexion
                     else
                         div.login-buttons
                             p.Username Bonjour #{session_data.user.username} !
-                            button(onclick='module.login_forms.logout()') Déconnexion
+                            button(onclick='module.auth.logout()') Déconnexion
 
                 div.user-viewport(id='mime_get_type')
                     include repos_list
@@ -58,8 +58,8 @@ html
 
     if locals.force_login
         script(type='module').
-            module.login_forms.open_modal_signin()
+            module.auth.open_modal_signin()
 
     if locals.force_signin
         script(type='module').
-            module.login_forms.open_modal_signup()
+            module.auth.open_modal_signup()

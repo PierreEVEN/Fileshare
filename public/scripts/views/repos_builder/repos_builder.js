@@ -33,20 +33,17 @@ function add_directory_to_viewport(dir) {
     })
 
 
-    /* CONTEXT ACTION BUTTON */
     object_button.append(gen_context_action(dir));
 
     const div = document.createElement('div');
     div.classList.add('item-preview')
     div.classList.add('folder')
 
-    /* ICON */
     const img = document.createElement('img')
     img.src = "/images/icons/icons8-folder-96.png";
     img.alt = "dossier";
     div.append(img);
 
-    /* DIR NAME */
     const p = document.createElement('p');
     p.innerText = dir.name;
     div.append(p);
@@ -58,7 +55,7 @@ function add_directory_to_viewport(dir) {
         if (selector.get_hover_item() === dir)
             selector.set_hover_item(null);
     }
-
+    
     viewport_container.append(object_button);
     dir.callback_removed = () => object_button.remove();
     dir.div = object_button;

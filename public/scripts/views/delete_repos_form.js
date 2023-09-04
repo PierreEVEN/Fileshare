@@ -1,18 +1,7 @@
 import {open_modal} from "../widgets/modal.js";
 
-function delete_repos(e) {
-    const delete_repos_modal = document.createElement('div')
-    delete_repos_modal.classList.add('modal-content')
-    delete_repos_modal.innerHTML = `
-            <h1>Supprimer ce dépôt et toutes ses données ?</h1>
-            <form action="/repos/delete/?repos=${e}" method="post" class="delete-repos">
-                <input type="button" value="Annuler" onclick="module.modal.close_modal()">
-                <input type="submit" value="Oui : Supprimer" id="countdown-button">
-            </form>
-            <div class="delete-repos-progress">
-                <div id="countdown-bar"></div>
-            </div>`
-    open_modal(delete_repos_modal, '500px', '170px');
+async function delete_repos(e) {
+    open_modal(await module.mustache.render('repos/delete_repos'), '500px', '170px');
 
     let remaining_s = 5;
     const coundown_bar = document.getElementById('countdown-bar');

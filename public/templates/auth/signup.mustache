@@ -1,0 +1,26 @@
+<div class="modal-content">
+    <h1>Créer un compte</h1>
+    <div class="field">
+        <label for='username'>
+            <input type="text" name="username" placeholder="Nom / e-mail" id="username" required>
+        </label>
+    </div>
+    <div class="field">
+        <label for='email'>
+            <input type="email" name="email" placeholder="e-mail" id="email" required>
+        </label>
+    </div>
+    <div class="field">
+        <label for='password'>
+            <input type="password" name="password" placeholder="Mot de passe" id="password" required>
+        </label>
+    </div>
+
+    <input type="submit" value="Créer un compte" onclick="module.auth.post_signup()">
+    <a id="forgot-password" href="mailto: evenpierre@orange.fr"></a>
+    <div class="separator"></div>
+    <div class='bottom-button'>
+        <p>Déjà membre ?</p> <a href="javascript:module.auth.open_modal_signin();">Se connecter à votre
+        compte</a>
+    </div>
+</div>
