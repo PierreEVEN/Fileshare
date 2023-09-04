@@ -5,7 +5,7 @@ const UserRepos = require("./database/tables/user_repos");
 function require_connection(req, res) {
     if (!session_data(req).connected_user) {
         req.session.last_url = req.originalUrl;
-        res.redirect('/fileshare/signin');
+        res.redirect('/signin');
         return true;
     }
     return false;
@@ -16,6 +16,7 @@ async function error_404(req, res, custom_error = null) {
     res.render('error', {
         title: "404 - Not found",
         session_data: await session_data(req).client_data(),
+        public_data: await public_data().get(),
         message: `404 - ${custom_error ? custom_error : 'Cette page n\'existe pas'}`
     })
 }
@@ -25,6 +26,7 @@ async function error_403(req, res, custom_error = null) {
     res.render('error', {
         title: "403 - Forbidden",
         session_data: await session_data(req).client_data(),
+        public_data: await public_data().get(),
         message: `403 - ${custom_error ? custom_error : 'Cette page n\'est pas accessible'}`
     })
 }

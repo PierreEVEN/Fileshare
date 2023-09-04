@@ -176,7 +176,7 @@ async function init_table() {
 const table_created = init_table();
 
 /**
- * @return {File}
+ * @return {Promise<File>}
  */
 async function find(id) {
     return await table_created.then(async () => {

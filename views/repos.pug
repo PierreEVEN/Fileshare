@@ -1,0 +1,84 @@
+extends fileshare
+
+block content
+    if session_data.selected_repos
+        div(id="current-repos")
+            div.file-view(id="drop_zone", ondrop="on_drop_files(event, this);", ondragover="drag_files_over(event);", ondragenter="start_drag_files(event, this);", ondragleave="stop_drag_files(event, this);")
+                include repos_toolbar
+                div.separator
+                link(href="https://vjs.zencdn.net/8.5.2/video-js.css", rel="stylesheet")
+                script(src="https://vjs.zencdn.net/8.5.2/video.min.js")
+                div(id='file-list')
+
+        script.
+            const modal_div = document.getElementById('modal')
+            function modal_drop(event) { on_drop_files(event, modal_div) }
+            function modal_drag_enter(event) { start_drag_files(event, modal_div) }
+            function modal_drag_leave(event) { stop_drag_files(event, modal_div) }
+            function modal_drag_over(event) { drag_files_over(event) }
+
+            modal_div.addEventListener('drop', modal_drop)
+            modal_div.addEventListener('dragenter', modal_drag_enter)
+            modal_div.addEventListener('dragleave', modal_drag_leave)
+            modal_div.addEventListener('dragover', modal_drag_over)
+
+            window.addEventListener("beforeunload", event => {
+                modal_div.removeEventListener('drop', modal_drop)
+                modal_div.removeEventListener('dragenter', modal_drag_enter)
+                modal_div.removeEventListener('dragleave', modal_drag_leave)
+                modal_div.removeEventListener('dragover', modal_drag_over)
+            }, false);
+
+            function start_drag_files(event, target) {
+                target.style.cursor = 'copy'
+                target.style.border = '5px yellow dashed'
+                target.style['border-radius'] = '20px'
+                event.preventDefault();
+            }
+
+            function stop_drag_files(event, target) {
+                target.style.cursor = 'cursor'
+                target.style.border = '0'
+                target.style['border-radius'] = '0'
+                event.preventDefault();
+            }
+
+            function drag_files_over(event) {
+                event.preventDefault();
+            }
+
+            function on_drop_files(event, target) {
+                stop_drag_files(event, target);
+                event.preventDefault();
+
+                if (event.dataTransfer.items) {
+                    [...event.dataTransfer.items].forEach((item, i) => {
+                        const process_entry = (entry, path) => {
+                            if (entry.isDirectory) {
+                                path = `${path ? path : ''}/${entry.name}`;
+                                entry.createReader().readEntries((entries) => {
+                                    for (const new_entry of entries)
+                                        process_entry(new_entry, path);
+                                })
+                            } else {
+                                entry.file(file => {
+                                    if (file.size === 0) return;
+                                    module.upload.add_file_to_upload(file, path);
+                                });
+                            }
+                        }
+                        if (item.kind === "file") {
+                            const entry = "getAsEntry" in DataTransferItem.prototype ? item.getAsEntry() : item.webkitGetAsEntry();
+                            process_entry(entry);
+                        }
+                    });
+                } else {
+                    [...event.dataTransfer.files].forEach((file, _) => {
+                        module.upload.add_file_to_upload(file, '/');
+                    });
+                }
+            }
+
+        if locals.forcer_show_upload
+            script(type='module').
+                module.upload.open_or_update_modal();
