@@ -29,7 +29,7 @@ logger.add(new winston.transports.File({
 
 logger.add(new winston.transports.File({
     filename: 'logs/combined.log',
-    options: {flags: 'w'},
+    //options: {flags: 'w'},
     format: winston.format.combine(
         winston.format.align(),
         winston.format.timestamp(),
