@@ -6,7 +6,7 @@ const {logger} = require("../logger");
 const router = require('express').Router();
 router.use(async (req, res, next) => {
     if (!req.query.repos)
-        res.redirect('/');
+        return res.redirect('/');
 
     const repos = await Repos.find_access_key(req.query.repos);
 

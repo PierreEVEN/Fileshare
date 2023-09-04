@@ -2,12 +2,8 @@ doctype html
 html
     head
         title= title
-        block css
-        link(rel='stylesheet', href='/stylesheets/layout.css')
         link(rel="icon", type="image/x-icon", href="/images/icons/favicon.ico")
-        script(type='module', src='/scripts/index.js')
     body
-        // ################################## Global available client modules ##################################
         script.
             const module = {}
 
@@ -15,11 +11,20 @@ html
             script.
                 const current_repos = {
                     name: `!{locals.session_data.selected_repos.name}`,
-                access_key: `!{locals.session_data.selected_repos.access_key}`
+                    access_key: `!{locals.session_data.selected_repos.access_key}`
                 };
         else
             script.
                 const current_repos = null;
+
+
+        if locals.force_login
+            script(type='module').
+                module.auth.open_modal_signin()
+
+        if locals.force_signin
+            script(type='module').
+                module.auth.open_modal_signup()
 
         // ################################## MODAL ##################################
         div(id='modal', onclick="if (event.target === this) module.modal.close_modal()").modal-closed
@@ -55,11 +60,4 @@ html
                     include repos_list
                     block content
 
-
-    if locals.force_login
-        script(type='module').
-            module.auth.open_modal_signin()
-
-    if locals.force_signin
-        script(type='module').
-            module.auth.open_modal_signup()
+script(src='dist/main.js')

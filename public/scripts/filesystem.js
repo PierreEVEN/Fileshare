@@ -1,4 +1,4 @@
-import mime from 'https://cdn.skypack.dev/mime'
+const mime = require('mime');
 
 function prepare_file(file, absolute_path) {
     file.callback_removed = file.callback_removed === undefined ? null : file.callback_removed;

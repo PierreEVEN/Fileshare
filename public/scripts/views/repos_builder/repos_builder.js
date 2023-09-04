@@ -55,7 +55,7 @@ function add_directory_to_viewport(dir) {
         if (selector.get_hover_item() === dir)
             selector.set_hover_item(null);
     }
-    
+
     viewport_container.append(object_button);
     dir.callback_removed = () => object_button.remove();
     dir.div = object_button;
