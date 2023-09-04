@@ -1,4 +1,5 @@
 const ffmpeg = require('fluent-ffmpeg');
+const {logger} = require("../logger");
 
 class FileConversionQueue {
     constructor() {
@@ -6,7 +7,7 @@ class FileConversionQueue {
     }
 
     push_video(path, new_format, on_success) {
-        console.info(`Pushed new video for conversion '${path}' to ${new_format}`);
+        logger.info(`Pushed new video for conversion '${path}' to ${new_format}`);
         this.video_conversion_queue.push({path: path, new_format: new_format, on_success: on_success});
         this.proc_next_video()
     }
@@ -22,12 +23,12 @@ class FileConversionQueue {
         new ffmpeg({ source: next_proc.path})
             .toFormat(next_proc.new_format)
             .on('end', function() {
-                console.info(`Finished video conversion from '${next_proc.path}' to ${next_proc.new_format} :`);
+                logger.info(`Finished video conversion from '${next_proc.path}' to ${next_proc.new_format}`);
                 next_proc.on_success(next_proc.path + '_converted');
                 this_ref.proc_next_video();
             })
             .on('error', function(err) {
-                console.error(`Failed to convert video '${next_proc.path}' to ${next_proc.new_format} :`, err);
+                logger.error(`Failed to convert video '${next_proc.path}' to ${next_proc.new_format} : ${JSON.stringify(err)}`);
                 this_ref.proc_next_video();
             })
             .saveToFile(next_proc.path + '_converted');

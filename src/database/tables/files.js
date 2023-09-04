@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path')
 const fc = require('filecompare');
 const {gen_uhash} = require("../../uid_generator");
+const {logger} = require("../../../logger");
 
 const files_storage = new Storage();
 
@@ -149,7 +150,7 @@ async function init_table() {
     const charset = Object.values(await connection.query(`SELECT default_character_set_name FROM information_schema.SCHEMATA S WHERE schema_name = "Personal";`))[0].default_character_set_name;
     if (charset !== 'utf8mb4') {
         await connection.query(`ALTER DATABASE Personal CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
-        console.warn('changed database default encoding to utf8mb4');
+        logger.warn('changed database default encoding to utf8mb4');
     }
 
     // Create Accounts table if needed
@@ -218,7 +219,7 @@ async function already_exists(file_path, file_hash, repos) {
  * @return {Promise<File>|null}
  */
 async function insert(old_file_path, repos, owner, name, description, mimetype, virtual_folder) {
-    console.info(`try insert file ${name}`)
+    logger.info(`try insert file ${name}`)
     if (!fs.existsSync(old_file_path))
         return null;
 
@@ -257,7 +258,7 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         await connection.end();
         return find(file_id);
     })
-        .catch(err => console.error(`Failed to insert file ${name} : err`, err))
+        .catch(err => logger.error(`Failed to insert file ${name} : ${JSON.stringify(err)}`))
 }
 
 

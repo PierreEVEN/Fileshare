@@ -1,6 +1,7 @@
 const Users = require("./database/tables/user");
 const Repos = require("./database/tables/repos");
 const UserRepos = require("./database/tables/user_repos");
+const {logger} = require("../logger");
 
 function require_connection(req, res) {
     if (!session_data(req).connected_user) {
@@ -12,8 +13,9 @@ function require_connection(req, res) {
 }
 
 async function error_404(req, res, custom_error = null) {
-    res.status(404);
-    res.render('error', {
+    const user = session_data(req).connected_user;
+    logger.error(`404 Not found : ${req.originalUrl} (${request_username(req)})`)
+    res.status(404).render('error', {
         title: "404 - Not found",
         session_data: await session_data(req).client_data(),
         public_data: await public_data().get(),
@@ -43,10 +45,17 @@ class SessionData {
     }
 
     async connect_user(user_id = null) {
-        if (user_id)
+        if (user_id) {
+            const new_connection = !this.connected_user;
             this.connected_user = await Users.find(user_id.get_id());
-        else
+            if (new_connection)
+                logger.info(`new connection from ${await this.connected_user.get_username()}#${this.connected_user.get_id()}`)
+        }
+        else {
+            if (this.connected_user)
+                logger.info(`${await this.connected_user.get_username()}#${this.connected_user.get_id()} disconnected`)
             this.connected_user = null;
+        }
 
         this.last_data = null;
 
@@ -216,7 +225,13 @@ function public_data() {
     return _public_data;
 }
 
+function request_username(req) {
+    const user = session_data(req).connected_user;
+    return user ? `${user._username}#${user.get_id()}` : `@{${req.socket.remoteAddress}}`
+}
+
 module.exports = {
+    request_username,
     require_connection,
     error_404,
     error_403,

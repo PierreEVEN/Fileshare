@@ -1,10 +1,11 @@
 const fs = require("fs");
 const Files = require('../../src/database/tables/files');
-const {session_data, public_data, require_connection} = require("../../src/session_utils");
+const {session_data, public_data, require_connection, request_username} = require("../../src/session_utils");
 const conversion_queue = require("../../src/file-conversion");
 const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
+const {logger} = require("../../logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -46,7 +47,7 @@ async function received_file(file_path, metadata, repos, user) {
             conversion_queue.push_video(file_path, 'mp4', async (new_path) => {
                 const result = await Files.insert(new_path, repos, user, metadata.file_name, metadata.description, 'video/mp4', metadata.virtual_path)
                 if (!result) {
-                    console.warn(`Failed to insert file : ${metadata.file_name}`)
+                    logger.warn(`Failed to insert file : ${metadata.file_name}`)
                     resolve(null);
                 }
                 else {
@@ -58,7 +59,7 @@ async function received_file(file_path, metadata, repos, user) {
     } else {
         const result = await Files.insert(file_path, repos, user, metadata.file_name, metadata.description, metadata.mimetype, metadata.virtual_path)
         if (!result)
-            console.warn(`Failed to insert file : ${metadata.file_name}`)
+            logger.warn(`Failed to insert file : ${metadata.file_name}`)
         return result;
     }
 }
@@ -97,6 +98,9 @@ router.post('/', async (req, res) => {
 
     req.on('end', async () => {
         if (upload_in_progress[file_id].received_size >= upload_in_progress[file_id].metadata.file_size) {
+
+            logger.info(`${request_username(req)} pushed ${JSON.stringify(upload_in_progress[file_id].metadata)} to ${await req.repos.get_access_key()}`)
+
             const file = await received_file(tmp_file_path, upload_in_progress[file_id].metadata, req.repos, session_data(req).connected_user)
             delete upload_in_progress[file_id];
             res.status(202).send(file ? `${file.get_id()}` : '');

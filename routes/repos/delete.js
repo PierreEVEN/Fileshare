@@ -1,4 +1,5 @@
-const {require_connection, session_data, error_403} = require("../../src/session_utils");
+const {require_connection, session_data, error_403, request_username} = require("../../src/session_utils");
+const {logger} = require("../../logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -20,6 +21,9 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     await events.on_delete_repos(req.repos);
+
+    logger.warn(`${request_username(req)} deleted repos ${await req.repos.get_access_key()}`)
+
     res.redirect(`/`);
 })
 

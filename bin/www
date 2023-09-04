@@ -9,6 +9,7 @@ let debug = require('debug')('evenpierre:server');
 let http = require('http');
 const https = require('https');
 const fs = require('fs')
+const {logger} = require("../logger");
 
 /**
  * Get port from environment and store in Express.
@@ -28,7 +29,7 @@ if (fs.existsSync(process.env.SSL_CERTIFICATE) && fs.existsSync(process.env.SSL_
         res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
         res.end();
     }).listen(80, function(err) {
-        console.info("Created redirect server on port 80");
+        logger.info("Created redirect server on port 80");
     });
 
     port = normalizePort(process.env.PORT || '443');
@@ -38,14 +39,14 @@ if (fs.existsSync(process.env.SSL_CERTIFICATE) && fs.existsSync(process.env.SSL_
     const certificate = fs.readFileSync(process.env.SSL_CERTIFICATE, 'utf8');
     const ca = fs.readFileSync(process.env.SSL_CHAIN, 'utf8');
     server = https.createServer({key: privateKey, cert: certificate, ca: ca}, app);
-    console.info("Start secured server on port 443")
+    logger.info("Start secured server on port 443")
 } else {
 
     port = normalizePort(process.env.PORT || '80');
     app.set('port', port);
 
     server = http.createServer(app);
-    console.info("Start development server on port 80")
+    logger.info("Start development server on port 80")
 }
 
 /**
@@ -65,11 +66,11 @@ server.on('error', (error) => {
     // handle specific listen errors with friendly messages
     switch (error.code) {
         case 'EACCES':
-            console.error(bind + ' requires elevated privileges');
+            logger.error(bind + ' requires elevated privileges');
             process.exit(1);
             break;
         case 'EADDRINUSE':
-            console.error(bind + ' is already in use');
+            logger.error(bind + ' is already in use');
             process.exit(1);
             break;
         default:

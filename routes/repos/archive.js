@@ -1,6 +1,8 @@
 const archiver = require('archiver');
 const db = require("../../database");
 const path = require("path");
+const {logger} = require("../../logger");
+const {request_username} = require("../../src/session_utils");
 const router = require('express').Router();
 
 router.get('/', async (req, res) => {
@@ -14,6 +16,8 @@ router.get('/', async (req, res) => {
     for (const file of Object.values(found_files))
         archive.file(file.storage_path, {name: file.virtual_folder + '/' + decodeURIComponent(file.name)})
     await connection.end();
+
+    logger.info(`Archived '${await req.repos.get_access_key()}${directory}' for ${request_username(req)}`)
 
     res.attachment(`${await req.repos.get_name()}.${directory.replaceAll('/', '.')}.zip`.replace(/([^:]\.)\.+/g, "$1"));
     archive.pipe(res);

@@ -1,6 +1,7 @@
-const {require_connection, get_user_private_data, session_data, error_403, public_data, events} = require("../src/session_utils");
+const {require_connection, get_user_private_data, session_data, error_403, public_data, events, request_username} = require("../src/session_utils");
 const Repos = require('../src/database/tables/repos')
 const crypto = require("crypto");
+const {logger} = require("../logger");
 const router = require('express').Router();
 
 router.get('/', async (req, res) => {
@@ -51,6 +52,8 @@ router.post('/', async (req, res) => {
     session_data(req).mark_dirty();
     if (status === 'public')
         public_data().mark_dirty();
+
+    logger.warn(`${request_username(req)} created a new ${status} repos named ${name}`)
 
     res.redirect(`/repos/?repos=${access_key}`);
 });

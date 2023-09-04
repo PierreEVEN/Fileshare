@@ -2,8 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const ffmpeg = require("fluent-ffmpeg");
-const {error_404, session_data} = require("../src/session_utils");
+const {error_404, session_data, request_username} = require("../src/session_utils");
 const Files = require("../src/database/tables/files");
+const {logger} = require("../logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -32,6 +33,7 @@ router.use(async (req, res, next) => {
 /* ###################################### CREATE ROUTER ###################################### */
 
 router.get('/', async function (req, res) {
+    logger.info(`${request_username(req)} downloaded ${await req.file.get_name()}#${req.file.get_id()}`)
     res.setHeader('Content-Disposition', 'attachment; filename=' + encodeURIComponent(await req.file.get_name()));
     return res.sendFile(path.resolve(req.file_path));
 })
@@ -53,10 +55,10 @@ router.get('/thumbnail', async function (req, res) {
                 }).withMetadata()
                     .toFile(thumbnail_path, async (err, resizeImage) => {
                         if (err) {
-                            console.error(`failed to generate thumbnail for ${req.file.get_id()} (${await req.file.get_name()}) :`, err);
+                            logger.error(`failed to generate thumbnail for ${req.file.get_id()} (${await req.file.get_name()}) : ${JSON.stringify(err)}`);
                             return res.sendFile(path.resolve(req.file_path));
                         } else {
-                            console.info(`generated thumbnail for ${req.file.get_id()} (${await req.file.get_name()})`);
+                            logger.info(`generated thumbnail for ${req.file.get_id()} (${await req.file.get_name()})`);
                             return res.sendFile(path.resolve(thumbnail_path));
                         }
                     });
@@ -68,13 +70,13 @@ router.get('/thumbnail', async function (req, res) {
                         filename = filenames[0]
                     })
                     .on('end', async () => {
-                        console.info(`generated video thumbnail for ${req.file.get_id()} (${await req.file.get_name()})`)
+                        logger.info(`generated video thumbnail for ${req.file.get_id()} (${await req.file.get_name()})`)
                         fs.renameSync(`data_storage/thumbnail/dir_${req.file.get_id()}/${filename}`, thumbnail_path);
                         fs.rmdirSync(`data_storage/thumbnail/dir_${req.file.get_id()}`)
                         return res.sendFile(path.resolve(thumbnail_path));
                     })
                     .on('error', async (err) => {
-                        console.error(`Failed generated video thumbnail for ${req.file.get_id()} (${await req.file.get_name()}) :`, err);
+                        logger.error(`Failed generated video thumbnail for ${req.file.get_id()} (${await req.file.get_name()}) : ${JSON.stringify(err)}`);
                         return res.sendFile(path.resolve(req.file_path));
                     })
                     .takeScreenshots({
