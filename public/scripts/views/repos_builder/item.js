@@ -84,7 +84,7 @@ function gen_item(name, url, size, mimetype, thumbnail) {
             return audio;
         }
     }
-    if (!mimetype.startsWith('video/') && !mimetype.startsWith('image/')) {
+    if (mimetype && !mimetype.startsWith('video/') && !mimetype.startsWith('image/')) {
 
         const div = document.createElement('div');
         div.classList.add('item-preview');

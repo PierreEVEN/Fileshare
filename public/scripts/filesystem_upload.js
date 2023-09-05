@@ -1,4 +1,4 @@
-import {print_message} from "./message_box.js";
+import {print_message} from "./widgets/message_box.js";
 
 class FilesystemUpload {
     /**

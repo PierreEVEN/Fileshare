@@ -1,3 +1,4 @@
+import {spawn_context_action} from "./context_action";
 
 const modal = document.getElementById('modal');
 const modal_box = document.getElementById('modal-content');
@@ -23,5 +24,5 @@ function is_opened() {
     return modal.classList.contains('modal-open')
 }
 
-module.modal = {open_modal, close_modal, is_opened}
+window.modal = {open_modal, close_modal, is_opened}
 export {open_modal, close_modal, is_opened}

@@ -57,5 +57,5 @@ function spawn_context_action(actions) {
     }, 10);
 }
 
-
+window.context_action = {spawn_context_action}
 export {spawn_context_action}

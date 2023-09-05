@@ -1,9 +1,9 @@
-
 /**
  * @callback callback_directory_changed
  * @param {Directory} new_dir
  * @param {Directory} old_dir
  */
+import {close_message, parse_fetch_result, print_message} from "./widgets/message_box";
 
 
 class Selector {
@@ -79,6 +79,5 @@ class Selector {
 
 const selector = new Selector();
 
-module.selector = selector;
-
+window.selector = {selector}
 export {selector}

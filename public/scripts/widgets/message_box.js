@@ -1,3 +1,4 @@
+import {close_modal, is_opened, open_modal} from "./modal";
 
 const message_box = document.getElementById('message-box')
 const message_box_message = document.getElementById('message-box-message')
@@ -36,6 +37,5 @@ function close_message() {
     message_timeout = null;
 }
 
-module.message_box = {print_message, parse_fetch_result, close_message}
-
+window.modal = {print_message, parse_fetch_result, close_message}
 export {print_message, parse_fetch_result, close_message}

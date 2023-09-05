@@ -1,3 +1,5 @@
+import {selector} from "./selector";
+
 function humanFileSize(bytes) {
     const thresh = 1024;
 
@@ -123,6 +125,5 @@ function mime_icon(mimetype) {
     return '/images/icons/mime-icons/no-mime-icon.png';
 }
 
-module.utils = {humanFileSize, seconds_to_str, mime_icon}
-
+window.utils = {humanFileSize, seconds_to_str, mime_icon}
 export {humanFileSize, seconds_to_str, mime_icon}

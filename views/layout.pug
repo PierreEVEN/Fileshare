@@ -20,22 +20,22 @@ html
 
         if locals.force_login
             script(type='module').
-                module.auth.open_modal_signin()
+                window.auth.open_modal_signin()
 
         if locals.force_signin
             script(type='module').
-                module.auth.open_modal_signup()
+                window.auth.open_modal_signup()
 
         // ################################## MODAL ##################################
-        div(id='modal', onclick="if (event.target === this) module.modal.close_modal()").modal-closed
+        div(id='modal', onclick="if (event.target === this) window.modal.close_modal()").modal-closed
             div(id='modal-box')
                 div(id='modal-content')
-                div(id="modal-close-button", onclick="module.modal.close_modal()")
+                div(id="modal-close-button", onclick="window.modal.close_modal()")
                     p X
 
         // ################################## ERROR ##################################
         div(id='message-box').message-box-close
-            div(id="message-box-close-button", onclick="module.message_box.close_message()").cancel-button
+            div(id="message-box-close-button", onclick="window.message_box.close_message()").cancel-button
                 p X
             h1
             p(id='message-box-message')
@@ -49,15 +49,15 @@ html
                         p FileShare
                     if !locals.session_data || !locals.session_data.user
                         div.login-buttons
-                            button(onclick = 'module.auth.open_modal_signup()') Nouveau Compte
-                            button(onclick = 'module.auth.open_modal_signin()') Connexion
+                            button(onclick = 'window.auth.open_modal_signup()') Nouveau Compte
+                            button(onclick = 'window.auth.open_modal_signin()') Connexion
                     else
                         div.login-buttons
                             p.Username Bonjour #{session_data.user.username} !
-                            button(onclick='module.auth.logout()') Déconnexion
+                            button(onclick='window.auth.logout()') Déconnexion
 
                 div.user-viewport(id='mime_get_type')
                     include repos_list
                     block content
 
-script(src='dist/main.js')
+script(src='/dist/main.js')

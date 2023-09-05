@@ -4,3 +4,4 @@ package-lock.json
 .env
 data_storage
 logs
+public/dist

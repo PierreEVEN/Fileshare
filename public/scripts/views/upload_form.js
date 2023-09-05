@@ -1,10 +1,11 @@
 import {close_modal, is_opened, open_modal} from '../widgets/modal.js'
 import {humanFileSize, seconds_to_str} from "../utils.js";
-import {print_message} from "../message_box.js";
+import {print_message} from "../widgets/message_box.js";
 import {picture_from_mime_type} from "./repos_builder/item.js";
 import {Filesystem} from "../filesystem.js";
 import {FilesystemUpload} from "../filesystem_upload.js";
 import {get_viewport_filesystem} from "./repos_builder/repos_builder.js";
+import {delete_repos} from "./delete_repos_form";
 
 const url = current_repos ? `/repos/upload/?repos=${current_repos.access_key}` : null;
 let filesystem = current_repos ? new Filesystem(current_repos.name) : null;
@@ -261,8 +262,5 @@ function open_file_dialog() {
     inputElement.dispatchEvent(new MouseEvent("click"));
 }
 
-module.upload = {
-    add_file_to_upload,
-    open_or_update_modal,
-}
+window.upload = {add_file_to_upload, open_file_dialog, start_upload, stop_upload, open_or_update_modal}
 export {add_file_to_upload, open_or_update_modal, stop_upload, open_file_dialog, start_upload}

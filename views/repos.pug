@@ -1,4 +1,4 @@
-extends fileshare
+extends layout
 
 block content
     if session_data.selected_repos
@@ -6,8 +6,6 @@ block content
             div.file-view(id="drop_zone", ondrop="on_drop_files(event, this);", ondragover="drag_files_over(event);", ondragenter="start_drag_files(event, this);", ondragleave="stop_drag_files(event, this);")
                 include repos_toolbar
                 div.separator
-                link(href="https://vjs.zencdn.net/8.5.2/video-js.css", rel="stylesheet")
-                script(src="https://vjs.zencdn.net/8.5.2/video.min.js")
                 div(id='file-list')
 
         script.
@@ -63,7 +61,7 @@ block content
                             } else {
                                 entry.file(file => {
                                     if (file.size === 0) return;
-                                    module.upload.add_file_to_upload(file, path);
+                                    upload.add_file_to_upload(file, path);
                                 });
                             }
                         }
@@ -74,11 +72,11 @@ block content
                     });
                 } else {
                     [...event.dataTransfer.files].forEach((file, _) => {
-                        module.upload.add_file_to_upload(file, '/');
+                        upload.add_file_to_upload(file, '/');
                     });
                 }
             }
 
         if locals.forcer_show_upload
             script(type='module').
-                module.upload.open_or_update_modal();
+                upload.open_or_update_modal();

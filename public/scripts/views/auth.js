@@ -1,8 +1,8 @@
 import {open_modal} from "../widgets/modal.js";
-import {print_message, parse_fetch_result} from "../message_box.js";
+import {print_message, parse_fetch_result} from "../widgets/message_box.js";
 
 async function open_modal_signin() {
-    open_modal(await module.mustache.render('auth/signin', {
+    open_modal(await window.mustache.render('auth/signin', {
         submit: async () => {
             const data = new URLSearchParams();
             data.append('username', document.getElementById('username').value);
@@ -17,7 +17,7 @@ async function open_modal_signin() {
 }
 
 async function open_modal_signup() {
-    open_modal(await module.mustache.render('auth/signup'), '500px', '500px');
+    open_modal(await window.mustache.render('auth/signup'), '500px', '500px');
 }
 
 async function post_signin() {
@@ -53,5 +53,5 @@ async function logout() {
     await parse_fetch_result(await fetch('/logout/', {method: 'POST'}));
 }
 
-module.auth = {open_modal_signin, open_modal_signup, logout, post_signin, post_signup}
+window.auth = {open_modal_signin, open_modal_signup, logout, post_signin, post_signup}
 export {open_modal_signin, open_modal_signup, logout}

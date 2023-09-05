@@ -33,8 +33,8 @@ div.repos-view
     div.separator.last-separator
 
     if session_data.user && session_data.user.repos_edit_rights
-        button(onclick='module.create_repos.open_create_repos_modal()').create-repos Nouveau dépot
+        button(onclick='create_repos.open_create_repos_modal()').create-repos Nouveau dépot
 
 if locals.force_open_create_repos
     script(type='module').
-        module.create_repos.open_create_repos_modal()
+        create_repos.open_create_repos_modal()
