@@ -4,10 +4,13 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "start": "npm-run-all --parallel watch:server watch:build",
-    "watch:build": "webpack --watch",
-    "watch:server": "nodemon --ignore public/* ./bin/www localhost 80",
-    "run_production": "pm2 start ./bin/www",
+    "start": "npm-run-all --parallel watch:dev:server watch:dev:build",
+    "watch:dev:build": "webpack --watch",
+    "watch:dev:server": "nodemon --ignore public/* ./bin/www localhost 80",
+    "start:rel": "npm-run-all --parallel watch:rel:server watch:rel:build",
+    "watch:rel:build": "webpack",
+    "watch:rel:server": "pm2 start ./bin/www",
+    "run_production": "start:rel",
     "build": "webpack",
     "watch": "webpack --watch"
   },
