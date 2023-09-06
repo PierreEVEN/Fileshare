@@ -1,7 +1,6 @@
 const express = require('express');
 const session = require('express-session');
 const {error_404} = require("./src/session_utils");
-require('dotenv').config();
 require('./logger');
 
 let app = express();
