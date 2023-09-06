@@ -44,7 +44,7 @@ router.get('/thumbnail', async function (req, res) {
 
         const thumbnail_path = `data_storage/thumbnail/${req.file.get_id()}`
 
-        res.setHeader('Content-Disposition', 'attachment; filename=thumbnail_' + await req.file.get_name());
+        res.setHeader('Content-Disposition', 'attachment; filename=thumbnail_' + encodeURIComponent(await req.file.get_name()));
 
         if (!fs.existsSync(thumbnail_path)) {
             if ((await req.file.get_mimetype()).startsWith('image/')) {
