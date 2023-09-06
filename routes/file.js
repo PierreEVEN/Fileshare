@@ -71,6 +71,10 @@ router.get('/thumbnail', async function (req, res) {
                     })
                     .on('end', async () => {
                         logger.info(`generated video thumbnail for ${req.file.get_id()} (${await req.file.get_name()})`)
+                        if (!fs.existsSync(`data_storage/thumbnail/dir_${req.file.get_id()}/${filename}`)) {
+                            logger.error(`Failed to get path to generated thumbnail : 'data_storage/thumbnail/dir_${req.file.get_id()}/${filename}'`);
+                            return res.sendFile(path.resolve(req.file_path));
+                        }
                         fs.renameSync(`data_storage/thumbnail/dir_${req.file.get_id()}/${filename}`, thumbnail_path);
                         fs.rmdirSync(`data_storage/thumbnail/dir_${req.file.get_id()}`)
                         return res.sendFile(path.resolve(thumbnail_path));
