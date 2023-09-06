@@ -4,15 +4,16 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "start": "npm-run-all --parallel watch:dev:server watch:dev:build",
-    "watch:dev:build": "webpack --watch",
-    "watch:dev:server": "nodemon --ignore public/* ./bin/www localhost 80",
-    "start:rel": "npm-run-all --parallel watch:rel:server watch:rel:build",
-    "watch:rel:build": "webpack",
-    "watch:rel:server": "pm2 start ./bin/www",
-    "run_production": "start:rel",
-    "build": "webpack",
-    "watch": "webpack --watch"
+    "dev": "npm-run-all --parallel dev:build dev:start ",
+    "dev:build": "webpack --watch --config webpack.dev.js",
+    "dev:start": "nodemon --ignore public/* ./bin/www",
+
+    "prod": "npm-run-all rel:build rel:start",
+    "rel:build": "webpack --config webpack.prod.js",
+    "rel:start": "npm start ./bin/www",
+
+    "run_production": "prod",
+    "pm2:start": "pm2 start ./bin/www"
   },
   "dependencies": {
     "archiver": "^6.0.0",
@@ -28,6 +29,7 @@
     "http-errors": "~1.6.3",
     "mariadb": "^3.2.0",
     "mime": "^3.0.0",
+    "mini-css-extract-plugin": "^2.7.6",
     "node-sass": "^9.0.0",
     "npm-run-all": "^4.1.5",
     "pug": "^3.0.2",
@@ -37,6 +39,7 @@
     "style-loader": "^3.3.3",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
+    "webpack-merge": "^5.9.0",
     "winston": "^3.10.0"
   }
 }
