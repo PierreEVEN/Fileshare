@@ -33,7 +33,7 @@ router.get('/', async(req, res) => {
         title: 'Envoyer un fichier',
         session_data: await session_data(req).client_data(),
         public_data: await public_data().get(),
-        forcer_show_upload: true,
+        forcer_show_upload: true
     });
 });
 

@@ -1,5 +1,4 @@
 const path = require('path');
-const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
@@ -11,6 +10,10 @@ module.exports = {
     plugins: [new MiniCssExtractPlugin()],
     module: {
         rules: [
+            {
+                test: /\.hbs$/,
+                use: path.resolve('bin/handlebars_custom_loader.js')
+            },
             {
                 test: /\.(scss)$/,
                 use: [

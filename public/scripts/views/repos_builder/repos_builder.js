@@ -10,7 +10,6 @@ const viewport_container = document.getElementById('file-list')
 function fetch_repos_content() {
     if (!filesystem)
         return;
-
     fetch(`/repos/content/?repos=${current_repos.access_key}`)
         .then(async (response) => await parse_fetch_result(response))
         .then((json) => {
@@ -55,6 +54,10 @@ function add_directory_to_viewport(dir) {
         if (selector.get_hover_item() === dir)
             selector.set_hover_item(null);
     }
+
+    //const res = new DOMParser().parseFromString(directory_template(dir), "text/html");
+    //console.log('res :', res)
+    //viewport_container.insertAdjacentHTML('beforeend', directory_template(dir));
 
     viewport_container.append(object_button);
     dir.callback_removed = () => object_button.remove();

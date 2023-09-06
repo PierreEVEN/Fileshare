@@ -2,7 +2,7 @@ import {open_modal} from "../widgets/modal.js";
 import {open_create_repos_modal} from "./create-repos-form";
 
 async function delete_repos(e) {
-    open_modal(await window.mustache.render('repos/delete_repos'), '500px', '170px');
+    open_modal(await window.handlebars.render('repos/delete_repos'), '500px', '170px');
 
     let remaining_s = 5;
     const coundown_bar = document.getElementById('countdown-bar');

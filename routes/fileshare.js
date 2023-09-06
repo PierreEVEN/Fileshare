@@ -8,7 +8,7 @@ router.get('/', async function (req, res, next) {
     res.render('fileshare', {
         title: 'FileShare',
         session_data: await session_data(req).client_data(),
-        public_data: await public_data().get(),
+        public_data: await public_data().get()
     });
 });
 

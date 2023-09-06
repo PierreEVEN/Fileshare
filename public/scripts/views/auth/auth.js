@@ -1,8 +1,12 @@
-import {open_modal} from "../widgets/modal.js";
-import {print_message, parse_fetch_result} from "../widgets/message_box.js";
+import {open_modal} from "../../widgets/modal.js";
+import {print_message, parse_fetch_result} from "../../widgets/message_box.js";
+
+import signin from './signin.hbs';
+import signup from './signup.hbs';
+console.log('LOADED DATA : ', signin());
 
 async function open_modal_signin() {
-    open_modal(await window.mustache.render('auth/signin', {
+    open_modal(await window.handlebars.render('auth/signin', {
         submit: async () => {
             const data = new URLSearchParams();
             data.append('username', document.getElementById('username').value);
@@ -17,7 +21,7 @@ async function open_modal_signin() {
 }
 
 async function open_modal_signup() {
-    open_modal(await window.mustache.render('auth/signup'), '500px', '500px');
+    open_modal(await window.handlebars.render('auth/signup'), '500px', '500px');
 }
 
 async function post_signin() {

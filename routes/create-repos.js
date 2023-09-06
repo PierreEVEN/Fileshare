@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
         title: 'Nouveau dépot',
         session_data: await session_data(req).client_data(),
         public_data: await public_data().get(),
-        force_open_create_repos: true,
+        force_open_create_repos: true
     });
 });
 

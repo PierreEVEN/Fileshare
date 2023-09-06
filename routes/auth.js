@@ -7,7 +7,7 @@ router.get('/signin/', async (req, res) => {
         title: "Connexion",
         force_login: true,
         session_data: await session_data(req).client_data(),
-        public_data: await public_data().get(),
+        public_data: await public_data().get()
     });
 })
 
@@ -33,7 +33,7 @@ router.get('/signup/', async (req, res) => {
         title: "Nouveau compte",
         force_signin: true,
         session_data: await session_data(req).client_data(),
-        public_data: await public_data().get(),
+        public_data: await public_data().get()
     });
 })
 
