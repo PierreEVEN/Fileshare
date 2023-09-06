@@ -32,7 +32,7 @@ if (is_secured) {
     logger.info(`Start secured server on port ${port}`)
 } else {
     server = http.createServer(app);
-    logger.info(`Start unsecured server on port ${port}`)
+    logger.warn(`Start unsecured server on port ${port}`)
 }
 
 /**
