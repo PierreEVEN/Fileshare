@@ -26,22 +26,13 @@ let port = null;
 let redirect_server = null;
 if (fs.existsSync(process.env.SSL_CERTIFICATE) && fs.existsSync(process.env.SSL_PRIVATE_KEY) && fs.existsSync(process.env.SSL_CHAIN) ) {
     port = normalizePort(process.env.PORT || '443');
-
-    // Enable redirection to https
-    redirect_server = http.createServer(function(req,res){
-        res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
-        res.end();
-    }).listen(80, function(err) {
-        logger.info(`Created redirect server on port 80`);
-    });
-
     app.set('port', port);
 
     const privateKey = fs.readFileSync(process.env.SSL_PRIVATE_KEY, 'utf8');
     const certificate = fs.readFileSync(process.env.SSL_CERTIFICATE, 'utf8');
     const ca = fs.readFileSync(process.env.SSL_CHAIN, 'utf8');
     server = https.createServer({key: privateKey, cert: certificate, ca: ca}, app);
-    logger.info("Start secured server on port 443")
+    logger.info(`Start secured server on port ${port}`)
 } else {
 
     port = normalizePort(process.env.PORT || '80');
