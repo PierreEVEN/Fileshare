@@ -21,7 +21,7 @@ function loader_function(source) {
             }` :
         `module.exports = function() { return ""; };`;
 
-    this.async(null, slug)
+    this.async()(null, slug);
 }
 
 module.exports = loader_function;

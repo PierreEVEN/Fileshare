@@ -11,7 +11,7 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.hbs$/,
+                test: /\.(hbs|handlebars)$/,
                 use: path.resolve('bin/handlebars_custom_loader.js')
             },
             {
