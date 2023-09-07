@@ -1,6 +1,6 @@
 const {session_data, public_data, error_404, require_connection, error_403, request_username} = require("../src/session_utils");
 const Repos = require("../src/database/tables/repos");
-const {logger} = require("../logger");
+const {logger} = require("../src/logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();

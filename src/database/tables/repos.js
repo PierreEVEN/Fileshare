@@ -1,4 +1,4 @@
-const db = require('./../../../database')
+const db = require('../../database')
 const Users = require('./user')
 
 const Storage = require('../storage')
@@ -83,7 +83,7 @@ class Repos {
 
     async _update_data_internal() {
         const connection = await db();
-        const result = await connection.query('SELECT * FROM Personal.Repos WHERE id = ?', [this._id])
+        const result = await connection.query('SELECT * FROM Fileshare.Repos WHERE id = ?', [this._id])
         await connection.end();
 
         if (Object.values(result).length > 0) {
@@ -103,13 +103,13 @@ class Repos {
     async delete() {
         const File = require('./files')
         const connection = await db();
-        for (const file of Object.values(await connection.query("SELECT * FROM Personal.Files WHERE repos = ?", [this._id]))) {
+        for (const file of Object.values(await connection.query("SELECT * FROM Fileshare.Files WHERE repos = ?", [this._id]))) {
             const found_file = await File.find(file.id)
             await found_file.delete();
         }
 
-        await connection.query("DELETE FROM Personal.UserRepos WHERE repos = ?", [this._id]);
-        await connection.query("DELETE FROM Personal.Repos WHERE id = ?", [this._id]);
+        await connection.query("DELETE FROM Fileshare.UserRepos WHERE repos = ?", [this._id]);
+        await connection.query("DELETE FROM Fileshare.Repos WHERE id = ?", [this._id]);
         await connection.end();
 
         repos_storage_id.clear(this._id);
@@ -125,7 +125,7 @@ class Repos {
         if (include_content) {
 
             const connection = await db();
-            const files = Object.values(await connection.query("SELECT * FROM Personal.Files WHERE repos = ?", [this.get_id()]))
+            const files = Object.values(await connection.query("SELECT * FROM Fileshare.Files WHERE repos = ?", [this.get_id()]))
             await connection.end()
             for (const file of files) {
                 content.push({
@@ -162,7 +162,7 @@ class Repos {
             return true;
 
         const connection = await db();
-        const found = Object.values(await connection.query("SELECT * FROM Personal.UserRepos WHERE user = ? AND repos = ?", [user.get_id(), this.get_id()])).length !== 0;
+        const found = Object.values(await connection.query("SELECT * FROM Fileshare.UserRepos WHERE user = ? AND repos = ?", [user.get_id(), this.get_id()])).length !== 0;
         await connection.end();
         return found;
     }
@@ -177,8 +177,8 @@ async function init_table() {
     const connection = await db();
 
     // Create Accounts table if needed
-    if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Repos'")).length === 0) {
-        await connection.query(`CREATE TABLE Personal.Repos (
+    if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Fileshare' AND TABLE_NAME = 'Repos'")).length === 0) {
+        await connection.query(`CREATE TABLE Fileshare.Repos (
             id int AUTO_INCREMENT PRIMARY KEY,
             name varchar(200) UNIQUE NOT NULL,
             owner int NOT NULL,
@@ -187,7 +187,7 @@ async function init_table() {
             max_file_size BIGINT DEFAULT 1048576000,
             visitor_file_lifetime int,
             allow_visitor_upload BOOLEAN DEFAULT false NOT NULL,
-            FOREIGN KEY(owner) REFERENCES Personal.Users(id)
+            FOREIGN KEY(owner) REFERENCES Fileshare.Users(id)
         );`)
     }
 
@@ -246,10 +246,10 @@ async function insert(name, owner, status, custom_access_key = null) {
             do {
                 access_key = crypto.randomBytes(16).toString("hex");
             }
-            while (Object.entries(await connection.query('SELECT * FROM Personal.Repos WHERE access_key = ?', [access_key])).length > 0);
+            while (Object.entries(await connection.query('SELECT * FROM Fileshare.Repos WHERE access_key = ?', [access_key])).length > 0);
         }
 
-        const result = await connection.query('INSERT INTO Personal.Repos (name, owner, status, access_key) VALUES (?, ?, ?, ?)', [name, owner.get_id(), status, access_key]);
+        const result = await connection.query('INSERT INTO Fileshare.Repos (name, owner, status, access_key) VALUES (?, ?, ?, ?)', [name, owner.get_id(), status, access_key]);
         await connection.end();
 
         return find(Number(result.insertId));
@@ -264,7 +264,7 @@ async function find_user(user) {
     return await table_created.then(async () => {
         const connection = await db();
         const user_repos = []
-        for (const entry of Object.values(await connection.query("SELECT * FROM Personal.Repos WHERE owner = ?", [await user.get_id()]))) {
+        for (const entry of Object.values(await connection.query("SELECT * FROM Fileshare.Repos WHERE owner = ?", [await user.get_id()]))) {
             user_repos.push(await find(entry.id))
         }
         await connection.end();
@@ -279,7 +279,7 @@ async function find_public() {
     return await table_created.then(async () => {
         const connection = await db();
         const user_repos = []
-        for (const entry of Object.values(await connection.query("SELECT * FROM Personal.Repos WHERE status = 'public'"))) {
+        for (const entry of Object.values(await connection.query("SELECT * FROM Fileshare.Repos WHERE status = 'public'"))) {
             user_repos.push(await find(entry.id))
         }
         await connection.end();

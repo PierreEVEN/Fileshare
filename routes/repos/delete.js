@@ -1,5 +1,5 @@
 const {require_connection, session_data, error_403, request_username} = require("../../src/session_utils");
-const {logger} = require("../../logger");
+const {logger} = require("../../src/logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();

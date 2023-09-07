@@ -5,7 +5,7 @@ const pool = mariadb.createPool({
     user: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
     connectionLimit: 5,
-    database: 'Personal'
+    database: 'Fileshare'
 });
 
 async function get() {

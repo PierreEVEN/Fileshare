@@ -1,4 +1,4 @@
-const db = require('./../../../database')
+const db = require('../../database')
 
 const Storage = require('../storage');
 const repos = require('./repos');
@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path')
 const fc = require('filecompare');
 const {gen_uhash} = require("../../uid_generator");
-const {logger} = require("../../../logger");
+const {logger} = require("../../logger");
 
 const files_storage = new Storage();
 
@@ -110,7 +110,7 @@ class File {
             fs.unlinkSync(path.resolve(await this.get_storage_path()));
 
         const connection = await db();
-        await connection.query("DELETE FROM Personal.Files WHERE id = ?", [this._id]);
+        await connection.query("DELETE FROM Fileshare.Files WHERE id = ?", [this._id]);
         await connection.end();
 
         files_storage.clear(this._id);
@@ -121,7 +121,7 @@ class File {
 
         if (!result) {
             const connection = await db();
-            const found_data = Object.values(await connection.query('SELECT * FROM Personal.Files WHERE id = ?', [this._id]));
+            const found_data = Object.values(await connection.query('SELECT * FROM Fileshare.Files WHERE id = ?', [this._id]));
             if (found_data.length > 0)
                 result = found_data[0];
             await connection.end();
@@ -147,15 +147,15 @@ async function init_table() {
 
     const connection = await db();
 
-    const charset = Object.values(await connection.query(`SELECT default_character_set_name FROM information_schema.SCHEMATA S WHERE schema_name = "Personal";`))[0].default_character_set_name;
+    const charset = Object.values(await connection.query(`SELECT default_character_set_name FROM information_schema.SCHEMATA S WHERE schema_name = "Fileshare";`))[0].default_character_set_name;
     if (charset !== 'utf8mb4') {
-        await connection.query(`ALTER DATABASE Personal CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
+        await connection.query(`ALTER DATABASE Fileshare CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
         logger.warn('changed database default encoding to utf8mb4');
     }
 
     // Create Accounts table if needed
-    if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Personal' AND TABLE_NAME = 'Files'")).length === 0) {
-        await connection.query(`CREATE TABLE Personal.Files (
+    if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Fileshare' AND TABLE_NAME = 'Files'")).length === 0) {
+        await connection.query(`CREATE TABLE Fileshare.Files (
                 id varchar(200) PRIMARY KEY,
                 repos int NOT NULL,
                 owner int NOT NULL,
@@ -166,8 +166,8 @@ async function init_table() {
                 mimetype varchar(200) NOT NULL,
                 virtual_folder varchar(200) NOT NULL,
                 hash varchar(64) NOT NULL,
-                FOREIGN KEY(Repos) REFERENCES Personal.Repos(id),
-                FOREIGN KEY(owner) REFERENCES Personal.Users(id)
+                FOREIGN KEY(Repos) REFERENCES Fileshare.Repos(id),
+                FOREIGN KEY(owner) REFERENCES Fileshare.Users(id)
         );`)
     }
 
@@ -184,7 +184,7 @@ async function find(id) {
         let file = files_storage.find(id);
         if (!file) {
             const connection = await db();
-            const new_result = Object.values(await connection.query('SELECT * FROM Personal.Files WHERE id = ?', [id]))
+            const new_result = Object.values(await connection.query('SELECT * FROM Fileshare.Files WHERE id = ?', [id]))
             await connection.end();
             if (new_result.length > 0) {
                 file = new File(id);
@@ -201,7 +201,7 @@ async function find(id) {
  */
 async function already_exists(file_path, file_hash, repos) {
     const connection = await db();
-    const file_with_same_hash = Object.values(await connection.query('SELECT * from Personal.Files WHERE repos = ? AND hash = ?', [repos.get_id(), file_hash]));
+    const file_with_same_hash = Object.values(await connection.query('SELECT * from Fileshare.Files WHERE repos = ? AND hash = ?', [repos.get_id(), file_hash]));
     await connection.end();
 
     if (file_with_same_hash.length > 0) {
@@ -243,12 +243,12 @@ async function insert(old_file_path, repos, owner, name, description, mimetype, 
         const connection = await db();
 
 
-        const file_id = await gen_uhash(async (entry) => Object.entries(await connection.query(`SELECT * FROM Personal.Files WHERE id = '${entry}'`)).length > 0);
+        const file_id = await gen_uhash(async (entry) => Object.entries(await connection.query(`SELECT * FROM Fileshare.Files WHERE id = '${entry}'`)).length > 0);
         const storage_path = path.posix.normalize(`./data_storage/${file_id}`)
         const vp = path.posix.normalize(virtual_folder ? virtual_folder : '/');
 
         const file_data = fs.statSync(old_file_path)
-        await connection.query('INSERT INTO Personal.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), encodeURIComponent(name), description, storage_path, file_data.size, mimetype, vp, file_hash]);
+        await connection.query('INSERT INTO Fileshare.Files (id, repos, owner, name, description, storage_path, size, mimetype, virtual_folder, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [file_id, repos.get_id(), owner.get_id(), encodeURIComponent(name), description, storage_path, file_data.size, mimetype, vp, file_hash]);
 
         if (!fs.existsSync('./data_storage/'))
             fs.mkdirSync('./data_storage/');

@@ -1,7 +1,7 @@
 const {require_connection, get_user_private_data, session_data, error_403, public_data, events, request_username} = require("../src/session_utils");
 const Repos = require('../src/database/tables/repos')
 const crypto = require("crypto");
-const {logger} = require("../logger");
+const {logger} = require("../src/logger");
 const router = require('express').Router();
 
 router.get('/', async (req, res) => {

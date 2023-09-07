@@ -5,7 +5,7 @@ const conversion_queue = require("../../src/file-conversion");
 const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
-const {logger} = require("../../logger");
+const {logger} = require("../../src/logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();

@@ -1,7 +1,7 @@
 const Users = require("./database/tables/user");
 const Repos = require("./database/tables/repos");
 const UserRepos = require("./database/tables/user_repos");
-const {logger} = require("../logger");
+const {logger} = require("./logger");
 
 function require_connection(req, res) {
     if (!session_data(req).connected_user) {

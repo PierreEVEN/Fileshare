@@ -4,7 +4,7 @@ const sharp = require("sharp");
 const ffmpeg = require("fluent-ffmpeg");
 const {error_404, session_data, request_username} = require("../src/session_utils");
 const Files = require("../src/database/tables/files");
-const {logger} = require("../logger");
+const {logger} = require("../src/logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();

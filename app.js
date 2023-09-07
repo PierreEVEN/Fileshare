@@ -1,7 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 const {error_404} = require("./src/session_utils");
-require('./logger');
+require('./src/logger');
 
 let app = express();
 
