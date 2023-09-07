@@ -37,5 +37,5 @@ function close_message() {
     message_timeout = null;
 }
 
-window.modal = {print_message, parse_fetch_result, close_message}
+window.message_box = {print_message, parse_fetch_result, close_message}
 export {print_message, parse_fetch_result, close_message}

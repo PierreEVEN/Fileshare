@@ -1,4 +1,3 @@
-import {is_opened} from "./item.js";
 import {spawn_context_action} from "../../widgets/context_action.js";
 import {close_modal, open_modal} from "../../widgets/modal.js";
 import {print_message} from "../../widgets/message_box.js";
@@ -36,7 +35,7 @@ function spawn_item_context_action(item) {
         title: "Partager",
         action: async () => {
             let url;
-            if (item.folders) {
+            if (item.is_directory) {
                 url = `${location.hostname}/repos/?repos=${current_repos.access_key}&directory=${item.absolute_path()}`;
             }
             else {
@@ -73,18 +72,4 @@ function spawn_item_context_action(item) {
     ])
 }
 
-function gen_context_action(item) {
-    const object_button = document.createElement('button');
-    object_button.onclick = () => {
-        spawn_item_context_action(item);
-    }
-    object_button.innerText = '...';
-    object_button.classList.add('open-context-button')
-    return object_button;
-}
-
-function is_item_opened() {
-    return is_opened();
-}
-
-export {is_item_opened, gen_context_action, spawn_item_context_action}
+export {spawn_item_context_action}

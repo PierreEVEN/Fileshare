@@ -1,0 +1,8 @@
+<div class="context-action-box">
+    {{#each actions}}
+            <button onclick="window.context_action.click_object('{{this.title}}')">
+                <img src="{{this.image}}" alt="{{this.title}}">
+                <p>{{this.title}}</p>
+            </button>
+    {{/each}}
+</div>

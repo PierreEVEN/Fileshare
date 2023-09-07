@@ -1,8 +1,11 @@
-import {gen_context_action, is_item_opened, spawn_item_context_action} from "./viewport.js";
+import {spawn_item_context_action} from "./viewport.js";
 import {parse_fetch_result} from "../../widgets/message_box.js";
 import {close_item_plain, gen_item, is_opened, open_this_item} from "./item.js";
 import {Filesystem} from "../../filesystem.js";
 import {selector} from "../../selector.js";
+
+const directory_hbs = require('./directory.hbs');
+const file_hbs = require('./file.hbs');
 
 const filesystem = current_repos ? new Filesystem(current_repos.name) : null;
 const viewport_container = document.getElementById('file-list')
@@ -20,85 +23,52 @@ function fetch_repos_content() {
 }
 
 function add_directory_to_viewport(dir) {
-    const object_button = document.createElement('div');
-    object_button.classList.add('object-button')
-    object_button.onclick = (event) => {
-        if (!event.target.classList.contains('open-context-button'))
-            selector.set_current_dir(dir);
-    }
-    object_button.addEventListener('contextmenu', event => {
-        spawn_item_context_action(dir);
-        event.preventDefault();
-    })
+    const dir_div = directory_hbs(dir, {
+        clicked: event => {
+            if (!event.target.classList.contains('open-context-button'))
+                selector.set_current_dir(dir);
+        },
+        enter: () => selector.set_hover_item(dir),
+        leave: () => {
+            if (selector.get_hover_item() === dir)
+                selector.set_hover_item(null);
+        },
+        context_menu: event => {
+            spawn_item_context_action(dir);
+            event.preventDefault();
+        },
+    });
+    dir.div = dir_div;
+    dir_div.object = dir;
 
-
-    object_button.append(gen_context_action(dir));
-
-    const div = document.createElement('div');
-    div.classList.add('item-preview')
-    div.classList.add('folder')
-
-    const img = document.createElement('img')
-    img.src = "/images/icons/icons8-folder-96.png";
-    img.alt = "dossier";
-    div.append(img);
-
-    const p = document.createElement('p');
-    p.innerText = dir.name;
-    div.append(p);
-    object_button.append(div)
-    object_button.onmouseenter = () => {
-        selector.set_hover_item(dir);
-    }
-    object_button.onmouseleave = () => {
-        if (selector.get_hover_item() === dir)
-            selector.set_hover_item(null);
-    }
-
-    //const res = new DOMParser().parseFromString(directory_template(dir), "text/html");
-    //console.log('res :', res)
-    //viewport_container.insertAdjacentHTML('beforeend', directory_template(dir));
-
-    viewport_container.append(object_button);
-    dir.callback_removed = () => object_button.remove();
-    dir.div = object_button;
-    object_button.object = dir;
+    viewport_container.append(dir_div);
+    dir.callback_removed = () => dir_div.remove();
 }
 
 function add_file_to_viewport(file) {
-    const object_button = document.createElement('div');
-    object_button.classList.add('object-button')
-    object_button.onclick = (event) => {
-        if (event.target.classList.contains('open-context-button'))
-            return
-        if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/'))
-            open_this_item(object_button, file);
-        selector.set_selected_item(file);
-    }
-    object_button.addEventListener('contextmenu', event => {
-        spawn_item_context_action(file);
-        event.preventDefault();
-    })
-
-    /* CONTEXT ACTION BUTTON */
-    object_button.append(gen_context_action(file));
-
-    const div = document.createElement('div');
-    div.classList.add('item-preview')
-    div.append(gen_item(file.name, `/file/?file=${file.id}`, file.size, file.mimetype, true));
-    object_button.append(div);
-    object_button.onmouseenter = () => {
-        selector.set_hover_item(file);
-    }
-    object_button.onmouseleave = () => {
-        if (selector.get_hover_item() === file)
-            selector.set_hover_item(null);
-    }
-
-    viewport_container.append(object_button);
-    file.callback_removed = () => object_button.remove();
-    file.div = object_button;
-    object_button.object = file;
+    const file_div = file_hbs(file, {
+        clicked: event => {
+            if (event.target.classList.contains('open-context-button'))
+                return
+            if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/'))
+                open_this_item(file_div, file);
+            selector.set_selected_item(file);
+        },
+        enter: () => selector.set_hover_item(file),
+        leave: () => {
+            if (selector.get_hover_item() === file)
+                selector.set_hover_item(null);
+        },
+        context_menu: event => {
+            spawn_item_context_action(file);
+            event.preventDefault();
+        },
+    });
+    file_div.children[1].append(gen_item(file.name, `/file/?file=${file.id}`, file.size, file.mimetype, true));
+    file.div = file_div;
+    file_div.object = file;
+    viewport_container.append(file_div);
+    file.callback_removed = () => file_div.remove();
 }
 
 function render_directory(directory) {
@@ -131,7 +101,7 @@ selector.on_select_item((new_item, old_item) => {
         new_item.div.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
     }
 
-    if (is_item_opened() && new_item)
+    if (is_opened() && new_item)
         open_this_item(null, new_item);
 })
 
@@ -163,11 +133,11 @@ document.addEventListener('keydown', (event) => {
         }
     }
     if (event.key === 'ArrowRight') {
-        const elements = is_item_opened() ? selector.get_current_directory().files : Object.values(selector.get_current_directory().directories).concat(selector.get_current_directory().files);
+        const elements = is_opened() ? selector.get_current_directory().files : Object.values(selector.get_current_directory().directories).concat(selector.get_current_directory().files);
         select_next_in([...elements])
     }
     if (event.key === 'ArrowLeft') {
-        const elements = is_item_opened() ? selector.get_current_directory().files : Object.values(selector.get_current_directory().directories).concat(selector.get_current_directory().files);
+        const elements = is_opened() ? selector.get_current_directory().files : Object.values(selector.get_current_directory().directories).concat(selector.get_current_directory().files);
         select_next_in([...elements].reverse())
     }
     if (event.key === 'Enter' && selector.get_current_directory()) {

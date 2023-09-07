@@ -1,5 +1,3 @@
-import {spawn_context_action} from "./context_action";
-
 const modal = document.getElementById('modal');
 const modal_box = document.getElementById('modal-content');
 const modal_content = document.getElementById('modal-content');
