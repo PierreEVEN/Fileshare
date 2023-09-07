@@ -10,11 +10,11 @@ router.get('/', async (req, res) => {
     archive.on('error', err => res.status(500).send({message: err}));
 
     const directory =  path.posix.normalize(req.query.directory || '/');
-
     const connection = await db();
     const found_files = await connection.query(`SELECT * FROM Fileshare.Files WHERE repos = ${req.repos.get_id()} AND virtual_folder LIKE '${directory}%';`);
-    for (const file of Object.values(found_files))
+    for (const file of Object.values(found_files)) {
         archive.file(file.storage_path, {name: file.virtual_folder + '/' + decodeURIComponent(file.name)})
+    }
     await connection.end();
 
     logger.info(`Archived '${await req.repos.get_access_key()}${directory}' for ${request_username(req)}`)

@@ -9,52 +9,47 @@
     max-height: 95vh;
     flex-direction: column;
     align-items: center;
-}
+    h1 {
+        text-align: center;
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 100;
+        margin-bottom: 25px;
+        margin-top: 50px;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+    p {
+        font-weight: lighter;
+        font-size: 15px;
+        color: #5b6574;
+    }
+    a {
+        margin-left: 8px;
+    }
+    form input[type="button"] {
+        color: black;
+        background-color: #eeeeee;
+    }
+    form input[type="button"]:hover {
+        background-color: #c7ddff;
+    }
+    .bottom-button {
+        align-items: center;
+        display: flex;
+    }
 
-.modal-content h1 {
-    text-align: center;
-    color: #ffffff;
-    font-size: 24px;
-    font-weight: 100;
-    margin-bottom: 25px;
-    margin-top: 50px;
-}
-
-.modal-content form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
+    .Username {
+        margin-top: 30px;
+        margin-right: 20px;
+    }
 }
 
 #forgot-password {
     margin-top: 25px;
     margin-bottom: 40px;
-}
-
-.modal-content p {
-    font-weight: lighter;
-    font-size: 15px;
-    color: #5b6574;
-}
-.modal-content a {
-    margin-left: 8px;
-}
-
-.modal-content form input[type="button"] {
-    color: black;
-    background-color: #eeeeee;
-}
-.modal-content form input[type="button"]:hover {
-    background-color: #c7ddff;
-}
-.modal-content .bottom-button {
-    align-items: center;
-    display: flex;
-}
-
-.Username {
-    margin-top: 30px;
-    margin-right: 20px;
-
 }

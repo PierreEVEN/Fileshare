@@ -25,10 +25,10 @@ function spawn_item_context_action(item) {
         title: "Télécharger",
         action: () => {
             if (item.is_directory) {
-                window.open(`/repos/archive/?repos={current_repos.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
+                window.open(`/repos/archive/?repos=${current_repos.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
             }
             else
-                window.open(`/file/?repos=${current_repos.access_key}`, '_blank').focus();
+                window.open(`/file/?file=${item.id}`, '_blank').focus();
         },
         image: '/images/icons/icons8-download-96.png'
     }, {

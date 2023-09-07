@@ -12,146 +12,146 @@
 @import "context_action";
 
 body {
-    width: 100%;
-    height: 100vh;
-    background-color: #282f3d;
-    display:table;
-    margin: 0;
-    padding: 0;
-    color: #ffffff;
-    font-family: Bahnschrift, sans-serif;
+  width: 100%;
+  height: 100vh;
+  background-color: #282f3d;
+  display: table;
+  margin: 0;
+  padding: 0;
+  color: #ffffff;
+  font-family: Bahnschrift, sans-serif;
 }
 
 .app-container {
-    display: flex;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 
-    position: absolute;
-    top: 0;
-    bottom: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
 }
 
 div.left-panel {
-    background-color: #282f3d;
-    width: 200px;
-    display:table-cell;
-    flex-grow: 1;
+  background-color: #282f3d;
+  width: 200px;
+  display: table-cell;
+  flex-grow: 1;
 }
 
 div.viewport {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
 div.toolbar {
-    background-color: #0070f0;
-    display: flex;
+  background-color: #0070f0;
+  display: flex;
 }
 
 div.title {
-    flex-grow: 1;
-    height: 100%;
-    font-weight: 600;
-    font-size: 25px;
-    margin-left: 40px;
+  flex-grow: 1;
+  height: 100%;
+  font-weight: 600;
+  font-size: 25px;
+  margin-left: 40px;
 }
 
 .separator {
-    background-color: rgba(59,159,50,0);
-    border-bottom: 1px #5b6574 solid;
-    width: 100%;
+  background-color: rgba(59, 159, 50, 0);
+  border-bottom: 1px #5b6574 solid;
+  width: 100%;
 }
 
 /* ############################################################## BUTTONS ############################################################## */
 
 .login-buttons {
-    display: flex;
-    height: 100%;
-    justify-content: right;
-    align-content: center;
-    padding-right: 50px ;
+  display: flex;
+  height: 100%;
+  justify-content: right;
+  align-content: center;
+  padding-right: 50px;
 }
 
 button {
-    color: #ffffff;
-    background-color: rgb(33, 128, 255);
-    border: 0;
-    box-sizing: border-box;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 300;
-    height: 40px;
-    min-width: 140px;
-    padding: 0 17px;
-    transition: all .15s;
-}
+  color: #ffffff;
+  background-color: rgb(33, 128, 255);
+  border: 0;
+  box-sizing: border-box;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 300;
+  height: 40px;
+  min-width: 140px;
+  padding: 0 17px;
+  transition: all .15s;
 
-button:focus {
+  &:focus {
     color: rgb(97, 229, 170);
     background-color: rgb(4, 97, 224);
-}
+  }
 
-button:hover {
+  &:hover {
     background-color: rgb(0, 82, 185);
-}
+  }
 
-button:active {
+  &:active {
     background-color: #3385ff;
+  }
 }
 
 /* ############################################################## A ############################################################## */
 a {
-    text-decoration: none;
-    color: #50b7f1;
-    transition-duration: 0.1s;
-}
+  text-decoration: none;
+  color: #50b7f1;
+  transition-duration: 0.1s;
 
-a:hover {
+  &:hover {
     text-decoration: underline;
-    color: #e1a35c;
-}
+  }
 
-a:visited {
+  &:visited {
     color: #509bf1;
     text-decoration: none;
+  }
 }
 
 /* ############################################################## OTHER ############################################################## */
 
 textarea {
-    width: 310px;
-    border: 0;
-    border-bottom: 2px solid #282f3d;
-    background-color: rgba(18,21,28,1);
-    margin-bottom: 20px;
-    padding: 0 15px;
-    color: white;
+  width: 310px;
+  border: 0;
+  border-bottom: 2px solid #282f3d;
+  background-color: rgba(18, 21, 28, 1);
+  margin-bottom: 20px;
+  padding: 0 15px;
+  color: white;
 }
 
 .progress-container {
-    position: relative;
-    height: 10px;
+  position: relative;
+  height: 10px;
 }
 
 .progress-bar {
-    width: 0%;
-    height: 100%;
-    background-color: #00ff04;
-    position: absolute;
+  width: 0;
+  height: 100%;
+  background-color: #00ff04;
+  position: absolute;
 }
 
 button.trash {
-    width: 40px;
-    min-width: 0;
-    height: 40px;
-    margin-right: 0;
-    padding: 0;
-}
-button.trash img {
+  width: 40px;
+  min-width: 0;
+  height: 40px;
+  margin-right: 0;
+  padding: 0;
+
+  img {
     width: 20px;
     height: 20px;
+  }
 }

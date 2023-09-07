@@ -1,68 +1,68 @@
 
 #message-box {
-    z-index: 100000000;
-    position: absolute;
-    max-width: 90%;
-    bottom: 30px;
-    left: 50%;
-    transform: translate(-50%, 0);
-    background-color: #0d0d16c4;
-    padding: 10px 80px;
-    border: 2px #696666 solid;
-    border-radius: 20px;
-}
+  z-index: 100000000;
+  position: absolute;
+  max-width: 90%;
+  bottom: 30px;
+  left: 50%;
+  transform: translate(-50%, 0);
+  background-color: #0d0d16c4;
+  padding: 10px 80px;
+  border: 2px #696666 solid;
+  border-radius: 20px;
 
-#message-box h1 {
+  h1 {
     font-size: 20px;
-}
+  }
 
-#message-box p {
+  p {
     font-size: 14px;
     font-weight: 100;
+  }
 }
 
 .message-box-close {
-    background-color: rgba(0,0,0,0);
-    pointer-events: none;
-    opacity: 0;
-    transition-duration: 0.25s;
+  background-color: rgba(0, 0, 0, 0);
+  pointer-events: none;
+  opacity: 0;
+  transition-duration: 0.25s;
 }
 
 .message-box-open {
-    background-color: rgba(0,0,0,0.5);
-    opacity: 100%;
-    pointer-events: all;
-    transition-duration: 0.1s;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 100%;
+  pointer-events: all;
+  transition-duration: 0.1s;
 }
 
 
 #message-box-close-button {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    width: 30px;
-    height: 30px;
-    border: 1px #3b3d56 solid;
-    border-radius: 5px;
-    color: #c1c1c1;
-    transition-duration: 0.15s;
-}
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 30px;
+  height: 30px;
+  border: 1px #3b3d56 solid;
+  border-radius: 5px;
+  color: #c1c1c1;
+  transition-duration: 0.15s;
 
-#message-box-close-button:hover {
+  &:hover {
     border: 1px #9f1000 solid;
     border-radius: 3px;
     background-color: #3b3d56;
     color: white;
-}
+  }
 
-#message-box-close-button:active {
+  &:active {
     border: 1px #696666 solid;
     border-radius: 3px;
     background-color: #050505;
     color: white;
-}
+  }
 
-#message-box-close-button p {
+  p {
     transform: translate(35%, -50%);
     pointer-events: none;
+  }
 }

@@ -79,5 +79,5 @@ class Selector {
 
 const selector = new Selector();
 
-window.selector = {selector}
+window.selector = selector
 export {selector}

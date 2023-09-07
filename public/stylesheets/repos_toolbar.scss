@@ -1,82 +1,84 @@
 
 .repos-toolbar {
-    display: flex;
-    flex-direction: row;
-    display: flex;
-    align-items: center;
-}
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 52px;
 
-.repos-toolbar p {
+  p {
     flex-grow: 1;
-}
+  }
 
-.repos-toolbar button {
+  button {
     min-width: 0;
     margin-left: 20px;
-}
 
-.repos-toolbar .cancel-button {
+    img {
+      width: 30px;
+    }
+  }
+
+  .cancel-button {
     height: 100%;
+  }
 }
 
-.repos-toolbar button img {
-    width: 30px;
-}
-
-.modal-content .delete-repos {
+.modal-content {
+  .delete-repos {
     display: flex;
     flex-direction: row;
-}
 
-.modal-content .delete-repos input[type="button"] {
-    background-color: #9f1000;
-    color: white;
-    font-size: 20px;
-}
+    input[type="button"] {
+      background-color: #9f1000;
+      color: white;
+      font-size: 20px;
+    }
 
-.modal-content .delete-repos input[type="button"]:hover {
-    background-color: #6b0b00;
-}
+    input[type="button"]:hover {
+      background-color: #6b0b00;
+    }
 
-.delete-repos input[type="submit"] {
-    background-color: #d98000;
-    color: #e0e0e0;
-    font-size: 20px;
-}
-.delete-repos input[type="submit"]:hover {
-    background-color: #b97200;
-}
+    input[type="submit"] {
+      background-color: #d98000;
+      color: #e0e0e0;
+      font-size: 20px;
+    }
 
-.delete-repos input[type="submit"]:disabled {
-    background-color: #696666;
-    color: #e0e0e0;
-    font-size: 20px;
-    cursor: progress;
-}
+    input[type="submit"]:hover {
+      background-color: #b97200;
+    }
 
-.delete-repos-progress {
+    input[type="submit"]:disabled {
+      background-color: #696666;
+      color: #e0e0e0;
+      font-size: 20px;
+      cursor: progress;
+    }
+  }
+
+  .delete-repos-progress {
     width: 100%;
     height: 5px;
     background-color: #000000;
-}
+  }
 
-.delete-repos-progress div {
+  .delete-repos-progress div {
     background-color: #00ff04;
     height: 5px;
     width: 0;
+  }
 }
 
 #current-path {
-    display: flex;
-    margin: 0;
-}
+  display: flex;
+  margin: 0;
 
-#current-path p {
+  p {
     display: flex;
     flex-grow: 0;
-}
+  }
 
-#current-path button {
+  button {
     display: flex;
     height: 52px;
     min-width: 0;
@@ -85,14 +87,16 @@
     align-items: center;
     justify-content: center;
     flex-direction: row;
-    padding: 0 8px ;
-}
-#current-path button img {
-    margin: 0 20px;
-    height: 30px;
-    width: 30px;
-}
+    padding: 0 8px;
 
-#current-path button:hover {
-    background-color: rgb(26, 30, 37);
+    img {
+      margin: 0 20px;
+      height: 30px;
+      width: 30px;
+    }
+
+    &:hover {
+      background-color: rgb(26, 30, 37);
+    }
+  }
 }

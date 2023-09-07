@@ -10,20 +10,21 @@
 .repos-list {
     max-height: 35vh;
     overflow-x: auto;
-}
-
-
-.repos-list button {
-    background-color: rgba(54,59,72,0);
-    border-right: 0 #0070f0 solid;
-    border-left: 0 #0070f0 solid;
-    width: 100%;
-}
-
-.repos-list button:hover {
-    background-color: rgba(58, 68, 98, 0.76);
-    border-right: 4px #0070f0 solid;
-    border-left: 4px #0070f0 solid;
+    button {
+        background-color: rgba(54,59,72,0);
+        border-right: 0 #0070f0 solid;
+        border-left: 0 #0070f0 solid;
+        width: 100%;
+        &:hover {
+            background-color: rgba(58, 68, 98, 0.76);
+            border-right: 4px #0070f0 solid;
+            border-left: 4px #0070f0 solid;
+        }
+    }
+    .selected-repos {
+        background-color: rgba(0, 111, 238, 0.37);
+        border: 1px #0070f0 dashed;
+    }
 }
 
 .last-separator {
@@ -33,9 +34,4 @@
 .create-repos {
     background-color: #329f9f;
     margin-bottom: 10%;
-}
-
-.repos-list .selected-repos {
-    background-color: rgba(0, 111, 238, 0.37);
-    border: 1px #0070f0 dashed;
 }
