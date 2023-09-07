@@ -1,0 +1,17 @@
+@import "../common/colors";
+
+.progress-container {
+  display: flex;
+  flex-grow: 1;
+  position: relative;
+  height: 10px;
+  background-color: #171821;
+
+  .progress-bar {
+    width: 0;
+    height: 100%;
+    background-color: $progress-bar;
+    position: absolute;
+    transition-duration: 0.5s;
+  }
+}

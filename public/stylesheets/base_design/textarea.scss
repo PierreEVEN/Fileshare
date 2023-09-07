@@ -1,0 +1,11 @@
+@import "../common/colors";
+
+textarea {
+  width: 310px;
+  border: 0;
+  border-bottom: 2px solid #282f3d;
+  background-color: rgba(18, 21, 28, 1);
+  margin-bottom: 20px;
+  padding: 0 15px;
+  color: $text-color;
+}

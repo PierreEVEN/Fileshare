@@ -1,0 +1,61 @@
+@import "../common/colors";
+
+.modal-container {
+    h1 {
+        font-size: 24px;
+        font-weight: 100;
+        margin-bottom: 25px;
+        margin-top: 50px;
+    }
+
+    .plus-button {
+        margin-right: auto;
+    }
+
+    .cancel-button {
+        margin-right: 5px;
+    }
+
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    z-index: 100000;
+
+    background-color: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    opacity: 0;
+    transition-duration: 0.1s;
+
+    &.show {
+        background-color: rgba(0, 0, 0, 0.5);
+        opacity: 100%;
+        pointer-events: all;
+        transition-duration: 0.1s;
+    }
+
+    .modal-box {
+        background-color: $background_1;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        border: 1px $border-default dotted;
+        border-radius: 5px;
+
+        .floating-top-right.cancel-button {
+            min-width: 0;
+            width: 30px;
+            height: 30px;
+            border-width: 1px;
+            padding: 0;
+        }
+
+        #modal-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+    }
+}

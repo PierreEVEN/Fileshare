@@ -3,7 +3,7 @@ import {selector} from "../../selector.js";
 const current_path = document.getElementById('current-path');
 
 function update_dir(new_dir) {
-    if (!new_dir)
+    if (!new_dir || !current_path)
         return;
 
     current_path.innerHTML = '';
@@ -25,16 +25,6 @@ function update_dir(new_dir) {
         button.innerText = dir.name;
         button.onclick = () => selector.set_current_dir(dir);
         current_path.append(button);
-    }
-
-    if (new_dir.parent) {
-        const back_button = document.createElement('button');
-        back_button.onclick = () => selector.set_current_dir(new_dir.parent);
-        const img = document.createElement('img');
-        img.src = "/images/icons/icons8-back-64.png";
-        img.alt = "back"
-        back_button.append(img);
-        current_path.append(back_button);
     }
 
     const full_path = new_dir.absolute_path();

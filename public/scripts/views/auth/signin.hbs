@@ -1,20 +1,14 @@
-<div class="modal-content">
-    <h1>Connexion</h1>
-    <div class="field">
-        <label for='username'>
-            <input type="text" name="username" placeholder="Nom / e-mail" id="username" required>
-        </label>
-    </div>
-    <div class="field">
-        <label for='password'>
-            <input type="password" name="password" placeholder="Mot de passe" id="password" required>
-        </label>
-    </div>
+<h1>Connexion</h1>
 
-    <input type="submit" value="Se connecter" onclick="window.auth.post_signin()">
-    <a id="forgot-password" href="mailto: evenpierre@orange.fr">mot de passe oublié</a>
-    <div class="separator"></div>
-    <div class='bottom-button'>
-        <p>Pas encore de compte ?</p> <a href="javascript:window.auth.open_modal_signup();">Créer un compte</a>
-    </div>
+<label for='username'>
+    <input type="text" name="username" placeholder="Nom / e-mail" id="username" required>
+</label>
+<label for='password'>
+    <input type="password" name="password" placeholder="Mot de passe" id="password" required>
+</label>
+
+<input type="submit" value="Se connecter" onclick="window.auth.post_signin()">
+<a id="forgot-password" href="mailto: evenpierre@orange.fr">mot de passe oublié</a>
+<div class='footer'>
+    <p>Pas encore de compte ?</p> <a href="javascript:window.auth.open_modal_signup();">Créer un compte</a>
 </div>

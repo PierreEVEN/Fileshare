@@ -37,46 +37,6 @@ input, button {
       color: #00ff04;
     }
   }
-
-  &.plus-button {
-
-    margin-top: 0;
-    margin-right: auto;
-    min-width: 0;
-    width: 40px;
-    border-radius: 20px;
-    background-color: rgba(5, 5, 5, 0);
-    border: 2px #5b6574 solid;
-    padding: 0;
-    font-size: 25px;
-    font-weight: 100;
-
-    &:hover {
-      background-color: #40426a;
-      border-color: #00ff04;
-    }
-
-    &:active {
-      background-color: #5b5e98;
-      border-color: #00ff9d;
-    }
-  }
-
-  &.cancel-button {
-    background-color: rgba(64, 66, 106, 0);
-    border: 2px #5b6574 solid;
-
-    &:hover {
-      background-color: rgb(91, 14, 0);
-      border-color: #9f1000;
-    }
-
-    &:active {
-      background-color: rgb(63, 12, 0);
-      border-color: #720d01;
-      color: #ffc1c1;
-    }
-  }
 }
 
 select {

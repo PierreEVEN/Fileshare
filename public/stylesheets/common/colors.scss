@@ -1,0 +1,30 @@
+
+$text-color: #ffffff;
+$foreground_1: #0070f0;
+$background_1: #1f232c;
+$background_2: #1B1B25FF;
+$toolbar: #202a38;
+
+$border-default: #5b6574;
+$text-url: #50b7f1;
+$progress-bar: #00ff04;
+
+$button_1: #2180FF;
+$cancel-background: #9f1600;
+$cancel-border: #f61701;
+
+
+$button_yes: #00ff04;
+
+
+@function item_hover($base) {
+  @return adjust-color($base, $hue: -2%, $lightness: -15%);
+}
+
+@function item_active($base) {
+  @return adjust-color($base, $hue: 5%, $lightness: -20%);
+}
+
+@function item_focused($base) {
+  @return adjust-color($base, $hue: 0%, $lightness: -10%);
+}

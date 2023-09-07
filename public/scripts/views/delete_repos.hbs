@@ -1,10 +1,9 @@
-<div class="modal-content">
-    <h1>Supprimer ce dépôt et toutes ses données ?</h1>
-    <form action="/repos/delete/?repos=${e}" method="post" class="delete-repos">
-        <input type="button" value="Annuler" onclick="modal.close_modal()">
-        <input type="submit" value="Oui : Supprimer" id="countdown-button">
-    </form>
-    <div class="delete-repos-progress">
-        <div id="countdown-bar"></div>
-    </div>
+<h1>Supprimer ce dépôt et toutes ses données ?</h1>
+
+<div class="progress-container">
+    <div class="progress-bar"></div>
 </div>
+<form action="/repos/delete/?repos={{id}}" method="post" class="delete-repos">
+    <button onclick="modal.close_modal()" class="cancel-button">Annuler</button>
+    <input type="submit" value="Veuillez patienter" id="countdown-button" disabled>
+</form>

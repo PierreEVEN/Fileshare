@@ -50,7 +50,7 @@ function add_file_to_viewport(file) {
         clicked: event => {
             if (event.target.classList.contains('open-context-button'))
                 return
-            if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/'))
+            if (file.mimetype && (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/')))
                 open_this_item(file_div, file);
             selector.set_selected_item(file);
         },

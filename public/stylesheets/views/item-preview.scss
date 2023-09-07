@@ -1,3 +1,4 @@
+@import "../common/colors";
 
 .item-preview {
     position: relative;
@@ -70,7 +71,7 @@
 
 .details-panel {
     width: 400px;
-    background-color: #0070f0;
+    background-color: $foreground_1;
     p, h1 {
         width: 100%;
         text-align: center;
@@ -80,7 +81,7 @@
 
 @keyframes item-grow {
     100% {
-        background-color: rgb(17, 17, 17);
+        background-color: $background_2;
         width: 100vw;
         height: 100vh;
         top: 0;

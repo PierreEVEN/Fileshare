@@ -1,0 +1,54 @@
+@import "../../common/colors";
+
+
+.outliner {
+  position: relative;
+  display: flex;
+  width: 200px;
+  height: 100%;
+  flex-direction: column;
+  background-color: $background_2;
+
+  .category {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 0 10px;
+    height: 45px;
+    max-height: 10vh;
+
+    p {
+      flex-grow: 1;
+      font-weight: bolder;
+    }
+
+    .plus-button {
+      width: 35px;
+      height: 35px;
+      max-height: 100%;
+      font-size: 20px;
+    }
+  }
+
+  .repos-list {
+    overflow-x: auto;
+
+    button {
+      background-color: #00000000;
+      border-right: 0 #0070f0 solid;
+      border-left: 0 #0070f0 solid;
+      width: 100%;
+
+      &:hover {
+        background-color: rgba(0, 100, 211, 0.37);
+        border-right: 4px #0070f0 solid;
+        border-left: 4px #0070f0 solid;
+      }
+    }
+
+    .selected-repos {
+      background-color: rgba(0, 111, 238, 0.37);
+      border: 1px #0070f0 dashed;
+    }
+  }
+}

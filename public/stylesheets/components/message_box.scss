@@ -19,6 +19,12 @@
     font-size: 14px;
     font-weight: 100;
   }
+
+  .cancel-button {
+    min-width: 0;
+    width: 30px;
+    height: 30px;
+  }
 }
 
 .message-box-close {
@@ -33,36 +39,4 @@
   opacity: 100%;
   pointer-events: all;
   transition-duration: 0.1s;
-}
-
-
-#message-box-close-button {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 30px;
-  height: 30px;
-  border: 1px #3b3d56 solid;
-  border-radius: 5px;
-  color: #c1c1c1;
-  transition-duration: 0.15s;
-
-  &:hover {
-    border: 1px #9f1000 solid;
-    border-radius: 3px;
-    background-color: #3b3d56;
-    color: white;
-  }
-
-  &:active {
-    border: 1px #696666 solid;
-    border-radius: 3px;
-    background-color: #050505;
-    color: white;
-  }
-
-  p {
-    transform: translate(35%, -50%);
-    pointer-events: none;
-  }
 }

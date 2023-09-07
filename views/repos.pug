@@ -2,11 +2,21 @@ extends layout
 
 block content
     if session_data.selected_repos
-        div(id="current-repos")
-            div.file-view(id="drop_zone", ondrop="on_drop_files(event, this);", ondragover="drag_files_over(event);", ondragenter="start_drag_files(event, this);", ondragleave="stop_drag_files(event, this);")
-                include repos_toolbar
-                div.separator
-                div(id='file-list')
+        div.file-view(id="drop_zone", ondrop="on_drop_files(event, this);", ondragover="drag_files_over(event);", ondragenter="start_drag_files(event, this);", ondragleave="stop_drag_files(event, this);")
+            div.repos-toolbar
+                div(id="current-path")
+                    p Chargement...
+
+                div.tool-buttons
+                    if session_data.selected_repos
+                        button(onclick=`window.open('/repos/archive/?repos=${session_data.selected_repos.access_key}&directory=' + (selector.get_current_directory() ? selector.get_current_directory().absolute_path() : ''), '_blank').focus();`)
+                            img(src='/images/icons/icons8-download-96.png', alt='download')
+                    if session_data.user && session_data.selected_repos.owner.id === session_data.user.id
+                        button.delete(onclick=`upload.open_or_update_modal()`).plus-button +
+                        button(onclick=`delete_repos.delete_repos('${session_data.selected_repos.access_key}')`).cancel-button
+                            img(src='/images/icons/icons8-trash-52.png', alt='supprimer')
+            div.hseparator
+            div(id='file-list')
 
         script.
             const modal_div = document.getElementById('modal')
@@ -20,7 +30,7 @@ block content
             modal_div.addEventListener('dragleave', modal_drag_leave)
             modal_div.addEventListener('dragover', modal_drag_over)
 
-            window.addEventListener("beforeunload", event => {
+            window.addEventListener("beforeunload", () => {
                 modal_div.removeEventListener('drop', modal_drop)
                 modal_div.removeEventListener('dragenter', modal_drag_enter)
                 modal_div.removeEventListener('dragleave', modal_drag_leave)

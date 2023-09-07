@@ -1,4 +1,41 @@
 import {print_message} from "./widgets/message_box.js";
+import {humanFileSize} from "./utils";
+
+class TransferStats {
+    constructor() {
+        this.timestamp = performance.now();
+        this.last_sent = null;
+        this.total = 0;
+
+        this.speed_measures = [];
+    }
+
+    speed() {
+        let average = 0;
+        for (const measure of this.speed_measures)
+            average += measure;
+        average /= this.speed_measures.length;
+        return average;
+    }
+
+    remaining() {
+        return (this.total - this.last_sent) / this.speed();
+    }
+
+    update(sent, total) {
+        if (!this.last_sent) {
+            this.last_sent = sent;
+            return;
+        }
+        const added = sent - this.last_sent;
+        const elapsed = performance.now() - this.timestamp;
+        this.timestamp = performance.now();
+        const local_speed = added / elapsed * 1000;
+        this.speed_measures.push(local_speed);
+        this.total = total;
+        this.last_sent = sent;
+    }
+}
 
 class FilesystemUpload {
     /**
@@ -6,7 +43,7 @@ class FilesystemUpload {
      * @param url {string}
      */
     constructor(filesystem, url) {
-        this.max_batch_size = 200 * 1024 * 1024; // 200Mo
+        this.max_batch_size = 50 * 1024 * 1024; // 200Mo
         this.filesystem = filesystem;
         this.is_running = false;
         this.url = url;
@@ -49,8 +86,10 @@ class FilesystemUpload {
 
             const total_sent = this_ref.total_content_sent + this_ref.upload_in_progress_data_sent + (this_ref._byte_sent ? this_ref._byte_sent : 0);
 
+            this.transfer_stats.update(total_sent, this_ref.total_content_size);
+
             if (this_ref.callback_global_state_changed)
-                this_ref.callback_global_state_changed(total_sent, this_ref.total_content_size, 0, 0);
+                this_ref.callback_global_state_changed(total_sent, this_ref.total_content_size, this.transfer_stats.speed(), this.transfer_stats.remaining());
             if (this_ref.callback_file_state_changed)
                 this_ref.callback_file_state_changed(this_ref.file_in_process + this_ref._byte_sent, this_ref.upload_in_progress_data_sent);
         });
@@ -60,15 +99,15 @@ class FilesystemUpload {
     start() {
         if (this.is_running)
             return;
-        this.is_running = true;
 
+        this.transfer_stats = new TransferStats();
+        this.is_running = true;
         if (!this._received_ack)
             return;
 
         if (this.file_in_process)
             this._continue_current_file();
         else {
-
             this.total_content_sent = 0;
             this.total_content_size = this.filesystem.root.content_size;
 
@@ -86,6 +125,7 @@ class FilesystemUpload {
         this._byte_sent = 0;
         this._process_file_id = null
         this.file_in_process = null;
+        this._request.abort();
     }
 
     _receive_file_id(file_id) {
@@ -138,7 +178,10 @@ class FilesystemUpload {
 
     _received_error(status, content) {
         this.stop();
-        print_message('error', `An error occured durring the upload : ${status}\n`, content.toString());
+        if (!this.file_in_process)
+            return;
+
+        print_message('error', `An error occured while uploading ${this.file_in_process ? this.file_in_process.name : 'a file'} (${status}) : ` + content.toString());
         console.error('Error :\n', content);
     }
 

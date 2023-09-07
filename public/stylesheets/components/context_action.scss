@@ -1,8 +1,10 @@
+@import "../common/colors";
+
 .context-action-box {
   position: absolute;
   display: flex;
   flex-direction: column;
-  background-color: #1b1b25;
+  background-color: $background_2;
   z-index: 1000;
   border-radius: 5px;
   padding: 10px;
@@ -19,12 +21,12 @@
   }
 
   button {
-    background-color: rgba(126, 126, 126, 0);
+    background-color: rgba(0, 0, 0, 0);
     transition-duration: 0.15s;
     display: flex;
     flex-direction: row;
     align-items: center;
-    border-bottom: 1px #6e6e6e dotted;
+    border-bottom: 1px $border-default dotted;
 
     &:hover {
       background-color: rgba(143, 139, 139, 0.35);

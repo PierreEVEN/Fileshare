@@ -1,0 +1,16 @@
+@import "../common/colors";
+
+a {
+  text-decoration: none;
+  color: $text-url;
+  transition-duration: 0.1s;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:visited {
+    color: item_active($text-url);
+    text-decoration: none;
+  }
+}
