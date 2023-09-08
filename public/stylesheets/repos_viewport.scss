@@ -42,7 +42,7 @@
     &:active {
         background-color: black;
     }
-    .selected {
+    &.selected {
         background-color: #102646;;
         border: 2px #888fb8 solid;
     }
