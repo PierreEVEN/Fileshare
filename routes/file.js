@@ -5,6 +5,8 @@ const ffmpeg = require("fluent-ffmpeg");
 const {error_404, session_data, request_username} = require("../src/session_utils");
 const Files = require("../src/database/tables/files");
 const {logger} = require("../src/logger");
+const gm = require('gm');
+
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -63,6 +65,27 @@ router.get('/thumbnail', async function (req, res) {
                             return res.sendFile(path.resolve(thumbnail_path));
                         }
                     });
+            } else if ((await req.file.get_mimetype()).includes('pdf')) {
+
+                await new Promise(async (resolve) => {
+                    console.log('CONVERT : ', path.resolve(req.file_path + '') + '')
+                    gm(path.resolve(req.file_path + '')) // The name of your pdf
+                        .setFormat("jpg")
+                        .resize(200) // Resize to fixed 200px width, maintaining aspect ratio
+                        .quality(75) // Quality from 0 to 100
+                        .write(thumbnail_path, async error => {
+                            // Callback function executed when finished
+                            if (!error) {
+                                logger.info(`generated thumbnail for ${req.file.get_id()} (${await req.file.get_name()})`);
+                                resolve();
+                            } else {
+                                console.log(error)
+                                logger.error(`failed to generate thumbnail for ${req.file.get_id()} (${await req.file.get_name()}) : ${JSON.stringify(error)}`);
+                            }
+                        });
+                });
+
+                return res.sendFile(path.resolve(thumbnail_path));
             } else if ((await req.file.get_mimetype()).startsWith('video/')) {
                 let filename = null;
 

@@ -28,7 +28,7 @@ router.use(async (req, res, next) => {
 })
 /* ###################################### CREATE ROUTER ###################################### */
 
-router.get('/', async(req, res) => {
+router.get('/', async (req, res) => {
     res.render('repos', {
         title: 'Envoyer un fichier',
         session_data: await session_data(req).client_data(),
@@ -42,15 +42,14 @@ const upload_in_progress = {};
 async function received_file(file_path, metadata, repos, user) {
 
     if (metadata.mimetype === 'video/mpeg') {
-        return await new Promise(resolve=> {
+        return await new Promise(resolve => {
 
             conversion_queue.push_video(file_path, 'mp4', async (new_path) => {
                 const result = await Files.insert(new_path, repos, user, metadata.file_name, metadata.description, 'video/mp4', metadata.virtual_path)
                 if (!result) {
                     logger.warn(`Failed to insert file : ${metadata.file_name}`)
                     resolve(null);
-                }
-                else {
+                } else {
                     await events.on_upload_file(repos)
                     resolve(result);
                 }

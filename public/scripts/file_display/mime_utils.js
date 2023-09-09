@@ -35,4 +35,4 @@ function get_mime_icon_path(mimetype) {
     return mime_category.base;
 }
 
-export {get_mime_icon_path}
+export {get_mime_icon_path, is_valid}

@@ -46,7 +46,6 @@ function add_directory_to_viewport(dir) {
 }
 
 function add_file_to_viewport(file) {
-
     const file_div = file_hbs({item:file}, {
         clicked: event => {
             if (event.target.classList.contains('open-context-button'))
