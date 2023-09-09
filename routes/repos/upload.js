@@ -78,11 +78,11 @@ router.post('/', async (req, res) => {
         upload_in_progress[file_id] = {
             received_size: 0,
             metadata: {
-                file_name: decode_header('file_name'),
-                file_size: decode_header('file_size'),
+                file_name: decode_header('name'),
+                file_size: decode_header('octets'),
                 mimetype: decode_header('mimetype') || '',
                 virtual_path: decode_header('virtual_path') || '',
-                file_description: decode_header('file_description'),
+                file_description: decode_header('description'),
                 file_id: file_id,
             }
         }

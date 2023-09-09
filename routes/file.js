@@ -68,7 +68,6 @@ router.get('/thumbnail', async function (req, res) {
             } else if ((await req.file.get_mimetype()).includes('pdf')) {
 
                 await new Promise(async (resolve) => {
-                    console.log('CONVERT : ', path.resolve(req.file_path + '') + '')
                     gm(path.resolve(req.file_path + '')) // The name of your pdf
                         .setFormat("jpg")
                         .resize(200) // Resize to fixed 200px width, maintaining aspect ratio
