@@ -11,9 +11,9 @@ const router = require('express').Router();
 router.use(async (req, res, next) => {
     if (!req.query.file) {
         if (session_data(req).selected_repos)
-            res.redirect(`/repos/?repos=${await session_data(req).selected_repos.get_access_key()}`);
+            return res.redirect(`/repos/?repos=${await session_data(req).selected_repos.get_access_key()}`);
         else
-            res.redirect(`/`);
+            return res.redirect(`/`);
     }
 
     const file = await Files.find(req.query.file);
@@ -34,7 +34,8 @@ router.use(async (req, res, next) => {
 
 router.get('/', async function (req, res) {
     logger.info(`${request_username(req)} downloaded ${await req.file.get_name()}#${req.file.get_id()}`)
-    res.setHeader('Content-Disposition', 'attachment; filename=' + encodeURIComponent(await req.file.get_name()));
+    res.setHeader('Content-Type', `${await req.file.get_mimetype()}`)
+    res.setHeader('Content-Disposition', 'inline; filename=' + encodeURIComponent(await req.file.get_name()));
     return res.sendFile(path.resolve(req.file_path));
 })
 

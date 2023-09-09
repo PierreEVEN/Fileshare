@@ -1,0 +1,11 @@
+<div class="item-plain">
+    <button style="position: absolute; z-index: 1" onclick="{{ctx 'close_item_plain()'}}">Fermer</button>
+    <div class="details-panel">
+        <h1>{{item.name}}</h1>
+        <p>{{item_size}}</p>
+        <p>{{item.mimetype}}</p>
+    </div>
+    <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center">
+        {{item_image item}}
+    </div>
+</div>

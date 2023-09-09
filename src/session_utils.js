@@ -24,8 +24,7 @@ async function error_404(req, res, custom_error = null) {
 }
 
 async function error_403(req, res, custom_error = null) {
-    res.status(403);
-    res.render('error', {
+    res.status(403).render('error', {
         title: "403 - Forbidden",
         session_data: await session_data(req).client_data(),
         public_data: await public_data().get(),

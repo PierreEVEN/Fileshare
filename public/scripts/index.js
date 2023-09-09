@@ -1,6 +1,7 @@
 import '../stylesheets/layout.scss'
+
 const Handlebars = require('handlebars');
-require('./mime_image_generator')
+require('./file_display/mime_image_generator')
 Handlebars.registerHelper("ctx", function(options) {
     if (!this.__handlebar_ctx_id)
         return console.error('This template was not instanced with a context');

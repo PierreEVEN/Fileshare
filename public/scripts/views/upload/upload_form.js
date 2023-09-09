@@ -56,7 +56,7 @@ function open_upload_modal_for_files() {
     filesystem.clear();
     const gen_dir = (dir, parent_div) => {
         const ctx = {};
-        const directory = directory_hbs(dir, ctx);
+        const directory = directory_hbs({item: dir}, ctx);
         const dir_content = directory.getElementsByClassName('folder-content')[0];
         ctx.enter = () => directory.getElementsByClassName('cancel-button')[0].style.opacity = '1';
         ctx.leave = () => directory.getElementsByClassName('cancel-button')[0].style.opacity = '0';
@@ -97,7 +97,7 @@ function open_upload_modal_for_files() {
 
     const gen_file = (file, parent_div) => {
         const ctx = {};
-        const file_dom = file_hbs({name: file.name, size: humanFileSize(file.size)}, ctx);
+        const file_dom = file_hbs({item: file, name:file.name, size: humanFileSize(file.size)}, ctx);
         ctx.removed = () => filesystem.remove_file(file);
         ctx.enter = () => file_dom.getElementsByClassName('cancel-button')[0].style.opacity = '1';
         ctx.leave = () => file_dom.getElementsByClassName('cancel-button')[0].style.opacity = '0';

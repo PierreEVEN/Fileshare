@@ -1,5 +1,8 @@
 import {humanFileSize, mime_icon} from "../../utils.js";
 
+const item_hbs = require('./item.hbs')
+
+
 function make_standard_icon(mime_type) {
     const image = document.createElement('img');
     image.classList.add('item-thumbnail');
@@ -105,71 +108,15 @@ function gen_item(name, url, size, mimetype, thumbnail) {
 let opened_item_div = null;
 
 function open_this_item(div, file) {
-
-    const url = `/file/?file=${file.id}`;
-    if (!opened_item_div) {
-        opened_item_div = document.createElement('div');
-        opened_item_div.classList.add('item-plain')
-        if (div) {
-            opened_item_div.style.width = div.getBoundingClientRect().width + 'px';
-            opened_item_div.style.height = div.getBoundingClientRect().height + 'px';
-            opened_item_div.style.left = div.getBoundingClientRect().x + 'px';
-            opened_item_div.style.top = div.getBoundingClientRect().y + 'px';
-        } else {
-            opened_item_div.style.width = '100%';
-            opened_item_div.style.height = '100%';
-            opened_item_div.style.left = '0';
-            opened_item_div.style.top = '0';
-        }
-
-        if (document.item_container)
-            document.item_container.remove();
-
-
-        const close_button = document.createElement('button');
-        close_button.style.position = 'absolute';
-        close_button.innerText = 'Fermer';
-        close_button.style.zIndex = '1';
-        close_button.onclick = () => close_item_plain()
-        opened_item_div.append(close_button);
-
-        const details_panel = document.createElement('div');
-        details_panel.classList.add('details-panel');
-        {
-            const filename = document.createElement('h1');
-            opened_item_div.file_name = filename;
-            details_panel.append(filename);
-
-            const filesize = document.createElement('p');
-            opened_item_div.file_size = filesize;
-            details_panel.append(filesize);
-
-            const mime_type = document.createElement('p');
-            opened_item_div.mime_type = mime_type;
-            details_panel.append(mime_type);
-        }
-        opened_item_div.append(details_panel);
-
-        const item_container = document.createElement('div');
-        item_container.style.flexGrow = '1';
-        item_container.style.display = 'flex';
-        item_container.style.justifyContent = 'center';
-        item_container.style.alignItems = 'center';
-        opened_item_div.append(item_container);
-        document.body.append(opened_item_div)
-
-        document.item_container = item_container;
-    }
-
-    opened_item_div.file_name.innerText = file.name;
-    opened_item_div.file_size.innerText = humanFileSize(file.size);
-    opened_item_div.mime_type.innerText = file.mimetype;
-
-    document.item_container.innerHTML = '';
-    document.item_container.append(gen_item(file.name, url, file.size, file.mimetype, false));
+    if (opened_item_div)
+        opened_item_div.remove();
+    opened_item_div = item_hbs({item: file, file_size: humanFileSize(file.size)}, {
+        close_item_plain: close_item_plain,
+    });
+    document.body.append(opened_item_div);
 }
 
-window.addEventListener('resize', (result) => {
+window.addEventListener('resize', _ => {
     if (opened_item_div) {
         opened_item_div.style.width = window.innerWidth + 'px';
         opened_item_div.style.height = window.innerHeight + 'px';

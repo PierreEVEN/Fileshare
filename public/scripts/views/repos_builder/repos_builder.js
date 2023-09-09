@@ -23,7 +23,7 @@ function fetch_repos_content() {
 }
 
 function add_directory_to_viewport(dir) {
-    const dir_div = directory_hbs(dir, {
+    const dir_div = directory_hbs({item:dir}, {
         clicked: event => {
             if (!event.target.classList.contains('open-context-button'))
                 selector.set_current_dir(dir);
@@ -51,8 +51,8 @@ function add_file_to_viewport(file) {
         clicked: event => {
             if (event.target.classList.contains('open-context-button'))
                 return
-            if (file.mimetype && (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/')))
-                open_this_item(file_div, file);
+
+            open_this_item(file_div, file);
             selector.set_selected_item(file);
         },
         enter: () => selector.set_hover_item(file),

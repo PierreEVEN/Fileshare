@@ -103,11 +103,11 @@ router.post('/', async (req, res) => {
 
             const file = await received_file(tmp_file_path, upload_in_progress[file_id].metadata, req.repos, session_data(req).connected_user)
             delete upload_in_progress[file_id];
-            res.status(202).send(file ? `${file.get_id()}` : '');
+            return res.status(202).send(file ? `${file.get_id()}` : '');
         } else if (generated_file_id)
-            res.status(201).send(file_id);
+            return res.status(201).send(file_id);
         else
-            res.status(200).send();
+            return res.status(200).send();
     })
 });
 

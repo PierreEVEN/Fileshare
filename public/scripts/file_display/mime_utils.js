@@ -14,18 +14,6 @@ function is_valid(mimetype) {
     return true;
 }
 
-const does_mimetype_has_thumbnail = mimetype => {
-    if (!is_valid(mimetype))
-        return false;
-    const begin = mimetype.split('/')[0];
-    switch (begin) {
-        case 'video':
-        case 'image':
-            return true;
-    }
-    return false;
-}
-
 function get_mime_icon_path(mimetype) {
     if (!is_valid(mimetype))
         return '/images/icons/no-mime-icon.png';
@@ -47,4 +35,4 @@ function get_mime_icon_path(mimetype) {
     return mime_category.base;
 }
 
-export {does_mimetype_has_thumbnail, get_mime_icon_path}
+export {get_mime_icon_path}

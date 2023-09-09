@@ -1,0 +1,17 @@
+import {get_mime_icon_path} from "../mime_utils";
+
+function get(item) {
+    switch (item.mimetype.split('/')[0]) {
+        case 'video':
+            return `<div class="item-small">
+                            <img class="item-background" src="/file/thumbnail/?file=${item.id}" alt="fichier: '${item.name}" onError="this.onError = null; this.src='/images/icons/mime-icons/video.png'"/>
+                            <img class="item-overlay" src="/images/icons/icons8-play-64.png" alt="play button">
+                        </div>`
+        case 'image':
+            return `<img class="item-small" src="/file/thumbnail/?file=${item.id}" alt="fichier: ${item.name}" onError="this.onError = null; this.src='/images/icons/mime-icons/image.png'"/>`
+    }
+
+    return `<img class="item-small" src="${get_mime_icon_path(item.mimetype)}" alt="document: ${item.name}"/>`;
+}
+
+export {get}
