@@ -1,5 +1,6 @@
 import {get_mime_icon_path} from "../mime_utils";
 require('./document-embed.js')
+require('./pdf-viewer.js')
 
 
 function get(item) {
@@ -19,7 +20,7 @@ function get(item) {
                 case 'x-pdf':
                 case 'pdf':
                     return `<object data="${url}" type="application/pdf" width="100%" height="100%">
-                                 <img class="item-small" src="${get_mime_icon_path(item.mimetype)}" alt="document: ${item.name}"/>
+                                <pdf-embed src="${url}"></pdf-embed>
                             </object>`
                 case 'json':
                 case 'javascript':

@@ -1,0 +1,14 @@
+<div style="height: 100%; display: flex; flex-direction:column">
+    <div style="display: flex; background-color: #4b4b4b; height: 40px">
+        <button onclick="{{ctx 'page_next()'}}" style="min-width: 140px;">Next</button>
+        <button onclick="{{ctx 'page_prev()'}}" style="min-width: 140px;">Prev</button>
+        <div style="flex-grow: 1"></div>
+        <button onclick="{{ctx 'zoom()'}}" style="min-width: 140px;">Zoom+</button>
+        <button onclick="{{ctx 'dezoom()'}}" style="min-width: 140px;">Zoom-</button>
+    </div>
+    <div style="position: relative; flex-grow: 1">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto; display:flex; justify-content:center">
+            <canvas style="height:fit-content"></canvas>
+        </div>
+    </div>
+</div>

@@ -2,9 +2,12 @@ const path = require('path');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
-    entry: './public/scripts/index.js',
+    entry: {
+        main: './public/scripts/index.js',
+        "pdf.worker": "pdfjs-dist/build/pdf.worker.entry",
+    },
     output: {
-        filename: 'main.js',
+        filename: '[name].js',
         path: path.resolve(__dirname, 'public/dist'),
     },
     plugins: [new MiniCssExtractPlugin()],
