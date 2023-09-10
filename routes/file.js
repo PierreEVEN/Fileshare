@@ -6,6 +6,7 @@ const {error_404, session_data, request_username} = require("../src/session_util
 const Files = require("../src/database/tables/files");
 const {logger} = require("../src/logger");
 const gm = require('gm');
+const {platform} = require("os");
 
 
 /* ###################################### CREATE ROUTER ###################################### */
@@ -66,7 +67,9 @@ router.get('/thumbnail', async function (req, res) {
                         }
                     });
             } else if ((await req.file.get_mimetype()).includes('pdf')) {
-
+                // Doesn't work on windows
+                if (platform() === 'win32')
+                    return  res.sendFile(path.resolve('public/images/icons/mime-icons/application/pdf.png'));
                 await new Promise(async (resolve) => {
                     gm(path.resolve(req.file_path + '')) // The name of your pdf
                         .setFormat("jpg")
@@ -78,8 +81,8 @@ router.get('/thumbnail', async function (req, res) {
                                 logger.info(`generated thumbnail for ${req.file.get_id()} (${await req.file.get_name()})`);
                                 resolve();
                             } else {
-                                console.log(error)
                                 logger.error(`failed to generate thumbnail for ${req.file.get_id()} (${await req.file.get_name()}) : ${JSON.stringify(error)}`);
+                                return res.sendFile(path.resolve(req.file_path));
                             }
                         });
                 });
