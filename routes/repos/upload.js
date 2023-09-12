@@ -1,5 +1,5 @@
 const fs = require("fs");
-const Files = require('../../src/database/tables/files');
+const Files = require('../../src/database/files');
 const {session_data, public_data, require_connection, request_username} = require("../../src/session_utils");
 const conversion_queue = require("../../src/file-conversion");
 const path = require("path");

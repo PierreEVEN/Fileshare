@@ -1,5 +1,5 @@
 const {require_connection, get_user_private_data, session_data, error_403, public_data, events, request_username} = require("../src/session_utils");
-const Repos = require('../src/database/tables/repos')
+const {Repos} = require('../src/database/repos')
 const crypto = require("crypto");
 const {logger} = require("../src/logger");
 const router = require('express').Router();
@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
         return;
 
     // Ensure user has privileges
-    if (!await session_data(req).connected_user.can_edit_repos())
+    if (!session_data(req).connected_user.can_create_repos())
         return error_403(req, res, "Vous n'avez pas les droits pour créer un dépôt.");
 
     res.render('fileshare', {
@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
         return;
 
     // Ensure user has privileges
-    if (!await session_data(req).connected_user.can_edit_repos())
+    if (!await session_data(req).connected_user.can_create_repos())
         return error_403(req, res, "Vous n'avez pas les droits pour créer un dépôt.");
 
     let name = req.body.name;
@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
     }
 
     const access_key = crypto.randomBytes(16).toString("hex");
-    await Repos.insert(name, session_data(req).connected_user, status, access_key)
+    await new Repos({name: name, owner: session_data(req).connected_user, status: status, access_key: access_key}).push();
 
     // Ensure connected user will refresh data
     session_data(req).mark_dirty();

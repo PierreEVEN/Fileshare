@@ -1,6 +1,6 @@
-const Users = require("./database/tables/user");
-const Repos = require("./database/tables/repos");
-const UserRepos = require("./database/tables/user_repos");
+const {User} = require("./database/user");
+const {Repos} = require("./database/repos");
+const {UserRepos} = require("./database/user_repos");
 const {logger} = require("./logger");
 
 function require_connection(req, res) {
@@ -43,16 +43,20 @@ class SessionData {
         this.user_tracked_repos = new Set();
     }
 
-    async connect_user(user_id = null) {
-        if (user_id) {
+    /**
+     * @param user {User | null}
+     * @return {Promise<SessionData>}
+     */
+    async connect_user(user = null) {
+        if (user) {
             const new_connection = !this.connected_user;
-            this.connected_user = await Users.find(user_id.get_id());
+            this.connected_user = user;
             if (new_connection)
-                logger.info(`new connection from ${await this.connected_user.get_username()}#${this.connected_user.get_id()}`)
+                logger.info(`new connection from ${this.connected_user.name}#${this.connected_user.id}`)
         }
         else {
             if (this.connected_user)
-                logger.info(`${await this.connected_user.get_username()}#${this.connected_user.get_id()} disconnected`)
+                logger.info(`${this.connected_user.name}#${this.connected_user.id} disconnected`)
             this.connected_user = null;
         }
 
@@ -68,38 +72,24 @@ class SessionData {
             const tracked_repos = [];
 
             for (const key of this.tracked_repos) {
-                const repos = await Repos.find_access_key(key)
+                const repos = await Repos.from_access_key(key)
                 if (repos) {
                     tracked_repos.push({
                         access_type: 'visitor',
-                        repos: await repos.public_data(false)
+                        repos: repos
                     });
                 }
             }
 
             if (this.connected_user) {
-                for (const repos of await Repos.find_user(this.connected_user)) {
-                    user_repos.push(await repos.public_data(false));
-                }
-
-                for (const user_repos of await UserRepos.find_user(this.connected_user)) {
-                    tracked_repos.push({
-                        access_type: user_repos.get_access(),
-                        repos: await user_repos.get_repos().public_data()
-                    })
-                    this.user_tracked_repos.add(await user_repos.get_repos().get_access_key())
+                this.connected_user.repos = [];
+                for (const repos of await Repos.from_owner(this.connected_user)) {
+                    this.connected_user.repos.push(repos);
                 }
             }
 
             this.last_data = {
-                user: this.connected_user ? {
-                    id: this.connected_user.get_id(),
-                    username: await this.connected_user.get_username(),
-                    role: await this.connected_user.get_role(),
-                    repos_edit_rights: await this.connected_user.can_edit_repos(),
-                    repos: user_repos,
-                } : null,
-
+                user: this.connected_user,
                 tracked_repos: tracked_repos,
                 selected_repos: this.selected_repos ? await this.selected_repos.public_data(true) : null,
             }
@@ -108,7 +98,7 @@ class SessionData {
     }
 
     /**
-     * @param repos {Repos|null}
+     * @param repos {number|null}
      */
     async select_repos(repos = null) {
         if (!repos && this.selected_repos) {
@@ -117,31 +107,35 @@ class SessionData {
         }
 
         if (repos && !this.selected_repos) {
-            this.selected_repos = repos;
+            this.selected_repos = Repos.from_id(repos);
             this.mark_dirty();
         }
 
-        if (repos && this.selected_repos && repos.get_id() !== this.selected_repos.get_id()) {
-            this.selected_repos = repos;
+        if (repos && this.selected_repos && repos !== this.selected_repos.repos) {
+            this.selected_repos = Repos.from_id(repos);
             this.mark_dirty();
         }
 
-        if (repos)
-            await this.view_repos(repos);
+        if (this.selected_repos)
+            await this.view_repos(this.selected_repos);
 
         return this;
     }
 
+    /**
+     * @param repos {Repos}
+     * @return {Promise<void>}
+     */
     async view_repos(repos) {
         if (this.connected_user) {
-            if ((await repos.get_owner()).get_id() === this.connected_user.get_id())
+            if (await repos.owner === this.connected_user.id)
                 return;
         }
 
-        if (await repos.get_status() !== 'private' &&
-            !this.tracked_repos.has(await repos.get_access_key()) &&
-            !this.user_tracked_repos.has(await repos.get_access_key())) {
-            this.tracked_repos.add(await repos.get_access_key())
+        if (repos.status !== 'private' &&
+            !this.tracked_repos.has(await repos.access_key) &&
+            !this.user_tracked_repos.has(await repos.access_key)) {
+            this.tracked_repos.add(await repos.access_key)
             this.mark_dirty();
         }
     }
@@ -152,27 +146,34 @@ class SessionData {
 }
 
 events = {
+    /**
+     * @param repos {Repos}
+     * @return {Promise<void>}
+     */
     on_delete_repos: async (repos) => {
-        repos.delete();
+        await repos.delete();
         for (const session of Object.values(available_sessions)) {
             if (session.connected_user) {
                 for (const user_repos of (await session.client_data()).user.repos)
-                    if (user_repos.id === repos.get_id())
+                    if (user_repos.id === repos.id)
                         session.mark_dirty();
             }
 
             for (const user_repos of (await session.client_data()).tracked_repos)
-                if (user_repos.repos.id === repos.get_id())
+                if (user_repos.repos.id === repos.id)
                     session.mark_dirty();
         }
 
         public_data().mark_dirty();
     },
 
+    /**
+     * @param repos {Repos}
+     * @return {Promise<void>}
+     */
     on_upload_file: async (repos) => {
-
         for (const session of Object.values(available_sessions))
-            if (session.selected_repos && session.selected_repos.get_id() === repos.get_id())
+            if (session.selected_repos && session.selected_repos.id === repos.id)
                 session.mark_dirty();
     }
 }
@@ -190,8 +191,8 @@ class PublicData {
     async get_repos_list() {
         if (!this.repos_list) {
             this.repos_list = [];
-            for (const repos of await Repos.find_public()) {
-                this.repos_list.push(await repos.public_data());
+            for (const repos of await Repos.with_public_access()) {
+                this.repos_list.push(repos);
             }
         }
         return this.repos_list;
@@ -226,7 +227,7 @@ function public_data() {
 
 function request_username(req) {
     const user = session_data(req).connected_user;
-    return user ? `${user._username}#${user.get_id()}` : `@{${req.socket.remoteAddress}}`
+    return user ? `${user.name}#${user.id}` : `@{${req.socket.remoteAddress}}`
 }
 
 module.exports = {

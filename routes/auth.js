@@ -1,5 +1,5 @@
 const {session_data, public_data} = require("../src/session_utils");
-const User = require("../src/database/tables/user");
+const {User} = require("../src/database/user");
 const router = require('express').Router();
 
 router.get('/signin/', async (req, res) => {
@@ -12,7 +12,7 @@ router.get('/signin/', async (req, res) => {
 })
 
 router.post('/signin/', async (req, res) => {
-    const found_user = await User.find_with_credentials(req.body.username, req.body.password);
+    const found_user = await User.from_credentials(req.body.username, req.body.password);
     await session_data(req).connect_user(found_user);
 
     if (found_user)
@@ -38,13 +38,12 @@ router.get('/signup/', async (req, res) => {
 })
 
 router.post('/signup/', async (req, res) => {
-    let username = req.body.username;
+    let name = req.body.username;
     let email = req.body.email;
     let password = req.body.password;
 
-    if (username && password && email) {
-
-        if (await User.find_with_identifiers(username, email)) {
+    if (name && password && email) {
+        if (await User.exists(name, email)) {
             return res.status(401).send(JSON.stringify({
                 message: {
                     severity: 'error',
@@ -54,7 +53,11 @@ router.post('/signup/', async (req, res) => {
             }))
         }
 
-        const new_user = await User.insert(email, username, password);
+        const new_user = await User.create({
+            email: email,
+            name: name,
+            password: password
+        });
 
         await session_data(req).connect_user(new_user)
 

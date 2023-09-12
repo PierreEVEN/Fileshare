@@ -1,5 +1,5 @@
 const {session_data, public_data, error_404, require_connection, error_403, request_username} = require("../src/session_utils");
-const Repos = require("../src/database/tables/repos");
+const Repos = require("../src/database/repos");
 const {logger} = require("../src/logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
