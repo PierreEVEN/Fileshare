@@ -68,7 +68,6 @@ class SessionData {
     async client_data() {
         if (!this.last_data) {
 
-            const user_repos = []
             const tracked_repos = [];
 
             for (const key of this.tracked_repos) {
@@ -83,7 +82,7 @@ class SessionData {
 
             if (this.connected_user) {
                 this.connected_user.repos = [];
-                for (const repos of await Repos.from_owner(this.connected_user)) {
+                for (const repos of await Repos.from_owner(this.connected_user.id)) {
                     this.connected_user.repos.push(repos);
                 }
             }
@@ -91,7 +90,7 @@ class SessionData {
             this.last_data = {
                 user: this.connected_user,
                 tracked_repos: tracked_repos,
-                selected_repos: this.selected_repos ? await this.selected_repos.public_data(true) : null,
+                selected_repos: this.selected_repos,
             }
         }
         return this.last_data;
@@ -107,12 +106,12 @@ class SessionData {
         }
 
         if (repos && !this.selected_repos) {
-            this.selected_repos = Repos.from_id(repos);
+            this.selected_repos = repos;
             this.mark_dirty();
         }
 
         if (repos && this.selected_repos && repos !== this.selected_repos.repos) {
-            this.selected_repos = Repos.from_id(repos);
+            this.selected_repos = repos;
             this.mark_dirty();
         }
 

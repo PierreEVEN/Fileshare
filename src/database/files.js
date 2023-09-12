@@ -13,8 +13,9 @@ const STORAGE_PATH = path.resolve('data_storage')
 class File {
     /**
      * @param data {Object}
+     * @param file_path {string|null}
      */
-    constructor(data) {
+    constructor(data, file_path = null) {
         this.id = data.id;
         this.repos = data.repos;
         this.owner = data.owner;
@@ -27,7 +28,7 @@ class File {
     }
 
     async push() {
-        assert(this.id);
+        this.id = this.id || await File.gen_id()
         assert(this.repos);
         assert(this.owner);
         assert(this.directory);
@@ -40,7 +41,7 @@ class File {
         await connection.query(`REPLACE INTO Fileshare.Files
             (id, repos, owner, directory, name, description, size, mimetype, hash) VALUES
             (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-            [this.id || await Files.gen_id(), this.repos, this.owner, this.directory, encodeURIComponent(this.name), encodeURIComponent(this.description), this.size, this.mimetype, this.hash]);
+            [this.id, this.repos, this.owner, this.directory, encodeURIComponent(this.name), encodeURIComponent(this.description), this.size, this.mimetype, this.hash]);
         await connection.end();
         return this;
     }

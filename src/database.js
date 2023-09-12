@@ -5,13 +5,14 @@ const pool = mariadb.createPool({
     host: '127.0.0.1',
     user: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
-    connectionLimit: 5,
-    database: 'Fileshare'
+    connectionLimit: 5
 });
 
 
 const table_created = (async () => {
-    const connection = await pool.getConnection();
+    let connection = await pool.getConnection();
+
+    await connection.query(`CREATE DATABASE IF NOT EXISTS Fileshare;`)
 
     const charset = Object.values(await connection.query(`SELECT default_character_set_name FROM information_schema.SCHEMATA S WHERE schema_name = "Fileshare";`))[0].default_character_set_name;
     if (charset !== 'utf8mb4') {
@@ -71,12 +72,11 @@ const table_created = (async () => {
                 name VARCHAR(200) NOT NULL,
                 description VARCHAR(1200),
                 is_special BOOLEAN DEFAULT false,
-                parent_directory VARCHAR(200),
+                parent_directory BIGINT NULL,
                 FOREIGN KEY(Repos) REFERENCES Fileshare.Repos(id),
-                FOREIGN KEY(owner) REFERENCES Fileshare.Users(id)
+                FOREIGN KEY(owner) REFERENCES Fileshare.Users(id),
+                FOREIGN KEY(parent_directory) REFERENCES Fileshare.Users(id)
         );`)
-
-        await (connection.query(` ALTER TABLE Fileshare.Directories ADD FOREIGN KEY (parent_directory) REFERENCES Fileshare.Directories(id);`))
     }
 
     // Create Accounts table if needed

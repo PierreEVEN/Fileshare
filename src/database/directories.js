@@ -19,7 +19,7 @@ class Directories {
     }
 
     async push() {
-        assert(this.id);
+        this.id = this.id || await Directories.gen_id();
         assert(this.repos);
         assert(this.owner);
         assert(this.name);
@@ -30,7 +30,7 @@ class Directories {
         await connection.query(`REPLACE INTO Fileshare.Directories
             (id, repos, owner, name, description, is_special, parent_directory) VALUES
             (?, ?, ?, ?, ?, ?, ?);`,
-            [this.id || await Directories.gen_id(), this.repos, this.owner, encodeURIComponent(this.name), encodeURIComponent(this.description), this.is_special, this.parent_directory]);
+            [this.id, this.repos, this.owner, encodeURIComponent(this.name), encodeURIComponent(this.description), this.is_special, this.parent_directory]);
         await connection.end();
         return this;
     }

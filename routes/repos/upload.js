@@ -1,5 +1,5 @@
 const fs = require("fs");
-const Files = require('../../src/database/files');
+const {File} = require('../../src/database/files');
 const {session_data, public_data, require_connection, request_username} = require("../../src/session_utils");
 const conversion_queue = require("../../src/file-conversion");
 const path = require("path");
@@ -14,8 +14,8 @@ router.use(async (req, res, next) => {
         return;
 
     // Or every connected user can upload to this repo, or only it's owner is allowed to
-    if (!await req.repos.does_allow_visitor_upload()) {
-        if ((await req.repos.get_owner()).get_id() !== session_data(req).connected_user.get_id())
+    if (!await req.repos.does_allow_visitor_upload) {
+        if (req.repos.owner !== session_data(req).connected_user.id)
             return res.status(401).send(JSON.stringify({
                 message: {
                     severity: 'error',
@@ -39,28 +39,37 @@ router.get('/', async (req, res) => {
 
 const upload_in_progress = {};
 
+/**
+ * @param file_path
+ * @param metadata
+ * @param repos {Repos}
+ * @param user {User}
+ * @returns {Promise<unknown>}
+ */
 async function received_file(file_path, metadata, repos, user) {
+    let path = file_path;
+    const meta = metadata;
 
-    if (metadata.mimetype === 'video/mpeg') {
-        return await new Promise(resolve => {
-
-            conversion_queue.push_video(file_path, 'mp4', async (new_path) => {
-                const result = await Files.insert(new_path, repos, user, metadata.file_name, metadata.description, 'video/mp4', metadata.virtual_path)
-                if (!result) {
-                    logger.warn(`Failed to insert file : ${metadata.file_name}`)
-                    resolve(null);
-                } else {
-                    await events.on_upload_file(repos)
-                    resolve(result);
-                }
+    switch (metadata.mimetype) {
+        case 'video/mpeg':
+            await new Promise(resolve => {
+                conversion_queue.push_video(file_path, 'mp4', async (new_path) => {
+                    path = new_path;
+                    meta.mimetype = 'video/mp4';
+                    resolve();
+                });
             });
-        });
-    } else {
-        const result = await Files.insert(file_path, repos, user, metadata.file_name, metadata.description, metadata.mimetype, metadata.virtual_path)
-        if (!result)
-            logger.warn(`Failed to insert file : ${metadata.file_name}`)
-        return result;
+            break;
     }
+
+    return await new File({
+        repos: repos.id,
+        owner: user.id,
+        name: meta.file_name,
+        description: meta.description,
+        mimetype: meta.mimetype,
+        directory: meta.directory
+    }, file_path).push();
 }
 
 router.post('/', async (req, res) => {
@@ -81,7 +90,7 @@ router.post('/', async (req, res) => {
                 file_name: decode_header('name'),
                 file_size: decode_header('octets'),
                 mimetype: decode_header('mimetype') || '',
-                virtual_path: decode_header('virtual_path') || '',
+                directory: decode_header('directory') || '',
                 file_description: decode_header('description'),
                 file_id: file_id,
             }

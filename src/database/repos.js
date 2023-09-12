@@ -1,9 +1,10 @@
 const db = require('../database')
 const {logger} = require("../logger");
-const {gen_uid} = require("../uid_generator");
+const {gen_uid, gen_uhash} = require("../uid_generator");
 const {File} = require('./files')
 const {UserRepos} = require("./user_repos");
 const assert = require("assert");
+const {Directories} = require("./directories");
 
 const id_base = new Set();
 
@@ -23,8 +24,9 @@ class Repos {
     }
 
     async push() {
+        this.id = this.id || await Repos.gen_id()
         assert(this.name);
-        assert(this.owner);
+        assert(this.owner && typeof this.owner === 'bigint');
         assert(this.status);
         assert(this.access_key);
         assert(this.max_file_size);
@@ -34,7 +36,7 @@ class Repos {
         await connection.query(`REPLACE INTO Fileshare.Repos
             (id, name, owner, status, access_key, max_file_size, visitor_file_lifetime, allow_visitor_upload) VALUES
             (?, ?, ?, ?, ?, ?, ?, ?);`,
-            [this.id || Repos.gen_id(), encodeURIComponent(this.name), this.owner, this.status.toLowerCase().trim(), encodeURIComponent(this.access_key), this.max_file_size, this.visitor_file_lifetime, this.allow_visitor_upload]);
+            [this.id, encodeURIComponent(this.name), this.owner, this.status.toLowerCase().trim(), encodeURIComponent(this.access_key), this.max_file_size, this.visitor_file_lifetime, this.allow_visitor_upload]);
         await connection.end();
         return this;
     }
@@ -66,6 +68,18 @@ class Repos {
         return user && this.owner === user;
     }
 
+    async get_content() {
+        const result = {
+            directories: [],
+            files: [],
+        };
+        for (const dir of await Directories.from_repos(this.id))
+            result.directories.push(dir);
+        for (const file of await File.from_repos(this.id))
+            result.files.push(file);
+        return result;
+    }
+
     static async gen_id() {
         const connection = await db();
         const id = await gen_uid(async (id) => Object(await connection.query('SELECT * FROM Fileshare.Repos WHERE id = ?', [id])).length, id_base);
@@ -78,6 +92,7 @@ class Repos {
      * @return {Promise<Repos|null>}
      */
     static async from_id(id) {
+        assert(typeof id === 'bigint')
         const connection = await db();
         const found_data = Object.values(await connection.query('SELECT * FROM Fileshare.Repos WHERE id = ?', [id]));
         const repos = found_data.length === 1 ? new Repos(found_data[0]) : null;
@@ -90,6 +105,7 @@ class Repos {
      * @return {Promise<Repos[]>}
      */
     static async from_owner(id) {
+        assert(typeof id === 'bigint')
         const connection = await db();
         const repos = []
         for (const repo of Object.values(await connection.query('SELECT * FROM Fileshare.Repos WHERE owner = ?', [id])))
@@ -103,6 +119,7 @@ class Repos {
      * @return {Promise<Repos[]>}
      */
     static async visible_to_user(id) {
+        assert(typeof id === 'bigint')
         const connection = await db();
         const repos = []
         for (const repo of Object.values(await connection.query('SELECT * FROM Fileshare.Repos WHERE NOT owner = id AND id IN (SELECT id FROM Fileshare.UserRepos WHERE repos = ? AND user = ?)', [this.id, id])))
@@ -128,6 +145,7 @@ class Repos {
      * @return {Promise<Repos|null>}
      */
     static async from_access_key(key) {
+        assert(typeof key === 'string')
         const connection = await db();
         const found_data = Object.values(await connection.query('SELECT * FROM Fileshare.Repos WHERE access_key = ?', [encodeURIComponent(key)]));
         const repos = found_data.length === 1 ? new Repos(found_data[0]) : null;

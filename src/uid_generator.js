@@ -13,7 +13,7 @@ const {randomBytes} = require("crypto");
 async function gen_uid(callback_exists, id_base = null) {
     let id = null;
     do {
-        id = Math.floor(Math.random() * 147483647);
+        id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
     } while ((!id_base || id_base.has(id)) && await callback_exists(id));
     if (id_base)
         id_base.add(id);

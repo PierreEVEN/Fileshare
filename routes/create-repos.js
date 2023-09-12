@@ -2,6 +2,7 @@ const {require_connection, get_user_private_data, session_data, error_403, publi
 const {Repos} = require('../src/database/repos')
 const crypto = require("crypto");
 const {logger} = require("../src/logger");
+const {Directories} = require("../src/database/directories");
 const router = require('express').Router();
 
 router.get('/', async (req, res) => {
@@ -46,7 +47,8 @@ router.post('/', async (req, res) => {
     }
 
     const access_key = crypto.randomBytes(16).toString("hex");
-    await new Repos({name: name, owner: session_data(req).connected_user, status: status, access_key: access_key}).push();
+    const repos = await new Repos({name: name, owner: session_data(req).connected_user.id, status: status, access_key: access_key}).push();
+    await new Directories({repos: repos.id, })
 
     // Ensure connected user will refresh data
     session_data(req).mark_dirty();

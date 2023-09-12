@@ -1,5 +1,5 @@
 const {session_data, public_data, error_404, require_connection, error_403, request_username} = require("../src/session_utils");
-const Repos = require("../src/database/repos");
+const {Repos} = require("../src/database/repos");
 const {logger} = require("../src/logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
@@ -8,7 +8,7 @@ router.use(async (req, res, next) => {
     if (!req.query.repos)
         return res.redirect('/');
 
-    const repos = await Repos.find_access_key(req.query.repos);
+    const repos = await Repos.from_access_key(req.query.repos);
 
     // This repos does not exist
     if (!repos)
@@ -31,14 +31,14 @@ router.use(async (req, res, next) => {
 
 router.get('/', async (req, res) => {
     res.render('repos', {
-        title: `FileShare - ${await req.repos.get_name()}`,
+        title: `FileShare - ${req.repos.name}`,
         session_data: await session_data(req).client_data(),
         public_data: await public_data().get()
     });
 })
 router.get('/content/', async function (req, res, next) {
-    logger.info(`${request_username(req)} fetched content of ${await req.repos.get_access_key()}`)
-    res.json(await req.repos.public_data(true));
+    logger.info(`${request_username(req)} fetched content of ${req.repos.access_key}`)
+    res.json(await req.repos.get_content());
 });
 
 router.use('/archive/', require('./repos/archive'));

@@ -16,8 +16,24 @@ function fetch_repos_content() {
     fetch(`/repos/content/?repos=${current_repos.access_key}`)
         .then(async (response) => await parse_fetch_result(response))
         .then((json) => {
+
+            const directories = {}
+
+            // Retrieve dirs
+            json.directories.forEach(dir => directories[dir.id] = dir)
+
+            // Compute dirs paths
+            const path_of = dir => (dir.parent ? path_of(directories[dir.parent]) : '/') + dir.name + '/';
+
+            for (const dir of Object.values(directories)) {
+                dir.compute_path = path_of(dir)
+            }
+
             filesystem.clear();
-            json.content.forEach((item) => filesystem.add_file(item, item.virtual_folder))
+            json.files.forEach(item => {
+                filesystem.add_file(item, item.directory ? directories[item.directory].compute_path : '/');
+            })
+            
             selector.set_current_dir(filesystem.root);
         });
 }

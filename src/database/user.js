@@ -1,5 +1,5 @@
 const db = require('../database')
-const {gen_uhash} = require("../uid_generator");
+const {gen_uhash, gen_uid} = require("../uid_generator");
 const {Repos} = require("./repos")
 const bcrypt = require("bcrypt");
 const assert = require("assert");
@@ -23,7 +23,7 @@ class User {
     }
 
     async push() {
-        assert(this.id);
+        this.id = this.id || await User.gen_id();
         assert(this.email);
         assert(this.name);
         assert(this.allow_contact);
@@ -32,7 +32,7 @@ class User {
         await connection.query(`REPLACE INTO Fileshare.Users
             (id, email, name, allow_contact, role) VALUES
             (?, ?, ?, ?, ?, ?);`,
-            [this.id || await User.gen_id(), encodeURIComponent(this.email), encodeURIComponent(this.name), this.allow_contact.toLowerCase().trim(), this.role]);
+            [this.id, encodeURIComponent(this.email), encodeURIComponent(this.name), this.allow_contact.toLowerCase().trim(), this.role]);
         await connection.end();
         return this;
     }
@@ -64,7 +64,7 @@ class User {
     }
     static async gen_id() {
         const connection = await db();
-        const id = await gen_uhash(async (id) => Object(await connection.query('SELECT * FROM Fileshare.Users WHERE id = ?', [id])).length, id_base);
+        const id = await gen_uid(async (id) => Object(await connection.query('SELECT * FROM Fileshare.Users WHERE id = ?', [id])).length, id_base);
         await connection.end();
         return id;
     }

@@ -220,7 +220,7 @@ class FilesystemUpload {
             this._request.setRequestHeader('name', encodeURIComponent(this.file_in_process.name));
             this._request.setRequestHeader('octets', this.file_in_process.size);
             this._request.setRequestHeader('mimetype', this.file_in_process.mimetype);
-            this._request.setRequestHeader('virtual_path', encodeURIComponent(this.file_in_process.directory));
+            this._request.setRequestHeader('directory', encodeURIComponent(this.file_in_process.directory));
             if (this.file_in_process.description)
                 this._request.setRequestHeader('description', encodeURIComponent(this.file_in_process.description));
         } else {
