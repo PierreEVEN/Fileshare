@@ -8,7 +8,7 @@ router.use(async (req, res, next) => {
         return;
 
     // Ensure user is the owner
-    if (session_data(req).connected_user.get_id() !== (await req.repos.get_owner()).get_id())
+    if (session_data(req).connected_user.id !== req.repos.owner)
         return error_403(req, res, "Seul le propriétaire d'un dépôt peut le supprimer.");
 
     next();
@@ -16,13 +16,13 @@ router.use(async (req, res, next) => {
 /* ###################################### CREATE ROUTER ###################################### */
 
 router.get('/', async (req, res) => {
-    res.redirect(`/repos/?repos=${await req.repos.get_access_key()}`);
+    res.redirect(`/repos/?repos=${req.repos.access_key}`);
 })
 
 router.post('/', async (req, res) => {
     await events.on_delete_repos(req.repos);
 
-    logger.warn(`${request_username(req)} deleted repos ${await req.repos.get_access_key()}`)
+    logger.warn(`${request_username(req)} deleted repos ${req.repos.access_key}`)
 
     res.redirect(`/`);
 })

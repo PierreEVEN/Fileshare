@@ -10,7 +10,7 @@ const file_hbs = require('./file.hbs');
 const filesystem = current_repos ? new Filesystem(current_repos.name) : null;
 const viewport_container = document.getElementById('file-list')
 
-function fetch_repos_content() {
+function update_repos_content() {
     if (!filesystem)
         return;
     fetch(`/repos/content/?repos=${current_repos.access_key}`)
@@ -24,16 +24,14 @@ function fetch_repos_content() {
 
             // Compute dirs paths
             const path_of = dir => (dir.parent ? path_of(directories[dir.parent]) : '/') + dir.name + '/';
-
-            for (const dir of Object.values(directories)) {
-                dir.compute_path = path_of(dir)
-            }
+            for (const dir of Object.values(directories))
+                filesystem.directory_from_path(dir.absolute_path, true);
 
             filesystem.clear();
             json.files.forEach(item => {
-                filesystem.add_file(item, item.directory ? directories[item.directory].compute_path : '/');
+                filesystem.add_file(item, item.parent_directory ? directories[item.parent_directory].absolute_path : '/');
             })
-            
+
             selector.set_current_dir(filesystem.root);
         });
 }
@@ -106,7 +104,7 @@ selector.on_changed_dir((new_dir, old_dir) => {
     render_directory(new_dir);
 })
 
-fetch_repos_content();
+update_repos_content();
 
 selector.on_select_item((new_item, old_item) => {
     if (old_item && old_item.div)
@@ -181,4 +179,4 @@ function get_viewport_filesystem() {
     return filesystem;
 }
 
-export {get_viewport_filesystem}
+export {get_viewport_filesystem, update_repos_content}

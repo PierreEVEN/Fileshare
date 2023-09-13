@@ -8,18 +8,15 @@ const assert = require("assert");
 
 const id_base = new Set();
 
-const STORAGE_PATH = path.resolve('data_storage')
-
 class File {
     /**
      * @param data {Object}
-     * @param file_path {string|null}
      */
-    constructor(data, file_path = null) {
+    constructor(data) {
         this.id = data.id;
         this.repos = data.repos;
         this.owner = data.owner;
-        this.directory = data.directory;
+        this.parent_directory = data.parent_directory;
         this.name = data.name ? decodeURIComponent(data.name) : null;
         this.description = data.description ? decodeURIComponent(data.description) : null;
         this.size = data.size;
@@ -31,27 +28,25 @@ class File {
         this.id = this.id || await File.gen_id()
         assert(this.repos);
         assert(this.owner);
-        assert(this.directory);
         assert(this.name);
-        assert(this.description);
         assert(this.size);
         assert(this.mimetype);
         assert(this.hash);
         const connection = await db();
         await connection.query(`REPLACE INTO Fileshare.Files
-            (id, repos, owner, directory, name, description, size, mimetype, hash) VALUES
+            (id, repos, owner, parent_directory, name, description, size, mimetype, hash) VALUES
             (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-            [this.id, this.repos, this.owner, this.directory, encodeURIComponent(this.name), encodeURIComponent(this.description), this.size, this.mimetype, this.hash]);
+            [this.id, this.repos, this.owner, this.parent_directory, encodeURIComponent(this.name), encodeURIComponent(this.description), this.size, this.mimetype, this.hash]);
         await connection.end();
         return this;
     }
 
     storage_path() {
-        return path.join(STORAGE_PATH, this.id);
+        return path.join(path.resolve(process.env.FILE_STORAGE_PATH), this.id);
     }
 
     thumbnail_path() {
-        return path.join(STORAGE_PATH, 'thumbnails', this.id);
+        return path.join(path.resolve(process.env.FILE_STORAGE_PATH), 'thumbnails', this.id);
     }
 
     async delete() {
@@ -89,20 +84,20 @@ class File {
      * @param hash
      * @param file_path
      * @param repos
-     * @return {Promise<boolean>}
+     * @return {Promise<File|null>}
      */
     static async from_data(hash, file_path, repos) {
         const connection = await db();
-        const file_with_same_hash = Object.values(await connection.query('SELECT * from Fileshare.Files WHERE repos = ? AND hash = ?', [id, hash]));
+        const file_with_same_hash = Object.values(await connection.query('SELECT * from Fileshare.Files WHERE repos = ? AND hash = ?', [repos, hash]));
         await connection.end();
 
         for (const file of file_with_same_hash) {
             if (await new Promise((resolve) => {
-                fc(file_path, file_with_same_hash[0].storage_path, (res) => resolve(res))
+                fc(file_path, new File(file).storage_path(), (res) => resolve(res))
             }))
-            return true;
+                return new File(file);
         }
-        return false;
+        return null;
     }
 
     /**

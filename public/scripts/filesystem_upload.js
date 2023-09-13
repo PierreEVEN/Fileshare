@@ -1,4 +1,5 @@
 import {print_message} from "./widgets/message_box.js";
+import {humanFileSize} from "./utils";
 
 class TransferStats {
     constructor() {
@@ -177,10 +178,12 @@ class FilesystemUpload {
 
     _received_error(status, content) {
         this.stop();
-        if (!this.file_in_process)
-            return;
 
-        print_message('error', `An error occured while uploading ${this.file_in_process ? this.file_in_process.name : 'a file'} (${status}) : ` + content.toString());
+        if (status === 403) {
+            window.location = `/repos/upload/?repos=${current_repos.access_key}`
+        }
+
+        print_message('error', `An error occured while uploading ${this.file_in_process ? this.file_in_process.name : 'a file'} (${status})`, content.toString());
         console.error('Error :\n', content);
     }
 
@@ -210,32 +213,16 @@ class FilesystemUpload {
             return;
 
         const new_end = Math.min(this.file_in_process.size, this._byte_sent + this.max_batch_size);
-        this._process_data(this.file_in_process.slice(this._byte_sent, new_end))
-            .catch(err => console.error(err));
+        this._process_data(this.file_in_process.slice(this._byte_sent, new_end));
     }
 
-    async _register_directory(directory) {
-        await fetch("/echo/json/",
-            {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                method: "POST",
-                body: JSON.stringify({a: 1, b: 2})
-            })
-    };
-
-    async _process_data(data) {
+    _process_data(data) {
         this._request.open("POST", this.url);
         if (this._byte_sent === 0) {
             this._request.setRequestHeader('name', encodeURIComponent(this.file_in_process.name));
             this._request.setRequestHeader('octets', this.file_in_process.size);
             this._request.setRequestHeader('mimetype', this.file_in_process.mimetype);
-
-            if (!this.file_in_process.directory.id)
-                await this._register_directory(this.file_in_process.directory);
-            this._request.setRequestHeader('directory', encodeURIComponent(this.file_in_process.directory.id));
+            this._request.setRequestHeader('virtual_path', encodeURIComponent(this.file_in_process.directory.absolute_path()));
             if (this.file_in_process.description)
                 this._request.setRequestHeader('description', encodeURIComponent(this.file_in_process.description));
         } else {

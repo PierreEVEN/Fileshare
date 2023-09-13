@@ -77,6 +77,7 @@ class Repos {
             result.directories.push(dir);
         for (const file of await File.from_repos(this.id))
             result.files.push(file);
+
         return result;
     }
 

@@ -31,7 +31,7 @@ if (filesystem_upload) {
             mimetype: file.mimetype,
             size: file.size,
             id: file_id
-        }, file.directory);
+        }, file.directory.absolute_path());
     }
 }
 

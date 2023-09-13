@@ -6,6 +6,7 @@ const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
 const {logger} = require("../../src/logger");
+const {Directories} = require("../../src/database/directories");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -44,9 +45,10 @@ const upload_in_progress = {};
  * @param metadata
  * @param repos {Repos}
  * @param user {User}
+ * @param file_hash
  * @returns {Promise<unknown>}
  */
-async function received_file(file_path, metadata, repos, user) {
+async function received_file(file_path, metadata, repos, user, file_hash) {
     let path = file_path;
     const meta = metadata;
 
@@ -62,20 +64,28 @@ async function received_file(file_path, metadata, repos, user) {
             break;
     }
 
-    return await new File({
+    const existing_file = await File.from_data(file_hash, file_path, repos.id);
+    if (existing_file) {
+        logger.warn(`File ${metadata} already exists in this repository - skipping`);
+        return null;
+    }
+
+    const parent_directory = (await Directories.find_or_create(repos.id, meta.virtual_path, {owner: user.id}));
+
+    const file_meta = await new File({
         repos: repos.id,
         owner: user.id,
         name: meta.file_name,
         description: meta.description,
         mimetype: meta.mimetype,
-        directory: meta.directory
-    }, file_path).push();
-}
+        size: meta.file_size,
+        parent_directory: parent_directory ? parent_directory.id : null,
+        hash:file_hash,
+    }).push();
 
-router.post('/hierarchy/', async (req, res) => {
-    const data = await req.json();
-    console.log(data);
-});
+    fs.renameSync(file_path, file_meta.storage_path());
+    return file_meta;
+}
 
 router.post('/', async (req, res) => {
     const decode_header = (key) => {
@@ -95,11 +105,11 @@ router.post('/', async (req, res) => {
                 file_name: decode_header('name'),
                 file_size: decode_header('octets'),
                 mimetype: decode_header('mimetype') || '',
-                directory: decode_header('directory_path') || null,
-                directory: decode_header('directory_id') || '',
+                virtual_path: decode_header('virtual_path') || '/',
                 file_description: decode_header('description'),
                 file_id: file_id,
-            }
+            },
+            hash_sum: crypto.createHash('sha256'),
         }
     }
 
@@ -107,21 +117,21 @@ router.post('/', async (req, res) => {
 
     req.on('data', chunk => {
         upload_in_progress[file_id].received_size += Buffer.byteLength(chunk);
+        upload_in_progress[file_id].hash_sum.update(chunk)
         fs.appendFileSync(tmp_file_path, chunk);
     })
 
     req.on('end', async () => {
         if (upload_in_progress[file_id].received_size >= upload_in_progress[file_id].metadata.file_size) {
-
-            logger.info(`${request_username(req)} pushed ${JSON.stringify(upload_in_progress[file_id].metadata)} to ${await req.repos.get_access_key()}`)
-
-            const file = await received_file(tmp_file_path, upload_in_progress[file_id].metadata, req.repos, session_data(req).connected_user)
+            logger.info(`${request_username(req)} store '${JSON.stringify(upload_in_progress[file_id].metadata)}' to repos '${req.repos.access_key}'`)
+            const file = await received_file(tmp_file_path, upload_in_progress[file_id].metadata, req.repos, session_data(req).connected_user, upload_in_progress[file_id].hash_sum.digest('hex'))
             delete upload_in_progress[file_id];
-            return res.status(202).send(file ? `${file.get_id()}` : '');
+            return res.status(202).send(file ? `${file.id}` : '');
         } else if (generated_file_id)
             return res.status(201).send(file_id);
-        else
+        else {
             return res.status(200).send();
+        }
     })
 });
 

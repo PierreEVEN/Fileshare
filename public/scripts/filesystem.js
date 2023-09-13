@@ -3,6 +3,7 @@ const mime = require('mime');
 function prepare_file(file, directory) {
     file.callback_removed = file.callback_removed === undefined ? null : file.callback_removed;
     file.directory = directory;
+    file.delete = () => directory.remove_file(file)
     file.is_file = true;
     file.is_directory = false;
     if (!file.mimetype && file.type && file.type !== '')
@@ -16,6 +17,7 @@ function prepare_file(file, directory) {
 function clear_file(file) {
     delete file['callback_removed'];
     file['directory'] = undefined;
+    delete file['delete'];
     return file;
 }
 

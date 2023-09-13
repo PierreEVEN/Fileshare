@@ -1,6 +1,7 @@
 import {spawn_context_action} from "../../widgets/context_action.js";
 import {close_modal, open_modal} from "../../widgets/modal.js";
 import {print_message} from "../../widgets/message_box.js";
+import {update_repos_content} from "./repos_builder";
 
 function spawn_item_context_action(item) {
     spawn_context_action([{
@@ -26,8 +27,7 @@ function spawn_item_context_action(item) {
         action: () => {
             if (item.is_directory) {
                 window.open(`/repos/archive/?repos=${current_repos.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
-            }
-            else
+            } else
                 window.open(`/file/?file=${item.id}`, '_blank').focus();
         },
         image: '/images/icons/icons8-download-96.png'
@@ -37,8 +37,7 @@ function spawn_item_context_action(item) {
             let url;
             if (item.is_directory) {
                 url = `${location.hostname}/repos/?repos=${current_repos.access_key}&directory=${item.absolute_path()}`;
-            }
-            else {
+            } else {
                 url = `${location.hostname}/file/?file=${item.id}`;
             }
             await navigator.clipboard.writeText(url);
@@ -61,14 +60,43 @@ function spawn_item_context_action(item) {
             div.append(no_button)
             const confirm_button = document.createElement('button')
             confirm_button.innerText = 'Oui';
-            confirm_button.onclick = () => {
-                console.log("Not handled")
+            confirm_button.onclick = async () => {
+
+                if (item.is_file) {
+                    const result = await fetch(`/file/delete/?file=${item.id}`, {method: 'POST'});
+                    if (result.status === 200) {
+                        item.delete();
+                        print_message('info', `File removed`, `Successfully removed ${item.name}`);
+                        close_modal();
+                    } else if (result.status === 403) {
+                        window.location = `/signin/`;
+                    } else {
+                        print_message('error', `Failed to remove ${item.name}`, result.status);
+                        update_repos_content();
+                        close_modal();
+                    }
+                } else if (item.is_directory) {
+                    const result = await fetch(`/directory/delete/?directory=${item.id}`, {method: 'POST'});
+                    if (result.status === 200) {
+                        item.delete();
+                        print_message('info', `Directory removed`, `Successfully removed ${item.name}`);
+                        close_modal();
+                    } else if (result.status === 403) {
+                        window.location = `/signin/`;
+                    } else {
+                        print_message('error', `Failed to remove ${item.name}`, result.status);
+                        update_repos_content();
+                        close_modal();
+                    }
+                } else
+                    print_message('error', 'Not handled', 'null');
             }
             div.append(confirm_button)
             open_modal(div, '500px', '100px');
         },
         image: '/images/icons/icons8-trash-52.png'
     }
+
     ])
 }
 

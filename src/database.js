@@ -1,5 +1,7 @@
 const mariadb = require("mariadb");
 const {logger} = require("./logger");
+const fs = require("fs");
+const path = require("path");
 
 const pool = mariadb.createPool({
     host: '127.0.0.1',
@@ -7,7 +9,6 @@ const pool = mariadb.createPool({
     password: process.env.DATABASE_PASSWORD,
     connectionLimit: 5
 });
-
 
 const table_created = (async () => {
     let connection = await pool.getConnection();
@@ -62,7 +63,7 @@ const table_created = (async () => {
         );`)
     }
 
-    // Create Accounts table if needed
+    // Create Directories table if needed
     if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Fileshare' AND TABLE_NAME = 'Directories'")).length === 0) {
         logger.warn('Create Directories table');
         await connection.query(`CREATE TABLE Fileshare.Directories (
@@ -73,20 +74,21 @@ const table_created = (async () => {
                 description VARCHAR(1200),
                 is_special BOOLEAN DEFAULT false,
                 parent_directory BIGINT NULL,
+                absolute_path VARCHAR(200),
                 FOREIGN KEY(Repos) REFERENCES Fileshare.Repos(id),
                 FOREIGN KEY(owner) REFERENCES Fileshare.Users(id),
-                FOREIGN KEY(parent_directory) REFERENCES Fileshare.Users(id)
+                FOREIGN KEY(parent_directory) REFERENCES Fileshare.Directories(id)
         );`)
     }
 
-    // Create Accounts table if needed
+    // Create Files table if needed
     if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Fileshare' AND TABLE_NAME = 'Files'")).length === 0) {
         logger.warn('Create Fileshare table');
         await connection.query(`CREATE TABLE Fileshare.Files (
                 id VARCHAR(32) PRIMARY KEY,
                 repos BIGINT NOT NULL,
                 owner BIGINT NOT NULL,
-                directory BIGINT NOT NULL,
+                parent_directory BIGINT,
                 name VARCHAR(200) NOT NULL,
                 description VARCHAR(1200),
                 size BIGINT NOT NULL,
@@ -94,9 +96,12 @@ const table_created = (async () => {
                 hash VARCHAR(64) NOT NULL,
                 FOREIGN KEY(repos) REFERENCES Fileshare.Repos(id),
                 FOREIGN KEY(owner) REFERENCES Fileshare.Users(id),
-                FOREIGN KEY(directory) REFERENCES Fileshare.Directories(id)
+                FOREIGN KEY(parent_directory) REFERENCES Fileshare.Directories(id)
         );`)
     }
+    const storage_path = path.resolve(process.env.FILE_STORAGE_PATH)
+    if (!fs.existsSync(storage_path))
+        fs.mkdirSync(storage_path);
 
     await connection.end();
 })();

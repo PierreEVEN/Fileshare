@@ -11,15 +11,17 @@ router.get('/', async (req, res) => {
 
     const directory =  path.posix.normalize(req.query.directory || '/');
     const connection = await db();
-    const found_files = await connection.query(`SELECT * FROM Fileshare.Files WHERE repos = ${req.repos.get_id()} AND virtual_folder LIKE '${directory}%';`);
+    console.error("DODTODOO")
+    const found_files = await connection.query(`SELECT * FROM Fileshare.Files WHERE repos = ${req.repos.id} AND directory IN '${directory}%';`);
     for (const file of Object.values(found_files)) {
+        console.error('TODO')
         archive.file(file.storage_path, {name: file.virtual_folder + '/' + decodeURIComponent(file.name)})
     }
     await connection.end();
 
-    logger.info(`Archived '${await req.repos.get_access_key()}${directory}' for ${request_username(req)}`)
+    logger.info(`Archived '${req.repos.access_key}${directory}' for ${request_username(req)}`)
 
-    res.attachment(`${await req.repos.get_name()}.${directory.replaceAll('/', '.')}.zip`.replace(/([^:]\.)\.+/g, "$1"));
+    res.attachment(`${req.repos.name}.${directory.replaceAll('/', '.')}.zip`.replace(/([^:]\.)\.+/g, "$1"));
     archive.pipe(res);
     await archive.finalize();
 });

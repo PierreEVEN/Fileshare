@@ -6,7 +6,11 @@ const {logger} = require("./logger");
 function require_connection(req, res) {
     if (!session_data(req).connected_user) {
         req.session.last_url = req.originalUrl;
-        res.redirect('/signin');
+        console.log(req.method)
+        if (req.method === 'POST')
+            res.status(403).send('Connection required');
+        else
+            res.status().redirect('/signin');
         return true;
     }
     return false;
@@ -53,8 +57,7 @@ class SessionData {
             this.connected_user = user;
             if (new_connection)
                 logger.info(`new connection from ${this.connected_user.name}#${this.connected_user.id}`)
-        }
-        else {
+        } else {
             if (this.connected_user)
                 logger.info(`${this.connected_user.name}#${this.connected_user.id} disconnected`)
             this.connected_user = null;
