@@ -72,6 +72,11 @@ async function received_file(file_path, metadata, repos, user) {
     }, file_path).push();
 }
 
+router.post('/hierarchy/', async (req, res) => {
+    const data = await req.json();
+    console.log(data);
+});
+
 router.post('/', async (req, res) => {
     const decode_header = (key) => {
         return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
@@ -90,7 +95,8 @@ router.post('/', async (req, res) => {
                 file_name: decode_header('name'),
                 file_size: decode_header('octets'),
                 mimetype: decode_header('mimetype') || '',
-                directory: decode_header('directory') || '',
+                directory: decode_header('directory_path') || null,
+                directory: decode_header('directory_id') || '',
                 file_description: decode_header('description'),
                 file_id: file_id,
             }

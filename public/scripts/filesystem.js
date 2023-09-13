@@ -1,8 +1,8 @@
 const mime = require('mime');
 
-function prepare_file(file, absolute_path) {
+function prepare_file(file, directory) {
     file.callback_removed = file.callback_removed === undefined ? null : file.callback_removed;
-    file.directory = absolute_path;
+    file.directory = directory;
     file.is_file = true;
     file.is_directory = false;
     if (!file.mimetype && file.type && file.type !== '')
@@ -15,7 +15,7 @@ function prepare_file(file, absolute_path) {
 
 function clear_file(file) {
     delete file['callback_removed'];
-    delete file['directory'];
+    file['directory'] = undefined;
     return file;
 }
 
@@ -76,7 +76,7 @@ class Directory {
     }
 
     add_file(file) {
-        prepare_file(file, this.absolute_path())
+        prepare_file(file, this)
         for (const dir of this.parent_dirs()) {
             dir.content_size += file.size;
             dir.content_files += 1;
@@ -180,8 +180,8 @@ class Filesystem {
     add_file(file, path) {
         if (file.size === 0)
             return;
-        const folder = this.directory_from_path(path, true);
-        return folder.add_file(file);
+        const directory = this.directory_from_path(path, true);
+        return directory.add_file(file);
     }
 
     /**
@@ -218,11 +218,7 @@ class Filesystem {
         if (!file.directory)
             return null;
 
-        const directory = this.directory_from_path(file.directory, false);
-        if (!directory)
-            return null;
-
-        return directory.remove_file(file);
+        return file.directory.remove_file(file);
     }
 
     get_random_file() {

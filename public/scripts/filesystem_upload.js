@@ -1,5 +1,4 @@
 import {print_message} from "./widgets/message_box.js";
-import {humanFileSize} from "./utils";
 
 class TransferStats {
     constructor() {
@@ -211,16 +210,32 @@ class FilesystemUpload {
             return;
 
         const new_end = Math.min(this.file_in_process.size, this._byte_sent + this.max_batch_size);
-        this._process_data(this.file_in_process.slice(this._byte_sent, new_end));
+        this._process_data(this.file_in_process.slice(this._byte_sent, new_end))
+            .catch(err => console.error(err));
     }
 
-    _process_data(data) {
+    async _register_directory(directory) {
+        await fetch("/echo/json/",
+            {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                method: "POST",
+                body: JSON.stringify({a: 1, b: 2})
+            })
+    };
+
+    async _process_data(data) {
         this._request.open("POST", this.url);
         if (this._byte_sent === 0) {
             this._request.setRequestHeader('name', encodeURIComponent(this.file_in_process.name));
             this._request.setRequestHeader('octets', this.file_in_process.size);
             this._request.setRequestHeader('mimetype', this.file_in_process.mimetype);
-            this._request.setRequestHeader('directory', encodeURIComponent(this.file_in_process.directory));
+
+            if (!this.file_in_process.directory.id)
+                await this._register_directory(this.file_in_process.directory);
+            this._request.setRequestHeader('directory', encodeURIComponent(this.file_in_process.directory.id));
             if (this.file_in_process.description)
                 this._request.setRequestHeader('description', encodeURIComponent(this.file_in_process.description));
         } else {
