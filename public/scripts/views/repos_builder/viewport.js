@@ -3,23 +3,14 @@ import {close_modal, open_modal} from "../../widgets/modal.js";
 import {print_message} from "../../widgets/message_box.js";
 import {update_repos_content} from "./repos_builder";
 
+const edit_dir_hbs = require('./edit_directory.hbs')
+
 function spawn_item_context_action(item) {
     spawn_context_action([{
-        title: "Renommer",
+        title: "Modifier",
         action: () => {
-            const div = document.createElement('div')
-            const edit_text = document.createElement('input')
-            edit_text.type = 'text';
-            edit_text.value = item.name;
-            div.append(edit_text)
-            const confirm_button = document.createElement('button')
-            confirm_button.innerText = 'renommer';
-            confirm_button.onclick = () => {
-                console.log('rename to ', edit_text.value)
-                close_modal();
-            }
-            div.append(confirm_button)
-            open_modal(div, '500px', '100px');
+            console.log(item.name, item.id)
+            open_modal(edit_dir_hbs(item), '500px', '400px');
         },
         image: '/images/icons/icons8-edit-96.png'
     }, {
@@ -95,9 +86,7 @@ function spawn_item_context_action(item) {
             open_modal(div, '500px', '100px');
         },
         image: '/images/icons/icons8-trash-52.png'
-    }
-
-    ])
+    }])
 }
 
 export {spawn_item_context_action}

@@ -6,9 +6,9 @@
                 <p style="margin: 0; height: 1.2rem">{{this.line}}</p>
             {{/each}}
         </div>
-        <div style="background-color: #d7d6d3; width: 100%; height: fit-content; min-height: 100%; overflow-x: auto">
+        <div style="background-color: #d7d6d3; width: 100%; height: fit-content; min-height: 100%; overflow-x: auto; overflow-y: clip">
             {{#each lines}}
-                <p style="margin: 0 0 0 {{this.indent}}em; height: 1.2rem">{{this.text}}</p>
+                <p style="margin: 0 0 0 {{this.indent}}em; height: 1.2rem; white-space: nowrap;">{{this.text}}</p>
             {{/each}}
         </div>
     </div>

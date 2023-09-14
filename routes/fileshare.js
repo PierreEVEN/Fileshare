@@ -15,6 +15,7 @@ router.get('/', async function (req, res, next) {
 router.use('/', require('./auth'));
 router.use('/repos/', require('./repos'));
 router.use('/file/', require('./file'));
+router.use('/directory/', require('./directory'));
 router.use('/create-repos/', require('./create-repos'));
 
 module.exports = router;

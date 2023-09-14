@@ -74,7 +74,7 @@ const table_created = (async () => {
                 description VARCHAR(1200),
                 is_special BOOLEAN DEFAULT false,
                 parent_directory BIGINT NULL,
-                absolute_path VARCHAR(200),
+                can_visitor_upload BOOLEAN NOT NULL,
                 FOREIGN KEY(Repos) REFERENCES Fileshare.Repos(id),
                 FOREIGN KEY(owner) REFERENCES Fileshare.Users(id),
                 FOREIGN KEY(parent_directory) REFERENCES Fileshare.Directories(id)
@@ -84,7 +84,7 @@ const table_created = (async () => {
     // Create Files table if needed
     if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Fileshare' AND TABLE_NAME = 'Files'")).length === 0) {
         logger.warn('Create Fileshare table');
-        await connection.query(`CREATE TABLE Fileshare.Files (
+        await connection.query(`CREATE TABLE Fileshare.Files(
                 id VARCHAR(32) PRIMARY KEY,
                 repos BIGINT NOT NULL,
                 owner BIGINT NOT NULL,

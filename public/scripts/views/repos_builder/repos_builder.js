@@ -16,21 +16,27 @@ function update_repos_content() {
     fetch(`/repos/content/?repos=${current_repos.access_key}`)
         .then(async (response) => await parse_fetch_result(response))
         .then((json) => {
+            filesystem.clear();
 
             const directories = {}
 
             // Retrieve dirs
-            json.directories.forEach(dir => directories[dir.id] = dir)
-
-            // Compute dirs paths
-            const path_of = dir => (dir.parent ? path_of(directories[dir.parent]) : '/') + dir.name + '/';
-            for (const dir of Object.values(directories))
-                filesystem.directory_from_path(dir.absolute_path, true);
-
-            filesystem.clear();
-            json.files.forEach(item => {
-                filesystem.add_file(item, item.parent_directory ? directories[item.parent_directory].absolute_path : '/');
+            console.log(json.directories)
+            json.directories.forEach(dir => {
+                directories[dir.id] = dir;
             })
+            
+
+            const found = filesystem.directory_from_path(dir.TODO, true);
+            found.id = dir.id;
+            found.can_visitor_upload = dir.can_visitor_upload;
+            found.description = dir.description;
+            console.log(found)
+
+            json.files.forEach(item => {
+                //filesystem.add_file(item, item.parent_directory ? directories[item.parent_directory].absolute_path : '/');
+            })
+            console.log(filesystem)
 
             selector.set_current_dir(filesystem.root);
         });
