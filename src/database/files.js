@@ -18,7 +18,7 @@ class File {
         this.owner = data.owner;
         this.parent_directory = data.parent_directory;
         this.name = data.name ? decodeURIComponent(data.name) : null;
-        this.description = data.description ? decodeURIComponent(data.description) : null;
+        this.description = data.description ? decodeURIComponent(data.description) : '';
         this.size = data.size;
         this.mimetype = data.mimetype;
         this.hash = data.hash;

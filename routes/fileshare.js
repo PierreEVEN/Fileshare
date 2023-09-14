@@ -2,6 +2,18 @@ let express = require('express');
 let router = express.Router();
 const {session_data, public_data} = require("../src/session_utils");
 
+
+router.use((req, res, next) => {
+    req.user = session_data(req).connected_user;
+    res.redirect_to_current_repos = async () => {
+        if (session_data(req).selected_repos)
+            return res.redirect(`/repos/?repos=${await session_data(req).selected_repos.access_key}`);
+        else
+            return res.redirect(`/`);
+    }
+    next();
+})
+
 /* GET users listing. */
 router.get('/', async function (req, res, next) {
     await session_data(req).select_repos(null);
@@ -13,9 +25,10 @@ router.get('/', async function (req, res, next) {
 });
 
 router.use('/', require('./auth'));
-router.use('/repos/', require('./repos'));
-router.use('/file/', require('./file'));
-router.use('/directory/', require('./directory'));
+router.use('/repos/', require('./repos/root'));
+router.use('/file/', require('./file/root'));
+router.use('/directory/', require('./directory/root'));
 router.use('/create-repos/', require('./create-repos'));
+router.use('/archive/', require('./archive'));
 
 module.exports = router;

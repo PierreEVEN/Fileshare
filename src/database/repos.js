@@ -46,26 +46,56 @@ class Repos {
             await file.delete();
         }
 
+        for (const directory of await Directories.from_repos(this.id)) {
+            await directory.delete();
+        }
+
+        for (const user_repos of await UserRepos.from_repos(this.id)) {
+            await user_repos.delete();
+        }
+
         const connection = await db();
         await connection.query("DELETE FROM Fileshare.Repos WHERE id = ?", [this.id]);
         await connection.end();
     }
 
-    async can_user_read_repos(user) {
+    async can_user_view_repos(user_id) {
         if (this.status !== 'private')
             return true;
 
-        if (!user)
+        if (!user_id)
             return false;
 
-        if (this.owner === user)
+        if (this.owner === user_id)
             return true;
 
-        return await UserRepos.exists(user, this.id) !== null;
+        return await UserRepos.exists(user_id, this.id) !== null;
     }
 
-    can_user_edit_repos(user) {
-        return user && this.owner === user;
+    async can_user_upload_to_repos(user_id) {
+        if (!user_id)
+            return false;
+
+        // The owner of a repos can always upload to it
+        if (this.owner === user_id)
+            return true;
+
+        // Also the other people who have upload rights on the repos
+        const user_repos = await UserRepos.exists(user_id, this.id);
+        return user_repos.can_upload();
+    }
+
+    async can_user_edit_repos(user_id) {
+        if (!user_id)
+            return false;
+
+        // The owner of a repos can always edit it
+        if (this.owner === user_id)
+            return true;
+
+        // Also the other people who have the right on the repos
+        const user_repos = await UserRepos.exists(user_id, this.id);
+        return user_repos.can_edit();
     }
 
     async get_content() {

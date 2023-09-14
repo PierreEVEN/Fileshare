@@ -30,7 +30,7 @@ const table_created = (async () => {
                 name VARCHAR(200) UNIQUE,
                 password_hash VARCHAR(64),
                 allow_contact BOOLEAN DEFAULT false NOT NULL,
-                role ENUM('visitor', 'guest', 'vip', 'admin') DEFAULT 'visitor' NOT NULL
+                role ENUM('guest', 'vip', 'admin') DEFAULT 'visitor' NOT NULL
         );`)
     }
 
@@ -56,7 +56,7 @@ const table_created = (async () => {
         await connection.query(`CREATE TABLE Fileshare.UserRepos (
             owner BIGINT,
             repos BIGINT,
-            access_type ENUM('read-only', 'contributor', 'moderator') NOT NULL,
+            access_type ENUM('read-only', 'contributor', 'moderator') NOT NULL DEFAULT 'read-only',
             PRIMARY KEY(OWNER, repos),
             FOREIGN KEY(owner) REFERENCES Fileshare.Users(id),
             FOREIGN KEY(repos) REFERENCES Fileshare.Repos(id)
@@ -74,12 +74,23 @@ const table_created = (async () => {
                 description VARCHAR(1200),
                 is_special BOOLEAN DEFAULT false,
                 parent_directory BIGINT NULL,
-                can_visitor_upload BOOLEAN NOT NULL,
+                open_upload BOOLEAN NOT NULL,
                 FOREIGN KEY(Repos) REFERENCES Fileshare.Repos(id),
                 FOREIGN KEY(owner) REFERENCES Fileshare.Users(id),
                 FOREIGN KEY(parent_directory) REFERENCES Fileshare.Directories(id)
         );`)
     }
+
+
+    await connection.query(`
+    CREATE OR REPLACE TRIGGER
+    name_check_dup 
+    BEFORE INSERT ON 
+    Fileshare.Directories 
+    FOR EACH ROW
+    BEGIN 
+    END;
+  `)
 
     // Create Files table if needed
     if (Object.entries(await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Fileshare' AND TABLE_NAME = 'Files'")).length === 0) {

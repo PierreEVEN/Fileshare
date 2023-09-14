@@ -6,7 +6,6 @@ const {logger} = require("./logger");
 function require_connection(req, res) {
     if (!session_data(req).connected_user) {
         req.session.last_url = req.originalUrl;
-        console.log(req.method)
         if (req.method === 'POST')
             res.status(403).send('Connection required');
         else
@@ -100,7 +99,7 @@ class SessionData {
     }
 
     /**
-     * @param repos {number|null}
+     * @param repos {Repos|null}
      */
     async select_repos(repos = null) {
         if (!repos && this.selected_repos) {

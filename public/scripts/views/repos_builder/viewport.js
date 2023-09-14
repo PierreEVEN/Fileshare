@@ -9,7 +9,6 @@ function spawn_item_context_action(item) {
     spawn_context_action([{
         title: "Modifier",
         action: () => {
-            console.log(item.name, item.id)
             open_modal(edit_dir_hbs(item), '500px', '400px');
         },
         image: '/images/icons/icons8-edit-96.png'
@@ -17,7 +16,7 @@ function spawn_item_context_action(item) {
         title: "Télécharger",
         action: () => {
             if (item.is_directory) {
-                window.open(`/repos/archive/?repos=${current_repos.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
+                window.open(`/archive/?repos=${current_repos.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
             } else
                 window.open(`/file/?file=${item.id}`, '_blank').focus();
         },
@@ -52,11 +51,10 @@ function spawn_item_context_action(item) {
             const confirm_button = document.createElement('button')
             confirm_button.innerText = 'Oui';
             confirm_button.onclick = async () => {
-
                 if (item.is_file) {
                     const result = await fetch(`/file/delete/?file=${item.id}`, {method: 'POST'});
                     if (result.status === 200) {
-                        item.delete();
+                        item.remove();
                         print_message('info', `File removed`, `Successfully removed ${item.name}`);
                         close_modal();
                     } else if (result.status === 403) {
@@ -69,7 +67,7 @@ function spawn_item_context_action(item) {
                 } else if (item.is_directory) {
                     const result = await fetch(`/directory/delete/?directory=${item.id}`, {method: 'POST'});
                     if (result.status === 200) {
-                        item.delete();
+                        item.remove();
                         print_message('info', `Directory removed`, `Successfully removed ${item.name}`);
                         close_modal();
                     } else if (result.status === 403) {

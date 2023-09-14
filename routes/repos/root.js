@@ -1,6 +1,13 @@
-const {session_data, public_data, error_404, require_connection, error_403, request_username} = require("../src/session_utils");
-const {Repos} = require("../src/database/repos");
-const {logger} = require("../src/logger");
+const {
+    session_data,
+    public_data,
+    error_404,
+    require_connection,
+    error_403,
+    request_username
+} = require("../../src/session_utils");
+const {Repos} = require("../../src/database/repos");
+const {logger} = require("../../src/logger");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -10,13 +17,13 @@ router.use(async (req, res, next) => {
 
     const repos = await Repos.from_access_key(req.query.repos);
 
-    // This repos does not exist
+    // This repo does not exist
     if (!repos)
         return error_404(req, res);
 
-    if (!await repos.can_user_read_repos(session_data(req).connected_user)) {
+    if (!await repos.can_user_view_repos(req.user ? req.user.id : null)) {
         // Redirect to signin page if user is not connected
-        if (!session_data(req).connected_user)
+        if (!req.user)
             return require_connection(req, res);
 
         // This user is not allowed to access this repos
@@ -36,14 +43,24 @@ router.get('/', async (req, res) => {
         public_data: await public_data().get()
     });
 })
+
 router.get('/content/', async function (req, res, next) {
     logger.info(`${request_username(req)} fetched content of ${req.repos.access_key}`)
     res.json(await req.repos.get_content());
 });
 
-router.use('/archive/', require('./repos/archive'));
-router.use('/upload/', require('./repos/upload'));
-router.use('/delete/', require('./repos/delete'));
-router.use('/file/:file/', require('./file'));
+router.post('/delete/', async (req, res) => {
+    if (require_connection(req, res))
+        return;
+
+    if (!req.repos.owner === req.user.id)
+        return error_403(req, res);
+
+    await events.on_delete_repos(req.repos);
+    logger.warn(`${request_username(req)} deleted repos ${req.repos.access_key}`)
+    res.redirect(`/`);
+});
+
+router.use('/upload/', require('./upload'));
 
 module.exports = router;

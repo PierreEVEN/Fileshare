@@ -2,9 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const ffmpeg = require("fluent-ffmpeg");
-const {error_404, session_data, request_username} = require("../src/session_utils");
-const {File} = require("../src/database/files");
-const {logger} = require("../src/logger");
+const {error_404, session_data, request_username} = require("../../src/session_utils");
+const {File: Root} = require("../../src/database/files");
+const {logger} = require("../../src/logger");
 const gm = require('gm');
 const {platform} = require("os");
 
@@ -13,13 +13,14 @@ const {platform} = require("os");
 const router = require('express').Router();
 router.use(async (req, res, next) => {
     if (!req.query.file) {
+        logger.warn('ensure there is no sql injection in req.query')
         if (session_data(req).selected_repos)
             return res.redirect(`/repos/?repos=${await session_data(req).selected_repos.access_key}`);
         else
             return res.redirect(`/`);
     }
 
-    const file = await File.from_id(req.query.file);
+    const file = await Root.from_id(req.query.file);
     if (!file)
         return error_404(req, res, 'Document inexistant');
 
@@ -42,7 +43,7 @@ router.get('/', async function (req, res) {
     return res.sendFile(path.resolve(req.file_path));
 })
 
-router.use('/delete/', require('./file/delete'));
+router.use('/delete/', require('./delete'));
 
 router.get('/thumbnail', async function (req, res) {
         if (!fs.existsSync('./data_storage/thumbnail'))

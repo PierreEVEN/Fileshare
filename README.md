@@ -18,3 +18,39 @@ This is the public git repos of a cloud application available at [https://filesh
 - Run server in development mode `npm run dev` or production mode `npm run prod`
 
 That's it !
+
+## Permissions
+
+You can always delete what you created !
+Deleting an account also delete everything you added (repos, files and directories)
+
+There is 3 permission types :
+
+- view : browse and download the resource
+- upload : upload data inside this object
+- edit : modify object and delete data inside
+
+### Fileshare user role : 'guest', 'vip', 'admin'
+
+By default, new user are 'guest'.
+
+- guest can view and download visible repos contents, they can also upload to repos giving them the upload permission.
+- vip have the same rights and can create repos and upload to it.
+- admins can view every repo (not the content) and delete it. They can also manage users (give vip roles / bans etc...)
+
+### Repos specific user roles : 'read-only', 'contributor', 'moderator'
+
+By default, when you add a user to a repos, it has the 'read-only' rights.
+
+- read-only can see and download repos contents
+- contributors can also upload data (including in other people's directory)
+- moderator can also delete files and directories (including in other people's directory)
+
+Note: Only moderators can open a directory to upload
+
+### Custom directory attributes : open_upload
+
+- When open_upload is set to true, every connected user that have read access to the repo can upload files to this directory
+- if a user create a directory inside it, it becomes private to him.
+
+When someone create a ressource inside a directory, it automatically has the 'contributor permissions' on it.

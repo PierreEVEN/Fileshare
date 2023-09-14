@@ -1,6 +1,6 @@
 const fs = require("fs");
 const {File} = require('../../src/database/files');
-const {session_data, public_data, require_connection, request_username} = require("../../src/session_utils");
+const {session_data, public_data, require_connection, request_username, error_403} = require("../../src/session_utils");
 const conversion_queue = require("../../src/file-conversion");
 const path = require("path");
 const os = require("os");
@@ -15,15 +15,8 @@ router.use(async (req, res, next) => {
         return;
 
     // Or every connected user can upload to this repo, or only it's owner is allowed to
-    if (!await req.repos.does_allow_visitor_upload) {
-        if (req.repos.owner !== session_data(req).connected_user.id)
-            return res.status(401).send(JSON.stringify({
-                message: {
-                    severity: 'error',
-                    title: `Impossible d'envoyer ce fichier`,
-                    content: 'Vous n\'avez pas les droits pour mettre en ligne des fichiers sur ce dépôt'
-                }
-            }))
+    if (!await req.repos.can_user_upload_to_repos(req.user.id)) {
+        return error_403(req, res);
     }
     next();
 })

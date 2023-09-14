@@ -4,7 +4,6 @@ import {open_create_repos_modal} from "./create-repos-form";
 const delete_repos_form = require('./delete_repos.hbs')
 
 function delete_repos(e) {
-    console.log(e)
     open_modal(delete_repos_form({id: e}), '500px', '180px', 'delete-repos');
 
     let remaining_s = 5;

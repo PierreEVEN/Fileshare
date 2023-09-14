@@ -11,9 +11,9 @@
         </label>
     </div>
     <div class="field">
-        <label for='can_guest_upload'>
-            <p>Mise en ligne de fichiers publique</p>
-            <input type="checkbox" name="can_guest_upload" id="can_guest_upload" value="{{can_visitor_upload}}">
+        <p>Ouvrir la mise en ligne de fichiers à tous : {{open_upload}}</p>
+        <label for='open_upload'>
+            <input type="checkbox" name="open_upload" id="open_upload" {{#if open_upload}}checked{{/if}}>
         </label>
     </div>
     <input type="submit" value="Valider">
