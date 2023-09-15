@@ -1,6 +1,7 @@
 const {error_404, session_data, request_username, error_403} = require("../../src/session_utils");
 const {logger} = require("../../src/logger");
 const {Directories} = require("../../src/database/directories");
+const perms = require("../../src/permissions");
 
 
 /* ###################################### CREATE ROUTER ###################################### */
@@ -13,7 +14,7 @@ router.use(async (req, res, next) => {
     if (!directory)
         return error_404(req, res, 'Dossier inexistant');
 
-    if (!await directory.can_user_view_directory(req.user ? req.user.id : null))
+    if (!await perms.can_user_view_directory(directory, req.user ? req.user.id : null))
         return error_403(req, res, 'Accès non autorisé');
 
     req.directory = directory;
@@ -23,7 +24,7 @@ router.use(async (req, res, next) => {
 /* ###################################### CREATE ROUTER ###################################### */
 
 router.post('/delete/', async (req, res) => {
-    if (!await req.directory.can_user_edit_directory(req.user ? req.user.id : null))
+    if (!await perms.can_user_edit_directory(req.directory, req.user ? req.user.id : null))
         return error_403(req, res, 'Accès non autorisé');
 
     await req.directory.delete();
@@ -33,7 +34,7 @@ router.post('/delete/', async (req, res) => {
 
 router.post('/update/', async function (req, res) {
 
-    if (!await req.directory.can_user_edit_directory(req.user ? req.user.id : null))
+    if (!await perms.can_user_edit_directory(req.directory, req.user ? req.user.id : null))
         return error_403(req, res, 'Accès non autorisé');
 
     req.directory.name = req.body.name;

@@ -26,7 +26,6 @@
     "gm": "^1.25.0",
     "handlebars": "^4.7.8",
     "http-errors": "~1.6.3",
-    "mariadb": "^3.2.0",
     "mime": "^3.0.0",
     "mini-css-extract-plugin": "^2.7.6",
     "node-sass": "^9.0.0",

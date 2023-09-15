@@ -1,9 +1,8 @@
 const db = require("../database");
 const {gen_uid} = require("../uid_generator");
 const assert = require("assert");
-const fs = require("fs");
-const {File} = require('./files')
-const {Repos} = require("./repos");
+const {File} = require('./files');
+const {as_id, as_data_string, as_boolean} = require("../db_utils");
 
 const id_base = new Set();
 
@@ -30,74 +29,29 @@ class Directories {
         assert(typeof this.is_special === 'boolean');
         assert(typeof this.open_upload === 'boolean');
 
-        const connection = await db();
-        await connection.query(`SET FOREIGN_KEY_CHECKS = 0;`);
-        await connection.query(`REPLACE INTO Fileshare.Directories
+        await db.single().query(`INSERT INTO fileshare.directories
             (id, repos, owner, name, description, is_special, parent_directory, open_upload) VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?);`,
-            [this.id, this.repos, this.owner, encodeURIComponent(this.name), encodeURIComponent(this.description), this.is_special, this.parent_directory, this.open_upload]);
-        await connection.query(`SET FOREIGN_KEY_CHECKS = 1;`);
-        await connection.end();
+            ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (id) DO  
+            UPDATE SET id = $1, repos = $2, owner = $3, name = $4, description = $5, is_special = $6, parent_directory = $7, open_upload = $8;`,
+            [as_id(this.id), as_id(this.repos), as_id(this.owner), as_data_string(this.name), as_data_string(this.description), as_boolean(this.is_special), as_id(this.parent_directory), as_boolean(this.open_upload)]);
         return this;
     }
 
     async delete() {
-        let connection = await db();
-        for (const file of Object.values(await connection.query("SELECT * FROM Fileshare.Files WHERE parent_directory = ?", [this.id]))) {
-            await new File(file).delete();
+        let connection = await db.persist();
+
+        for (const file of await connection.fetch_objects(File, "SELECT * FROM fileshare.files WHERE parent_directory = $1", [as_id(this.id)])) {
+            await file.delete();
         }
 
-        const inner_dirs = Object.values(await connection.query("SELECT * FROM Fileshare.Directories WHERE parent_directory = ?", [this.id]));
+        const inner_dirs = await connection.fetch_objects(Directories,"SELECT * FROM fileshare.directories WHERE parent_directory = $1", [as_id(this.id)]);
         await connection.end();
         for (const inner_dir of inner_dirs) {
-            await new Directories(inner_dir).delete();
+            await inner_dir.delete();
         }
 
-        connection = await db();
-        await connection.query("DELETE FROM Fileshare.Directories WHERE id = ?", [this.id]);
-        await connection.end();
-    }
-
-    async can_user_view_directory(user_id) {
-        if (!user_id)
-            return false
-
-        // The people who created the directory can always edit or delete it
-        if (this.owner === user_id)
-            return true;
-
-        // The people who have admin right on the repos can edit or delete the directory as well
-        const repos = await Repos.from_id(this.repos);
-        return repos.can_user_view_repos(user_id);
-    }
-
-    async can_user_upload_to_directory(user_id) {
-        if (!user_id)
-            return false;
-
-        // The people who created the directory can always edit or delete it
-        if (this.owner === user_id)
-            return true;
-
-        if (this.open_upload)
-            return true;
-
-        // The people who have admin right on the repos can edit or delete the directory as well
-        const repos = await Repos.from_id(this.repos);
-        return repos.can_user_upload_to_repos(user_id);
-    }
-
-    async can_user_edit_directory(user_id) {
-        if (!user_id)
-            return false;
-
-        // The people who created the directory can always edit or delete it
-        if (this.owner === user_id)
-            return true;
-
-        // The people who have admin right on the repos can edit or delete the directory as well
-        const repos = await Repos.from_id(this.repos);
-        return repos.can_user_edit_repos(user_id);
+        await db.single().query("DELETE FROM fileshare.directories WHERE id = $1", [as_id(this.id)]);
     }
 
     async get_absolute_path() {
@@ -108,17 +62,10 @@ class Directories {
     }
 
     async get_files(recursive = true) {
-        let files = [];
-        const connection = await db();
-        for (const file of Object.values(await connection.query('SELECT * FROM Fileshare.Files WHERE parent_directory = ?', [this.id])))
-            files.push(new File(file));
+        const connection = await db.persist();
+        let files = await connection.fetch_objects(File, 'SELECT * FROM fileshare.files WHERE parent_directory = $1', [as_id(this.id)]);
 
-        console.log(files)
-
-        let child_dirs = []
-        if (recursive)
-            for (const file of Object.values(await connection.query('SELECT * FROM Fileshare.Directories WHERE parent_directory = ?', [this.id])))
-                child_dirs.push(new Directories(file));
+        let child_dirs = recursive ? await connection.fetch_objects(Directories,'SELECT * FROM fileshare.directories WHERE parent_directory = $1', [as_id(this.id)]) : [];
         await connection.end();
 
         for (const dir of child_dirs)
@@ -128,8 +75,8 @@ class Directories {
     }
 
     static async gen_id() {
-        const connection = await db();
-        const id = await gen_uid(async (id) => Object(await connection.query('SELECT * FROM Fileshare.Directories WHERE id = ?', [id])).length, id_base);
+        const connection = await db.persist();
+        const id = await gen_uid(async (id) => await connection.found('SELECT * FROM fileshare.directories WHERE id = $1', [as_id(id)]), id_base);
         await connection.end();
         return id;
     }
@@ -139,11 +86,7 @@ class Directories {
      * @return {Promise<Directories|null>}
      */
     static async from_id(id) {
-        const connection = await db();
-        const found_data = Object.values(await connection.query('SELECT * FROM Fileshare.Directories WHERE id = ?', [id]));
-        const directory = found_data.length === 1 ? new Directories(found_data[0]) : null;
-        await connection.end();
-        return directory;
+        return await db.single().fetch_object(Directories, 'SELECT * FROM fileshare.directories WHERE id = $1', [as_id(id)]);
     }
 
     /**
@@ -156,7 +99,7 @@ class Directories {
         let base = null;
         while (path_list.length > 0) {
             const name = path_list.shift();
-            base = await Directories.inside_dir(base, name, repos);
+            base = await Directories.inside_dir(base ? base.id : null, name, repos);
         }
         return base;
     }
@@ -168,13 +111,9 @@ class Directories {
      * @return {Promise<Directories|null>}
      */
     static async inside_dir(parent, name, repos) {
-        const connection = await db();
-        const found_data = parent ?
-            Object.values(await connection.query('SELECT * FROM Fileshare.Directories WHERE parent_directory = ? AND name = ? AND repos = ?', [parent, encodeURIComponent(name), repos])) :
-            Object.values(await connection.query('SELECT * FROM Fileshare.Directories WHERE parent_directory IS NULL AND name = ? AND repos = ?', [encodeURIComponent(name), repos]));
-        const directory = found_data.length >= 1 ? new Directories(found_data[0]) : null;
-        await connection.end();
-        return directory;
+        return parent ?
+            await db.single().fetch_object(Directories, 'SELECT * FROM fileshare.Directories WHERE parent_directory = $1 AND name = $2 AND repos = $3', [as_id(parent), as_data_string(name), as_id(repos)]) :
+            await db.single().fetch_object(Directories, 'SELECT * FROM fileshare.directories WHERE parent_directory IS NULL AND name = $1 AND repos = $2', [as_data_string(name), as_id(repos)]);
     }
 
     /**
@@ -182,12 +121,7 @@ class Directories {
      * @return {Promise<Directories[]>}
      */
     static async from_repos(id) {
-        const connection = await db();
-        const directories = [];
-        for (const dir of Object.values(await connection.query('SELECT * FROM Fileshare.Directories WHERE repos = ?', [id])))
-            directories.push(new Directories(dir));
-        await connection.end();
-        return directories;
+        return await db.single().fetch_objects(Directories, 'SELECT * FROM fileshare.directories WHERE repos = $1', [as_id(id)]);
     }
 
     /**
