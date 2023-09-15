@@ -93,7 +93,7 @@ const table_created = (async () => {
 
     // Create Files table if needed
     if ((await connection.query("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Fileshare' AND TABLE_NAME = 'Files'")).rowCount === 0) {
-        logger.warn('Create Fileshare table');
+        logger.warn('Create Files table');
         await connection.query(`CREATE TABLE Fileshare.Files(
                 id VARCHAR(32) PRIMARY KEY,
                 repos BIGINT NOT NULL,
