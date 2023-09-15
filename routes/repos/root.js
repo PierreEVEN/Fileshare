@@ -8,6 +8,7 @@ const {
 } = require("../../src/session_utils");
 const {Repos} = require("../../src/database/repos");
 const {logger} = require("../../src/logger");
+const perms = require("../../src/permissions");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -21,7 +22,7 @@ router.use(async (req, res, next) => {
     if (!repos)
         return error_404(req, res);
 
-    if (!await repos.can_user_view_repos(req.user ? req.user.id : null)) {
+    if (!await perms.can_user_view_repos(repos, req.user ? req.user.id : null)) {
         // Redirect to signin page if user is not connected
         if (!req.user)
             return require_connection(req, res);

@@ -7,6 +7,7 @@ const os = require("os");
 const crypto = require("crypto");
 const {logger} = require("../../src/logger");
 const {Directories} = require("../../src/database/directories");
+const perms = require("../../src/permissions");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -15,7 +16,7 @@ router.use(async (req, res, next) => {
         return;
 
     // Or every connected user can upload to this repo, or only it's owner is allowed to
-    if (!await req.repos.can_user_upload_to_repos(req.user.id)) {
+    if (!await perms.can_user_upload_to_repos(req.repos, req.user.id)) {
         return error_403(req, res);
     }
     next();
@@ -75,7 +76,6 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
         parent_directory: parent_directory ? parent_directory.id : null,
         hash:file_hash,
     }).push();
-
     fs.renameSync(file_path, file_meta.storage_path());
     return file_meta;
 }

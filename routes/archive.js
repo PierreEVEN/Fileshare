@@ -5,6 +5,7 @@ const {Directories} = require("../src/database/directories");
 const {Repos} = require("../src/database/repos");
 const router = require('express').Router();
 const {File} = require('../src/database/files')
+const perms = require("../src/permissions");
 
 router.get('/', async (req, res) => {
 
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
     if (!repos)
         return error_404(req, res);
 
-    if (!await repos.can_user_view_repos(req.user ? req.user.id : null)) {
+    if (!await perms.can_user_view_repos(repos, req.user ? req.user.id : null)) {
         if (require_connection(req, res))
             return;
 

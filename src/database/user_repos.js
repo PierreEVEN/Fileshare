@@ -1,6 +1,7 @@
 const db = require('../database')
 const assert = require("assert");
 const {File} = require("./files");
+const {as_id, as_enum} = require("../db_utils");
 
 const id_base = new Set();
 
@@ -26,19 +27,15 @@ class UserRepos {
         assert(this.owner);
         assert(this.repos);
         assert(this.access_type);
-        const connection = await db();
-        await connection.query(`REPLACE INTO Fileshare.UserRepos
+        await db.single().query(`REPLACE INTO fileshare.userrepos
             (owner, repos, access_type) VALUES
-            (?, ?, ?);`,
-            [this.owner, this.repos, this.access_type.toLowerCase().trim()]);
-        await connection.end();
+            ($1, $2, $3);`,
+            [as_id(this.owner), as_id(this.repos), as_enum(this.access_type)]);
         return this;
     }
 
     async delete() {
-        const connection = await db();
-        await connection.query("DELETE FROM Fileshare.UserRepos WHERE owner = ? AND repos = ?", [this.owner, this.repos]);
-        await connection.end();
+        await db.single().query("DELETE FROM fileshare.userrepos WHERE owner = $1 AND repos = $2", [as_id(this.owner), as_id(this.repos)]);
     }
 
 
@@ -48,10 +45,7 @@ class UserRepos {
      * @return {Promise<UserRepos|null>}
      */
     static async exists(owner, repos) {
-        const connection = await db();
-        const result =  Object.values(await connection.query('SELECT * FROM Fileshare.UserRepos WHERE owner = ? AND repos = ?', [owner, repos]));
-        await connection.end();
-        return result.length !== 0 ? result[0] : null;
+        await db.single().fetch_object(UserRepos, 'SELECT * FROM fileshare.userRepos WHERE owner = $1 AND repos = $2', [as_id(owner), as_id(repos)]);
     }
 
     /**
@@ -59,12 +53,7 @@ class UserRepos {
      * @return {Promise<UserRepos[]>}
      */
     static async from_user(id) {
-        const connection = await db();
-        const directories = [];
-        for (const dir of Object.values(await connection.query('SELECT * FROM Fileshare.UserRepos WHERE owner = ?', [id])))
-            directories.push(new UserRepos(dir));
-        await connection.end()
-        return directories;
+        return await db.single().fetch_objects(UserRepos, 'SELECT * FROM fileshare.userRepos WHERE owner = $1', [as_id(id)]);
     }
 
     /**
@@ -72,12 +61,8 @@ class UserRepos {
      * @return {Promise<UserRepos[]>}
      */
     static async from_repos(id) {
-        const connection = await db();
-        const directories = [];
-        for (const dir of Object.values(await connection.query('SELECT * FROM Fileshare.UserRepos WHERE repos = ?', [id])))
-            directories.push(new UserRepos(dir));
-        await connection.end();
-        return directories;
+
+        return await db.single().fetch_objects(UserRepos, 'SELECT * FROM fileshare.userrepos WHERE repos = $1', [as_id(id)]);
     }
 }
 

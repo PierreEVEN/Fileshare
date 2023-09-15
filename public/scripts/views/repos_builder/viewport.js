@@ -9,7 +9,9 @@ function spawn_item_context_action(item) {
     spawn_context_action([{
         title: "Modifier",
         action: () => {
-            open_modal(edit_dir_hbs(item), '500px', '400px');
+            if (item.is_directory)
+                open_modal(edit_dir_hbs(item), '500px', '400px');
+            else console.error('Not handled yet');
         },
         image: '/images/icons/icons8-edit-96.png'
     }, {

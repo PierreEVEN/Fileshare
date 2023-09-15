@@ -49,7 +49,7 @@ html
                     button(onclick = 'window.auth.open_modal_signup()') Nouveau Compte
                     button(onclick = 'window.auth.open_modal_signin()') Connexion
                 else
-                    p.Username Bonjour #{session_data.user.username} !
+                    p.Username Bonjour #{session_data.user.name} !
                     button(onclick='window.auth.logout()') Déconnexion
 
             div.viewport

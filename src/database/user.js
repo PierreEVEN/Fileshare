@@ -3,6 +3,7 @@ const {gen_uhash, gen_uid} = require("../uid_generator");
 const {Repos} = require("./repos")
 const bcrypt = require("bcrypt");
 const assert = require("assert");
+const {as_data_string, as_id, as_boolean, as_enum, as_hash_key} = require("../db_utils");
 
 const id_base = new Set();
 
@@ -28,12 +29,12 @@ class User {
         assert(this.name);
         assert(this.allow_contact);
         assert(this.role);
-        const connection = await db();
-        await connection.query(`REPLACE INTO Fileshare.Users
+        await db.single().query(`INSERT INTO fileshare.users
             (id, email, name, allow_contact, role) VALUES
-            (?, ?, ?, ?, ?, ?);`,
-            [this.id, encodeURIComponent(this.email), encodeURIComponent(this.name), this.allow_contact.toLowerCase().trim(), this.role]);
-        await connection.end();
+            ($1, $2, $3, $4, $5)
+            ON CONFLICT (id) DO  
+            UPDATE SET id = $1, email = $2, name = $3, allow_contact = $4, role = $5;`,
+            [as_id(this.id), as_data_string(this.email), as_data_string(this.name), as_boolean(this.allow_contact), as_enum(this.role)]);
         return this;
     }
 
@@ -42,9 +43,7 @@ class User {
         for (const repos of await Repos.from_owner(this.id))
             await repos.delete();
 
-        const connection = await db();
-        await connection.query("DELETE FROM Fileshare.Users WHERE id = ?", [this.id]);
-        await connection.end();
+        await db.single().query("DELETE FROM fileshare.users WHERE id = $1", [as_id(this.id)]);
     }
 
     static async create(data) {
@@ -54,17 +53,15 @@ class User {
         assert(user.name);
         assert(user.allow_contact);
         assert(user.role);
-        const connection = await db();
-        await connection.query(`REPLACE INTO Fileshare.Users
+        await db.single().query(`INSERT INTO fileshare.users
             (id, email, password_hash, name, allow_contact, role) VALUES
-            (?, ?, ?, ?, ?, ?);`,
-            [user.id || await User.gen_id(), encodeURIComponent(user.email), await bcrypt.hash(data.password, 10), encodeURIComponent(user.name), user.allow_contact, user.role.toLowerCase().trim()]);
-        await connection.end();
+            ($1, $2, $3, $4, $5, $6)`,
+            [as_id(user.id || await User.gen_id()), as_data_string(user.email), as_hash_key(await bcrypt.hash(data.password, 10)), as_data_string(user.name), as_boolean(user.allow_contact), as_enum(user.role)]);
         return await User.from_credentials(data.email, data.password);
     }
     static async gen_id() {
-        const connection = await db();
-        const id = await gen_uid(async (id) => Object(await connection.query('SELECT * FROM Fileshare.Users WHERE id = ?', [id])).length, id_base);
+        const connection = await db.persist();
+        const id = await gen_uid(async (id) => await connection.found('SELECT * FROM fileshare.users WHERE id = $1', [as_id(id)]), id_base);
         await connection.end();
         return id;
     }
@@ -74,21 +71,14 @@ class User {
      * @return {Promise<User|null>}
      */
     static async from_id(id) {
-        const connection = await db();
-        const found_data = Object.values(await connection.query('SELECT * FROM Fileshare.Users WHERE id = ?', [id]));
-        const user = found_data.length === 1 ? new User(found_data[0]) : null;
-        await connection.end();
-        return user;
+        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE id = $1', [as_id(id)]);
     }
     /**
      * @return {Promise<User | null>}
      */
     static async from_credentials(login, password) {
-        const connection = await db()
-        const res = Object.values(await connection.query('SELECT * FROM Fileshare.Users WHERE name = ? OR email = ?', [encodeURIComponent(login), encodeURIComponent(login)]));
-        await connection.end();
         let found_user = null;
-        for (let user of res) {
+        for (let user of (await db.single().query('SELECT * FROM fileshare.users WHERE name = $1 OR email = $2', [as_data_string(login), as_data_string(login)])).rows) {
             if (bcrypt.compareSync(password, user.password_hash.toString())) {
                 found_user = user;
                 break;
@@ -101,10 +91,7 @@ class User {
      * @return {Promise<boolean>}
      */
     static async exists(login, email) {
-        const connection = await db()
-        const res = await connection.query('SELECT * FROM Fileshare.Users WHERE name = ? OR email = ?', [encodeURIComponent(login), encodeURIComponent(email)]);
-        await connection.end();
-        return Object.values(res).length !== 0;
+        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE name = $1 OR email = $2', [as_data_string(login), as_data_string(email)]);
     }
 }
 

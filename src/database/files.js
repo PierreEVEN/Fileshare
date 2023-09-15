@@ -5,6 +5,7 @@ const path = require('path')
 const fc = require('filecompare');
 const {gen_uhash, gen_uid} = require("../uid_generator");
 const assert = require("assert");
+const {as_id, as_hash_key, as_data_string, as_number} = require("../db_utils");
 
 const id_base = new Set();
 
@@ -20,7 +21,7 @@ class File {
         this.name = data.name ? decodeURIComponent(data.name) : null;
         this.description = data.description ? decodeURIComponent(data.description) : '';
         this.size = data.size;
-        this.mimetype = data.mimetype;
+        this.mimetype = decodeURIComponent(data.mimetype);
         this.hash = data.hash;
     }
 
@@ -32,12 +33,12 @@ class File {
         assert(this.size);
         assert(this.mimetype);
         assert(this.hash);
-        const connection = await db();
-        await connection.query(`REPLACE INTO Fileshare.Files
+        await db.single().query(`INSERT INTO fileshare.files
             (id, repos, owner, parent_directory, name, description, size, mimetype, hash) VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-            [this.id, this.repos, this.owner, this.parent_directory, encodeURIComponent(this.name), encodeURIComponent(this.description), this.size, this.mimetype, this.hash]);
-        await connection.end();
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ON CONFLICT (id) DO  
+            UPDATE SET id = $1, repos = $2, owner = $3, parent_directory = $4, name = $5, description = $6, size = $7, mimetype = $8, hash = $9;`,
+            [as_hash_key(this.id), as_id(this.repos), as_id(this.owner), as_id(this.parent_directory), as_data_string(this.name), encodeURIComponent(this.description), as_number(this.size), as_data_string(this.mimetype), as_hash_key(this.hash)]);
         return this;
     }
 
@@ -56,14 +57,12 @@ class File {
         if (fs.existsSync(this.thumbnail_path()))
             fs.unlinkSync(this.thumbnail_path());
 
-        const connection = await db();
-        await connection.query("DELETE FROM Fileshare.Files WHERE id = ?", [this.id]);
-        await connection.end();
+        await db.single().query("DELETE FROM fileshare.files WHERE id = $1", [as_data_string(this.id)]);
     }
 
     static async gen_id() {
-        const connection = await db();
-        const id = await gen_uhash(async (id) => Object(await connection.query('SELECT * FROM Fileshare.Files WHERE id = ?', [id])).length, id_base);
+        const connection = await db.persist();
+        const id = await gen_uhash(async (id) => await connection.found('SELECT * FROM fileshare.files WHERE id = $1', [as_data_string(id)]), id_base);
         await connection.end();
         return id;
     }
@@ -73,11 +72,7 @@ class File {
      * @return {Promise<File|null>}
      */
     static async from_id(id) {
-        const connection = await db();
-        const found_data = Object.values(await connection.query('SELECT * FROM Fileshare.Files WHERE id = ?', [id]));
-        const file = found_data.length === 1 ? new File(found_data[0]) : null;
-        await connection.end();
-        return file;
+        return await db.single().fetch_object(File, 'SELECT * FROM fileshare.files WHERE id = $1', [as_data_string(id)]);
     }
 
     /**
@@ -87,9 +82,7 @@ class File {
      * @return {Promise<File|null>}
      */
     static async from_data(hash, file_path, repos) {
-        const connection = await db();
-        const file_with_same_hash = Object.values(await connection.query('SELECT * from Fileshare.Files WHERE repos = ? AND hash = ?', [repos, hash]));
-        await connection.end();
+        const file_with_same_hash = await db.single().rows('SELECT * from fileshare.files WHERE repos = $1 AND hash = $2', [as_id(repos), as_hash_key(hash)]);
 
         for (const file of file_with_same_hash) {
             if (await new Promise((resolve) => {
@@ -105,13 +98,7 @@ class File {
      * @return {Promise<File[]>}
      */
     static async from_repos(id) {
-        const connection = await db();
-        const files = [];
-        for (const file of Object.values(await connection.query('SELECT * from Fileshare.Files WHERE repos = ?', [id]))) {
-            files.push(new File(file));
-        }
-        await connection.end();
-        return files;
+        return await db.single().fetch_objects(File, 'SELECT * FROM fileshare.files WHERE repos = $1', [as_id(id)]);
     }
 }
 

@@ -4,6 +4,8 @@ const {gen_uid, gen_uhash} = require("../uid_generator");
 const {File} = require('./files')
 const {UserRepos} = require("./user_repos");
 const assert = require("assert");
+const {Directories} = require("./directories");
+const {as_data_string, as_id, as_enum, as_boolean, as_number} = require("../db_utils");
 
 const id_base = new Set();
 
@@ -25,18 +27,18 @@ class Repos {
     async push() {
         this.id = this.id || await Repos.gen_id()
         assert(this.name);
-        assert(this.owner && typeof this.owner === 'bigint');
+        assert(!isNaN(this.owner));
         assert(this.status);
         assert(this.access_key);
         assert(this.max_file_size);
         assert(this.visitor_file_lifetime);
         assert(this.allow_visitor_upload !== undefined && this.allow_visitor_upload !== null);
-        const connection = await db();
-        await connection.query(`REPLACE INTO Fileshare.Repos
+        await db.single().query(`INSERT INTO fileshare.repos
             (id, name, owner, status, access_key, max_file_size, visitor_file_lifetime, allow_visitor_upload) VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?);`,
-            [this.id, encodeURIComponent(this.name), this.owner, this.status.toLowerCase().trim(), encodeURIComponent(this.access_key), this.max_file_size, this.visitor_file_lifetime, this.allow_visitor_upload]);
-        await connection.end();
+            ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (id) DO  
+            UPDATE SET id = $1, name = $2, owner = $3, status = $4, access_key = $5, max_file_size = $6, visitor_file_lifetime = $7, allow_visitor_upload = $8;`,
+            [as_id(this.id), as_data_string(this.name), as_id(this.owner), as_enum(this.status), as_data_string(this.access_key), as_number(this.max_file_size), as_number(this.visitor_file_lifetime), as_boolean(this.allow_visitor_upload)]);
         return this;
     }
 
@@ -54,48 +56,7 @@ class Repos {
             await user_repos.delete();
         }
 
-        const connection = await db();
-        await connection.query("DELETE FROM Fileshare.Repos WHERE id = ?", [this.id]);
-        await connection.end();
-    }
-
-    async can_user_view_repos(user_id) {
-        if (this.status !== 'private')
-            return true;
-
-        if (!user_id)
-            return false;
-
-        if (this.owner === user_id)
-            return true;
-
-        return await UserRepos.exists(user_id, this.id) !== null;
-    }
-
-    async can_user_upload_to_repos(user_id) {
-        if (!user_id)
-            return false;
-
-        // The owner of a repos can always upload to it
-        if (this.owner === user_id)
-            return true;
-
-        // Also the other people who have upload rights on the repos
-        const user_repos = await UserRepos.exists(user_id, this.id);
-        return user_repos.can_upload();
-    }
-
-    async can_user_edit_repos(user_id) {
-        if (!user_id)
-            return false;
-
-        // The owner of a repos can always edit it
-        if (this.owner === user_id)
-            return true;
-
-        // Also the other people who have the right on the repos
-        const user_repos = await UserRepos.exists(user_id, this.id);
-        return user_repos.can_edit();
+        await db.single().query("DELETE FROM fileshare.repos WHERE id = $1", [as_id(this.id)]);
     }
 
     async get_content() {
@@ -112,8 +73,8 @@ class Repos {
     }
 
     static async gen_id() {
-        const connection = await db();
-        const id = await gen_uid(async (id) => Object(await connection.query('SELECT * FROM Fileshare.Repos WHERE id = ?', [id])).length, id_base);
+        const connection = await db.persist();
+        const id = await gen_uid(async (id) => await connection.found('SELECT * FROM fileshare.repos WHERE id = $1', [as_id(id)]), id_base);
         await connection.end();
         return id;
     }
@@ -123,12 +84,8 @@ class Repos {
      * @return {Promise<Repos|null>}
      */
     static async from_id(id) {
-        assert(typeof id === 'bigint')
-        const connection = await db();
-        const found_data = Object.values(await connection.query('SELECT * FROM Fileshare.Repos WHERE id = ?', [id]));
-        const repos = found_data.length === 1 ? new Repos(found_data[0]) : null;
-        await connection.end();
-        return repos;
+        assert(!isNaN(id))
+        return await db.single().fetch_object(File, 'SELECT * FROM fileshare.repos WHERE id = $1', [as_id(id)]);
     }
 
     /**
@@ -136,13 +93,8 @@ class Repos {
      * @return {Promise<Repos[]>}
      */
     static async from_owner(id) {
-        assert(typeof id === 'bigint')
-        const connection = await db();
-        const repos = []
-        for (const repo of Object.values(await connection.query('SELECT * FROM Fileshare.Repos WHERE owner = ?', [id])))
-            repos.push(repo);
-        await connection.end();
-        return repos;
+        assert(!isNaN(id))
+        return await db.single().fetch_objects(Repos, `SELECT * FROM fileshare.repos WHERE owner = $1`, [as_id(id)])
     }
 
     /**
@@ -150,25 +102,15 @@ class Repos {
      * @return {Promise<Repos[]>}
      */
     static async visible_to_user(id) {
-        assert(typeof id === 'bigint')
-        const connection = await db();
-        const repos = []
-        for (const repo of Object.values(await connection.query('SELECT * FROM Fileshare.Repos WHERE NOT owner = id AND id IN (SELECT id FROM Fileshare.UserRepos WHERE repos = ? AND user = ?)', [this.id, id])))
-            repos.push(repo);
-        await connection.end();
-        return repos;
+        assert(!isNaN(id))
+        await db.single().fetch_objects(Repos, 'SELECT * FROM fileshare.repos WHERE NOT owner = id AND id IN (SELECT id FROM fileshare.userrepos WHERE repos = $1 AND user = $2)', [as_id(this.id), as_id(id)])
     }
 
     /**
      * @return {Promise<Repos[]>}
      */
     static async with_public_access() {
-        const connection = await db();
-        const repos = []
-        for (const repo of Object.values(await connection.query('SELECT * FROM Fileshare.Repos WHERE status = "public"')))
-            repos.push(repo);
-        await connection.end();
-        return repos;
+        return await db.single().fetch_objects(Repos, `SELECT * FROM fileshare.repos WHERE status = 'public'`);
     }
 
     /**
@@ -177,11 +119,7 @@ class Repos {
      */
     static async from_access_key(key) {
         assert(typeof key === 'string')
-        const connection = await db();
-        const found_data = Object.values(await connection.query('SELECT * FROM Fileshare.Repos WHERE access_key = ?', [encodeURIComponent(key)]));
-        const repos = found_data.length === 1 ? new Repos(found_data[0]) : null;
-        await connection.end();
-        return repos;
+        return await db.single().fetch_object(Repos, 'SELECT * FROM fileshare.repos WHERE access_key = $1', [as_data_string(key)]);
     }
 }
 
