@@ -4,7 +4,6 @@ const {gen_uid, gen_uhash} = require("../uid_generator");
 const {File} = require('./files')
 const {UserRepos} = require("./user_repos");
 const assert = require("assert");
-const {Directories} = require("./directories");
 
 const id_base = new Set();
 
@@ -46,6 +45,7 @@ class Repos {
             await file.delete();
         }
 
+        console.error("Don't use directory here")
         for (const directory of await Directories.from_repos(this.id)) {
             await directory.delete();
         }
