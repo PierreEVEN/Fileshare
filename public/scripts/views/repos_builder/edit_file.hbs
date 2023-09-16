@@ -1,0 +1,14 @@
+<h1>Modifier le fichier {{name}}</h1>
+<form action="/file/update/?file={{id}}" method="post">
+    <div class="field">
+        <label for='name'>
+            <input type="text" name="name" placeholder="Nom" id="name" required value="{{name}}">
+        </label>
+    </div>
+    <div class="field">
+        <label for='description'>
+            <textarea name="description" placeholder="Description" id="description">{{description}}</textarea>
+        </label>
+    </div>
+    <input type="submit" value="Valider">
+</form>

@@ -113,6 +113,44 @@ class Permissions {
         const user_repos = await UserRepos.exists(user_id, repos.id);
         return user_repos.can_edit();
     }
+
+    /**
+     * @param file {File}
+     * @param user_id {number}
+     * @return {Promise<boolean>}
+     */
+    async can_user_view_file(file, user_id) {
+        const repos = await Repos.from_id(file.repos);
+
+        if (repos.status !== 'private')
+            return true;
+
+        if (!user_id)
+            return false;
+
+        if (repos.owner === user_id)
+            return true;
+
+        return await UserRepos.exists(user_id, repos.id) !== null;
+    }
+
+    /**
+     * @param file {File}
+     * @param user_id {number}
+     * @return {Promise<boolean>}
+     */
+    async can_user_edit_file(file, user_id) {
+        if (!user_id)
+            return false;
+
+        // The people who created the directory can always edit or delete it
+        if (file.owner === user_id)
+            return true;
+
+        // The people who have admin right on the repos can edit or delete the directory as well
+        const repos = await Repos.from_id(file.repos);
+        return this.can_user_edit_repos(repos, user_id);
+    }
 }
 
 const perms = new Permissions()

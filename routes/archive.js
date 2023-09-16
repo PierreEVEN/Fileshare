@@ -27,11 +27,12 @@ router.get('/', async (req, res) => {
     let path = '/';
     if (req.query.directory) {
         const dir = await Directories.from_path(Number(repos.id), req.query.directory)
-        if (!dir)
-            return error_404(req, res);
-
-        files = await dir.get_files(true);
-        path = await dir.get_absolute_path();
+        if (!dir) {
+            files = await File.from_repos(repos.id)
+        } else {
+            files = await dir.get_files(true);
+            path = await dir.get_absolute_path();
+        }
     } else
         files = await File.from_repos(repos.id)
 

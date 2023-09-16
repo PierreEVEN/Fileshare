@@ -40,8 +40,8 @@ class UserRepos {
 
 
     /**
-     * @param owner {id}
-     * @param repos {id}
+     * @param owner {number}
+     * @param repos {number}
      * @return {Promise<UserRepos|null>}
      */
     static async exists(owner, repos) {

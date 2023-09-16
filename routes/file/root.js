@@ -2,11 +2,12 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const ffmpeg = require("fluent-ffmpeg");
-const {error_404, session_data, request_username} = require("../../src/session_utils");
+const {error_404, session_data, request_username, error_403} = require("../../src/session_utils");
 const {File: Root} = require("../../src/database/files");
 const {logger} = require("../../src/logger");
 const gm = require('gm');
 const {platform} = require("os");
+const perms = require("../../src/permissions");
 
 
 /* ###################################### CREATE ROUTER ###################################### */
@@ -44,6 +45,19 @@ router.get('/', async function (req, res) {
 })
 
 router.use('/delete/', require('./delete'));
+
+router.post('/update/', async function (req, res) {
+
+    if (!await perms.can_user_edit_file(req.file, req.user ? req.user.id : null))
+        return error_403(req, res, 'Accès non autorisé');
+
+    req.file.name = req.body.name;
+    req.file.description = req.body.description;
+    await req.file.push();
+
+    logger.warn(`${request_username(req)} updated file ${req.file.id}`)
+    return res.redirect(session_data(req).selected_repos ? `/repos/?repos=${await session_data(req).selected_repos.access_key}` : '/');
+})
 
 router.get('/thumbnail', async function (req, res) {
         if (!fs.existsSync('./data_storage/thumbnail'))

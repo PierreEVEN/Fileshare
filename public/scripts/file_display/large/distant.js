@@ -1,4 +1,6 @@
 import {get_mime_icon_path} from "../mime_utils";
+import showdown from "showdown";
+import Handlebars from "handlebars";
 require('./document-embed.js')
 require('./pdf-viewer.js')
 
@@ -23,12 +25,28 @@ function get(item) {
                                 <pdf-embed src="${url}"></pdf-embed>
                             </object>`
                 case 'json':
+                case 'x-json':
+                    return `<document-code src="/file?file=${item.id}" class="language-json"></document-code>`
                 case 'javascript':
                 case 'x-javascript':
-                    return `<document-embed src="/file?file=${item.id}"></document-embed>`
+                    return `<document-code src="/file?file=${item.id}" class="language-js"></document-code>`
             }
             break;
         case 'text':
+            switch (mimetype[1]) {
+                case 'markdown':
+                case 'x-markdown':
+                    return `<document-markdown src="/file?file=${item.id}"></document-markdown>`;
+                case 'scss':
+                case 'x-scss':
+                    return `<document-code src="/file?file=${item.id}" class="language-scss"></document-code>`
+                case 'sass':
+                case 'x-sass':
+                    return `<document-code src="/file?file=${item.id}" class="language-scss"></document-code>`
+                case 'css':
+                case 'x-css':
+                    return `<document-code src="/file?file=${item.id}" class="language-css"></document-code>`
+            }
             return `<document-embed src="/file?file=${item.id}"></document-embed>`
     }
 

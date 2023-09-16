@@ -4,6 +4,7 @@ import {print_message} from "../../widgets/message_box.js";
 import {update_repos_content} from "./repos_builder";
 
 const edit_dir_hbs = require('./edit_directory.hbs')
+const edit_file_hbs = require('./edit_file.hbs')
 
 function spawn_item_context_action(item) {
     spawn_context_action([{
@@ -11,7 +12,8 @@ function spawn_item_context_action(item) {
         action: () => {
             if (item.is_directory)
                 open_modal(edit_dir_hbs(item), '500px', '400px');
-            else console.error('Not handled yet');
+            else
+                open_modal(edit_file_hbs(item), '500px', '400px');
         },
         image: '/images/icons/icons8-edit-96.png'
     }, {

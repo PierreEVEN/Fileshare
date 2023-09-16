@@ -1,11 +1,19 @@
 import '../stylesheets/layout.scss'
 
 const Handlebars = require('handlebars');
+const showdown = require('showdown');
+
 require('./file_display/mime_image_generator')
-Handlebars.registerHelper("ctx", function(options) {
+Handlebars.registerHelper("ctx", function (options) {
     if (!this.__handlebar_ctx_id)
         return console.error('This template was not instanced with a context');
     return new Handlebars.SafeString("window.__handlebar_custom_loader.__registered_ctx[" + this.__handlebar_ctx_id + "]." + options);
+});
+
+require('./file_display/mime_image_generator')
+Handlebars.registerHelper("markdown", function (options) {
+    const converter = new showdown.Converter();
+    return new Handlebars.SafeString(converter.makeHtml(options));
 });
 
 require('./utils.js');

@@ -71,6 +71,7 @@
 
 .details-panel {
     width: 400px;
+    min-width: 400px;
     background-color: $foreground_1;
     p, h1 {
         width: 100%;
