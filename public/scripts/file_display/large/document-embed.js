@@ -8,6 +8,7 @@ import "prismjs/components/prism-json";
 import "prismjs/components/prism-sass";
 import "prismjs/components/prism-scss";
 import "prismjs/components/prism-css";
+import "prismjs/components/prism-log";
 
 import "prismjs/plugins/toolbar/prism-toolbar.css";
 import "prismjs/plugins/toolbar/prism-toolbar";
@@ -65,9 +66,8 @@ class DocumentMarkdown extends HTMLElement {
             fetch(this.getAttribute('src'))
                 .then(data => data.text())
                 .then(text => {
-                    const shadowRoot = this.attachShadow({mode: 'open'});
                     const converter = new showdown.Converter();
-                    shadowRoot.innerHTML = converter.makeHtml(text);
+                    this.innerHTML = converter.makeHtml(text);
                 });
     }
 }

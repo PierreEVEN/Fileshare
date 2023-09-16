@@ -35,6 +35,8 @@ function update_repos_content() {
             }
 
             json.files.forEach(item => {
+                if (!item.description)
+                    item.description = '';
                 filesystem.add_file(item, item.parent_directory ? path_of(directories[item.parent_directory]) : '/');
             })
 

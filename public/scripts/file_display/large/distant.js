@@ -1,6 +1,5 @@
 import {get_mime_icon_path} from "../mime_utils";
-import showdown from "showdown";
-import Handlebars from "handlebars";
+
 require('./document-embed.js')
 require('./pdf-viewer.js')
 
@@ -12,7 +11,7 @@ function get(item) {
         case 'image':
             return `<img class="item-large" src="${url}" alt="image: ${item.name}" onError="this.onError = null; this.src='/images/icons/mime-icons/image.png'"/>`
         case 'video':
-            return `<video class="item-large video-js" preload="auto" data-setup="{}" autoplay="true" preload="auto" height="100%" width="100%">
+            return `<video class="item-large video-js" preload="auto" data-setup="{}" autoplay="true" preload="auto" controls="true" height="100%" width="100%">
                         <source src="${url}" type="${item.mimetype}">
                     </video>`
         case 'audio':
@@ -34,6 +33,11 @@ function get(item) {
             break;
         case 'text':
             switch (mimetype[1]) {
+                case 'plain':
+                    if (item.name.includes("log"))
+                        return `<document-code src="/file?file=${item.id}" class="language-log"></document-code>`
+                    else
+                        return `<document-code src="/file?file=${item.id}" class="language-plain"></document-code>`
                 case 'markdown':
                 case 'x-markdown':
                     return `<document-markdown src="/file?file=${item.id}"></document-markdown>`;
