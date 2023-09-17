@@ -1,5 +1,3 @@
-import {convert_text} from "./showdown_loader";
-
 class DocumentMarkdown extends HTMLElement {
     constructor() {
         super();
@@ -13,7 +11,11 @@ class DocumentMarkdown extends HTMLElement {
         if (this.hasAttribute('src'))
             fetch(this.getAttribute('src'))
                 .then(data => data.text())
-                .then(text => this.innerHTML = convert_text(text));
+                .then(text => {
+                    import('./showdown_loader.js').then(showdown_loader => {
+                        this.innerHTML = showdown_loader.convert_text(text)
+                    })
+                });
     }
 }
 

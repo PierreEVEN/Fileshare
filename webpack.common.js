@@ -6,7 +6,7 @@ module.exports = {
         index: './client/layout/index.js',
         viewers: {
             import: './client/embed_viewers/index.js',
-            dependOn: 'index',
+            dependOn: ['index'],
         },
         pdf_worker: "pdfjs-dist/build/pdf.worker.entry",
     },

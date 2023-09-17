@@ -1,7 +1,9 @@
 import Prism from 'prismjs';
+
 Prism.manual = true;
-function load_element(element) {
+
+function build(element) {
     Prism.highlightAllUnder(element);
 }
 
-export {load_element}
+export {build}

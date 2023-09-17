@@ -1,7 +1,6 @@
 import Handlebars from "handlebars";
 import {is_mimetype_valid, UNDEFINED_MIME_STRING} from "../common/tools/mime_utils";
 
-
 /* ################## HELPER {ITEM_THUMBNAIL} ################## */
 const get_item_thumbnail = require('../common/tools/get_item_thumbnail')
 Handlebars.registerHelper("item_thumbnail", (item) => {

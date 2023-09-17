@@ -23,10 +23,9 @@ class DocumentCode extends HTMLElement {
 
                     this.append(pre);
 
-                    import('./prism_loader').then(prism_loader => {
-                        prism_loader.load_element(this);
+                    import('./prism_loader.js').then(prism_loader => {
+                        prism_loader.build(this);
                     })
-
                 });
     }
 }
