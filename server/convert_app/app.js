@@ -133,15 +133,12 @@ try {
     is_in_file_insert = false;
     for (const line of lines)
         read_line(line)
-    console.log(directories)
-    console.log(directories['1'].dirs['Stage Amn'])
 
     is_in_file_insert = false;
     for (const line of lines)
         res += write_line(line) + '\n';
 
     fs.writeFileSync('./fixeddb.sql', res, {encoding: 'utf8', flag: 'w'});
-    console.log('done')
 } catch (err) {
     console.error(err);
 }

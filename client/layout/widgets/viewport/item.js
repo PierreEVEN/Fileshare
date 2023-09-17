@@ -114,7 +114,6 @@ function open_this_item(div, file) {
             close_item_plain: close_item_plain,
         };
         if (!opened_item_div) {
-            console.log(humanFileSize(file.size))
             opened_item_div = item_hbs({item: file, file_size: humanFileSize(file.size)}, ctx);
             document.body.append(opened_item_div);
         } else {
