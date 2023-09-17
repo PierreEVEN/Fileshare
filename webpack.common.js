@@ -3,8 +3,12 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
     entry: {
-        main: './public/scripts/index.js',
-        "pdf.worker": "pdfjs-dist/build/pdf.worker.entry",
+        index: './client/layout/index.js',
+        viewers: {
+            import: './client/embed_viewers/index.js',
+            dependOn: 'index',
+        },
+        pdf_worker: "pdfjs-dist/build/pdf.worker.entry",
     },
     output: {
         filename: '[name].js',
@@ -13,11 +17,13 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.(hbs|handlebars)$/,
-                use: path.resolve('bin/handlebars_custom_loader.js')
+                test: /\.(hbs)$/,
+                include: path.resolve(__dirname, 'client'),
+                use: path.resolve('server/handlebars_custom_loader.js')
             },
             {
                 test: /\.(scss)$/,
+                include: path.resolve(__dirname, 'client'),
                 use: [
                     MiniCssExtractPlugin.loader,
                     "css-loader",
@@ -26,6 +32,7 @@ module.exports = {
             },
             {
                 test: /\.(css)$/,
+                include: path.resolve(__dirname, 'node_modules', 'prismjs'),
                 use: [
                     MiniCssExtractPlugin.loader,
                     "css-loader"

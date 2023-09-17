@@ -4,6 +4,8 @@
   "private": true,
   "main": "index.js",
   "scripts": {
+    "debug": "npm-run-all --parallel debug:build dev:start ",
+    "debug:build": "webpack --watch --config webpack.debug.js",
     "dev": "npm-run-all --parallel dev:build dev:start ",
     "dev:build": "webpack --watch --config webpack.dev.js",
     "dev:start": "nodemon --ignore public/* ./bin/www",
@@ -44,6 +46,7 @@
     "showdown": "^2.1.0",
     "style-loader": "^3.3.3",
     "webpack": "^5.88.2",
+    "webpack-bundle-analyzer": "^4.9.1",
     "webpack-cli": "^5.1.4",
     "webpack-merge": "^5.9.0",
     "winston": "^3.10.0"

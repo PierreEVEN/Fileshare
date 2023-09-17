@@ -3,7 +3,7 @@ html
     head
         title= title
         link(rel="icon", type="image/x-icon", href="/images/icons/favicon.ico")
-        link(rel="stylesheet", href='/dist/main.css')
+        link(rel="stylesheet", href='/dist/index.css')
     body
         script.
             const module = {}
@@ -17,7 +17,6 @@ html
         else
             script.
                 const current_repos = null;
-
 
         if locals.force_login
             script(type='module').
@@ -57,4 +56,4 @@ html
                     include repos_list
                     block content
 
-script(src='/dist/main.js')
+script(src='/dist/index.js')
