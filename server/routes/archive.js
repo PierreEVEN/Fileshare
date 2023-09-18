@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
         return error_403(req, res);
     }
 
-    let files = []
+    let files;
     let path = '/';
     if (req.query.directory) {
         const dir = await Directories.from_path(Number(repos.id), req.query.directory)

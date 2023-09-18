@@ -1,6 +1,5 @@
 const {User} = require("./database/user");
 const {Repos} = require("./database/repos");
-const {UserRepos} = require("./database/user_repos");
 const {logger} = require("./logger");
 
 function require_connection(req, res) {
@@ -16,7 +15,6 @@ function require_connection(req, res) {
 }
 
 async function error_404(req, res, custom_error = null) {
-    const user = session_data(req).connected_user;
     logger.error(`404 Not found : ${req.originalUrl} (${request_username(req)})`)
     res.status(404).render('error', {
         title: "404 - Not found",

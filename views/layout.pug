@@ -6,17 +6,16 @@ html
         link(rel="stylesheet", href='/dist/index.css')
     body
         script.
-            const module = {}
-
         if locals.session_data && locals.session_data.selected_repos
             script.
-                const current_repos = {
+                const __loaded_current_repos = {
+                    id: `!{locals.session_data.selected_repos.id}`,
                     name: `!{locals.session_data.selected_repos.name}`,
                     access_key: `!{locals.session_data.selected_repos.access_key}`
                 };
         else
             script.
-                const current_repos = null;
+                const __loaded_current_repos = null;
 
         if locals.force_login
             script(type='module').

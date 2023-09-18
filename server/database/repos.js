@@ -1,6 +1,5 @@
 const db = require('../database')
-const {logger} = require("../logger");
-const {gen_uid, gen_uhash} = require("../uid_generator");
+const {gen_uid} = require("../uid_generator");
 const {File} = require('./files')
 const {UserRepos} = require("./user_repos");
 const assert = require("assert");
@@ -103,7 +102,7 @@ class Repos {
      */
     static async visible_to_user(id) {
         assert(!isNaN(id))
-        await db.single().fetch_objects(Repos, 'SELECT * FROM fileshare.repos WHERE NOT owner = id AND id IN (SELECT id FROM fileshare.userrepos WHERE repos = $1 AND user = $2)', [as_id(this.id), as_id(id)])
+        await db.single().fetch_objects(Repos, 'SELECT * FROM fileshare.repos WHERE NOT owner = id AND id IN (SELECT id FROM fileshare.userrepos WHERE repos = $1 AND user = $2)', [as_id(this['id']), as_id(id)])
     }
 
     /**

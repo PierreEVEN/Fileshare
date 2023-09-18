@@ -4,7 +4,7 @@ const {
     error_404,
     require_connection,
     error_403,
-    request_username
+    request_username, events
 } = require("../../session_utils");
 const {Repos} = require("../../database/repos");
 const {logger} = require("../../logger");
@@ -22,9 +22,9 @@ router.use(async (req, res, next) => {
     if (!repos)
         return error_404(req, res);
 
-    if (!await perms.can_user_view_repos(repos, req.user ? req.user.id : null)) {
+    if (!await perms.can_user_view_repos(repos, req['user'] ? req['user'].id : null)) {
         // Redirect to signin page if user is not connected
-        if (!req.user)
+        if (!req['user'])
             return require_connection(req, res);
 
         // This user is not allowed to access this repos
@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
     });
 })
 
-router.get('/content/', async function (req, res, next) {
+router.get('/content/', async function (req, res, _) {
     logger.info(`${request_username(req)} fetched content of ${req.repos.access_key}`)
     res.json(await req.repos.get_content());
 });

@@ -74,7 +74,7 @@ router.get('/thumbnail', async function (req, res) {
                     withoutEnlargement: true,
                     fastShrinkOnLoad: true,
                 }).withMetadata()
-                    .toFile(thumbnail_path, async (err, resizeImage) => {
+                    .toFile(thumbnail_path, async (err, _) => {
                         if (err) {
                             logger.error(`failed to generate thumbnail for ${req.file.id} (${req.file.name}) : ${JSON.stringify(err)}`);
                             return res.sendFile(path.resolve(req.file_path));

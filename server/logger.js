@@ -8,7 +8,7 @@ if (process.env.NODE_ENV !== 'production') {
             winston.format.align(),
             winston.format.colorize(),
             winston.format.timestamp(),
-            winston.format.printf(({level, message, label, timestamp}) => {
+            winston.format.printf(({level, message, _, timestamp}) => {
                 return `[${timestamp}] ${level}: ${message}`;
             }),
         )
@@ -21,7 +21,7 @@ logger.add(new winston.transports.File({
     format: winston.format.combine(
         winston.format.align(),
         winston.format.timestamp(),
-        winston.format.printf(({level, message, label, timestamp}) => {
+        winston.format.printf(({level, message, _, timestamp}) => {
             return `[${timestamp}] ${level}: ${message}`;
         }),
     ),
@@ -33,7 +33,7 @@ logger.add(new winston.transports.File({
     format: winston.format.combine(
         winston.format.align(),
         winston.format.timestamp(),
-        winston.format.printf(({level, message, label, timestamp}) => {
+        winston.format.printf(({level, message, _, timestamp}) => {
             return `[${timestamp}] ${level}: ${message}`;
         }),
     ),

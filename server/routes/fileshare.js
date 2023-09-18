@@ -15,7 +15,7 @@ router.use((req, res, next) => {
 })
 
 /* GET users listing. */
-router.get('/', async function (req, res, next) {
+router.get('/', async function (req, res, _) {
     await session_data(req).select_repos(null);
     res.render('fileshare', {
         title: 'FileShare',

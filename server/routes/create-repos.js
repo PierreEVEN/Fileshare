@@ -1,4 +1,4 @@
-const {require_connection, get_user_private_data, session_data, error_403, public_data, events, request_username} = require("../session_utils");
+const {require_connection, session_data, error_403, public_data, request_username} = require("../session_utils");
 const {Repos} = require('../database/repos')
 const crypto = require("crypto");
 const {logger} = require("../logger");

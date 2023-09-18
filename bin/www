@@ -41,7 +41,7 @@ if (is_secured) {
 
 server.listen(port);
 server.on('error', (error) => {
-    if (error.syscall !== 'listen') {
+    if (error['syscall'] !== 'listen') {
         throw error;
     }
 

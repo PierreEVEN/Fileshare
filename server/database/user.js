@@ -1,5 +1,5 @@
 const db = require('../database')
-const {gen_uhash, gen_uid} = require("../uid_generator");
+const {gen_uid} = require("../uid_generator");
 const {Repos} = require("./repos")
 const bcrypt = require("bcrypt");
 const assert = require("assert");
@@ -79,7 +79,7 @@ class User {
     static async from_credentials(login, password) {
         let found_user = null;
         for (let user of (await db.single().query('SELECT * FROM fileshare.users WHERE name = $1 OR email = $2', [as_data_string(login), as_data_string(login)])).rows) {
-            if (bcrypt.compareSync(password, user.password_hash.toString())) {
+            if (bcrypt.compareSync(password, user['password_hash'].toString())) {
                 found_user = user;
                 break;
             }

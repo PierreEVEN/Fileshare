@@ -1,4 +1,5 @@
 import {selector} from "../../../common/tools/selector.js";
+import {CURRENT_REPOS} from "../../../common/tools/utils";
 
 const current_path = document.getElementById('current-path');
 
@@ -28,7 +29,7 @@ function update_dir(new_dir) {
     }
 
     const full_path = new_dir.absolute_path();
-    window.history.pushState(full_path, null, `${window.location.href.split('?')[0]}?repos=${current_repos.access_key}&directory=${full_path}`);
+    window.history.pushState(full_path, null, `${window.location.href.split('?')[0]}?repos=${CURRENT_REPOS.access_key}&directory=${full_path}`);
 }
 
 selector.on_changed_dir((new_dir, _) => update_dir(new_dir));

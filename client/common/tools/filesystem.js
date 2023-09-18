@@ -1,5 +1,6 @@
 const mime = require('mime');
 
+
 function prepare_file(file, directory) {
     file.callback_removed = file.callback_removed === undefined ? null : file.callback_removed;
     file.directory = directory;

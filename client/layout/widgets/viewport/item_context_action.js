@@ -2,6 +2,7 @@ import {spawn_context_action} from "../../../common/widgets/context_action.js";
 import {close_modal, open_modal} from "../../../common/widgets/modal.js";
 import {print_message} from "../../../common/widgets/message_box.js";
 import {update_repos_content} from "./repos_builder";
+import {CURRENT_REPOS} from "../../../common/tools/utils";
 
 const edit_dir_hbs = require('./edit_directory.hbs')
 const edit_file_hbs = require('./edit_file.hbs')
@@ -20,7 +21,7 @@ function spawn_item_context_action(item) {
         title: "Télécharger",
         action: () => {
             if (item.is_directory) {
-                window.open(`/archive/?repos=${current_repos.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
+                window.open(`/archive/?repos=${CURRENT_REPOS.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
             } else
                 window.open(`/file/?file=${item.id}`, '_blank').focus();
         },
@@ -30,7 +31,7 @@ function spawn_item_context_action(item) {
         action: async () => {
             let url;
             if (item.is_directory) {
-                url = `${location.hostname}/repos/?repos=${current_repos.access_key}&directory=${item.absolute_path()}`;
+                url = `${location.hostname}/repos/?repos=${CURRENT_REPOS.access_key}&directory=${item.absolute_path()}`;
             } else {
                 url = `${location.hostname}/file/?file=${item.id}`;
             }

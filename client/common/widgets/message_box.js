@@ -1,5 +1,3 @@
-import {close_modal, is_opened, open_modal} from "./modal";
-
 const message_box = document.getElementById('message-box')
 const message_box_message = document.getElementById('message-box-message')
 let message_timeout = null;

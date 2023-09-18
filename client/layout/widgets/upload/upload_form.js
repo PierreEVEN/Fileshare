@@ -1,16 +1,16 @@
 import {close_modal, is_opened, open_modal} from '../../../common/widgets/modal.js'
-import {humanFileSize, seconds_to_str} from "../../../common/tools/utils.js";
+import {CURRENT_REPOS, humanFileSize, seconds_to_str} from "../../../common/tools/utils.js";
 import {print_message} from "../../../common/widgets/message_box.js";
 import {Filesystem} from "../../../common/tools/filesystem.js";
 import {FilesystemUpload} from "../../../common/tools/filesystem_upload.js";
 import {get_viewport_filesystem} from "../viewport/repos_builder.js";
-import upload_hbs from "./upload.hbs";
+import upload_hbs from "./upload_form.hbs";
 import file_hbs from "./file.hbs";
 import directory_hbs from "./directory.hbs";
 
-const url = current_repos ? `/repos/upload/?repos=${current_repos.access_key}` : null;
-let filesystem = current_repos ? new Filesystem(current_repos.name) : null;
-const filesystem_upload = current_repos ? new FilesystemUpload(filesystem, url) : null;
+const url = CURRENT_REPOS ? `/repos/upload/?repos=${CURRENT_REPOS.access_key}` : null;
+let filesystem = CURRENT_REPOS ? new Filesystem(CURRENT_REPOS.name) : null;
+const filesystem_upload = CURRENT_REPOS ? new FilesystemUpload(filesystem, url) : null;
 let stop_process = false;
 
 let add_file_button = null;
@@ -180,11 +180,9 @@ function stop_upload() {
 function open_file_dialog() {
     const inputElement = document.createElement("input");
     inputElement.type = "file";
-    //inputElement.webkitdirectory = true;
-    //inputElement.directory = true;
     inputElement.multiple = true;
     inputElement.addEventListener("change", (e) => {
-        for (const file of e.target.files) {
+        for (const file of e.target['files']) {
             const path = (file.webkitRelativePath ? file.webkitRelativePath : '').split('/');
             path.pop();
             add_file_to_upload(file, path.length > 0 ? path.join('/') : '')

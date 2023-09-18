@@ -11,7 +11,7 @@ const pool = new postgres.Pool({
 })
 // the pool with emit an error on behalf of any idle clients
 // it contains if a backend error or network partition happens
-pool.on('error', (err, client) => {
+pool.on('error', (err, _) => {
     console.error('Unexpected error on idle client', err) // your callback here
     process.exit(-1)
 })

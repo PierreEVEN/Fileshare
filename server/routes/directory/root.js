@@ -14,7 +14,7 @@ router.use(async (req, res, next) => {
     if (!directory)
         return error_404(req, res, 'Dossier inexistant');
 
-    if (!await perms.can_user_view_directory(directory, req.user ? req.user.id : null))
+    if (!await perms.can_user_view_directory(directory, req['user'] ? req['user'].id : null))
         return error_403(req, res, 'Accès non autorisé');
 
     req.directory = directory;

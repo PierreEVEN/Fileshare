@@ -35,7 +35,6 @@ class Selector {
         this.hover_item_callbacks.push(callback)
     }
 
-
     set_selected_item(item) {
         if (item !== this.last_selected_item) {
             for (const callback of this.selected_item_callbacks)

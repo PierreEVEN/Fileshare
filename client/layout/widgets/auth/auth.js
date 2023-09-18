@@ -4,11 +4,11 @@ import {print_message, parse_fetch_result} from "../../../common/widgets/message
 import signin from './signin.hbs';
 import signup from './signup.hbs';
 
-async function open_modal_signin() {
+function open_modal_signin() {
     open_modal(signin(), '500px', '450px', 'auth');
 }
 
-async function open_modal_signup() {
+function open_modal_signup() {
     open_modal(signup(), '500px', '500px', 'auth');
 }
 

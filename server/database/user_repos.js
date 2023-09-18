@@ -1,9 +1,6 @@
 const db = require('../database')
 const assert = require("assert");
-const {File} = require("./files");
 const {as_id, as_enum} = require("../db_utils");
-
-const id_base = new Set();
 
 class UserRepos {
     /**

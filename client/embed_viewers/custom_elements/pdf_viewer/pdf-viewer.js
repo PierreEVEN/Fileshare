@@ -18,16 +18,16 @@ class PdfViewer extends HTMLElement {
         const this_ref = this;
 
         const display = require('./pdf-viewer.hbs')({}, {
-            page_next: () => {
+            'page_next': () => {
                 this.ask_for_page(this.pageNum + 1);
             },
-            page_prev: () => {
+            'page_prev': () => {
                 this.ask_for_page(this.pageNum + 1);
             },
-            zoom: () => {
+            'zoom': () => {
                 this.zoom(this.scale * 1.2);
             },
-            dezoom: () => {
+            'dezoom': () => {
                 this.zoom(this.scale / 1.2);
             }
         });

@@ -1,5 +1,4 @@
 import {open_modal} from "../../../common/widgets/modal.js";
-import {logout, open_modal_signin, open_modal_signup} from "../auth/auth";
 
 const create_repos = require('./create_repos.hbs')
 

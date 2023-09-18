@@ -9,7 +9,7 @@ router.use(async (req, res, next) => {
         return;
 
     // Ensure user is the owner
-    if (session_data(req).connected_user.id !== req.file.owner)
+    if (session_data(req).connected_user.id !== req['file'].owner)
         return error_403(req, res, "Seul le propriétaire d'un fichier peut le supprimer.");
 
     next();

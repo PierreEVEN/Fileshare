@@ -1,4 +1,5 @@
 import {print_message} from "../widgets/message_box.js";
+import {CURRENT_REPOS} from "./utils";
 
 class TransferStats {
     constructor() {
@@ -51,8 +52,8 @@ class FilesystemUpload {
         this.total_content_sent = 0;
         this.upload_in_progress_data_sent = 0;
 
-        this.total_file_count = this.filesystem.root.content_files;
-        this.total_file_sent = 0;
+        this['total_file_count'] = this.filesystem.root.content_files;
+        this['total_file_sent'] = 0;
 
         /* CALLBACKS */
         this.callback_global_state_changed = null;
@@ -179,10 +180,10 @@ class FilesystemUpload {
         this.stop();
 
         if (status === 403) {
-            window.location = `/repos/upload/?repos=${current_repos.access_key}`
+            window.location = `/repos/upload/?repos=${CURRENT_REPOS.access_key}`
         }
 
-        print_message('error', `An error occured while uploading ${this.file_in_process ? this.file_in_process.name : 'a file'} (${status})`, content.toString());
+        print_message('error', `Upload error for ${this.file_in_process ? this.file_in_process.name : 'undefined'} (${status})`, content.toString());
         console.error('Error :\n', content);
     }
 

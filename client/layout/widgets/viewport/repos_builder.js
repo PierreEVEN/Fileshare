@@ -1,19 +1,20 @@
-import {spawn_item_context_action} from "./viewport.js";
+import {spawn_item_context_action} from "./item_context_action.js";
 import {parse_fetch_result} from "../../../common/widgets/message_box.js";
-import {close_item_plain, gen_item, is_opened, open_this_item} from "./item.js";
+import {close_item_plain, is_opened, open_this_item} from "./item.js";
 import {Filesystem} from "../../../common/tools/filesystem.js";
 import {selector} from "../../../common/tools/selector.js";
+import {CURRENT_REPOS} from "../../../common/tools/utils";
 
 const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
 
-const filesystem = current_repos ? new Filesystem(current_repos.name) : null;
+const filesystem = CURRENT_REPOS ? new Filesystem(CURRENT_REPOS.name) : null;
 const viewport_container = document.getElementById('file-list')
 
 function update_repos_content() {
     if (!filesystem)
         return;
-    fetch(`/repos/content/?repos=${current_repos.access_key}`)
+    fetch(`/repos/content/?repos=${CURRENT_REPOS.access_key}`)
         .then(async (response) => await parse_fetch_result(response))
         .then((json) => {
             filesystem.clear();
@@ -107,7 +108,7 @@ function render_directory(directory) {
     directory.callback_removed = () => selector.set_current_dir(filesystem.root);
 }
 
-selector.on_changed_dir((new_dir, old_dir) => {
+selector.on_changed_dir((new_dir, _) => {
     selector.set_selected_item(null);
     render_directory(new_dir);
 })

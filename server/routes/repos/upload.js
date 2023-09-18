@@ -16,7 +16,7 @@ router.use(async (req, res, next) => {
         return;
 
     // Or every connected user can upload to this repo, or only it's owner is allowed to
-    if (!await perms.can_user_upload_to_repos(req.repos, req.user.id)) {
+    if (!await perms.can_user_upload_to_repos(req['repos'], req['user'].id)) {
         return error_403(req, res);
     }
     next();
