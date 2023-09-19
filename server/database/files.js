@@ -3,7 +3,7 @@ const db = require('../database')
 const fs = require('fs');
 const path = require('path')
 const fc = require('filecompare');
-const {gen_uhash, gen_uid} = require("../uid_generator");
+const {gen_uhash} = require("../uid_generator");
 const assert = require("assert");
 const {as_id, as_hash_key, as_data_string, as_number} = require("../db_utils");
 

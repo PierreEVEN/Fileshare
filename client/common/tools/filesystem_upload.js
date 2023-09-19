@@ -43,7 +43,7 @@ class FilesystemUpload {
      * @param url {string}
      */
     constructor(filesystem, url) {
-        this.max_batch_size = 50 * 1024 * 1024; // 200Mo
+        this.max_batch_size = 50 * 1024 * 1024; // 50Mo
         this.filesystem = filesystem;
         this.is_running = false;
         this.url = url;
@@ -226,7 +226,7 @@ class FilesystemUpload {
             if (this.file_in_process.description)
                 this._request.setRequestHeader('description', this.file_in_process.description ? encodeURIComponent(this.file_in_process.description) : '');
         } else {
-            this._request.setRequestHeader('file_id', this._process_file_id);
+            this._request.setRequestHeader('content-id', this._process_file_id);
         }
         this._request.send(data);
         this._received_ack = false;
