@@ -98,7 +98,7 @@ router.post('/', async (req, res) => {
             metadata: {
                 file_name: decode_header('content-name'),
                 file_size: decode_header('content-size'),
-                mimetype: decode_header('content-type') || '',
+                mimetype: decode_header('content-mimetype') || '',
                 virtual_path: decode_header('content-path') || '/',
                 file_description: decode_header('content-description'),
                 file_id: file_id,
