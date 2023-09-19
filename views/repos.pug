@@ -18,7 +18,9 @@ block content
                         button(onclick=`delete_repos.delete_repos('${session_data.selected_repos.access_key}')`).cancel-button
                             img(src='/images/icons/icons8-trash-52.png', alt='supprimer')
             div.hseparator
-            div(id='file-list')
+            div.repos_content
+                div(id='file-list')
+                div(id='directory-description')
 
         script.
             const modal_div = document.getElementById('modal')
