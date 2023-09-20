@@ -111,13 +111,13 @@ function render_directory(directory) {
 selector.on_changed_dir((new_dir, _) => {
     selector.set_selected_item(null);
     render_directory(new_dir);
-    if (new_dir && new_dir.description && new_dir.description !== '') {
-        console.log('A');
+
+    const description = new_dir && new_dir.parent !== null ? new_dir.description : CURRENT_REPOS.description;
+    if (description && description !== '' && description !== 'null') {
         import('../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
             const directory_description = document.getElementById('directory-description')
-            console.log('B');
             if (directory_description) {
-                directory_description.innerHTML = showdown.convert_text(new_dir.description)
+                directory_description.innerHTML = showdown.convert_text(description)
                 directory_description.style.padding = '20px';
             }
         })

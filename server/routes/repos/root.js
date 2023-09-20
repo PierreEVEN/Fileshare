@@ -9,6 +9,7 @@ const {
 const {Repos} = require("../../database/repos");
 const {logger} = require("../../logger");
 const perms = require("../../permissions");
+const {as_number, as_boolean, as_data_string} = require("../../db_utils");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -53,6 +54,25 @@ router.get('/content/', async function (req, res, _) {
 router.get('/infos/', async function (req, res, _) {
     logger.info(`${request_username(req)} fetched informations of ${req.repos.access_key}`)
     res.json(await req.repos);
+});
+
+router.post('/update/', async function (req, res, _) {
+    if (!await perms.can_user_edit_repos(req.repos, req.user ? req.user.id : null))
+        return error_403(req, res, 'Accès non autorisé');
+
+    console.log(req.body);
+
+    req.repos.name = req.body.name;
+    req.repos.description = req.body.description;
+    req.repos.status = req.body.status;
+    req.repos.access_key = req.body.access_key;
+    req.repos.max_file_size = req.body.max_file_size;
+    req.repos.visitor_file_lifetime = req.body.guest_file_lifetime;
+    req.repos.allow_visitor_upload = req.body.allow_visitor_upload === 'on';
+
+    await req.repos.push();
+    logger.warn(`${request_username(req)} updated repos ${req.repos.access_key}`)
+    return res.redirect(session_data(req).selected_repos ? `/repos/?repos=${req.repos.access_key}` : '/');
 });
 
 router.post('/delete/', async (req, res) => {

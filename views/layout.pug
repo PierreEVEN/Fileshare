@@ -8,11 +8,7 @@ html
         script.
         if locals.session_data && locals.session_data.selected_repos
             script.
-                const __loaded_current_repos = {
-                    id: `!{locals.session_data.selected_repos.id}`,
-                    name: `!{locals.session_data.selected_repos.name}`,
-                    access_key: `!{locals.session_data.selected_repos.access_key}`
-                };
+                const __loaded_current_repos = JSON.parse(decodeURIComponent(`!{encodeURIComponent(JSON.stringify(locals.session_data.selected_repos))}`));
         else
             script.
                 const __loaded_current_repos = null;

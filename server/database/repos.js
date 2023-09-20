@@ -14,7 +14,7 @@ class Repos {
      */
     constructor(data) {
         this.id = data.id;
-        this.description = data.description;
+        this.description = decodeURIComponent(data.description);
         this.name = data.name ? decodeURIComponent(data.name) : null;
         this.owner = data.owner;
         this.status = data.status;
@@ -33,10 +33,10 @@ class Repos {
         assert(this.access_key);
         assert(this.max_file_size);
         assert(this.visitor_file_lifetime);
-        assert(this.allow_visitor_upload !== undefined && this.allow_visitor_upload !== null);
+        assert(typeof this.allow_visitor_upload === 'boolean');
         await db.single().query(`INSERT INTO fileshare.repos
             (id, name, owner, description, status, access_key, max_file_size, visitor_file_lifetime, allow_visitor_upload) VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, 9)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT (id) DO  
             UPDATE SET id = $1, name = $2, owner = $3, description = $4, status = $5, access_key = $6, max_file_size = $7, visitor_file_lifetime = $8, allow_visitor_upload = $9;`,
             [as_id(this.id), as_data_string(this.name), as_id(this.owner), as_data_string(this.description), as_enum(this.status), as_data_string(this.access_key), as_number(this.max_file_size), as_number(this.visitor_file_lifetime), as_boolean(this.allow_visitor_upload)]);

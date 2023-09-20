@@ -50,11 +50,13 @@ function seconds_to_str(in_seconds) {
     return '0s';
 }
 
-const CURRENT_REPOS = __loaded_current_repos ? {
-    id: __loaded_current_repos.id,
-    name: __loaded_current_repos.name,
-    access_key: __loaded_current_repos.access_key,
-} : null;
+/**
+ * @return {{id:number, description:string, name; string, owner:number, status:string, access_key:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string}|null}
+ */
+function __internal_get_current_repos() {
+    return (typeof __loaded_current_repos === 'undefined') ? null : __loaded_current_repos;
+}
+const CURRENT_REPOS = __internal_get_current_repos();
 
 window.utils = {humanFileSize, seconds_to_str, CURRENT_REPOS}
 export {humanFileSize, seconds_to_str, CURRENT_REPOS}
