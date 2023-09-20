@@ -43,7 +43,7 @@ class FilesystemUpload {
      * @param url {string}
      */
     constructor(filesystem, url) {
-        this.max_batch_size = 50 * 1024 * 1024; // 200Mo
+        this.max_batch_size = 50 * 1024 * 1024; // 50Mo
         this.filesystem = filesystem;
         this.is_running = false;
         this.url = url;
@@ -219,14 +219,14 @@ class FilesystemUpload {
     _process_data(data) {
         this._request.open("POST", this.url);
         if (this._byte_sent === 0) {
-            this._request.setRequestHeader('name', encodeURIComponent(this.file_in_process.name));
-            this._request.setRequestHeader('octets', this.file_in_process.size);
-            this._request.setRequestHeader('mimetype', this.file_in_process.mimetype);
-            this._request.setRequestHeader('virtual_path', encodeURIComponent(this.file_in_process.directory.absolute_path()));
+            this._request.setRequestHeader('content-name', encodeURIComponent(this.file_in_process.name));
+            this._request.setRequestHeader('content-size', this.file_in_process.size);
+            this._request.setRequestHeader('content-mimetype', this.file_in_process.mimetype);
+            this._request.setRequestHeader('content-path', encodeURIComponent(this.file_in_process.directory.absolute_path()));
             if (this.file_in_process.description)
-                this._request.setRequestHeader('description', this.file_in_process.description ? encodeURIComponent(this.file_in_process.description) : '');
+                this._request.setRequestHeader('content-description', this.file_in_process.description ? encodeURIComponent(this.file_in_process.description) : '');
         } else {
-            this._request.setRequestHeader('file_id', this._process_file_id);
+            this._request.setRequestHeader('content-id', this._process_file_id);
         }
         this._request.send(data);
         this._received_ack = false;

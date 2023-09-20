@@ -67,6 +67,7 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
 
     const parent_directory = (await Directories.find_or_create(repos.id, meta.virtual_path, {owner: user.id}));
 
+    console.log('name :', meta.file_name, meta)
     const file_meta = await new File({
         repos: repos.id,
         owner: user.id,
@@ -86,7 +87,7 @@ router.post('/', async (req, res) => {
         return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
     }
 
-    let file_id = decode_header('file_id'); // null if this was the first chunk
+    let file_id = decode_header('content-id'); // null if this was the first chunk
     let generated_file_id = false;
     if (!file_id) {
         do {
@@ -96,11 +97,11 @@ router.post('/', async (req, res) => {
         upload_in_progress[file_id] = {
             received_size: 0,
             metadata: {
-                file_name: decode_header('name'),
-                file_size: decode_header('octets'),
-                mimetype: decode_header('mimetype') || '',
-                virtual_path: decode_header('virtual_path') || '/',
-                file_description: decode_header('description'),
+                file_name: decode_header('content-name'),
+                file_size: decode_header('content-size'),
+                mimetype: decode_header('content-mimetype') || '',
+                virtual_path: decode_header('content-path') || '/',
+                file_description: decode_header('content-description'),
                 file_id: file_id,
             },
             hash_sum: crypto.createHash('sha256'),

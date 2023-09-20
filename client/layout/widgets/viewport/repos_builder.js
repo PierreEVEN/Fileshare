@@ -27,7 +27,7 @@ function update_repos_content() {
             })
 
             const path_of = dir => (dir.parent_directory ? `${path_of(directories[dir.parent_directory])}/` : '/') + `${dir.name}/`;
-            
+
             for (const directory of Object.values(directories)) {
                 const found = filesystem.directory_from_path(path_of(directory), true);
                 found.id = directory.id;
@@ -46,7 +46,7 @@ function update_repos_content() {
 }
 
 function add_directory_to_viewport(dir) {
-    const dir_div = directory_hbs({item:dir}, {
+    const dir_div = directory_hbs({item: dir}, {
         clicked: event => {
             if (!event.target.classList.contains('open-context-button'))
                 selector.set_current_dir(dir);
@@ -69,7 +69,7 @@ function add_directory_to_viewport(dir) {
 }
 
 function add_file_to_viewport(file) {
-    const file_div = file_hbs({item:file}, {
+    const file_div = file_hbs({item: file}, {
         clicked: event => {
             if (event.target.classList.contains('open-context-button'))
                 return
@@ -111,6 +111,23 @@ function render_directory(directory) {
 selector.on_changed_dir((new_dir, _) => {
     selector.set_selected_item(null);
     render_directory(new_dir);
+    if (new_dir && new_dir.description && new_dir.description !== '') {
+        console.log('A');
+        import('../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
+            const directory_description = document.getElementById('directory-description')
+            console.log('B');
+            if (directory_description) {
+                directory_description.innerHTML = showdown.convert_text(new_dir.description)
+                directory_description.style.padding = '20px';
+            }
+        })
+    } else {
+        const directory_description = document.getElementById('directory-description')
+        if (directory_description) {
+            directory_description.innerText = '';
+            directory_description.style.padding = '0';
+        }
+    }
 })
 
 update_repos_content();

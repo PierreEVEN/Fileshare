@@ -1,17 +1,31 @@
+@import "common/colors";
+
 .file-view {
     background-color: rgb(40, 47, 61);
     display: flex;
     flex-grow: 1;
     height: 100%;
     flex-direction: column;
-}
 
-#file-list {
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 0fr));
-    grid-auto-flow: dense;
+    .repos_content {
+        display: flex;
+        flex-direction: row;
+        height: 100%;
+        #file-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 0fr));
+            grid-auto-flow: dense;
+            height: fit-content;
+        }
+        #directory-description {
+            max-width: 30%;
+            height: 100%;
+            background-color: $background_1;
+        }
+    }
 }
 
 .open-context-button {
