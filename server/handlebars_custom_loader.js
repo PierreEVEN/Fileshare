@@ -36,18 +36,19 @@ function loader_function(source) {
         const parser = new DOMParser();
 
         // Used to register contexts
-        window.__handlebar_custom_loader = {
-            __next_obj_id: 0,
-            __registered_ctx: {}
-        }
+        if (!document.__handlebar_custom_loader)
+            document.__handlebar_custom_loader = {
+                __next_obj_id: 0,
+                __registered_ctx: {}
+            }
         
         Handlebars.get_mime_icons = () => JSON.parse('${JSON.stringify(get_available_mime_icons())}');
         
         module.exports = (data, ctx) => {
             if (ctx) {
                     if (!ctx['__handlebar_ctx_id']) {
-                    ctx.__handlebar_ctx_id = ++window.__handlebar_custom_loader.__next_obj_id;
-                    window.__handlebar_custom_loader.__registered_ctx[ctx.__handlebar_ctx_id] = ctx;
+                    ctx.__handlebar_ctx_id = ++document.__handlebar_custom_loader.__next_obj_id;
+                    document.__handlebar_custom_loader.__registered_ctx[ctx.__handlebar_ctx_id] = ctx;
                 }
                 data.__handlebar_ctx_id = ctx.__handlebar_ctx_id;
             }
