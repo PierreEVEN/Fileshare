@@ -15,10 +15,9 @@ img.item-small {
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  max-width: 150px;
+  max-height: 150px;
 
-  .item-background {
-
-  }
   .item-overlay {
     position: absolute;
     width: 50px;

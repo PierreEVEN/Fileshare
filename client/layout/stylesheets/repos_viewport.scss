@@ -30,8 +30,19 @@
             background-color: $background_1;
             overflow-y: auto;
         }
+
+        @media (orientation:portrait) {
+            flex-direction: column-reverse;
+
+            #directory-description {
+                max-height: 30%;
+                width: 100%;
+                max-width: none;
+            }
+        }
     }
 }
+
 
 .open-context-button {
     background-color: rgba(37, 37, 37, 0.58);

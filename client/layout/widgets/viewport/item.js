@@ -12,11 +12,13 @@ function open_this_item(div, file) {
             opened_item_div = require('./item.hbs')({item: file, file_size: humanFileSize(file.size)}, ctx);
             document.body.append(opened_item_div);
         } else {
-            document.getElementById('item-title').innerText = file.name;
-            document.getElementById('item-size').innerText = humanFileSize(file.size);
-            document.getElementById('item-mime-type').innerText = file.mimetype;
-            document.getElementById('item-description').innerText = 'TODO : improve regeneration';
-            document.getElementById('item-content').innerHTML = handlebars.compile('{{item_image item}}')({item: file});
+            import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown => {
+                document.getElementById('item-title').innerText = file.name;
+                document.getElementById('item-size').innerText = humanFileSize(file.size);
+                document.getElementById('item-mime-type').innerText = file.mimetype;
+                document.getElementById('item-description').innerHTML = file.description && file.description !== '' ? showdown.convert_text(file.description) : '';
+                document.getElementById('item-content').innerHTML = handlebars.compile('{{item_image item}}')({item: file});
+            })
         }
     });
 }
