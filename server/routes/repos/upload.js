@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const {logger} = require("../../logger");
 const {Directories} = require("../../database/directories");
 const perms = require("../../permissions");
+const {push_file, pop_file} = require('../../minio');
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
