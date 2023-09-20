@@ -57,15 +57,8 @@
   }
 }
 
-textarea {
-  flex-grow: 1;
-  height: 90%;
-  resize: none;
-  width: 95%;
-}
-
 #progress-bar {
-  width: 0%;
+  width: 0;
   height: 100%;
   background-color: #60f341;
 }

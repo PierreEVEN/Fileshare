@@ -8,12 +8,25 @@ function close_modal() {
     modal.classList.remove('show')
 }
 
-function open_modal(content, custom_width = '800px', custom_height = '300px', modal_class= null) {
+/**
+ * @param content
+ * @param custom_width {string|null}
+ * @param custom_height {string|null}
+ * @param modal_class {string|null}
+ * @return {HTMLElement}
+ */
+function open_modal(content, custom_width = null, custom_height = null, modal_class= null) {
     modal_content.classList.remove(...modal_content.classList);
     modal.classList.add('show')
 
-    modal_content.style.width = custom_width;
-    modal_content.style.height = custom_height;
+    if (custom_width)
+        modal_content.style.width = custom_width;
+    else
+        modal_content.style.width = 'fit-content';
+    if (custom_height)
+        modal_content.style.height = custom_height;
+    else
+        modal_content.style.height = 'fit-content';
     modal_content.innerHTML = "";
     if (modal_class)
         modal_content.classList.add(modal_class)

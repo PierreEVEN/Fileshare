@@ -12,9 +12,9 @@ function spawn_item_context_action(item) {
         title: "Modifier",
         action: () => {
             if (item.is_directory)
-                open_modal(edit_dir_hbs(item), '500px', '400px');
+                open_modal(edit_dir_hbs(item));
             else
-                open_modal(edit_file_hbs(item), '500px', '400px');
+                open_modal(edit_file_hbs(item));
         },
         image: '/images/icons/icons8-edit-96.png'
     }, {

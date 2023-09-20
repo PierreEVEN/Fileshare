@@ -1,0 +1,51 @@
+<h1>Modifier le dépôt {{name}}</h1>
+<form action="/repos/update/?repos={{id}}" method="post">
+<div class="field">
+    <p>Nom</p>
+    <label for='name'>
+        <input type="text" name="name" placeholder="Nom" id="name" required value="{{name}}">
+    </label>
+</div>
+<div class="field">
+    <p>Description</p>
+    <label for='description'>
+        <textarea name="description" placeholder="Description" id="description" rows="8">{{description}}</textarea>
+    </label>
+</div>
+<div class="field">
+    <p>Visibilité</p>
+    <label for='type'>
+        <select name="type" onChange="" id="type">
+            <option>Invisible</option>
+            <option>Publique</option>
+            <option>Privé</option>
+        </select>
+    </label>
+</div>
+<div class="field">
+    <p>Clé d'accès</p>
+    <label for='access_key'>
+        <input type="text" name="Lien d'accès" id="access_key" required value="{{access_key}}">
+    </label>
+</div>
+<div class="field">
+    <p>Taille maximale des fichiers</p>
+    <label for='max_file_size'>
+        <input type="number" name="Taille maximale des fichiers" id="max_file_size" required value="{{max_file_size}}">
+    </label>
+</div>
+<div class="field">
+    <p>Durée de vie des données invités</p>
+    <label for='guest_file_lifetime'>
+        <input type="number" name="Durée de vie des contenus invités" id="guest_file_lifetime" required
+               value="{{visitor_file_lifetime}}">
+    </label>
+</div>
+<div class="field">
+    <p>Ouvrir la mise en ligne de fichiers à tous </p>
+    <label for='allow_visitor_upload'>
+        <input type="checkbox" name="open_upload" id="allow_visitor_upload" {{#if open_upload}}checked{{/if}}>
+    </label>
+</div>
+<input type="submit" value="Valider">
+</form>

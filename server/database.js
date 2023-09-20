@@ -47,6 +47,7 @@ const table_created = (async () => {
             id BIGSERIAL PRIMARY KEY,
             name VARCHAR(200) UNIQUE NOT NULL,
             owner BIGINT NOT NULL,
+            description TEXT,
             status repos_status DEFAULT 'hidden' NOT NULL,
             access_key VARCHAR(32) NOT NULL UNIQUE,
             max_file_size BIGINT DEFAULT 1048576000,

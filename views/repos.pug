@@ -15,8 +15,8 @@ block content
                             img(src='/images/icons/icons8-download-96.png', alt='download')
                     if session_data.user && session_data.selected_repos.owner === session_data.user.id
                         button.delete(onclick=`upload.open_or_update_modal()`).plus-button +
-                        button(onclick=`delete_repos.delete_repos('${session_data.selected_repos.access_key}')`).cancel-button
-                            img(src='/images/icons/icons8-trash-52.png', alt='supprimer')
+                        button(onclick=`edit_repos.edit_repos('${session_data.selected_repos.access_key}')`).plus-button
+                            img(src='/images/icons/icons8-edit-96.png', alt='modifier')
             div.hseparator
             div.repos_content
                 div(id='file-list')

@@ -1,14 +1,18 @@
 
 input, button {
-  &[type='text'], &[type='password'], &[type='email'] {
-    width: 310px;
+  &[type='text'], &[type='password'], &[type='email'], &[type='number'] {
+    flex-grow: 1;
     height: 50px;
     border: 0;
     border-bottom: 2px solid #282f3d;
     background-color: rgba(18, 21, 28, 1);
-    margin-bottom: 20px;
     padding: 0 15px;
     color: white;
+  }
+
+  &[type='checkbox'] {
+    height: 25px;
+    flex-grow: 1;
   }
 
   &:-webkit-autofill {
@@ -40,11 +44,10 @@ input, button {
 }
 
 select {
-  width: 340px;
+  flex-grow: 1;
   height: 50px;
   border: 0;
   background-color: rgba(18, 21, 28, 1);
-  margin-bottom: 20px;
   padding: 0 15px;
   color: white;
   transition-duration: 0.15s;

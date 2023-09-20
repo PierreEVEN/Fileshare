@@ -13,6 +13,7 @@ import './widgets/auth/auth.js';
 import './widgets/create_repos/create-repos-form.js';
 import './widgets/viewport/repos_builder.js';
 import './widgets/delete_repos/delete_repos_form.js';
+import './widgets/edit_repos/edit_repos_form.js';
 
 /* VIEWPORT */
 import './widgets/viewport/path';

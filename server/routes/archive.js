@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
         archive.file(file.storage_path(), {name: (file.parent_directory ? await (await Directories.from_id(file.parent_directory)).get_absolute_path() : '/') + decodeURIComponent(file.name)})
     }
 
-    logger.info(`Archiving '${repos.access_key}${req.directory}' for ${request_username(req)} ...`)
+    logger.info(`Archiving '${repos.access_key}${path}' for ${request_username(req)} ...`)
 
     res.attachment(`${repos.name}.${path.replaceAll('/', '.')}.zip`.replace(/([^:]\.)\.+/g, "$1"));
     archive.on('error', err => {

@@ -1,6 +1,7 @@
 @import "common/colors";
 
 .file-view {
+    position: relative;
     background-color: rgb(40, 47, 61);
     display: flex;
     flex-grow: 1;
@@ -10,7 +11,11 @@
     .repos_content {
         display: flex;
         flex-direction: row;
-        height: 100%;
+        position: absolute;
+        top: 46px;
+        bottom: 0;
+        left: 0;
+        right: 0;
         #file-list {
             flex-grow: 1;
             overflow-y: auto;
@@ -22,8 +27,8 @@
         }
         #directory-description {
             max-width: 30%;
-            height: 100%;
             background-color: $background_1;
+            overflow-y: auto;
         }
     }
 }

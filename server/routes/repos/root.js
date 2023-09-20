@@ -50,6 +50,11 @@ router.get('/content/', async function (req, res, _) {
     res.json(await req.repos.get_content());
 });
 
+router.get('/infos/', async function (req, res, _) {
+    logger.info(`${request_username(req)} fetched informations of ${req.repos.access_key}`)
+    res.json(await req.repos);
+});
+
 router.post('/delete/', async (req, res) => {
     if (require_connection(req, res))
         return;

@@ -1,11 +1,15 @@
 <h1>Connexion</h1>
 
-<label for='username'>
-    <input type="text" name="username" placeholder="Nom / e-mail" id="username" required>
-</label>
-<label for='password'>
-    <input type="password" name="password" placeholder="Mot de passe" id="password" required>
-</label>
+<div class="field">
+    <label for='username'>
+        <input type="text" name="username" placeholder="Nom / e-mail" id="username" required>
+    </label>
+</div>
+<div class="field">
+    <label for='password'>
+        <input type="password" name="password" placeholder="Mot de passe" id="password" required>
+    </label>
+</div>
 
 <input type="submit" value="Se connecter" onclick="window.auth.post_signin()">
 <a id="forgot-password" href="mailto: evenpierre@orange.fr">mot de passe oublié</a>

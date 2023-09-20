@@ -5,11 +5,11 @@ import signin from './signin.hbs';
 import signup from './signup.hbs';
 
 function open_modal_signin() {
-    open_modal(signin(), '500px', '450px', 'auth');
+    open_modal(signin(), '500px', '400px', 'auth');
 }
 
 function open_modal_signup() {
-    open_modal(signup(), '500px', '500px', 'auth');
+    open_modal(signup(), '500px', '450px', 'auth');
 }
 
 async function post_signin() {
