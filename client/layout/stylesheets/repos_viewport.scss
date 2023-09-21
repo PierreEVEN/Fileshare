@@ -16,6 +16,7 @@
         bottom: 0;
         left: 0;
         right: 0;
+
         #file-list {
             flex-grow: 1;
             overflow-y: auto;
@@ -24,6 +25,7 @@
             grid-template-columns: repeat(auto-fit, minmax(120px, 0fr));
             grid-auto-flow: dense;
             height: fit-content;
+            align-content: baseline;
         }
         #directory-description {
             max-width: 30%;
@@ -49,6 +51,7 @@
     border: 1px #7e7e7e solid;
     transform: translate(-2px, -8px);
     right: 0;
+    top: 10px;
     position: absolute;
     z-index: 2;
     width: 40px;
@@ -65,6 +68,10 @@
     border-radius: 5px;
     border: 2px rgba(64,66,106,0) solid;
     transition-duration: 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 
     &:hover {
         border: 2px #5b6574 solid;
@@ -87,7 +94,6 @@
         font-size: 14px;
         font-weight: lighter;
         text-align: center;
-        word-wrap: break-word;
-
+        word-wrap: anywhere;
     }
 }
