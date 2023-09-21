@@ -222,7 +222,8 @@ class FilesystemUpload {
             this._request.setRequestHeader('content-name', encodeURIComponent(this.file_in_process.name));
             this._request.setRequestHeader('content-size', this.file_in_process.size);
             this._request.setRequestHeader('content-mimetype', this.file_in_process.mimetype);
-            this._request.setRequestHeader('content-path', encodeURIComponent(this.file_in_process.directory.absolute_path()));
+            const absolute_path = (selector.get_current_directory().absolute_path() + this.file_in_process.directory.absolute_path()).replaceAll('//', '/');
+            this._request.setRequestHeader('content-path', encodeURIComponent(absolute_path));
             if (this.file_in_process.description)
                 this._request.setRequestHeader('content-description', this.file_in_process.description ? encodeURIComponent(this.file_in_process.description) : '');
         } else {

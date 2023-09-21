@@ -42,7 +42,7 @@ class UserRepos {
      * @return {Promise<UserRepos|null>}
      */
     static async exists(owner, repos) {
-        await db.single().fetch_object(UserRepos, 'SELECT * FROM fileshare.userRepos WHERE owner = $1 AND repos = $2', [as_id(owner), as_id(repos)]);
+        return await db.single().fetch_object(UserRepos, 'SELECT * FROM fileshare.userrepos WHERE owner = $1 AND repos = $2', [as_id(owner), as_id(repos)]);
     }
 
     /**
@@ -50,7 +50,7 @@ class UserRepos {
      * @return {Promise<UserRepos[]>}
      */
     static async from_user(id) {
-        return await db.single().fetch_objects(UserRepos, 'SELECT * FROM fileshare.userRepos WHERE owner = $1', [as_id(id)]);
+        return await db.single().fetch_objects(UserRepos, 'SELECT * FROM fileshare.userrepos WHERE owner = $1', [as_id(id)]);
     }
 
     /**
@@ -58,7 +58,6 @@ class UserRepos {
      * @return {Promise<UserRepos[]>}
      */
     static async from_repos(id) {
-
         return await db.single().fetch_objects(UserRepos, 'SELECT * FROM fileshare.userrepos WHERE repos = $1', [as_id(id)]);
     }
 }

@@ -8,7 +8,6 @@ const crypto = require("crypto");
 const {logger} = require("../../logger");
 const {Directories} = require("../../database/directories");
 const perms = require("../../permissions");
-const {push_file, pop_file} = require('../../minio');
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -16,20 +15,20 @@ router.use(async (req, res, next) => {
     if (require_connection(req, res))
         return;
 
-    // Or every connected user can upload to this repo, or only it's owner is allowed to
-    if (!await perms.can_user_upload_to_repos(req['repos'], req['user'].id)) {
-        return error_403(req, res);
-    }
     next();
 })
 /* ###################################### CREATE ROUTER ###################################### */
 
 router.get('/', async (req, res) => {
+    if (!await perms.can_user_upload_to_repos(req['repos'], req['user'].id)) {
+        return error_403(req, res);
+    }
+
     res.render('repos', {
         title: 'Envoyer un fichier',
         session_data: await session_data(req).client_data(),
         public_data: await public_data().get(),
-        forcer_show_upload: true
+        force_show_upload: true
     });
 });
 
@@ -76,7 +75,7 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
         mimetype: meta.mimetype,
         size: meta.file_size,
         parent_directory: parent_directory ? parent_directory.id : null,
-        hash:file_hash,
+        hash: file_hash,
     }).push();
     fs.renameSync(file_path, file_meta.storage_path());
     return file_meta;
@@ -105,6 +104,22 @@ router.post('/', async (req, res) => {
                 file_id: file_id,
             },
             hash_sum: crypto.createHash('sha256'),
+        }
+    }
+
+    if (!await perms.can_user_upload_to_repos(req['repos'], req['user'].id)) {
+        let valid = false;
+        const dir = await Directories.from_path(req.repos.id, upload_in_progress[file_id].metadata.virtual_path);
+        if (!dir) {
+            valid = false;
+        }
+        else if (await perms.can_user_upload_to_directory(dir, req.user.id)) {
+            valid = true;
+        }
+
+        if (!valid) {
+            delete upload_in_progress[file_id];
+            return error_403(req, res);
         }
     }
 

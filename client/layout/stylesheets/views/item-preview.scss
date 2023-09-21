@@ -89,7 +89,13 @@
         background-color: $foreground_1;
         padding: 0 10px;
 
-        :first-child {
+
+        .typeicon {
+            width: 20px;
+            object-fit: contain;
+        }
+
+        :nth-child(2) {
             flex-grow: 1;
             text-align: initial;
         }

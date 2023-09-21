@@ -30,5 +30,5 @@ router.use('/file/', require('./file/root'));
 router.use('/directory/', require('./directory/root'));
 router.use('/create-repos/', require('./create-repos'));
 router.use('/archive/', require('./archive'));
-
+router.use('/permissions', require('./permissions'))
 module.exports = router;

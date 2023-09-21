@@ -79,7 +79,7 @@ router.post('/delete/', async (req, res) => {
     if (require_connection(req, res))
         return;
 
-    if (!req.repos.owner === req.user.id)
+    if (req.repos.owner !== req.user.id)
         return error_403(req, res);
 
     await events.on_delete_repos(req.repos);

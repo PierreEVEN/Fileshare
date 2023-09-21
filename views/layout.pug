@@ -5,7 +5,13 @@ html
         link(rel="icon", type="image/x-icon", href="/images/icons/favicon.ico")
         link(rel="stylesheet", href='/dist/index.css')
     body
-        script.
+        if locals.session_data && locals.session_data.user
+            script.
+                const __connected_user = JSON.parse(decodeURIComponent(`!{encodeURIComponent(JSON.stringify(locals.session_data.user))}`));
+        else
+            script.
+                const __connected_user = null;
+
         if locals.session_data && locals.session_data.selected_repos
             script.
                 const __loaded_current_repos = JSON.parse(decodeURIComponent(`!{encodeURIComponent(JSON.stringify(locals.session_data.selected_repos))}`));

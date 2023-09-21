@@ -1,5 +1,5 @@
 import Handlebars from "handlebars";
-import {is_mimetype_valid, UNDEFINED_MIME_STRING} from "../common/tools/mime_utils";
+import {get_mime_icon_path, is_mimetype_valid, UNDEFINED_MIME_STRING} from "../common/tools/mime_utils";
 
 /* ################## HELPER {ITEM_THUMBNAIL} ################## */
 const get_item_thumbnail = require('../common/tools/get_item_thumbnail')
@@ -23,6 +23,10 @@ Handlebars.registerHelper("item_thumbnail", (item) => {
     }
 });
 
+/* ################## HELPER {CTX} ################## */
+Handlebars.registerHelper("typeicon", function (options) {
+    return new Handlebars.SafeString(`<img class='typeicon' alt='typeicon' src="${get_mime_icon_path(options)}">`);
+});
 
 /* ################## HELPER {CTX} ################## */
 Handlebars.registerHelper("ctx", function (options) {

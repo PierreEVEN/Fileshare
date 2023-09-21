@@ -86,7 +86,7 @@ class Repos {
      */
     static async from_id(id) {
         assert(!isNaN(id))
-        return await db.single().fetch_object(File, 'SELECT * FROM fileshare.repos WHERE id = $1', [as_id(id)]);
+        return await db.single().fetch_object(Repos, 'SELECT * FROM fileshare.repos WHERE id = $1', [as_id(id)]);
     }
 
     /**

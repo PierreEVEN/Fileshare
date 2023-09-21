@@ -88,11 +88,13 @@ class Permissions {
             return false;
 
         // The owner of a repos can always upload to it
-        if (repos.owner === user_id)
+        if (repos.owner === user_id || repos.allow_visitor_upload)
             return true;
 
         // Also the other people who have upload rights on the repos
         const user_repos = await UserRepos.exists(user_id, repos.id);
+        if (!user_repos)
+            return false;
         return user_repos.can_upload();
     }
 
@@ -111,6 +113,8 @@ class Permissions {
 
         // Also the other people who have the right on the repos
         const user_repos = await UserRepos.exists(user_id, repos.id);
+        if (!user_repos)
+            return false;
         return user_repos.can_edit();
     }
 

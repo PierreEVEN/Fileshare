@@ -1,6 +1,7 @@
 const {User} = require("./database/user");
 const {Repos} = require("./database/repos");
 const {logger} = require("./logger");
+const {UserRepos} = require("./database/user_repos");
 
 function require_connection(req, res) {
     if (!session_data(req).connected_user) {
@@ -67,9 +68,9 @@ class SessionData {
 
     async client_data() {
         if (!this.last_data) {
-
             const tracked_repos = [];
 
+            // Get tracked repos
             for (const key of this.tracked_repos) {
                 const repos = await Repos.from_access_key(key)
                 if (repos) {

@@ -1,5 +1,6 @@
 import {humanFileSize} from "../../../common/tools/utils.js";
 import * as handlebars from "handlebars";
+import {get_mime_icon_path} from "../../../common/tools/mime_utils";
 
 let opened_item_div = null;
 
@@ -9,7 +10,11 @@ function open_this_item(div, file) {
             'close_item_plain': close_item_plain,
         };
         if (!opened_item_div) {
-            opened_item_div = require('./item.hbs')({item: file, file_size: humanFileSize(file.size)}, ctx);
+            opened_item_div = require('./item.hbs')({
+                    item: file,
+                    file_size: humanFileSize(file.size)
+                },
+                ctx);
             document.body.append(opened_item_div);
         } else {
             import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown => {
@@ -18,6 +23,7 @@ function open_this_item(div, file) {
                 document.getElementById('item-mime-type').innerText = file.mimetype;
                 document.getElementById('item-description').innerHTML = file.description && file.description !== '' ? showdown.convert_text(file.description) : '';
                 document.getElementById('item-content').innerHTML = handlebars.compile('{{item_image item}}')({item: file});
+                document.getElementsByClassName('typeicon')[0].src = get_mime_icon_path(file.mimetype);
             })
         }
     });
