@@ -39,7 +39,9 @@ body {
 @import "views/upload";
 @import "views/delete-repos";
 @import "views/create-repos";
+@import "views/edit-repos";
 
+@import "drop-box";
 @import "user-viewport";
 @import "repos_viewport";
 @import "components/message_box";

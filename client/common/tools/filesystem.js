@@ -81,7 +81,7 @@ class Directory {
     add_file(file) {
         prepare_file(file, this)
         for (const dir of this.parent_dirs()) {
-            dir.content_size += file.size;
+            dir.content_size += Number(file.size);
             dir.content_files += 1;
             if (dir.callback_stats_updated)
                 dir.callback_stats_updated(dir.content_size, dir.content_files);

@@ -1,0 +1,21 @@
+.drop-box {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100000;
+  transition-duration: 0.5s;
+  pointer-events: none;
+  border: 2px rgba(143, 26, 26, 0) solid;
+
+  &.hover {
+    cursor: copy;
+    backdrop-filter: blur(10px);
+    background: linear-gradient(45deg, #030e2eab 5%, #70644d85 50%, #259bd478 99%);
+  }
+
+  &.forbidden {
+    border: 2px #ea0d0d solid;
+  }
+}

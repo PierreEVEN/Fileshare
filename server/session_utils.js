@@ -145,26 +145,37 @@ class SessionData {
     }
 }
 
+async function repos_updated(repos) {
+    for (const session of Object.values(available_sessions)) {
+        if (session.connected_user) {
+            for (const user_repos of (await session.client_data()).user.repos)
+                if (user_repos.id === repos.id)
+                    session.mark_dirty();
+        }
+
+        for (const user_repos of (await session.client_data()).tracked_repos)
+            if (user_repos.repos.id === repos.id)
+                session.mark_dirty();
+    }
+
+    if (repos.status === 'public')
+        public_data().mark_dirty();
+}
+
 events = {
+    /**
+     * @param repos {Repos}
+     * @return {Promise<void>}
+     */
+    on_update_repos: repos_updated,
+
     /**
      * @param repos {Repos}
      * @return {Promise<void>}
      */
     on_delete_repos: async (repos) => {
         await repos.delete();
-        for (const session of Object.values(available_sessions)) {
-            if (session.connected_user) {
-                for (const user_repos of (await session.client_data()).user.repos)
-                    if (user_repos.id === repos.id)
-                        session.mark_dirty();
-            }
-
-            for (const user_repos of (await session.client_data()).tracked_repos)
-                if (user_repos.repos.id === repos.id)
-                    session.mark_dirty();
-        }
-
-        public_data().mark_dirty();
+        await repos_updated(repos);
     },
 
     /**

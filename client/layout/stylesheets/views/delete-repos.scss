@@ -1,8 +1,11 @@
 @import '../common/colors';
 
-.delete-repos {
+.modal-container .modal-box #modal-content .delete-repos {
   display: flex;
   flex-direction: row;
+}
+
+.delete-repos {
 
   .progress-container {
     width: 95%;
@@ -12,7 +15,6 @@
   }
 
   #countdown-button {
-
     background-color: item_hover($cancel-background);
     border-color: item_hover($cancel-border);
 

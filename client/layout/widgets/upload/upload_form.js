@@ -7,6 +7,7 @@ import {get_viewport_filesystem} from "../viewport/repos_builder.js";
 import upload_hbs from "./upload_form.hbs";
 import file_hbs from "./file.hbs";
 import directory_hbs from "./directory.hbs";
+import {spawn_context_action} from "../../../common/widgets/context_action";
 
 const url = CURRENT_REPOS ? `/repos/upload/?repos=${CURRENT_REPOS.access_key}` : null;
 let filesystem = CURRENT_REPOS ? new Filesystem(CURRENT_REPOS.name) : null;
@@ -27,25 +28,20 @@ if (filesystem_upload) {
 
     filesystem_upload.callback_file_uploaded = (file, file_id) => {
         get_viewport_filesystem().add_file({
-            name: file.name,
-            mimetype: file.mimetype,
-            size: file.size,
-            id: file_id
+            name: file.name, mimetype: file.mimetype, size: file.size, id: file_id
         }, file.directory.absolute_path());
     }
 }
 
 function add_file_to_upload(file, path) {
-    if (!is_opened())
-        open_upload_modal_for_files();
+    if (!is_opened()) open_upload_modal_for_files();
     filesystem.add_file(file, path ? path : '/');
 }
 
 let open_upload_modal_timeout = null;
 
 function open_or_update_modal() {
-    if (open_upload_modal_timeout)
-        clearTimeout(open_upload_modal_timeout);
+    if (open_upload_modal_timeout) clearTimeout(open_upload_modal_timeout);
     open_upload_modal_timeout = setTimeout(() => {
         open_upload_modal_for_files();
         open_upload_modal_timeout = null;
@@ -65,11 +61,9 @@ function open_upload_modal_for_files() {
                 dir_content.expanded = true;
                 if (!dir_content.generate_content) {
                     dir_content.generate_content = true;
-                    for (const child_dir of Object.values(dir.directories))
-                        gen_dir(child_dir, dir_content);
+                    for (const child_dir of Object.values(dir.directories)) gen_dir(child_dir, dir_content);
 
-                    for (const file of dir.files)
-                        gen_file(file, dir_content);
+                    for (const file of dir.files) gen_file(file, dir_content);
                 }
                 dir_content.style.display = 'flex';
             } else {
@@ -83,12 +77,10 @@ function open_upload_modal_for_files() {
         dir.callback_stats_updated = (content_size, content_files) => title.innerText = `${dir.name} (${humanFileSize(content_size)} - ${content_files} fichiers)`;
         dir.callback_stats_updated(dir.content_size, dir.content_files);
         dir.callback_directory_added = new_dir => {
-            if (dir_content.generate_content)
-                gen_dir(new_dir, dir_content);
+            if (dir_content.generate_content) gen_dir(new_dir, dir_content);
         }
         dir.callback_file_added = new_file => {
-            if (dir_content.generate_content)
-                gen_file(new_file, dir_content);
+            if (dir_content.generate_content) gen_file(new_file, dir_content);
         }
 
         dir.callback_removed = () => directory.remove();
@@ -96,8 +88,13 @@ function open_upload_modal_for_files() {
     }
 
     const gen_file = (file, parent_div) => {
-        const ctx = {removed:() => {}, enter:() => {}, leave:() => {}};
-        const file_dom = file_hbs({item: file, name:file.name, size: humanFileSize(file.size)}, ctx);
+        const ctx = {
+            removed: () => {
+            }, enter: () => {
+            }, leave: () => {
+            }
+        };
+        const file_dom = file_hbs({item: file, name: file.name, size: humanFileSize(file.size)}, ctx);
         ctx.removed = () => filesystem.remove_file(file);
         ctx.enter = () => file_dom.getElementsByClassName('cancel-button')[0].style.opacity = '1';
         ctx.leave = () => file_dom.getElementsByClassName('cancel-button')[0].style.opacity = '0';
@@ -106,8 +103,7 @@ function open_upload_modal_for_files() {
     }
 
     const modal_parent = open_modal(upload_hbs({}, {
-        send: start_upload,
-        pause: (button) => {
+        send: start_upload, pause: (button) => {
             if (button.paused) {
                 button.paused = false;
                 button.firstChild.src = '/images/icons/icons8-pause-30.png';
@@ -176,10 +172,16 @@ function stop_upload() {
     filesystem_upload.stop();
 }
 
-function open_file_dialog() {
+function open_file_browser(directory) {
     const inputElement = document.createElement("input");
     inputElement.type = "file";
-    inputElement.multiple = true;
+    if (directory) {
+        inputElement.webkitdirectory = true;
+        inputElement.directory = true;
+        inputElement.multiple = true;
+    } else {
+        inputElement.multiple = true;
+    }
     inputElement.addEventListener("change", (e) => {
         for (const file of e.target['files']) {
             const path = (file.webkitRelativePath ? file.webkitRelativePath : '').split('/');
@@ -188,6 +190,18 @@ function open_file_dialog() {
         }
     })
     inputElement.dispatchEvent(new MouseEvent("click"));
+}
+
+function open_file_dialog() {
+    spawn_context_action([{
+        title: "Ajouter des fichiers",
+        action: async () => open_file_browser(false),
+        image: '/images/icons/icons8-file-96.png'
+    }, {
+        title: "Ajouter un dossier et son contenu",
+        action: async () => open_file_browser(true),
+        image: '/images/icons/icons8-folder-96.png'
+    }])
 }
 
 window.upload = {add_file_to_upload, open_file_dialog, start_upload, stop_upload, open_or_update_modal}

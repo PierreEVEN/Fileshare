@@ -27,7 +27,7 @@ function from_local_path(item) {
         case 'image':
             return `<img class="item-small" src="${URL.createObjectURL(item)}" alt="image: ${item.name}" onError="this.onError = null; this.src='/images/icons/mime-icons/image.png'"/>`
         case 'video':
-            return `<video class="item-small" preload="auto" data-setup="{}" autoplay="false" preload="auto" height="100%" width="100%">
+            return `<video class="item-small" preload="auto" data-setup="{}" preload="auto" height="100%" width="100%">
                         <source src="${URL.createObjectURL(item)}" type="${item.mimetype}">
                     </video>`
     }

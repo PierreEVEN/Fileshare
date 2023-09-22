@@ -64,7 +64,12 @@ router.post('/update/', async function (req, res, _) {
 
     req.repos.name = req.body.name;
     req.repos.description = req.body.description;
-    req.repos.status = req.body.status;
+    if (req.repos.status !== req.body.status) {
+        if (req.repos.status === 'public' || req.body.status === 'public')
+            public_data().mark_dirty();
+        req.repos.status = req.body.status;
+        await events.on_update_repos(req.repos);
+    }
     req.repos.access_key = req.body.access_key;
     req.repos.max_file_size = req.body.max_file_size;
     req.repos.visitor_file_lifetime = req.body.guest_file_lifetime;

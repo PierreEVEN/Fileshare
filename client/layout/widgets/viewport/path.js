@@ -1,5 +1,5 @@
 import {selector} from "../../../common/tools/selector.js";
-import {CURRENT_REPOS, permissions} from "../../../common/tools/utils";
+import {CURRENT_REPOS, humanFileSize, permissions} from "../../../common/tools/utils";
 
 const current_path = document.getElementById('current-path');
 const tool_buttons = document.getElementById('viewport_toolbar');
@@ -12,6 +12,11 @@ async function update_dir(new_dir) {
 
     if (tool_buttons) {
         tool_buttons.innerHTML = '';
+
+        const dir_size = document.createElement('p');
+        dir_size.innerText = `${humanFileSize(new_dir.content_size)} / ${new_dir.content_files} fichiers`
+        tool_buttons.append(dir_size)
+        
         if ((new_dir && new_dir.parent && await permissions.can_user_upload_to_directory(new_dir.id)) || await permissions.can_user_upload_to_repos(CURRENT_REPOS.id)) {
             const upload_button = document.createElement('button');
             upload_button.onclick = () => upload.open_or_update_modal();
