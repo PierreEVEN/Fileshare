@@ -1,7 +1,7 @@
 @import "../../common/colors";
 
 .toolbar {
-  background-color: $foreground_1;
+  background: linear-gradient(to right, #105bb0, #0070ff);
   display: flex;
   align-items: center;
   height: 80px;
