@@ -7,12 +7,12 @@
 
 @font-face {
   font-family: "Bahnschrift";
-  src: url("http://localhost/fonts/Bahnschrift/font.eot");
-  src: url("http://localhost/fonts/Bahnschrift/font.eot")format("embedded-opentype"),
-  url("http://localhost/fonts/Bahnschrift/font.woff2")format("woff2"),
-  url("http://localhost/fonts/Bahnschrift/font.woff")format("woff"),
-  url("http://localhost/fonts/Bahnschrift/font.ttf")format("truetype"),
-  url("http://localhost/fonts/Bahnschrift/font.svg")format("svg");
+  src: url("../../../public/fonts/Bahnschrift/font.eot");
+  src: url("../../../public/fonts/Bahnschrift/font.eot")format("embedded-opentype"),
+  url("../../../public/fonts/Bahnschrift/font.woff2")format("woff2"),
+  url("../../../public/fonts/Bahnschrift/font.woff")format("woff"),
+  url("../../../public/fonts/Bahnschrift/font.ttf")format("truetype"),
+  url("../../../public/fonts/Bahnschrift/font.svg")format("svg");
 }
 
 body {
