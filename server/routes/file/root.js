@@ -60,10 +60,10 @@ router.post('/update/', async function (req, res) {
 })
 
 router.get('/thumbnail', async function (req, res) {
-        if (!fs.existsSync('./data_storage/thumbnail'))
-            fs.mkdirSync('./data_storage/thumbnail');
+        if (!fs.existsSync('./data_storage/thumbnails'))
+            fs.mkdirSync('./data_storage/thumbnails');
 
-        const thumbnail_path = `data_storage/thumbnail/${req.file.id}`
+        const thumbnail_path = `data_storage/thumbnails/${req.file.id}`
 
         res.setHeader('Content-Disposition', 'attachment; filename=thumbnail_' + encodeURIComponent(req.file.name));
 
@@ -114,12 +114,12 @@ router.get('/thumbnail', async function (req, res) {
                     })
                     .on('end', async () => {
                         logger.info(`generated video thumbnail for ${req.file.id} (${req.file.name})`)
-                        if (!fs.existsSync(`data_storage/thumbnail/dir_${req.file.id}/${filename}`)) {
-                            logger.error(`Failed to get path to generated thumbnail : 'data_storage/thumbnail/dir_${req.file.id}/${filename}'`);
+                        if (!fs.existsSync(`data_storage/thumbnails/dir_${req.file.id}/${filename}`)) {
+                            logger.error(`Failed to get path to generated thumbnail : 'data_storage/thumbnails/dir_${req.file.id}/${filename}'`);
                             return res.sendFile(path.resolve(req.file_path));
                         }
-                        fs.renameSync(`data_storage/thumbnail/dir_${req.file.id}/${filename}`, thumbnail_path);
-                        fs.rmdirSync(`data_storage/thumbnail/dir_${req.file.id}`)
+                        fs.renameSync(`data_storage/thumbnails/dir_${req.file.id}/${filename}`, thumbnail_path);
+                        fs.rmdirSync(`data_storage/thumbnails/dir_${req.file.id}`)
                         return res.sendFile(path.resolve(thumbnail_path));
                     })
                     .on('error', async (err) => {
@@ -130,7 +130,7 @@ router.get('/thumbnail', async function (req, res) {
                         count: 1,
                         timemarks: ['0'],
                         size: '100x100'
-                    }, `data_storage/thumbnail/dir_${req.file.id}`);
+                    }, `data_storage/thumbnails/dir_${req.file.id}`);
             } else
                 return res.sendFile(path.resolve(req.file_path));
         } else

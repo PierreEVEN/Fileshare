@@ -14,7 +14,7 @@ class Repos {
      */
     constructor(data) {
         this.id = data.id;
-        this.description = decodeURIComponent(data.description);
+        this.description = data.description ? decodeURIComponent(data.description) : null;
         this.name = data.name ? decodeURIComponent(data.name) : null;
         this.owner = data.owner;
         this.status = data.status;

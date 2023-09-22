@@ -1,11 +1,8 @@
 @import '../common/colors';
 
-.modal-container .modal-box #modal-content .delete-repos {
+.delete-repos {
   display: flex;
   flex-direction: row;
-}
-
-.delete-repos {
 
   .progress-container {
     width: 95%;

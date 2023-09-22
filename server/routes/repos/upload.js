@@ -66,7 +66,6 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
 
     const parent_directory = (await Directories.find_or_create(repos.id, meta.virtual_path, {owner: user.id}));
 
-    console.log('name :', meta.file_name, meta)
     const file_meta = await new File({
         repos: repos.id,
         owner: user.id,

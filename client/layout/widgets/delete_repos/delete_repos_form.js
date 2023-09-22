@@ -3,7 +3,14 @@ import {open_modal} from "../../../common/widgets/modal.js";
 const delete_repos_form = require('./delete_repos.hbs')
 
 function delete_repos(e) {
-    open_modal(delete_repos_form({id: e}), '500px', '180px', 'delete-repos');
+    open_modal(delete_repos_form({id: e}, {
+        clicked: async () => {
+            if (remaining_s <= 0) {
+                await fetch(`/repos/delete/?repos=${e}`, {method:'POST'})
+                window.location = `/`;
+            }
+        }
+    }), '500px', '180px', 'delete-repos');
 
     let remaining_s = 5;
     const countdown_bar = document.getElementsByClassName('progress-bar')[0];

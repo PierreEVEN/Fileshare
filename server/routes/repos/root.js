@@ -60,8 +60,6 @@ router.post('/update/', async function (req, res, _) {
     if (!await perms.can_user_edit_repos(req.repos, req.user ? req.user.id : null))
         return error_403(req, res, 'Accès non autorisé');
 
-    console.log(req.body);
-
     req.repos.name = req.body.name;
     req.repos.description = req.body.description;
     if (req.repos.status !== req.body.status) {
