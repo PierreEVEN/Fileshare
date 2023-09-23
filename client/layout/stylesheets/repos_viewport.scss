@@ -31,6 +31,9 @@
             max-width: 30%;
             background-color: $background_1;
             overflow-y: auto;
+            img {
+                max-width: 100%;
+            }
         }
 
         @media (orientation:portrait) {
