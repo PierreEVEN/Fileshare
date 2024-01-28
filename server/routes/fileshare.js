@@ -24,7 +24,7 @@ router.get('/', async function (req, res, _) {
     });
 });
 
-router.use('/', require('./auth'));
+router.use('/auth/', require('./auth'));
 router.use('/repos/', require('./repos/root'));
 router.use('/file/', require('./file/root'));
 router.use('/directory/', require('./directory/root'));

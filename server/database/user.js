@@ -1,9 +1,9 @@
 const db = require('../database')
-const {gen_uid} = require("../uid_generator");
+const {gen_uid, gen_uhash} = require("../uid_generator");
 const {Repos} = require("./repos")
 const bcrypt = require("bcrypt");
 const assert = require("assert");
-const {as_data_string, as_id, as_boolean, as_enum, as_hash_key} = require("../db_utils");
+const {as_data_string, as_id, as_boolean, as_enum, as_hash_key, as_number} = require("../db_utils");
 
 const id_base = new Set();
 
@@ -38,6 +38,21 @@ class User {
         return this;
     }
 
+    async gen_auth_token() {
+        const connection = await db.persist();
+        const token = await gen_uhash(async (id) => await connection.found('SELECT * FROM fileshare.authtoken WHERE token = $1', [as_data_string(id)]), id_base);
+        await connection.end();
+
+        // Valid for 30 days
+        const exp_date = new Date().getTime() + 86400000 * 30;
+
+        await db.single().query(`INSERT INTO fileshare.authtoken
+            (owner, token, expdate) VALUES
+            ($1, $2, $3);`,
+            [as_id(this.id), as_data_string(token), as_number(exp_date)]);
+        return [token, exp_date];
+    }
+
     async delete() {
 
         for (const repos of await Repos.from_owner(this.id))
@@ -64,6 +79,14 @@ class User {
         const id = await gen_uid(async (id) => await connection.found('SELECT * FROM fileshare.users WHERE id = $1', [as_id(id)]), id_base);
         await connection.end();
         return id;
+    }
+
+    /**
+     * @param token {string} Directory id
+     * @return {Promise<User|null>}
+     */
+    static async from_auth_token(token) {
+        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE id IN (SELECT id FROM fileshare.authtoken WHERE token = $1)', [as_data_string(token)]);
     }
 
     /**

@@ -28,12 +28,13 @@ async function gen_uid(callback_exists, id_base = null) {
 /**
  * @param callback_exists {callback_exists_hash}
  * @param id_base {Set<string>|null}
+ * @param size {number}
  * @return {Promise<string>}
  */
-async function gen_uhash(callback_exists, id_base= null) {
+async function gen_uhash(callback_exists, id_base= null, size=16) {
     let id = null;
     do {
-        id = randomBytes(16).toString("hex");
+        id = randomBytes(size).toString("hex");
     } while ((!id_base || id_base.has(id)) && await callback_exists(id));
     if (id_base)
         id_base.add(id);

@@ -72,6 +72,16 @@ const table_created = (async () => {
         );`)
     }
 
+    // Create AuthToken table if needed. The expDate is the timestamp in milliseconds since 1970
+    if ((await connection.query("SELECT * FROM pg_tables WHERE schemaname = 'fileshare' AND tablename = 'authtoken'")).rowCount === 0) {
+        logger.warn('Create authtoken table');
+        await connection.query(`CREATE TABLE fileshare.authtoken (
+            owner BIGINT,
+            token VARCHAR(200) NOT NULL,
+            expdate BIGINT NOT NULL
+        );`)
+    }
+
     // Create Directories table if needed
     if ((await connection.query("SELECT * FROM pg_tables WHERE schemaname = 'fileshare' AND tablename = 'directories'")).rowCount === 0) {
         logger.warn('Create Directories table');

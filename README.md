@@ -54,3 +54,54 @@ Note: Only moderators can open a directory to upload
 - if a user create a directory inside it, it becomes private to him.
 
 When someone create a ressource inside a directory, it automatically has the 'contributor permissions' on it.
+
+### POST/auth/gen-token
+
+Generate an auth token.
+- **content:** Auth credentials as json data
+
+```json
+{
+  "login":"username",
+  // TODO : normalize the hash format of the password
+  "password": "passwdhash"
+}
+```
+
+- **return :** Auth token (401 if credentials are not valid)
+
+```json
+{
+  "token": "token",
+  // expiration timestamp 
+  "expiration-date": "000000"
+}
+```
+
+### GET/repos/tree?repos=<repos_id>
+
+Get repository tree. 
+- **Option** : &directory=<directory_path>
+
+- **return :** Directory tree as json data
+
+```json
+{
+  "directories": [
+    {
+      "path": "path/to/directory/",
+      "directories": [],
+      "files": []
+    }
+  ],
+  "files": [
+    {
+      "path": "path/to/file.ext",
+      // size in bytes
+      "size": "1456",
+      // last modification timestamp
+      "time": "000000"
+    }
+  ]
+}
+```

@@ -1,6 +1,30 @@
 const {session_data, public_data} = require("../session_utils");
 const {User} = require("../database/user");
+const {logger} = require("../logger");
 const router = require('express').Router();
+
+router.post('/gen-token/', async (req, res) => {
+    const found_user = await User.from_credentials(req.body.username, req.body.password);
+    logger.info(`User '${req.body.username}' is trying to generate a new auth token`);
+    if (found_user) {
+        const [token, exp_date] = await found_user.gen_auth_token();
+
+        res.send({
+            token: token,
+            expiration_date: exp_date
+        });
+        logger.info(`Generated auth token for user '${req.body.username}'`);
+    }
+    else {
+        res.status(401).send(JSON.stringify({
+            message: {
+                severity: 'error',
+                title: 'Erreur de connexion',
+                content: 'Identifiants ou mot de passe invalid'
+            }
+        }))
+    }
+})
 
 router.get('/signin/', async (req, res) => {
     res.render('fileshare', {
