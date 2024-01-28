@@ -10,6 +10,7 @@ const {Repos} = require("../../database/repos");
 const {logger} = require("../../logger");
 const perms = require("../../permissions");
 const {as_number, as_boolean, as_data_string} = require("../../db_utils");
+const {Filesystem} = require("../../../client/common/tools/filesystem");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -88,6 +89,38 @@ router.post('/delete/', async (req, res) => {
     await events.on_delete_repos(req.repos);
     logger.warn(`${request_username(req)} deleted repos ${req.repos.access_key}`)
     res.redirect(`/`);
+});
+
+router.get('/tree/', async function (req, res, _) {
+    logger.info(`${request_username(req)} retrieved tree of repos ${req.repos.access_key}`);
+    const internal_data = await req.repos.get_content();
+
+    const filesystem = new Filesystem();
+
+    const directories = {}
+
+    // Retrieve dirs
+    internal_data.directories.forEach(dir => {
+        directories[dir.id] = dir;
+    })
+
+    const path_of = dir => (dir.parent_directory ? `${path_of(directories[dir.parent_directory])}/` : '/') + `${dir.name}/`;
+
+    for (const directory of Object.values(directories)) {
+        const found = filesystem.directory_from_path(path_of(directory), true);
+        found.id = directory.id;
+        found.open_upload = directory.open_upload;
+        found.description = directory.description;
+    }
+
+    internal_data.files.forEach(item => {
+        if (!item.description || item.description === 'null')
+            item.description = '';
+        item.name = decodeURIComponent(item.name);
+        filesystem.add_file(item, item.parent_directory ? path_of(directories[item.parent_directory]) : '/');
+    })
+
+    res.sendStatus(401);
 });
 
 router.use('/upload/', require('./upload'));

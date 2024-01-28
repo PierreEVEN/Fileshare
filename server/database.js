@@ -113,6 +113,7 @@ const table_created = (async () => {
                 size BIGINT NOT NULL,
                 mimetype VARCHAR(200) NOT NULL,
                 hash VARCHAR(64) NOT NULL,
+                timestamp BIGINT NOT NULL,
                 FOREIGN KEY(repos) REFERENCES fileshare.repos(id),
                 FOREIGN KEY(owner) REFERENCES fileshare.users(id),
                 FOREIGN KEY(parent_directory) REFERENCES fileshare.directories(id)

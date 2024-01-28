@@ -250,4 +250,5 @@ class Filesystem {
     }
 }
 
-export {Filesystem}
+module.exports = {Filesystem}
+//export {Filesystem}
