@@ -24,6 +24,9 @@ router.get('/', async function (req, res, _) {
     });
 });
 
+router.get('/time-epoch/', (req, res) => {
+    res.send({"time_since_epoch": new Date().getTime()})
+});
 router.use('/auth/', require('./auth'));
 router.use('/repos/', require('./repos/root'));
 router.use('/file/', require('./file/root'));

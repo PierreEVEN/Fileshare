@@ -1,15 +1,14 @@
 const {User} = require("./database/user");
 const {Repos} = require("./database/repos");
 const {logger} = require("./logger");
-const {UserRepos} = require("./database/user_repos");
 
 function require_connection(req, res) {
     if (!session_data(req).connected_user) {
         req.session.last_url = req.originalUrl;
-        if (req.method === 'POST')
+        if (req.method === 'POST' || req.headers["no-redirect"])
             res.status(403).send('Connection required');
         else
-            res.status().redirect('/signin');
+            res.redirect('/auth/signin');
         return true;
     }
     return false;

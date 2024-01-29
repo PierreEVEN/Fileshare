@@ -73,7 +73,7 @@ class Repos {
         return result;
     }
 
-    async get_tree(partial=true) {
+    async get_tree(partial = true) {
         const {directories, files} = await this.get_content()
 
         const root = {directories: [], files: [], name: this.name}

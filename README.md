@@ -55,6 +55,20 @@ Note: Only moderators can open a directory to upload
 
 When someone create a ressource inside a directory, it automatically has the 'contributor permissions' on it.
 
+## API
+
+
+### GET/time-epoch
+
+Get server time since epoch.
+- **return :** Time since epoch in milliseconds
+
+```json
+{
+  "time_since_epoch": "1234567890"
+}
+```
+
 ### POST/auth/gen-token
 
 Generate an auth token.
