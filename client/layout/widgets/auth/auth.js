@@ -16,7 +16,7 @@ async function post_signin() {
     const data = new URLSearchParams();
     data.append('username', document.getElementById('username').value);
     data.append('password', document.getElementById('password').value);
-    await parse_fetch_result(await fetch('/signin',
+    await parse_fetch_result(await fetch('/auth/signin',
         {
             method: 'POST',
             body: data
@@ -34,7 +34,7 @@ async function post_signup() {
     data.append('username', document.getElementById('username').value);
     data.append('email', document.getElementById('email').value);
     data.append('password', document.getElementById('password').value);
-    await parse_fetch_result(await fetch('/signup',
+    await parse_fetch_result(await fetch('/auth/signup',
         {
             method: 'POST',
             body: data

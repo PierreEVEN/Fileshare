@@ -23,6 +23,7 @@ class File {
         this.size = data.size;
         this.mimetype = decodeURIComponent(data.mimetype);
         this.hash = data.hash;
+        this.timestamp = data.timestamp;
     }
 
     async push() {
@@ -33,12 +34,13 @@ class File {
         assert(this.size);
         assert(this.mimetype);
         assert(this.hash);
+        assert(this.timestamp);
         await db.single().query(`INSERT INTO fileshare.files
-            (id, repos, owner, parent_directory, name, description, size, mimetype, hash) VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            (id, repos, owner, parent_directory, name, description, size, mimetype, hash, timestamp) VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             ON CONFLICT (id) DO  
-            UPDATE SET id = $1, repos = $2, owner = $3, parent_directory = $4, name = $5, description = $6, size = $7, mimetype = $8, hash = $9;`,
-            [as_hash_key(this.id), as_id(this.repos), as_id(this.owner), as_id(this.parent_directory), as_data_string(this.name), encodeURIComponent(this.description), as_number(this.size), as_data_string(this.mimetype), as_hash_key(this.hash)]);
+            UPDATE SET id = $1, repos = $2, owner = $3, parent_directory = $4, name = $5, description = $6, size = $7, mimetype = $8, hash = $9, timestamp = $10;`,
+            [as_hash_key(this.id), as_id(this.repos), as_id(this.owner), as_id(this.parent_directory), as_data_string(this.name), encodeURIComponent(this.description), as_number(this.size), as_data_string(this.mimetype), as_hash_key(this.hash), as_number(this.timestamp)]);
         return this;
     }
 

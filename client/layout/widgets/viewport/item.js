@@ -85,7 +85,7 @@ function open_this_item(div, file) {
                         print_message('info', `File removed`, `Successfully removed ${file.name}`);
                         close_modal();
                     } else if (result.status === 403) {
-                        window.location = `/signin/`;
+                        window.location = `/auth/signin/`;
                     } else {
                         print_message('error', `Failed to remove ${file.name}`, result.status);
                         update_repos_content();

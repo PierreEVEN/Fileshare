@@ -74,7 +74,7 @@ Generate an auth token.
 {
   "token": "token",
   // expiration timestamp 
-  "expiration-date": "000000"
+  "expiration-date": 1234567890
 }
 ```
 
@@ -89,18 +89,22 @@ Get repository tree.
 {
   "directories": [
     {
-      "path": "path/to/directory/",
-      "directories": [],
-      "files": []
+      "name": "directory",
+      "directories": [
+        ...
+      ],
+      "files": [
+        ...
+      ]
     }
   ],
   "files": [
     {
-      "path": "path/to/file.ext",
+      "name": "file.ext",
       // size in bytes
-      "size": "1456",
+      "size": 1456,
       // last modification timestamp
-      "time": "000000"
+      "time": 1234567890
     }
   ]
 }

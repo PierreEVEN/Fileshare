@@ -5,3 +5,4 @@ package-lock.json
 data_storage
 logs
 public/dist
+**.fileshare

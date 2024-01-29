@@ -73,6 +73,65 @@ class Repos {
         return result;
     }
 
+    async get_tree(partial=true) {
+        const {directories, files} = await this.get_content()
+
+        const root = {directories: [], files: [], name: this.name}
+
+        const dir_map = new Map();
+        directories.forEach((dir) => {
+            let dir_obj = {
+                id: dir.id,
+                name: dir.name,
+                files: [],
+                directories: [],
+            };
+
+            if (!partial) {
+                dir_obj.owner = dir.owner;
+                dir_obj.description = dir.description;
+                dir_obj.is_special = dir.is_special;
+                dir_obj.open_upload = dir.open_upload;
+            }
+
+            dir_map.set(dir.id, dir_obj);
+        })
+
+        directories.forEach((dir) => {
+            if (!dir.parent_directory) {
+                root.directories.push(dir_map.get(dir.id));
+                return;
+            }
+            let parent = dir_map.get(dir.parent_directory);
+            assert(parent);
+            parent.directories.push(dir_map.get(dir.id));
+        })
+
+        files.forEach((file) => {
+            const file_obj = {
+                id: file.id,
+                name: file.name,
+                size: Number(file.size),
+                timestamp: file.timestamp ? Number(file.timestamp) : undefined
+            }
+            if (!partial) {
+                file_obj.owner = file.owner;
+                file_obj.description = file.description;
+                file_obj.mimetype = file.mimetype;
+                file_obj.hash = file.hash;
+            }
+            if (!file.parent_directory) {
+                root.files.push(file_obj);
+                return;
+            }
+            let parent = dir_map.get(file.parent_directory);
+            assert(parent);
+            parent.files.push(file_obj);
+        });
+
+        return root;
+    }
+
     static async gen_id() {
         const connection = await db.persist();
         const id = await gen_uid(async (id) => await connection.found('SELECT * FROM fileshare.repos WHERE id = $1', [as_id(id)]), id_base);

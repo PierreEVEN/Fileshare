@@ -72,7 +72,7 @@ async function spawn_item_context_action(item) {
                             print_message('info', `File removed`, `Successfully removed ${item.name}`);
                             close_modal();
                         } else if (result.status === 403) {
-                            window.location = `/signin/`;
+                            window.location = `/auth/signin/`;
                         } else {
                             print_message('error', `Failed to remove ${item.name}`, result.status);
                             update_repos_content();
@@ -85,7 +85,7 @@ async function spawn_item_context_action(item) {
                             print_message('info', `Directory removed`, `Successfully removed ${item.name}`);
                             close_modal();
                         } else if (result.status === 403) {
-                            window.location = `/signin/`;
+                            window.location = `/auth/signin/`;
                         } else {
                             print_message('error', `Failed to remove ${item.name}`, result.status);
                             update_repos_content();
