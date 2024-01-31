@@ -8,7 +8,7 @@
     "debug:build": "webpack --watch --config webpack.debug.js",
     "dev": "npm-run-all --parallel dev:build dev:start",
     "dev:build": "webpack --watch --config webpack.dev.js",
-    "dev:start": "nodemon --ignore public/* ./bin/www",
+    "dev:start": "nodemon --ignore public bin/www",
     "prod": "npm-run-all --parallel rel:build rel:start",
     "rel:build": "webpack --config webpack.prod.js",
     "rel:start": "node ./bin/www",
