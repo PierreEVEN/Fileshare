@@ -229,6 +229,7 @@ function session_data(req) {
     }
 }
 
+
 const _public_data = new PublicData();
 
 function public_data() {
@@ -240,6 +241,22 @@ function request_username(req) {
     return user ? `${user.name}#${user.id}` : `@{${req.socket.remoteAddress}}`
 }
 
+
+/**
+ * @param req {Request}
+ * @return {Promise<User>}
+ */
+async function get_user_from_request(req) {
+    if (req.headers['auth-token']) {
+        return await User.from_auth_token(req.headers['auth-token']);
+    }
+    if (req.sessionID)
+        if (available_sessions[req.sessionID])
+            return available_sessions[req.sessionID].connected_user;
+    return null;
+}
+
+
 module.exports = {
     request_username,
     require_connection,
@@ -247,5 +264,6 @@ module.exports = {
     error_403,
     session_data,
     public_data,
+    get_user_from_request,
     events
 }

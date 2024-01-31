@@ -102,6 +102,15 @@ class File {
     static async from_repos(id) {
         return await db.single().fetch_objects(File, 'SELECT * FROM fileshare.files WHERE repos = $1', [as_id(id)]);
     }
+
+    /**
+     * @param repos_id {string}
+     * @param path {string}
+     * @return {Promise<File>}
+     */
+    static async from_path(repos_id, path) {
+        return await db.single().fetch_object(File, 'SELECT * FROM fileshare.files WHERE repos = $1', [as_id(id)]);
+    }
 }
 
 module.exports = {File};

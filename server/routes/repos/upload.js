@@ -75,6 +75,7 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
         size: meta.file_size,
         parent_directory: parent_directory ? parent_directory.id : null,
         hash: file_hash,
+        timestamp: meta.timestamp,
     }).push();
     fs.renameSync(file_path, file_meta.storage_path());
     return file_meta;
@@ -101,6 +102,7 @@ router.post('/', async (req, res) => {
                 virtual_path: decode_header('content-path') || '/',
                 file_description: decode_header('content-description'),
                 file_id: file_id,
+                timestamp: decode_header('timestamp'),
             },
             hash_sum: crypto.createHash('sha256'),
         }

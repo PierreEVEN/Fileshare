@@ -95,7 +95,9 @@ Generate an auth token.
 ### GET/repos/tree?repos=<repos_id>
 
 Get repository tree. 
-- **Option** : &directory=<directory_path>
+- **Option** : 
+  - &directory=<directory_path>
+  - &auth-token=<auth-token>
 
 - **return :** Directory tree as json data
 
@@ -123,3 +125,14 @@ Get repository tree.
   ]
 }
 ```
+
+
+### GET/repos/file?path=<path/to/file/uri>
+
+Download file from path uri
+
+- **Option** :
+  - &directory=<directory_path>
+  - &auth-token=<auth-token>
+
+- **return :** File stream

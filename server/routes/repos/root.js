@@ -9,8 +9,8 @@ const {
 const {Repos} = require("../../database/repos");
 const {logger} = require("../../logger");
 const perms = require("../../permissions");
-const {as_number, as_boolean, as_data_string} = require("../../db_utils");
-const {Filesystem} = require("../../../client/common/tools/filesystem");
+const {File} = require("../../database/files");
+const path = require("path");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -96,6 +96,20 @@ router.get('/tree/', async function (req, res, _) {
     const internal_data = await req.repos.get_tree();
 
     res.send(internal_data);
+});
+
+router.get('/file/', async function (req, res, _) {
+    const path = req.headers["path"];
+    if (!path)
+        return error_404(req, res);
+
+    const file = await File.from_path(req.repos.id, path);
+
+    logger.info(`${request_username(req)} downloaded ${file.name}#${file.id}`)
+    res.setHeader('Content-Type', `${req.file.mimetype}`)
+    res.setHeader('timestamp', `${req.file.timestamp}`)
+    res.setHeader('Content-Disposition', 'inline; filename=' + encodeURIComponent(file.name));
+    return res.sendFile(path.resolve(await file.storage_path()));
 });
 
 router.use('/upload/', require('./upload'));

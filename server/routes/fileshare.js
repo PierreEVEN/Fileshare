@@ -1,10 +1,10 @@
 let express = require('express');
 let router = express.Router();
-const {session_data, public_data} = require("../session_utils");
+const {session_data, public_data, get_user_from_request} = require("../session_utils");
 
+router.use(async (req, res, next) => {
+    req.user = await get_user_from_request(req);
 
-router.use((req, res, next) => {
-    req.user = session_data(req).connected_user;
     res.redirect_to_current_repos = async () => {
         if (session_data(req).selected_repos)
             return res.redirect(`/repos/?repos=${await session_data(req).selected_repos.access_key}`);
@@ -27,6 +27,7 @@ router.get('/', async function (req, res, _) {
 router.get('/time-epoch/', (req, res) => {
     res.send({"time_since_epoch": new Date().getTime()})
 });
+
 router.use('/auth/', require('./auth'));
 router.use('/repos/', require('./repos/root'));
 router.use('/file/', require('./file/root'));

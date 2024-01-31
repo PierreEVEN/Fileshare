@@ -221,6 +221,7 @@ class FilesystemUpload {
         if (this._byte_sent === 0) {
             this._request.setRequestHeader('content-name', encodeURIComponent(this.file_in_process.name));
             this._request.setRequestHeader('content-size', this.file_in_process.size);
+            this._request.setRequestHeader('timestamp', this.file_in_process.timestamp);
             this._request.setRequestHeader('content-mimetype', this.file_in_process.mimetype);
             const absolute_path = (selector.get_current_directory().absolute_path() + this.file_in_process.directory.absolute_path()).replaceAll('//', '/');
             this._request.setRequestHeader('content-path', encodeURIComponent(absolute_path));

@@ -3,7 +3,7 @@ const path = require("path");
 const sharp = require("sharp");
 const ffmpeg = require("fluent-ffmpeg");
 const {error_404, session_data, request_username, error_403} = require("../../session_utils");
-const {File: Root} = require("../../database/files");
+const {File} = require("../../database/files");
 const {logger} = require("../../logger");
 const gm = require('gm');
 const {platform} = require("os");
@@ -21,7 +21,7 @@ router.use(async (req, res, next) => {
             return res.redirect(`/`);
     }
 
-    const file = await Root.from_id(req.query.file);
+    const file = await File.from_id(req.query.file);
     if (!file)
         return error_404(req, res, 'Document inexistant');
 

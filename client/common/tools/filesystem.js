@@ -7,6 +7,8 @@ function prepare_file(file, directory) {
     file.remove = () => directory.remove_file(file)
     file.is_file = true;
     file.is_directory = false;
+    if (!file.timestamp && file.lastModified)
+        file.timestamp = file.lastModified;
     if (!file.mimetype && file.type && file.type !== '')
         file.mimetype = file.type;
     if (!file.mimetype)
