@@ -11,9 +11,9 @@
     "dev:start": "nodemon --ignore public bin/www",
     "prod": "npm-run-all --parallel rel:build rel:start",
     "rel:build": "webpack --config webpack.prod.js",
-    "rel:start": "node ./bin/www",
+    "rel:start": "node bin/www",
     "run_production": "prod",
-    "pm2:start": "pm2 start ./bin/www"
+    "pm2:start": "pm2 start bin/www"
   },
   "dependencies": {
     "@babel/core": "^7.22.20",
