@@ -136,3 +136,25 @@ Download file from path uri
   - &auth-token=<auth-token>
 
 - **return :** File stream
+
+## Upload process
+
+1) Send metadata in headers with expected size and hash to initiate the file transfer. Also send the first packet
+2) The server respond with the exchange-token and status=201 if the received size is less than the total file size
+3) Send file by packets of n octets (depending on the client settings) with the exchange-token in headers
+4) The server will respond status=200 while the file is not complete
+5) When the file is complete, the server respond with status=202
+
+### POST/repos/upload/file?repos=<repos>
+
+Metadata header : 
+```
+transfert_token:  Content-Token
+name:             Content-Name,
+size:             Content-Size,
+mimetype:         Content-Mimetype,
+path:             Content-Path,
+description:      Content-Description,
+timestamp:        Content-Timestamp
+```
+
