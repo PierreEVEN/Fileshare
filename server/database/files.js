@@ -6,6 +6,7 @@ const fc = require('filecompare');
 const {gen_uhash} = require("../uid_generator");
 const assert = require("assert");
 const {as_id, as_hash_key, as_data_string, as_number} = require("../db_utils");
+const {logger} = require("../logger");
 
 const id_base = new Set();
 
@@ -105,11 +106,11 @@ class File {
 
     /**
      * @param repos_id {string}
-     * @param path {string}
+     * @param file_path {string}
      * @return {Promise<File>}
      */
-    static async from_path(repos_id, path) {
-        return await db.single().fetch_object(File, 'SELECT * FROM fileshare.files WHERE repos = $1', [as_id(id)]);
+    static async from_path(repos_id, file_path) {
+        return await db.single().fetch_object(File, 'SELECT * FROM find_file_by_path($1, $2)', [as_data_string(file_path), as_id(repos_id)]);
     }
 }
 

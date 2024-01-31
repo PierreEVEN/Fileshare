@@ -100,9 +100,54 @@ const table_created = (async () => {
         );`)
     }
 
+    if ((await connection.query("SELECT * FROM pg_proc WHERE proname = 'find_file_by_path'")).rowCount === 0) {
+        logger.warn('Create find_file_by_path procedure');
+        await connection.query(`CREATE OR REPLACE FUNCTION find_file_by_path(target_path VARCHAR, repos_id BIGINT)
+                                RETURNS SETOF fileshare.files AS $$
+                                    DECLARE
+                                        path_elements VARCHAR[];
+                                        current_parent_dir BIGINT;
+                                    BEGIN
+                                        -- Split the path into an array of elements
+                                        path_elements := string_to_array(target_path, '/');
+                                        
+                                        current_parent_dir := NULL;
+                                
+                                        -- Iterate through each directory in the path
+                                        FOR i IN 1..array_length(path_elements, 1) - 1 LOOP	
+                                                SELECT id INTO current_parent_dir
+                                                    FROM fileshare.directories
+                                                    WHERE repos = repos_id AND parent_directory = current_parent_dir AND name = path_elements[i];
+                                            
+                                            -- If no match is found, the directory doesn't exist
+                                            IF current_parent_dir IS NULL THEN
+                                                RETURN;
+                                            END IF;
+                                        END LOOP;
+                                        
+                                        if current_parent_dir IS NULL THEN
+                                            RETURN QUERY SELECT *
+                                                         FROM fileshare.files
+                                                         WHERE repos = repos_id AND 
+                                                               name = path_elements[array_upper(path_elements, 1)] AND
+                                                               parent_directory IS NULL;
+                                        ELSE
+                                        
+                                            RETURN QUERY SELECT *
+                                                         FROM fileshare.files
+                                                         WHERE repos = repos_id AND 
+                                                               name = path_elements[array_upper(path_elements, 1)] AND
+                                                               parent_directory = current_parent_id;
+                                        END IF;
+                                        
+                                    END;
+                                $$ LANGUAGE plpgsql;`);
+    }
+
     // Create Files table if needed
     if ((await connection.query("SELECT * FROM pg_tables WHERE schemaname = 'fileshare' AND tablename = 'files'")).rowCount === 0) {
         logger.warn('Create fileshare table');
+
         await connection.query(`CREATE TABLE fileshare.files(
                 id VARCHAR(32) PRIMARY KEY,
                 repos BIGINT NOT NULL,

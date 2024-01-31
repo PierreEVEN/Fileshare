@@ -99,15 +99,17 @@ router.get('/tree/', async function (req, res, _) {
 });
 
 router.get('/file/', async function (req, res, _) {
-    const path = req.headers["path"];
-    if (!path)
+    const request_path = decodeURI(req.query.path);
+    if (!request_path || !req.query.path)
         return error_404(req, res);
 
-    const file = await File.from_path(req.repos.id, path);
+    const file = await File.from_path(req.repos.id, request_path);
+    if (!file)
+        return error_404(req, res);
 
     logger.info(`${request_username(req)} downloaded ${file.name}#${file.id}`)
-    res.setHeader('Content-Type', `${req.file.mimetype}`)
-    res.setHeader('timestamp', `${req.file.timestamp}`)
+    res.setHeader('Content-Type', `${file.mimetype}`)
+    res.setHeader('timestamp', `${file.timestamp}`)
     res.setHeader('Content-Disposition', 'inline; filename=' + encodeURIComponent(file.name));
     return res.sendFile(path.resolve(await file.storage_path()));
 });

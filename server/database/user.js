@@ -86,7 +86,6 @@ class User {
      * @return {Promise<User|null>}
      */
     static async from_auth_token(token) {
-        console.log(as_data_string(token))
         return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE id IN (SELECT id FROM fileshare.authtoken WHERE token = $1)', [as_data_string(token)]);
     }
 
