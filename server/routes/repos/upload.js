@@ -151,6 +151,7 @@ router.post('/', async (req, res) => {
 /** UPLOAD V2 **/
 
 router.post('/file', async (req, res) => {
+    console.log(req)
     if (!await perms.can_user_upload_to_repos(req['repos'], req['user'].id)) {
         return error_403(req, res);
     }
@@ -203,6 +204,7 @@ router.post('/file', async (req, res) => {
             return res.status(200).send();
         }
     })
+
 });
 
 
