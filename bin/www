@@ -6,7 +6,7 @@ require('dotenv').config();
  * Module dependencies.
  */
 
-const app = require('../server/app');
+const {setup_app, set_routes} = require('../server/app');
 const debug = require('debug')('evenpierre:server');
 const http = require('http');
 const https = require('https');
@@ -16,6 +16,8 @@ const {logger} = require("../server/logger");
 const is_secured = fs.existsSync(process.env.SSL_CERTIFICATE) && fs.existsSync(process.env.SSL_PRIVATE_KEY) && fs.existsSync(process.env.SSL_CHAIN);
 
 let port = normalizePort(process.env.PORT || (is_secured ? '443' : '80'));
+const app = setup_app();
+
 app.set('port', port);
 
 /**
@@ -38,7 +40,6 @@ if (is_secured) {
 /**
  * Listen on provided port, on all network interfaces.
  */
-
 server.listen(port);
 server.on('error', (error) => {
     if (error['syscall'] !== 'listen') {
@@ -68,6 +69,8 @@ server.on('listening', () => {
     let bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
     debug('Listening on ' + bind);
 });
+
+set_routes(app, server);
 
 /**
  * Normalize a port into a number, string, or false.

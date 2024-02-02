@@ -146,9 +146,16 @@ router.post('/', async (req, res) => {
     })
 });
 
+router.ws('/file', async (ws, req) => {
+    console.log('Received websocket event');
 
-
-/** UPLOAD V2 **/
+    ws.send("test");
+    ws.on('error', console.error);
+    ws.on('message', msg => {
+        console.log("RECEIVED MESSAGE !! ", msg);
+        ws.send("pong");
+    })
+});
 
 router.post('/file', async (req, res) => {
     console.log(req)
