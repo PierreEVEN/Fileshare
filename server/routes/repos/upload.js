@@ -1,6 +1,13 @@
 const fs = require("fs");
 const {File} = require('../../database/files');
-const {session_data, public_data, require_connection, request_username, error_403, error_404} = require("../../session_utils");
+const {
+    session_data,
+    public_data,
+    require_connection,
+    request_username,
+    error_403,
+    error_404
+} = require("../../session_utils");
 const conversion_queue = require("../../file-conversion");
 const path = require("path");
 const os = require("os");
@@ -32,6 +39,11 @@ router.get('/', async (req, res) => {
     });
 });
 
+router.get('/file', async (req, res) => {
+    logger.error("wrong request : get is not an allowed method for /repos/upload/file");
+    res.sendStatus(403);
+});
+
 const upload_in_progress = {};
 
 /**
@@ -47,6 +59,7 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
     const meta = metadata;
 
     switch (metadata.mimetype) {
+        // TODO Handle data conversion with client
         case 'video/mpeg':
             await new Promise(resolve => {
                 conversion_queue.push_video(file_path, 'mp4', async (new_path) => {
@@ -58,13 +71,13 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
             break;
     }
 
-    const existing_file = await File.from_data(file_hash, file_path, repos.id);
-    if (existing_file) {
-        logger.warn(`File ${metadata} already exists in this repository - skipping`);
+    const parent_directory = (await Directories.find_or_create(repos.id, meta.virtual_path, {owner: user.id}));
+
+    // Ensure the file doesn't already exists
+    if (await File.from_path(repos.id, file_path)) {
+        logger.warn(`File ${JSON.stringify(metadata)} with the same name already exists, but with different data inside`);
         return null;
     }
-
-    const parent_directory = (await Directories.find_or_create(repos.id, meta.virtual_path, {owner: user.id}));
 
     const file_meta = await new File({
         repos: repos.id,
@@ -87,7 +100,6 @@ router.post('/', async (req, res) => {
     if (!fs.existsSync(tmp_path))
         fs.mkdirSync(tmp_path);
 
-    console.log("HEADERS", req.headers)
     const decode_header = (key) => {
         return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
     }
@@ -119,8 +131,7 @@ router.post('/', async (req, res) => {
         const dir = await Directories.from_path(req.repos.id, upload_in_progress[file_id].metadata.virtual_path);
         if (!dir) {
             valid = false;
-        }
-        else if (await perms.can_user_upload_to_directory(dir, req.user.id)) {
+        } else if (await perms.can_user_upload_to_directory(dir, req.user.id)) {
             valid = true;
         }
 
@@ -143,7 +154,7 @@ router.post('/', async (req, res) => {
             logger.info(`${request_username(req)} store '${JSON.stringify(upload_in_progress[file_id].metadata)}' to repos '${req.repos.access_key}'`)
             const file = await received_file(tmp_file_path, upload_in_progress[file_id].metadata, req.repos, req.user, upload_in_progress[file_id].hash_sum.digest('hex'))
             delete upload_in_progress[file_id];
-            return res.status(202).send(file ? `${file.id}` : '');
+            return res.status(file ? 202 : 500).send(file ? `${file.id}` : '');
         } else if (generated_file_id)
             return res.status(201).send(file_id);
         else {
@@ -152,13 +163,7 @@ router.post('/', async (req, res) => {
     })
 });
 
-router.get('/file', async (req, res) => {
-    console.log("wrong request");
-    res.sendStatus(403);
-});
-
 router.post('/file', async (req, res) => {
-
     const tmp_path = path.join(path.resolve(process.env.FILE_STORAGE_PATH), 'tmp');
     if (!fs.existsSync(tmp_path)) {
         fs.mkdirSync(tmp_path);
@@ -169,13 +174,18 @@ router.post('/file', async (req, res) => {
     }
 
     const decode_header = (key) => {
-        return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
+        try {
+            return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
+        }
+        catch (e) {
+            logger.warn("Header : " + req.headers[key])
+            logger.error(e.toString());
+        }
     }
 
     let transfer_token = decode_header('content-token'); // null if this was the first chunk
-
-    // Does the request contains a file
     let generated_transfer_token = false;
+    // If no transfer token was found, initialize a file transfer
     if (!transfer_token) {
         do {
             transfer_token = crypto.randomBytes(16).toString("hex");
@@ -185,7 +195,7 @@ router.post('/file', async (req, res) => {
             received_size: 0,
             metadata: {
                 file_name: decode_header('content-name'),
-                file_size: decode_header('content-size'),
+                file_size: Number(decode_header('content-size')),
                 mimetype: decode_header('content-mimetype') || '',
                 virtual_path: decode_header('content-path') || '/',
                 file_description: decode_header('content-description'),
@@ -198,41 +208,28 @@ router.post('/file', async (req, res) => {
 
 
     const tmp_file_path = path.join(tmp_path, transfer_token);
-    console.log("post file")
-        req.on('data', chunk => {
-            upload_in_progress[transfer_token].received_size += Buffer.byteLength(chunk);
-            upload_in_progress[transfer_token].hash_sum.update(chunk)
-            fs.appendFileSync(tmp_file_path, chunk);
-        })
+
+    req.on('data', chunk => {
+        upload_in_progress[transfer_token].received_size += Buffer.byteLength(chunk);
+        upload_in_progress[transfer_token].hash_sum.update(chunk)
+        fs.appendFileSync(tmp_file_path, chunk);
+    })
 
     req.on('end', async () => {
-        if (upload_in_progress[transfer_token].received_size >= upload_in_progress[transfer_token].metadata.file_size) {
+        if (upload_in_progress[transfer_token].received_size === upload_in_progress[transfer_token].metadata.file_size) {
             logger.info(`${request_username(req)} store '${JSON.stringify(upload_in_progress[transfer_token].metadata)}' to repos '${req.repos.access_key}'`)
             const file = await received_file(tmp_file_path, upload_in_progress[transfer_token].metadata, req.repos, req.user, upload_in_progress[transfer_token].hash_sum.digest('hex'))
             delete upload_in_progress[transfer_token];
-            return res.status(202).send(file ? {status:"Finished", file_id: file.id} : {status:"Failed"});
-        } else if (generated_transfer_token)
-            return res.status(201).send({status:"Partial-init","content-token": transfer_token});
+            return res.status(file ? 202 : 400).send(file ? {status: "Finished", file_id: file.id} : {status: "Failed"});
+        } else if (upload_in_progress[transfer_token].received_size > upload_in_progress[transfer_token].metadata.file_size)
+            return res.status(413).send({status: "Overflow"});
+        else if (generated_transfer_token)
+            return res.status(201).send({status: "Partial-init", "content-token": transfer_token});
         else {
-            return res.status(200).send({status:"Partial-continue"});
+            return res.status(200).send({status: "Partial-continue"});
         }
     })
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 module.exports = router;

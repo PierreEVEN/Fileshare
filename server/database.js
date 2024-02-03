@@ -110,36 +110,43 @@ const table_created = (async () => {
                                     BEGIN
                                         -- Split the path into an array of elements
                                         path_elements := string_to_array(target_path, '/');
-                                        
+                        
                                         current_parent_dir := NULL;
-                                
+                        
                                         -- Iterate through each directory in the path
                                         FOR i IN 1..array_length(path_elements, 1) - 1 LOOP	
+                                        
+                                            IF current_parent_dir IS NULL THEN
+                                                SELECT id INTO current_parent_dir
+                                                    FROM fileshare.directories
+                                                    WHERE repos = repos_id AND parent_directory IS NULL AND name = path_elements[i];
+                                            ELSE
                                                 SELECT id INTO current_parent_dir
                                                     FROM fileshare.directories
                                                     WHERE repos = repos_id AND parent_directory = current_parent_dir AND name = path_elements[i];
-                                            
+                                            END IF;
+                        
                                             -- If no match is found, the directory doesn't exist
                                             IF current_parent_dir IS NULL THEN
                                                 RETURN;
                                             END IF;
                                         END LOOP;
                                         
-                                        if current_parent_dir IS NULL THEN
+                        
+                                        IF current_parent_dir IS NULL THEN
                                             RETURN QUERY SELECT *
                                                          FROM fileshare.files
                                                          WHERE repos = repos_id AND 
                                                                name = path_elements[array_upper(path_elements, 1)] AND
                                                                parent_directory IS NULL;
                                         ELSE
-                                        
                                             RETURN QUERY SELECT *
                                                          FROM fileshare.files
                                                          WHERE repos = repos_id AND 
                                                                name = path_elements[array_upper(path_elements, 1)] AND
-                                                               parent_directory = current_parent_id;
+                                                               parent_directory = current_parent_dir;
                                         END IF;
-                                        
+                        
                                     END;
                                 $$ LANGUAGE plpgsql;`);
     }

@@ -25,6 +25,17 @@ function as_data_string(source) {
     return data;
 }
 
+function as_data_path(source) {
+    if (!source)
+        return '';
+    const split_path = source.split('/')
+    for (let i in split_path) {
+        split_path[i] = encodeURIComponent(split_path[i].toString())
+        assert(/^[A-Za-z0-9-_.!~*'()%]*$/.test(split_path[i]))
+    }
+    return split_path.join('/');
+}
+
 function as_boolean(source) {
     return !!source;
 }
@@ -36,4 +47,4 @@ function as_enum(source) {
     return data;
 }
 
-module.exports = {as_hash_key, as_id, as_data_string, as_boolean, as_enum, as_number}
+module.exports = {as_hash_key, as_id, as_data_string, as_boolean, as_enum, as_number, as_data_path}

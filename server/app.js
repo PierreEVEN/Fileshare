@@ -27,7 +27,6 @@ function setup_app() {
     }));
 
     app.use(express.static('./public'));
-
     return app;
 }
 

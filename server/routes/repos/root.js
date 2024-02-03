@@ -17,7 +17,6 @@ const router = require('express').Router();
 router.use(async (req, res, next) => {
     if (!req.query.repos)
         return res.redirect('/');
-
     const repos = await Repos.from_access_key(req.query.repos);
 
     // This repo does not exist
@@ -74,7 +73,7 @@ router.post('/update/', async function (req, res, _) {
     req.repos.visitor_file_lifetime = req.body.guest_file_lifetime;
     req.repos.allow_visitor_upload = req.body.allow_visitor_upload === 'on';
 
-    await req.repos.push();
+    req.repos.push();
     logger.warn(`${request_username(req)} updated repos ${req.repos.access_key}`)
     return res.redirect(session_data(req).selected_repos ? `/repos/?repos=${req.repos.access_key}` : '/');
 });
@@ -89,6 +88,25 @@ router.post('/delete/', async (req, res) => {
     await events.on_delete_repos(req.repos);
     logger.warn(`${request_username(req)} deleted repos ${req.repos.access_key}`)
     res.redirect(`/`);
+});
+
+router.post('/delete-file/', async (req, res) => {
+
+    const request_path = decodeURI(req.query.path);
+    if (!request_path || !req.query.path)
+        return error_404(req, res);
+    const file = await File.from_path(req.repos.id, request_path)
+
+    if (!file)
+        return error_404(req, res);
+
+    if (req.repos.owner !== req.user.id)
+        return error_403(req, res);
+
+    logger.warn(`${JSON.stringify(req.user)} deleted file ${file.id}`)
+
+    await file.delete();
+    res.sendStatus(200);
 });
 
 router.get('/tree/', async function (req, res, _) {
