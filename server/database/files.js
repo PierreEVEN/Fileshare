@@ -110,6 +110,8 @@ class File {
      * @return {Promise<File>}
      */
     static async from_path(repos_id, file_path) {
+        console.log(repos_id, file_path)
+
         return await db.single().fetch_object(File, 'SELECT * FROM find_file_by_path($1, $2)', [as_data_string(file_path), as_id(repos_id)]);
     }
 }

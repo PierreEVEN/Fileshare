@@ -82,6 +82,12 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
 }
 
 router.post('/', async (req, res) => {
+
+    const tmp_path = path.join(path.resolve(process.env.FILE_STORAGE_PATH), 'tmp');
+    if (!fs.existsSync(tmp_path))
+        fs.mkdirSync(tmp_path);
+
+    console.log("HEADERS", req.headers)
     const decode_header = (key) => {
         return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
     }
@@ -91,7 +97,7 @@ router.post('/', async (req, res) => {
     if (!file_id) {
         do {
             file_id = crypto.randomBytes(16).toString("hex");
-        } while (fs.existsSync(path.join(os.tmpdir(), file_id)))
+        } while (fs.existsSync(path.join(tmp_path, file_id)))
         generated_file_id = true;
         upload_in_progress[file_id] = {
             received_size: 0,
@@ -124,7 +130,7 @@ router.post('/', async (req, res) => {
         }
     }
 
-    const tmp_file_path = path.join(os.tmpdir(), file_id);
+    const tmp_file_path = path.join(tmp_path, file_id);
 
     req.on('data', chunk => {
         upload_in_progress[file_id].received_size += Buffer.byteLength(chunk);
@@ -146,19 +152,18 @@ router.post('/', async (req, res) => {
     })
 });
 
-router.ws('/file', async (ws, req) => {
-    console.log('Received websocket event');
-
-    ws.send("test");
-    ws.on('error', console.error);
-    ws.on('message', msg => {
-        console.log("RECEIVED MESSAGE !! ", msg);
-        ws.send("pong");
-    })
+router.get('/file', async (req, res) => {
+    console.log("wrong request");
+    res.sendStatus(403);
 });
 
 router.post('/file', async (req, res) => {
-    console.log(req)
+
+    const tmp_path = path.join(path.resolve(process.env.FILE_STORAGE_PATH), 'tmp');
+    if (!fs.existsSync(tmp_path)) {
+        fs.mkdirSync(tmp_path);
+    }
+
     if (!await perms.can_user_upload_to_repos(req['repos'], req['user'].id)) {
         return error_403(req, res);
     }
@@ -167,14 +172,16 @@ router.post('/file', async (req, res) => {
         return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
     }
 
-    let file_id = decode_header('content-token'); // null if this was the first chunk
-    let generated_file_id = false;
-    if (!file_id) {
+    let transfer_token = decode_header('content-token'); // null if this was the first chunk
+
+    // Does the request contains a file
+    let generated_transfer_token = false;
+    if (!transfer_token) {
         do {
-            file_id = crypto.randomBytes(16).toString("hex");
-        } while (fs.existsSync(path.join(os.tmpdir(), file_id)))
-        generated_file_id = true;
-        upload_in_progress[file_id] = {
+            transfer_token = crypto.randomBytes(16).toString("hex");
+        } while (fs.existsSync(path.join(tmp_path, transfer_token)))
+        generated_transfer_token = true;
+        upload_in_progress[transfer_token] = {
             received_size: 0,
             metadata: {
                 file_name: decode_header('content-name'),
@@ -182,7 +189,7 @@ router.post('/file', async (req, res) => {
                 mimetype: decode_header('content-mimetype') || '',
                 virtual_path: decode_header('content-path') || '/',
                 file_description: decode_header('content-description'),
-                file_id: file_id,
+                file_id: transfer_token,
                 timestamp: decode_header('content-timestamp'),
             },
             hash_sum: crypto.createHash('sha256'),
@@ -190,28 +197,26 @@ router.post('/file', async (req, res) => {
     }
 
 
-    const tmp_file_path = path.join(os.tmpdir(), file_id);
-
-    req.on('data', chunk => {
-        console.log("DATAAA : ", Buffer.byteLength(chunk))
-        upload_in_progress[file_id].received_size += Buffer.byteLength(chunk);
-        upload_in_progress[file_id].hash_sum.update(chunk)
-        fs.appendFileSync(tmp_file_path, chunk);
-    })
+    const tmp_file_path = path.join(tmp_path, transfer_token);
+    console.log("post file")
+        req.on('data', chunk => {
+            upload_in_progress[transfer_token].received_size += Buffer.byteLength(chunk);
+            upload_in_progress[transfer_token].hash_sum.update(chunk)
+            fs.appendFileSync(tmp_file_path, chunk);
+        })
 
     req.on('end', async () => {
-        if (upload_in_progress[file_id].received_size >= upload_in_progress[file_id].metadata.file_size) {
-            logger.info(`${request_username(req)} store '${JSON.stringify(upload_in_progress[file_id].metadata)}' to repos '${req.repos.access_key}'`)
-            const file = await received_file(tmp_file_path, upload_in_progress[file_id].metadata, req.repos, req.user, upload_in_progress[file_id].hash_sum.digest('hex'))
-            delete upload_in_progress[file_id];
-            return res.status(202).send(file ? `${file.id}` : '');
-        } else if (generated_file_id)
-            return res.status(201).send({"content-token": file_id});
+        if (upload_in_progress[transfer_token].received_size >= upload_in_progress[transfer_token].metadata.file_size) {
+            logger.info(`${request_username(req)} store '${JSON.stringify(upload_in_progress[transfer_token].metadata)}' to repos '${req.repos.access_key}'`)
+            const file = await received_file(tmp_file_path, upload_in_progress[transfer_token].metadata, req.repos, req.user, upload_in_progress[transfer_token].hash_sum.digest('hex'))
+            delete upload_in_progress[transfer_token];
+            return res.status(202).send(file ? {status:"Finished", file_id: file.id} : {status:"Failed"});
+        } else if (generated_transfer_token)
+            return res.status(201).send({status:"Partial-init","content-token": transfer_token});
         else {
-            return res.status(200).send();
+            return res.status(200).send({status:"Partial-continue"});
         }
     })
-
 });
 
 

@@ -1,7 +1,6 @@
 const express = require('express');
 const session = require('express-session');
 const {error_404} = require("./session_utils");
-const express_ws = require('express-ws');
 require('./logger');
 
 function setup_app() {
@@ -33,7 +32,6 @@ function setup_app() {
 }
 
 function set_routes(app, server) {
-    express_ws(app, server);
     app.use('/', require('./routes/fileshare'));
     // catch 404
     app.use(async (req, res) => {
