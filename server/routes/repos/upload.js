@@ -74,9 +74,16 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
     const parent_directory = (await Directories.find_or_create(repos.id, meta.virtual_path, {owner: user.id}));
 
     // Ensure the file doesn't already exists
-    if (await File.from_path(repos.id, file_path)) {
-        logger.warn(`File ${JSON.stringify(metadata)} with the same name already exists, but with different data inside`);
-        return null;
+    const existing_file = await File.from_path(repos.id, meta.virtual_path + "/" + meta.file_name);
+    if (existing_file) {
+        logger.warn(`File ${JSON.stringify(metadata)} with the same name already exists, but with different data inside. Replacing with new one`);
+        fs.renameSync(file_path, existing_file.storage_path());
+        existing_file.size = meta.file_size;
+        existing_file.hash = file_hash;
+        existing_file.mimetype = meta.mimetype;
+        existing_file.timestamp = meta.timestamp;
+        await existing_file.push();
+        return existing_file;
     }
 
     const file_meta = await new File({
