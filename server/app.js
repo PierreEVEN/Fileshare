@@ -2,11 +2,20 @@ const express = require('express');
 const session = require('express-session');
 const {error_404} = require("./session_utils");
 require('./logger');
+const fs = require("fs");
+const {join} = require("path");
+const {logger} = require("./logger");
 
 function setup_app() {
 
     if (!process.env.FILE_STORAGE_PATH)
         process.env.FILE_STORAGE_PATH = 'data_storage'
+
+    // Remove old temp data
+    const tmp_dir = join(process.env.FILE_STORAGE_PATH, "tmp");
+    if (fs.existsSync(tmp_dir)) {
+        fs.rmSync(tmp_dir, {recursive: true, force: true});
+    }
 
     let app = express();
 
