@@ -32,7 +32,7 @@ class File {
         assert(this.repos);
         assert(this.owner);
         assert(this.name);
-        assert(this.size);
+        assert(this.size !== undefined);
         assert(this.mimetype);
         assert(this.hash);
         assert(this.timestamp);

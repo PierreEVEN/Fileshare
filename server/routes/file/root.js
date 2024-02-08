@@ -27,7 +27,7 @@ router.use(async (req, res, next) => {
 
     const file_path = file.storage_path()
 
-    if (!fs.existsSync(file_path))
+    if (!fs.existsSync(file_path) && !req.url.startsWith('/delete'))
         return error_404(req, res, 'Document introuvable');
 
     req.file = file;

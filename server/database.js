@@ -77,7 +77,7 @@ const table_created = (async () => {
         logger.warn('Create authtoken table');
         await connection.query(`CREATE TABLE fileshare.authtoken (
             owner BIGINT,
-            token VARCHAR(200) NOT NULL,
+            token VARCHAR(200) NOT NULL UNIQUE,
             expdate BIGINT NOT NULL
         );`)
     }

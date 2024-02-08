@@ -149,6 +149,9 @@ router.post('/', async (req, res) => {
     }
 
     const tmp_file_path = path.join(tmp_path, file_id);
+    if ( upload_in_progress[file_id].metadata.file_size === 0) {
+        fs.closeSync(fs.openSync(tmp_file_path, 'w'));
+    }
 
     req.on('data', chunk => {
         upload_in_progress[file_id].received_size += Buffer.byteLength(chunk);
@@ -173,7 +176,7 @@ router.post('/', async (req, res) => {
 router.post('/file', async (req, res) => {
     const tmp_path = path.join(path.resolve(process.env.FILE_STORAGE_PATH), 'tmp');
     if (!fs.existsSync(tmp_path)) {
-        fs.mkdirSync(tmp_path);
+        fs.mkdirSync(tmp_path, {recursive: true});
     }
 
     if (!await perms.can_user_upload_to_repos(req['repos'], req['user'].id)) {
@@ -215,6 +218,9 @@ router.post('/file', async (req, res) => {
 
 
     const tmp_file_path = path.join(tmp_path, transfer_token);
+    if ( upload_in_progress[transfer_token].metadata.file_size === 0) {
+        fs.closeSync(fs.openSync(tmp_file_path, 'w'));
+    }
 
     req.on('data', chunk => {
         upload_in_progress[transfer_token].received_size += Buffer.byteLength(chunk);

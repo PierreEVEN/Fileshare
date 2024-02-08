@@ -39,6 +39,9 @@ router.get('/upload-to-directory', async (req, res) => {
 router.get('/edit-file', async (req, res) => {
     if (req.user && req.query.file) {
         const file = await File.from_id(req.query.file)
+        if (!file)
+            return res.sendStatus(204);
+
         if (file.owner === req.user.id)
             return res.sendStatus(200);
 

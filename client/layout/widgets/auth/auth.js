@@ -42,7 +42,7 @@ async function post_signup() {
 }
 
 async function logout() {
-    await parse_fetch_result(await fetch('/logout/', {method: 'POST'}));
+    await parse_fetch_result(await fetch('/auth/logout/', {method: 'POST'}));
 }
 
 window.auth = {open_modal_signin, open_modal_signup, logout, post_signin, post_signup}
