@@ -86,19 +86,26 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
         return existing_file;
     }
 
-    const file_meta = await new File({
-        repos: repos.id,
-        owner: user.id,
-        name: meta.file_name,
-        description: meta.description,
-        mimetype: meta.mimetype,
-        size: meta.file_size,
-        parent_directory: parent_directory ? parent_directory.id : null,
-        hash: file_hash,
-        timestamp: meta.timestamp,
-    }).push();
-    fs.renameSync(file_path, file_meta.storage_path());
-    return file_meta;
+    try {
+        const file_meta = await new File({
+            repos: repos.id,
+            owner: user.id,
+            name: meta.file_name,
+            description: meta.description,
+            mimetype: meta.mimetype,
+            size: meta.file_size,
+            parent_directory: parent_directory ? parent_directory.id : null,
+            hash: file_hash,
+            timestamp: meta.timestamp,
+        }).push();
+
+        fs.renameSync(file_path, file_meta.storage_path());
+        return file_meta;
+    }
+    catch (error) {
+        logger.error('file insertion failed : ' + error);
+        return null;
+    }
 }
 
 router.post('/', async (req, res) => {

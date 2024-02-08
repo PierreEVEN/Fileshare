@@ -100,6 +100,52 @@ const table_created = (async () => {
         );`)
     }
 
+
+    if ((await connection.query("SELECT * FROM pg_proc WHERE proname = 'ensure_file_does_not_exists'")).rowCount === 0) {
+        logger.warn('Create ensure_file_does_not_exists procedure and triggers');
+        await connection.query(`CREATE OR REPLACE FUNCTION ensure_file_does_not_exists()
+                                  RETURNS TRIGGER AS $$
+                                DECLARE
+                                    found_file_id VARCHAR(32);
+                                BEGIN
+                                
+                                    SELECT id INTO found_file_id FROM fileshare.files WHERE parent_directory = NEW.parent_directory AND name = NEW.name;
+                                    
+                                  IF found_file_id IS NOT NULL
+                                  THEN
+                                    RAISE EXCEPTION 'Cannot insert the same file twice';
+                                  END IF;
+                                  RETURN NEW;
+                                END;
+                                $$ LANGUAGE plpgsql;
+                                
+                                CREATE OR REPLACE TRIGGER trig_ins_ensure_file_does_not_exists 
+                                BEFORE INSERT ON fileshare.files 
+                                FOR EACH ROW EXECUTE PROCEDURE ensure_file_does_not_exists();
+                                
+                                
+                                CREATE OR REPLACE FUNCTION ensure_directory_does_not_exists()
+                                  RETURNS TRIGGER AS $$
+                                DECLARE
+                                    found_dir_id BIGINT;
+                                BEGIN
+                                
+                                    SELECT id INTO found_dir_id FROM fileshare.directories WHERE parent_directory = NEW.parent_directory AND name = NEW.name;
+                                    
+                                  IF found_dir_id IS NOT NULL
+                                  THEN
+                                    RAISE EXCEPTION 'Cannot insert the same file twice';
+                                  END IF;
+                                  RETURN NEW;
+                                END;
+                                $$ LANGUAGE plpgsql;
+                                
+                                CREATE OR REPLACE TRIGGER trig_ins_ensure_directory_does_not_exists 
+                                BEFORE INSERT ON fileshare.directories
+                                FOR EACH ROW EXECUTE PROCEDURE ensure_directory_does_not_exists();
+                                `);
+    }
+
     if ((await connection.query("SELECT * FROM pg_proc WHERE proname = 'find_file_by_path'")).rowCount === 0) {
         logger.warn('Create find_file_by_path procedure');
         await connection.query(`CREATE OR REPLACE FUNCTION find_file_by_path(target_path VARCHAR, repos_id BIGINT)
