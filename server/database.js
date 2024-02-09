@@ -101,7 +101,7 @@ const table_created = (async () => {
     }
 
 
-    if ((await connection.query("SELECT * FROM pg_proc WHERE proname = 'ensure_file_does_not_exists'")).rowCount === 0 || true) {
+    if ((await connection.query("SELECT * FROM pg_proc WHERE proname = 'ensure_file_does_not_exists'")).rowCount === 0) {
         logger.warn('Create ensure_file_does_not_exists procedure and triggers');
         await connection.query(`CREATE OR REPLACE FUNCTION ensure_file_does_not_exists()
                                   RETURNS TRIGGER AS $$
@@ -219,6 +219,10 @@ const table_created = (async () => {
                 FOREIGN KEY(owner) REFERENCES fileshare.users(id),
                 FOREIGN KEY(parent_directory) REFERENCES fileshare.directories(id)
         );`)
+    }
+    else if ((await connection.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'files' AND column_name = 'timestamp'")).rowCount === 0) {
+        logger.warn('Add timestamp row to fileshare.files');
+        await connection.query(`ALTER TABLE fileshare.files ADD COLUMN timestamp BIGINT NOT NULL DEFAULT ${new Date().getTime()};`);
     }
     const storage_path = path.resolve(process.env.FILE_STORAGE_PATH)
     if (!fs.existsSync(storage_path))
