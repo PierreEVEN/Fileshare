@@ -127,7 +127,7 @@ router.get('/file/', async function (req, res, _) {
 
     logger.info(`${request_username(req)} downloaded ${file.name}#${file.id}`)
     res.setHeader('Content-Type', `${file.mimetype}`)
-    res.setHeader('timestamp', `${file.timestamp}`)
+    res.setHeader('Content-Timestamp', `${file.timestamp}`)
     res.setHeader('Content-Disposition', 'inline; filename=' + encodeURIComponent(file.name));
     return res.sendFile(path.resolve(await file.storage_path()));
 });

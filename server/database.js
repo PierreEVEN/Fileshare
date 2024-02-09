@@ -101,7 +101,7 @@ const table_created = (async () => {
     }
 
 
-    if ((await connection.query("SELECT * FROM pg_proc WHERE proname = 'ensure_file_does_not_exists'")).rowCount === 0) {
+    if ((await connection.query("SELECT * FROM pg_proc WHERE proname = 'ensure_file_does_not_exists'")).rowCount === 0 || true) {
         logger.warn('Create ensure_file_does_not_exists procedure and triggers');
         await connection.query(`CREATE OR REPLACE FUNCTION ensure_file_does_not_exists()
                                   RETURNS TRIGGER AS $$
@@ -113,7 +113,10 @@ const table_created = (async () => {
                                     
                                   IF found_file_id IS NOT NULL
                                   THEN
-                                    RAISE EXCEPTION 'Cannot insert the same file twice';
+                                    IF found_file_id != NEW.id
+                                    THEN
+                                        RAISE EXCEPTION 'Cannot insert the same file twice';
+                                    END IF;
                                   END IF;
                                   RETURN NEW;
                                 END;
