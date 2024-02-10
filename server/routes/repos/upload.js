@@ -224,7 +224,6 @@ router.post('/file', async (req, res) => {
         }
     }
 
-
     const tmp_file_path = path.join(tmp_path, transfer_token);
     if ( upload_in_progress[transfer_token].metadata.file_size === 0) {
         fs.closeSync(fs.openSync(tmp_file_path, 'w'));

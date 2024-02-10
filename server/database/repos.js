@@ -114,7 +114,6 @@ class Repos {
         })
 
         files.forEach((file) => {
-            console.log(file.name)
             const file_obj = {
                 id: file.id,
                 name: file.name,
