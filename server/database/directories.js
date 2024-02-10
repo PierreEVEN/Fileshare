@@ -150,7 +150,7 @@ class Directories {
             const parent = await _internal(repos, path_split);
             data.repos = repos;
             data.parent_directory = parent ? parent.id : null;
-            data.name = name;
+            data.name = as_data_string(name);
             return await new Directories(data).push();
         }
 

@@ -65,10 +65,16 @@ class Repos {
             directories: [],
             files: [],
         };
-        for (const dir of await Directories.from_repos(this.id))
+        for (const dir of await Directories.from_repos(this.id)) {
+            dir.name = encodeURI(dir.name);
+            dir.description = dir.description ? encodeURI(dir.description) : undefined;
             result.directories.push(dir);
-        for (const file of await File.from_repos(this.id))
+        }
+        for (const file of await File.from_repos(this.id)) {
+            file.name = encodeURI(file.name);
+            file.description = file.description ? encodeURI(file.description) : undefined;
             result.files.push(file);
+        }
 
         return result;
     }
@@ -76,7 +82,7 @@ class Repos {
     async get_tree(partial = true) {
         const {directories, files} = await this.get_content()
 
-        const root = {directories: [], files: [], name: this.name}
+        const root = {directories: [], files: [], name: encodeURI(this.name)}
 
         const dir_map = new Map();
         directories.forEach((dir) => {
@@ -108,6 +114,7 @@ class Repos {
         })
 
         files.forEach((file) => {
+            console.log(file.name)
             const file_obj = {
                 id: file.id,
                 name: file.name,

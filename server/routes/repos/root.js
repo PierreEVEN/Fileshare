@@ -91,9 +91,8 @@ router.post('/delete/', async (req, res) => {
 });
 
 router.post('/delete-file/', async (req, res) => {
-
-    const request_path = decodeURI(req.query.path);
-    if (!request_path || !req.query.path)
+    const request_path = req.query.path;
+    if (!request_path)
         return error_404(req, res);
     const file = await File.from_path(req.repos.id, request_path)
 
@@ -117,8 +116,8 @@ router.get('/tree/', async function (req, res, _) {
 });
 
 router.get('/file/', async function (req, res, _) {
-    const request_path = decodeURI(req.query.path);
-    if (!request_path || !req.query.path)
+    const request_path = req.query.path;
+    if (!request_path)
         return error_404(req, res);
 
     const file = await File.from_path(req.repos.id, request_path);

@@ -23,6 +23,8 @@ function update_repos_content() {
 
             // Retrieve dirs
             json.directories.forEach(dir => {
+                dir.name = decodeURIComponent(dir.name);
+                dir.description = dir.description ? decodeURIComponent(dir.description) : undefined;
                 directories[dir.id] = dir;
             })
 
@@ -39,6 +41,7 @@ function update_repos_content() {
                 if (!item.description || item.description === 'null')
                     item.description = '';
                 item.name = decodeURIComponent(item.name);
+                item.description = item.description ? decodeURIComponent(item.description) : undefined;
                 filesystem.add_file(item, item.parent_directory ? path_of(directories[item.parent_directory]) : '/');
             })
 

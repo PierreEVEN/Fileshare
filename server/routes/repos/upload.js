@@ -15,6 +15,7 @@ const crypto = require("crypto");
 const {logger} = require("../../logger");
 const {Directories} = require("../../database/directories");
 const perms = require("../../permissions");
+const {as_data_string} = require("../../db_utils");
 
 /* ###################################### CREATE ROUTER ###################################### */
 const router = require('express').Router();
@@ -90,8 +91,8 @@ async function received_file(file_path, metadata, repos, user, file_hash) {
         const file_meta = await new File({
             repos: repos.id,
             owner: user.id,
-            name: meta.file_name,
-            description: meta.description,
+            name: as_data_string(meta.file_name),
+            description: as_data_string(meta.description),
             mimetype: meta.mimetype,
             size: meta.file_size,
             parent_directory: parent_directory ? parent_directory.id : null,
