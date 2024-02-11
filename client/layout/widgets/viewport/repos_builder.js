@@ -14,7 +14,9 @@ const viewport_container = document.getElementById('file-list')
 function update_repos_content() {
     if (!filesystem)
         return;
-    fetch(`/repos/content/?repos=${CURRENT_REPOS.access_key}`)
+    fetch(`/repos/content/?repos=${CURRENT_REPOS.access_key}`, {
+        headers: auth
+    })
         .then(async (response) => await parse_fetch_result(response))
         .then((json) => {
             filesystem.clear();

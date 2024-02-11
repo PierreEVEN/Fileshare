@@ -109,13 +109,13 @@ const table_created = (async () => {
                                     found_file_id VARCHAR(32);
                                 BEGIN
                                 
-                                    SELECT id INTO found_file_id FROM fileshare.files WHERE parent_directory = NEW.parent_directory AND name = NEW.name;
+                                    SELECT id INTO found_file_id FROM fileshare.files WHERE parent_directory = NEW.parent_directory AND name = NEW.name and repos = NEW.repos;
                                     
                                   IF found_file_id IS NOT NULL
                                   THEN
                                     IF found_file_id != NEW.id
                                     THEN
-                                        RAISE EXCEPTION 'Cannot insert the same file twice';
+                                        RAISE EXCEPTION 'Cannot insert the same file twice (old id is %)', found_file_id;
                                     END IF;
                                   END IF;
                                   RETURN NEW;
@@ -133,11 +133,11 @@ const table_created = (async () => {
                                     found_dir_id BIGINT;
                                 BEGIN
                                 
-                                    SELECT id INTO found_dir_id FROM fileshare.directories WHERE parent_directory = NEW.parent_directory AND name = NEW.name;
+                                    SELECT id INTO found_dir_id FROM fileshare.directories WHERE parent_directory = NEW.parent_directory AND name = NEW.name and repos = NEW.repos;
                                     
                                   IF found_dir_id IS NOT NULL
                                   THEN
-                                    RAISE EXCEPTION 'Cannot insert the same file twice';
+                                    RAISE EXCEPTION 'Cannot insert the same directory twice (old id is %)', found_dir_id;
                                   END IF;
                                   RETURN NEW;
                                 END;
