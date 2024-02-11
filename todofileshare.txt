@@ -1,0 +1,28 @@
+# GOOD TO KNOW
+
+TODO
+- Table of unavailable usernames ("settings")
+- Table of unavailable repos names ()
+- Compte : booleen = publique ou non
+- Username : unique
+- Username : tolower
+- Repos name : unique per user
+
+# Main routes
+
+> le token de connexion est présenté dans les headers : content-authtoken:<token>
+
+/								# affiche toutes les infos publics (liste des repos publics etc...)
+/settings/profile 				# affiche les infos du profile (edition possible, mdp, supprimer compte etc...)
+/settings/tokens 				# affiche la liste des connexions du compte courant
+/username/ 						# affiche la liste des dépots et infos publiques de cette personne
+/username/repos 				# affiche le contenu d'un repos
+/username/repos/settings		# affiche les paramètres d'un repos
+/username/repos/tree/			# equivalent à /repos
+/username/repos/tree/dir/file	# affiche un dossier ou un fichier si cas échéant
+
+# Additional routes
+POST /api/create-user    			# Cree un token de connexion {username, password}
+POST /api/create-authtoken 			# Cree un token de connexion {username, password}
+POST /api/delete-authtoken/<token> 	# Supprime le token de connexion courant
+GET  /api/server-time				# get server current time in microseconds since epoch
