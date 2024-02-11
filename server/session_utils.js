@@ -18,8 +18,7 @@ async function error_404(req, res, custom_error = null) {
     logger.error(`404 Not found : ${req.originalUrl} (${request_username(req)})`)
     res.status(404).render('error', {
         title: "404 - Not found",
-        session_data: await session_data(req).client_data(),
-        public_data: await public_data().get(),
+        common: await get_common_data(req),
         message: `404 - ${custom_error ? custom_error : 'Cette page n\'existe pas'}`
     })
 }
@@ -27,8 +26,7 @@ async function error_404(req, res, custom_error = null) {
 async function error_403(req, res, custom_error = null) {
     res.status(403).render('error', {
         title: "403 - Forbidden",
-        session_data: await session_data(req).client_data(),
-        public_data: await public_data().get(),
+        common: await get_common_data(req),
         message: `403 - ${custom_error ? custom_error : 'Cette page n\'est pas accessible'}`
     })
 }
@@ -256,6 +254,21 @@ async function get_user_from_request(req) {
     return null;
 }
 
+async function get_common_data(req) {
+    const data = {};
+    data.tracked_repos = [];
+    data.repos_list = [];
+    data.user_repos = [];
+
+    if (req.local_user) {
+        data.user = req.local_user;
+        for (const repos of await Repos.from_owner(req.local_user.id)) {
+            data.user_repos.push(repos);
+        }
+    }
+
+    return data;
+}
 
 module.exports = {
     request_username,
@@ -265,5 +278,6 @@ module.exports = {
     session_data,
     public_data,
     get_user_from_request,
-    events
+    events,
+    get_common_data
 }

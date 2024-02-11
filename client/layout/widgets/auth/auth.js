@@ -3,6 +3,7 @@ import {print_message, parse_fetch_result} from "../../../common/widgets/message
 
 import signin from './signin.hbs';
 import signup from './signup.hbs';
+import {LOCAL_USER} from "../../../common/tools/user";
 
 function open_modal_signin() {
     open_modal(signin(), '500px', '400px', 'auth');
@@ -13,14 +14,7 @@ function open_modal_signup() {
 }
 
 async function post_signin() {
-    const data = new URLSearchParams();
-    data.append('username', document.getElementById('username').value);
-    data.append('password', document.getElementById('password').value);
-    await parse_fetch_result(await fetch('/auth/signin',
-        {
-            method: 'POST',
-            body: data
-        }));
+    await LOCAL_USER.login(document.getElementById('username').value, document.getElementById('password').value);
 }
 
 async function post_signup() {
@@ -42,7 +36,7 @@ async function post_signup() {
 }
 
 async function logout() {
-    await parse_fetch_result(await fetch('/auth/logout/', {method: 'POST'}));
+    await LOCAL_USER.logout();
 }
 
 window.auth = {open_modal_signin, open_modal_signup, logout, post_signin, post_signup}

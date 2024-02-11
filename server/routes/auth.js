@@ -1,4 +1,4 @@
-const {session_data, public_data} = require("../session_utils");
+const {session_data, public_data, get_common_data} = require("../session_utils");
 const {User} = require("../database/user");
 const {logger} = require("../logger");
 const router = require('express').Router();
@@ -30,8 +30,7 @@ router.get('/signin/', async (req, res) => {
     res.render('fileshare', {
         title: "Connexion",
         force_login: true,
-        session_data: await session_data(req).client_data(),
-        public_data: await public_data().get()
+        common: await get_common_data(req),
     });
 })
 
@@ -56,8 +55,7 @@ router.get('/signup/', async (req, res) => {
     res.render('fileshare', {
         title: "Nouveau compte",
         force_signin: true,
-        session_data: await session_data(req).client_data(),
-        public_data: await public_data().get()
+        common: await get_common_data(req),
     });
 })
 

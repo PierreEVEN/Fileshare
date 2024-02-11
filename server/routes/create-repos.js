@@ -1,4 +1,4 @@
-const {require_connection, session_data, error_403, public_data, request_username} = require("../session_utils");
+const {require_connection, session_data, error_403, public_data, request_username, get_common_data} = require("../session_utils");
 const {Repos} = require('../database/repos')
 const crypto = require("crypto");
 const {logger} = require("../logger");
@@ -16,8 +16,7 @@ router.get('/', async (req, res) => {
 
     res.render('fileshare', {
         title: 'Nouveau dépot',
-        session_data: await session_data(req).client_data(),
-        public_data: await public_data().get(),
+        common: await get_common_data(req),
         force_open_create_repos: true
     });
 });

@@ -155,6 +155,16 @@ class Repos {
     }
 
     /**
+     * @param name {string}
+     * @param owner {User}
+     * @return {Promise<Repos|null>}
+     */
+    static async from_name(name, owner) {
+        assert(!isNaN(owner.id))
+        return await db.single().fetch_object(Repos, 'SELECT * FROM fileshare.repos WHERE LOWER(name) = LOWER($1) AND owner = $2', [as_data_string(name), as_data_string(owner.id)]);
+    }
+
+    /**
      * @param id {number} user id
      * @return {Promise<Repos[]>}
      */

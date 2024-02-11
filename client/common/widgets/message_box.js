@@ -23,10 +23,24 @@ async function parse_fetch_result(result) {
         return null;
     }
 
-    const data = result.json ? await result.json() : result.response ? JSON.parse(result.response) : null;
-    if (data && data.message)
-        print_message(data.message.severity, data.message.title, data.message.content)
-    return data;
+    let jsonData = undefined;
+    try {
+        jsonData = await result.json();
+    }
+    catch {
+        if (result.response && typeof(result.response) === 'string')
+            jsonData = JSON.parse(result.response)
+    }
+
+    if (jsonData) {
+        if (jsonData && jsonData.message)
+            print_message(jsonData.message.severity, jsonData.message.title, jsonData.message.content)
+        return jsonData;
+    }
+    else if (result.status) {
+        if (result.status !== 200 && result.status !== 201 &&result.status !== 202)
+            print_message("Error", "Unknown error", `${result.status} : ${result.statusText}`)
+    }
 }
 
 function close_message() {

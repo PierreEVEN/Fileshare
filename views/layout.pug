@@ -5,16 +5,16 @@ html
         link(rel="icon", type="image/x-icon", href="/images/icons/favicon.ico")
         link(rel="stylesheet", href='/dist/index.css')
     body
-        if locals.session_data && locals.session_data.user
+        if locals.common && locals.common.user
             script.
-                const __connected_user = JSON.parse(decodeURIComponent(`!{encodeURIComponent(JSON.stringify(locals.session_data.user))}`));
+                const __connected_user = JSON.parse(decodeURIComponent(`!{encodeURIComponent(JSON.stringify(locals.common.user))}`));
         else
             script.
                 const __connected_user = null;
 
-        if locals.session_data && locals.session_data.selected_repos
+        if locals.common && locals.common.selected_repos
             script.
-                const __loaded_current_repos = JSON.parse(decodeURIComponent(`!{encodeURIComponent(JSON.stringify(locals.session_data.selected_repos))}`));
+                const __loaded_current_repos = JSON.parse(decodeURIComponent(`!{encodeURIComponent(JSON.stringify(locals.common.selected_repos))}`));
         else
             script.
                 const __loaded_current_repos = null;
@@ -45,11 +45,11 @@ html
             div.toolbar
                 div.title
                     p FileShare
-                if !locals.session_data || !locals.session_data.user
+                if !locals.common || !locals.common.user
                     button(onclick = 'window.auth.open_modal_signup()') Nouveau Compte
                     button(onclick = 'window.auth.open_modal_signin()') Connexion
                 else
-                    p.Username Bonjour #{session_data.user.name} !
+                    p.Username Bonjour #{common.user.name} !
                     button(onclick='window.auth.logout()') Déconnexion
 
             div.viewport

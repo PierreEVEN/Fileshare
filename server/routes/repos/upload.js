@@ -6,7 +6,7 @@ const {
     require_connection,
     request_username,
     error_403,
-    error_404
+    error_404, get_common_data
 } = require("../../session_utils");
 const conversion_queue = require("../../file-conversion");
 const path = require("path");
@@ -34,8 +34,7 @@ router.get('/', async (req, res) => {
 
     res.render('repos', {
         title: 'Envoyer un fichier',
-        session_data: await session_data(req).client_data(),
-        public_data: await public_data().get(),
+        common: await get_common_data(req),
         force_show_upload: true
     });
 });

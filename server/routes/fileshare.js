@@ -1,6 +1,6 @@
 let express = require('express');
 let router = express.Router();
-const {session_data, public_data, get_user_from_request} = require("../session_utils");
+const {session_data, public_data, get_user_from_request, get_common_data} = require("../session_utils");
 
 router.use(async (req, res, next) => {
     req.user = await get_user_from_request(req);
@@ -19,8 +19,7 @@ router.get('/', async function (req, res, _) {
     await session_data(req).select_repos(null);
     res.render('fileshare', {
         title: 'FileShare',
-        session_data: await session_data(req).client_data(),
-        public_data: await public_data().get()
+        common: await get_common_data(req),
     });
 });
 

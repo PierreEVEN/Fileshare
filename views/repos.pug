@@ -1,19 +1,19 @@
 extends layout
 
 block content
-    if session_data.selected_repos
+    if common.selected_repos
         div.file-view
             div.repos-toolbar
                 div(id="current-path")
                     p Chargement...
 
                 div(id="viewport_toolbar").tool-buttons
-                    if session_data.selected_repos
-                        button(onclick=`window.open('/archive/?repos=${session_data.selected_repos.access_key}&directory=' + (selector.get_current_directory() ? selector.get_current_directory().absolute_path() : ''), '_blank').focus();`)
+                    if common.selected_repos
+                        button(onclick=`window.open('/archive/?repos=${common.selected_repos.access_key}&directory=' + (selector.get_current_directory() ? selector.get_current_directory().absolute_path() : ''), '_blank').focus();`)
                             img(src='/images/icons/icons8-download-96.png', alt='download')
-                    if session_data.user && session_data.selected_repos.owner === session_data.user.id
+                    if common.user && common.selected_repos.owner === common.user.id
                         button.delete(onclick=`upload.open_or_update_modal()`).plus-button +
-                        button(onclick=`edit_repos.edit_repos('${session_data.selected_repos.access_key}')`).plus-button
+                        button(onclick=`edit_repos.edit_repos('${common.selected_repos.access_key}')`).plus-button
                             img(src='/images/icons/icons8-edit-96.png', alt='modifier')
             div.hseparator
             div.repos_content

@@ -4,7 +4,7 @@ const {
     error_404,
     require_connection,
     error_403,
-    request_username, events
+    request_username, events, get_common_data
 } = require("../../session_utils");
 const {Repos} = require("../../database/repos");
 const {logger} = require("../../logger");
@@ -41,8 +41,7 @@ router.use(async (req, res, next) => {
 router.get('/', async (req, res) => {
     res.render('repos', {
         title: `FileShare - ${req.repos.name}`,
-        session_data: await session_data(req).client_data(),
-        public_data: await public_data().get()
+        common: await get_common_data(req),
     });
 })
 

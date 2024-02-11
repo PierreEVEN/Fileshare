@@ -5,6 +5,7 @@ require('./logger');
 const fs = require("fs");
 const {join} = require("path");
 const {logger} = require("./logger");
+const cookieParser = require("cookie-parser");
 
 function setup_app() {
 
@@ -31,16 +32,18 @@ function setup_app() {
     app.use(express.urlencoded({extended: false}));
     app.use(session({
         secret: process.env.SESSION_SECRET,
-        resave: true,
-        saveUninitialized: true
+        resave: false,
+        saveUninitialized: false,
+        cookie: { secure: true }
     }));
+    app.use(cookieParser());
 
     app.use(express.static('./public'));
     return app;
 }
 
 function set_routes(app, server) {
-    app.use('/', require('./routes/fileshare'));
+    app.use('/', require('./routes-v2/root'));
     // catch 404
     app.use(async (req, res) => {
         return error_404(req, res);

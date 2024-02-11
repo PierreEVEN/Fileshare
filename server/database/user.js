@@ -53,6 +53,10 @@ class User {
         return [token, exp_date];
     }
 
+    async delete_auth_token(token) {
+        await db.single().query("DELETE FROM fileshare.authtoken WHERE owner = $1 AND token = $2", [as_id(this.id), as_data_string(token)]);
+    }
+
     async delete() {
 
         for (const repos of await Repos.from_owner(this.id))
@@ -96,6 +100,15 @@ class User {
     static async from_id(id) {
         return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE id = $1', [as_id(id)]);
     }
+
+    /**
+     * @param name {string} Directory id
+     * @return {Promise<User|null>}
+     */
+    static async from_name(name) {
+        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE LOWER(name) = LOWER($1)', [as_data_string(name)]);
+    }
+
     /**
      * @return {Promise<User | null>}
      */
