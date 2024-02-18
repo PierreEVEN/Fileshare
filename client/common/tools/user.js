@@ -71,11 +71,31 @@ class User {
         window.location.reload()
     }
 
+    async register(username, email, password) {
+        const data = new URLSearchParams();
+
+        data.append('username', username);
+        data.append('email', email);
+        data.append('password',password);
+        const authtoken = await parse_fetch_result(await fetch('/api/create-user',
+            {
+                method: 'POST',
+                body: data
+            }));
+        this._authtoken = authtoken.token;
+        this._authtoken_exp = authtoken.expiration_date;
+        this.save_cookies();
+        window.location = `/${username}/`
+    }
+
     async logout() {
         if (this._authtoken)
             await parse_fetch_result(await fetch(`/api/delete-authtoken/${this._authtoken}`,
                 {
                     method: 'POST',
+                    headers: {
+                        'content-authtoken': this._authtoken
+                    }
                 }));
         delete this._authtoken;
         delete this._authtoken_exp;

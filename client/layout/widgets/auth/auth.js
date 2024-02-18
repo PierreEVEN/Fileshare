@@ -18,21 +18,11 @@ async function post_signin() {
 }
 
 async function post_signup() {
-    const data = new URLSearchParams();
-
     if (!document.getElementById('email').validity.valid) {
         await print_message('error', 'Email invalide', 'veuillez spécifier un email valide');
         return;
     }
-
-    data.append('username', document.getElementById('username').value);
-    data.append('email', document.getElementById('email').value);
-    data.append('password', document.getElementById('password').value);
-    await parse_fetch_result(await fetch('/auth/signup',
-        {
-            method: 'POST',
-            body: data
-        }));
+    await LOCAL_USER.register(document.getElementById('username').value, document.getElementById('email').value, document.getElementById('password').value);
 }
 
 async function logout() {
