@@ -1,5 +1,5 @@
 import {selector} from "../../../common/tools/selector.js";
-import {CURRENT_REPOS, humanFileSize, permissions} from "../../../common/tools/utils";
+import {PAGE_CONTEXT, humanFileSize, permissions} from "../../../common/tools/utils";
 
 const current_path = document.getElementById('current-path');
 const tool_buttons = document.getElementById('viewport_toolbar');
@@ -17,7 +17,7 @@ async function update_dir(new_dir) {
         dir_size.innerText = `${humanFileSize(new_dir.content_size)} / ${new_dir.content_files} fichiers`
         tool_buttons.append(dir_size)
         
-        if ((new_dir && new_dir.parent && await permissions.can_user_upload_to_directory(new_dir.id)) || await permissions.can_user_upload_to_repos(CURRENT_REPOS.id)) {
+        if ((new_dir && new_dir.parent && await permissions.can_user_upload_to_path(new_dir)) || await permissions.can_user_upload_to_repos(PAGE_CONTEXT.repos_path())) {
             const upload_button = document.createElement('button');
             upload_button.onclick = () => upload.open_or_update_modal();
             upload_button.innerText = '+';
@@ -26,13 +26,15 @@ async function update_dir(new_dir) {
         }
 
         const download_button = document.createElement('button');
-        download_button.onclick = () => window.open(`/archive/?repos=${CURRENT_REPOS.access_key}&directory=` + (selector.get_current_directory() ? selector.get_current_directory().absolute_path() : ''), '_blank').focus();
+        download_button.onclick = () => window.open(`/NOT HANDLED YETTTT` + (selector.get_current_directory() ? selector.get_current_directory().absolute_path() : ''), '_blank').focus();
         download_button.innerHTML = `<img src='/images/icons/icons8-download-96.png' alt='download'>`
         tool_buttons.append(download_button);
 
-        if (await permissions.can_user_edit_repos(CURRENT_REPOS.id)) {
+        console.log((await fetch(`${PAGE_CONTEXT.repos_path()}/can-edit`)).status)
+
+        if (await permissions.can_user_edit_repos(PAGE_CONTEXT.repos_path())) {
             const edit_button = document.createElement('button');
-            edit_button.onclick = () => edit_repos.edit_repos(CURRENT_REPOS);
+            edit_button.onclick = () => edit_repos.edit_repos(PAGE_CONTEXT.display_repos);
             edit_button.innerHTML = `<img src='/images/icons/icons8-edit-96.png' alt='modifier'>`;
             edit_button.classList.add('plus-button')
             tool_buttons.append(edit_button);
@@ -59,7 +61,7 @@ async function update_dir(new_dir) {
     }
 
     const full_path = new_dir.absolute_path();
-    window.history.pushState(full_path, null, `${window.location.href.split('?')[0]}?repos=${CURRENT_REPOS.access_key}&directory=${full_path}`);
+    window.history.pushState(full_path, null, `${PAGE_CONTEXT.repos_path()}/tree${full_path}`);
 }
 
 selector.on_changed_dir((new_dir, _) => update_dir(new_dir));

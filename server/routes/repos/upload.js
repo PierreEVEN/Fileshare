@@ -142,7 +142,7 @@ router.post('/', async (req, res) => {
 
     if (!await perms.can_user_upload_to_repos(req['repos'], req['user'].id)) {
         let valid = false;
-        const dir = await Directories.from_path(req.repos.id, upload_in_progress[file_id].metadata.virtual_path);
+        const dir = await Directories.from_path(req.display_repos.id, upload_in_progress[file_id].metadata.virtual_path);
         if (!dir) {
             valid = false;
         } else if (await perms.can_user_upload_to_directory(dir, req.user.id)) {
@@ -168,8 +168,8 @@ router.post('/', async (req, res) => {
 
     req.on('end', async () => {
         if (upload_in_progress[file_id].received_size >= upload_in_progress[file_id].metadata.file_size) {
-            logger.info(`${request_username(req)} store '${JSON.stringify(upload_in_progress[file_id].metadata)}' to repos '${req.repos.access_key}'`)
-            const file = await received_file(tmp_file_path, upload_in_progress[file_id].metadata, req.repos, req.user, upload_in_progress[file_id].hash_sum.digest('hex'))
+            logger.info(`${req.log_name} store '${JSON.stringify(upload_in_progress[file_id].metadata)}' to repos '${req.display_repos.access_key}'`)
+            const file = await received_file(tmp_file_path, upload_in_progress[file_id].metadata, req.display_repos, req.user, upload_in_progress[file_id].hash_sum.digest('hex'))
             delete upload_in_progress[file_id];
             return res.status(file ? 202 : 500).send(file ? `${file.id}` : '');
         } else if (generated_file_id)
@@ -236,8 +236,8 @@ router.post('/file', async (req, res) => {
 
     req.on('end', async () => {
         if (upload_in_progress[transfer_token].received_size === upload_in_progress[transfer_token].metadata.file_size) {
-            logger.info(`${request_username(req)} store '${JSON.stringify(upload_in_progress[transfer_token].metadata)}' to repos '${req.repos.access_key}'`)
-            const file = await received_file(tmp_file_path, upload_in_progress[transfer_token].metadata, req.repos, req.user, upload_in_progress[transfer_token].hash_sum.digest('hex'))
+            logger.info(`${req.log_name} store '${JSON.stringify(upload_in_progress[transfer_token].metadata)}' to repos '${req.display_repos.access_key}'`)
+            const file = await received_file(tmp_file_path, upload_in_progress[transfer_token].metadata, req.display_repos, req.user, upload_in_progress[transfer_token].hash_sum.digest('hex'))
             delete upload_in_progress[transfer_token];
             return res.status(file ? 202 : 400).send(file ? {status: "Finished", file_id: file.id} : {status: "Failed"});
         } else if (upload_in_progress[transfer_token].received_size > upload_in_progress[transfer_token].metadata.file_size)

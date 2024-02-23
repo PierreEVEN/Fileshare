@@ -1,5 +1,5 @@
 import {print_message} from "../widgets/message_box.js";
-import {CURRENT_REPOS} from "./utils";
+import {PAGE_CONTEXT} from "./utils";
 
 class TransferStats {
     constructor() {
@@ -180,7 +180,7 @@ class FilesystemUpload {
         this.stop();
 
         if (status === 403) {
-            window.location = `/repos/upload/?repos=${CURRENT_REPOS.access_key}`
+            window.location = `/TODO REDIRECT TO UPLOAD ERROR`
         }
 
         print_message('error', `Upload error for ${this.file_in_process ? this.file_in_process.name : 'undefined'} (${status})`, content.toString());

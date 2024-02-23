@@ -3,19 +3,21 @@ import {parse_fetch_result} from "../../../common/widgets/message_box.js";
 import {close_item_plain, is_opened, open_this_item} from "./item.js";
 import {Filesystem} from "../../../common/tools/filesystem.js";
 import {selector} from "../../../common/tools/selector.js";
-import {CURRENT_REPOS} from "../../../common/tools/utils";
+import {PAGE_CONTEXT} from "../../../common/tools/utils";
+import {LOCAL_USER} from "../../../common/tools/user";
 
 const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
 
-const filesystem = CURRENT_REPOS ? new Filesystem(CURRENT_REPOS.name) : null;
+const filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.name) : null;
 const viewport_container = document.getElementById('file-list')
 
 function update_repos_content() {
     if (!filesystem)
         return;
-    fetch(`/repos/content/?repos=${CURRENT_REPOS.access_key}`, {
-        headers: auth
+
+    fetch(`${PAGE_CONTEXT.repos_path()}/data`, {
+        headers: {'content-authtoken': LOCAL_USER.get_token()}
     })
         .then(async (response) => await parse_fetch_result(response))
         .then((json) => {
@@ -118,7 +120,7 @@ selector.on_changed_dir((new_dir, _) => {
     selector.set_selected_item(null);
     render_directory(new_dir);
 
-    const description = new_dir && new_dir.parent !== null ? new_dir.description : CURRENT_REPOS.description;
+    const description = new_dir && new_dir.parent !== null ? new_dir.description : PAGE_CONTEXT.display_repos.description;
     if (description && description !== '' && description !== 'null') {
         import('../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
             const directory_description = document.getElementById('directory-description')

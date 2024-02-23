@@ -16,11 +16,11 @@ router.get('/server-time/', (req, res) => {
 
 router.post('/create-repos', async (req, res) => {
     // Ensure user is connected
-    if (req.local_user == null)
+    if (req.connected_user == null)
         return error_403(req, res, "Vous devez être connecté.");
 
     // Ensure user has privileges
-    if (!await req.local_user.can_create_repos())
+    if (!await req.connected_user.can_create_repos())
         return error_403(req, res, "Vous n'avez pas les droits pour créer un dépôt.");
 
     let name = req.body.name;
@@ -38,12 +38,22 @@ router.post('/create-repos', async (req, res) => {
     }
 
     const access_key = crypto.randomBytes(16).toString("hex");
-    const repos = await new Repos({name: name, owner: req.local_user.id, status: status, access_key: access_key}).push();
+    try {
+        const repos = await new Repos({
+            name: name,
+            owner: req.connected_user.id,
+            status: status,
+            access_key: access_key
+        }).push();
+        logger.warn(`${req.log_name} created a new ${status} repos named ${name}`)
+    }
+    catch (error) {
+        logger.error(`${req.log_name} created a new ${status} repos but it failed ! : ${error}`)
 
-    logger.warn(`${request_username(req)} created a new ${status} repos named ${name}`)
+    }
 
     if (repos)
-        res.redirect(`/${req.local_user.name}/${repos.name}`);
+        res.redirect(`/${req.connected_user.name}/${repos.name}`);
 });
 
 module.exports = router;

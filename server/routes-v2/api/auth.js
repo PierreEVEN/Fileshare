@@ -75,7 +75,7 @@ router.post("/delete-authtoken/:authtoken", async (req, res) => {
     const found_user = await User.from_auth_token(req.params['authtoken']);
     if (found_user) {
         logger.info(`User '${found_user.name}' is trying to delete its token`);
-        await req.local_user.delete_auth_token(req.params['authtoken']);
+        await req.connected_user.delete_auth_token(req.params['authtoken']);
         res.sendStatus(200);
     }
     else {

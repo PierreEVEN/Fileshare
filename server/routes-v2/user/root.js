@@ -27,8 +27,8 @@ const repos_router = require("express").Router();
 repos_router.use('/:repos/', async (req, res, next) => {
     if (!req.display_user)
         return error_404(req, res);
-    req.repos = await Repos.from_name(req.params['repos'], req.display_user);
-    if (!req.repos)
+    req.display_repos = await Repos.from_name(req.params['repos'], req.display_user);
+    if (!req.display_repos)
         return error_404(req, res);
 
     next();

@@ -30,9 +30,8 @@ class CookieString {
 
     save() {
         for (const cookie of document.cookie.split(";")) {
-            document.cookie = `${cookie.split("=")[0]}=; SameSite=Strict; expires=${new Date(0).toUTCString()}`
+            document.cookie = `${cookie}; SameSite=Strict; expires=${new Date(0).toUTCString()}`
         }
-
         for (const [key, value] of this._cookies.entries()) {
             if (value.exp)
                 document.cookie = `${key}=${value.value}; SameSite=Strict; expire=${new Date(value.exp).toUTCString()}`
@@ -65,10 +64,12 @@ class User {
                 method: 'POST',
                 body: data
             }));
-        this._authtoken = authtoken.token;
-        this._authtoken_exp = authtoken.expiration_date;
-        this.save_cookies();
-        window.location.reload()
+        if (authtoken.token) {
+            this._authtoken = authtoken.token;
+            this._authtoken_exp = authtoken.expiration_date;
+            this.save_cookies();
+            window.location.reload()
+        }
     }
 
     async register(username, email, password) {
@@ -111,7 +112,7 @@ class User {
                 cookies.set("authtoken", this._authtoken, this._authtoken_exp)
             else
                 cookies.set("authtoken", this._authtoken, new Date().getTime() + 36000000)
-
+        console.log(this._authtoken)
         if (this._authtoken_exp)
             cookies.set("authtoken-exp", this._authtoken_exp)
         cookies.save();

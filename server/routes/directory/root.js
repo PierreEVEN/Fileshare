@@ -28,7 +28,7 @@ router.post('/delete/', async (req, res) => {
         return error_403(req, res, 'Accès non autorisé');
 
     await req.directory.delete();
-    logger.warn(`${request_username(req)} deleted directory ${req.directory.id}`)
+    logger.warn(`${req.log_name} deleted directory ${req.directory.id}`)
     res.sendStatus(200);
 });
 
@@ -42,7 +42,7 @@ router.post('/update/', async function (req, res) {
     req.directory.open_upload = req.body.open_upload === 'on';
 
     await req.directory.push();
-    logger.warn(`${request_username(req)} updated directory ${req.directory.id}`)
+    logger.warn(`${req.log_name} updated directory ${req.directory.id}`)
     return res.redirect(session_data(req).selected_repos ? `/repos/?repos=${await session_data(req).selected_repos.access_key}` : '/');
 })
 

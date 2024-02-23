@@ -50,48 +50,68 @@ function seconds_to_str(in_seconds) {
     return '0s';
 }
 
+class PageContext {
+    /**
+     * @param data {{
+     *      connected_user:{id:number, email; string, name:string, role:string},
+     *      display_user:{id:number, description:string, name; string, owner:number, status:string, access_key:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string},
+     *      display_repos:{id:number, description:string, name; string, owner:number, status:string, access_key:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string}
+     *  } || null} */
+
+    constructor(data) {
+        if (!data)
+            return;
+        this.connected_user = data.connected_user;
+        this.display_user = data.display_user;
+        this.display_repos = data.display_repos;
+    }
+
+    repos_path() {
+        if (this.display_user && this.display_repos)
+            return `/${this.display_user.name}/${this.display_repos.name}`
+        return null;
+    }
+}
+
+const PAGE_CONTEXT = new PageContext((typeof __PAGE_CONTEXT === 'undefined') ? null : __PAGE_CONTEXT);
+
 class Permissions {
-    async can_user_edit_repos(repos) {
-        if (!CONNECTED_USER)
-            return false;
-        return (await fetch(`/permissions/edit-repos?repos=${repos}`)).status === 200;
+    /**
+     * @param repos_url {string}
+     * @return {Promise<boolean>}
+     */
+    async can_user_edit_repos(repos_url) {
+        return (await fetch(`${repos_url}/can-edit`)).status === 200;
     }
-    async can_user_upload_to_repos(repos) {
-        if (!CONNECTED_USER)
-            return false;
-        return (await fetch(`/permissions/upload-to-repos?repos=${repos}`)).status === 200;
+
+    /**
+     * @param repos_url {string}
+     * @return {Promise<boolean>}
+     */
+    async can_user_upload_to_repos(repos_url) {
+        return (await fetch(`${repos_url}/can-upload`)).status === 200;
     }
-    async can_user_edit_directory(directory) {
-        if (!CONNECTED_USER)
-            return false;
+
+    /**
+     * @param repos_url {string}
+     * @param path {string}
+     * @return {Promise<boolean>}
+     */
+    async can_user_edit_path(repos_url, path) {
         return (await fetch(`/permissions/edit-directory?directory=${directory}`)).status === 200;
     }
-    async can_user_upload_to_directory(directory) {
-        if (!CONNECTED_USER)
-            return false;
+
+    /**
+     * @param repos_url {string}
+     * @param path {string}
+     * @return {Promise<boolean>}
+     */
+    async can_user_upload_to_path(repos_url, path) {
         return (await fetch(`/permissions/upload-to-directory?directory=${directory}`)).status === 200;
     }
-    async can_user_edit_file(file) {
-        if (!CONNECTED_USER)
-            return false;
-        return (await fetch(`/permissions/edit-file?file=${file}`)).status === 200;
-    }
 }
+
 const permissions = new Permissions();
-/**
- * @return {{id:number, description:string, name; string, owner:number, status:string, access_key:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string}|null}
- */
-function __internal_get_current_repos() {
-    return (typeof __loaded_current_repos === 'undefined') ? null : __loaded_current_repos;
-}
-const CURRENT_REPOS = __internal_get_current_repos();
 
-/**
- * @return {{id:number, email; string, name:string, role:string}} */
-function __internal_get_user() {
-    return (typeof __connected_user === 'undefined') ? null : __connected_user;
-}
-const CONNECTED_USER = __internal_get_user();
-
-window.utils = {humanFileSize, seconds_to_str, CURRENT_REPOS, CONNECTED_USER, permissions}
-export {humanFileSize, seconds_to_str, CURRENT_REPOS, CONNECTED_USER, permissions}
+window.utils = {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions}
+export {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions}
