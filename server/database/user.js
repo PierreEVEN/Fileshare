@@ -65,6 +65,15 @@ class User {
         await db.single().query("DELETE FROM fileshare.users WHERE id = $1", [as_id(this.id)]);
     }
 
+
+    publicData() {
+        let cloneUser = Object.assign({}, this);
+        cloneUser.id = null;
+        if (!cloneUser.allow_contact)
+            cloneUser.email = null;
+        return cloneUser;
+    }
+
     static async create(data) {
         const user = new User(data);
         assert(data.password);

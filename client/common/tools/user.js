@@ -56,6 +56,13 @@ class User {
         return this._authtoken;
     }
 
+    auth_header(header) {
+        if (!header)
+            header = {};
+        header['content-authtoken'] = this._authtoken;
+        return header;
+    }
+
     async login(username, password) {
         const data = new URLSearchParams();
         data.append('username', username);

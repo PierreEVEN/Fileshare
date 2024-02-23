@@ -54,32 +54,32 @@ class Permissions {
     async can_user_edit_repos(repos) {
         if (!CONNECTED_USER)
             return false;
-        return (await fetch(`/permissions/edit-repos?repos=${repos}`)).status === 200;
+        return (await fetch(`/${repos.owner.name}/${repos.name}/edit-repos`)).status === 200;
     }
     async can_user_upload_to_repos(repos) {
         if (!CONNECTED_USER)
             return false;
-        return (await fetch(`/permissions/upload-to-repos?repos=${repos}`)).status === 200;
+        return (await fetch(`/${repos.owner.name}/${repos.name}/upload-to-repos`)).status === 200;
     }
-    async can_user_edit_directory(directory) {
+    async can_user_edit_directory(repos, directory) {
         if (!CONNECTED_USER)
             return false;
-        return (await fetch(`/permissions/edit-directory?directory=${directory}`)).status === 200;
+        return (await fetch(`/${repos.owner.name}/${repos.name}/tree/${directory.absolute_path()}/edit-directory`)).status === 200;
     }
-    async can_user_upload_to_directory(directory) {
+    async can_user_upload_to_directory(repos, directory) {
         if (!CONNECTED_USER)
             return false;
-        return (await fetch(`/permissions/upload-to-directory?directory=${directory}`)).status === 200;
+        return (await fetch(`/${repos.owner.name}/${repos.name}/tree/${directory.absolute_path()}/upload-to-directory`)).status === 200;
     }
-    async can_user_edit_file(file) {
+    async can_user_edit_file(repos, file) {
         if (!CONNECTED_USER)
             return false;
-        return (await fetch(`/permissions/edit-file?file=${file}`)).status === 200;
+        return (await fetch(`/${repos.owner.name}/${repos.name}/tree/${file.absolute_path()}/edit-file`)).status === 200;
     }
 }
 const permissions = new Permissions();
 /**
- * @return {{id:number, description:string, name; string, owner:number, status:string, access_key:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string}|null}
+ * @return {{id:number, description:string, name; string, owner:object, status:string, access_key:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string}|null}
  */
 function __internal_get_current_repos() {
     return (typeof __loaded_current_repos === 'undefined') ? null : __loaded_current_repos;

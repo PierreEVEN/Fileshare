@@ -259,6 +259,12 @@ async function get_common_data(req) {
     data.tracked_repos = [];
     data.repos_list = [];
     data.user_repos = [];
+    data.selected_repos = Object.assign({}, req.repos)
+    if (req.repos) {
+        data.selected_repos.owner = (await User.from_id(req.repos.owner)).publicData();
+        if (!data.selected_repos.owner)
+            logger.error(`Cannot find owner of repos ${data.selected_repos.name}#${data.selected_repos.id}`)
+    }
 
     if (req.local_user) {
         data.user = req.local_user;

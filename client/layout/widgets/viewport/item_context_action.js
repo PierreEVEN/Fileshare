@@ -37,7 +37,7 @@ async function spawn_item_context_action(item) {
         image: '/images/icons/icons8-download-96.png'
     });
 
-    if ((item.is_directory && await permissions.can_user_edit_directory(item.id)) || (item.is_file && await permissions.can_user_edit_file(item.id))) {
+    if ((item.is_directory && await permissions.can_user_edit_directory(CURRENT_REPOS, item)) || (item.is_file && await permissions.can_user_edit_file(item.id))) {
         actions.push({
             title: "Modifier",
             action: () => {

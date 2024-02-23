@@ -15,11 +15,14 @@ TODO
 /								# affiche toutes les infos publics (liste des repos publics etc...)
 /settings/profile 				# affiche les infos du profile (edition possible, mdp, supprimer compte etc...)
 /settings/tokens 				# affiche la liste des connexions du compte courant
-/username/ 						# affiche la liste des dépots et infos publiques de cette personne
-/username/repos 				# affiche le contenu d'un repos
-/username/repos/settings		# affiche les paramètres d'un repos
-/username/repos/tree/			# equivalent à /repos
-/username/repos/tree/dir/file	# affiche un dossier ou un fichier si cas échéant
+/<username>/ 						# affiche la liste des dépots et infos publiques de cette personne
+/<username>/<repos> 				# affiche le contenu d'un repos
+/<username>/<repos>/settings		# affiche les paramètres d'un repos
+/<username>/<repos>/tree/			# equivalent à /repos
+/<username>/<repos>/data/			# Renvoie un json avec le contenu du dépot
+/<username>/<repos>/tree/dir/file	# affiche un dossier ou un fichier si cas échéant
+/<username>/<repos>/edit-repos      # demande si l'utilisateur courant peut éditer le dépot
+/<username>/<repos>/upload-to-repos # demande si l'utilisateur courant peut envoyer des fichiers dans le dépot
 
 # Additional routes
 POST /api/create-user    			# Cree un token de connexion {username, password}

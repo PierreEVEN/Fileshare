@@ -16,7 +16,7 @@ document.body.addEventListener('dragenter', async (event) => {
             if (!CURRENT_REPOS)
                 return resolve(false);
             const directory = selector.get_current_directory();
-            if ((directory && directory.parent && await permissions.can_user_upload_to_directory(directory.id)) || await permissions.can_user_upload_to_repos(CURRENT_REPOS.id)) {
+            if ((directory && directory.parent && await permissions.can_user_upload_to_directory(CURRENT_REPOS, directory)) || await permissions.can_user_upload_to_repos(CURRENT_REPOS)) {
                 resolve(true);
             } else
                 resolve(false);
