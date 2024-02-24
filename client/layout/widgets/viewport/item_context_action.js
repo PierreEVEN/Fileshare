@@ -2,13 +2,13 @@ import {spawn_context_action} from "../../../common/widgets/context_action.js";
 import {close_modal, open_modal} from "../../../common/widgets/modal.js";
 import {print_message} from "../../../common/widgets/message_box.js";
 import {update_repos_content} from "./repos_builder";
-import {CURRENT_REPOS, permissions} from "../../../common/tools/utils";
+import {PAGE_CONTEXT, permissions} from "../../../common/tools/utils";
 
 const edit_dir_hbs = require('./edit_directory.hbs')
 const edit_file_hbs = require('./edit_file.hbs')
 
 async function spawn_item_context_action(item) {
-    if (!CURRENT_REPOS)
+    if (!PAGE_CONTEXT.display_repos)
         return;
     const actions = [];
     actions.push({
@@ -16,9 +16,9 @@ async function spawn_item_context_action(item) {
         action: async () => {
             let url;
             if (item.is_directory) {
-                url = `${location.hostname}/repos/?repos=${CURRENT_REPOS.access_key}&directory=${item.absolute_path()}`;
+                'TODO: make url available';//url = `${location.hostname}/repos/?repos=${.access_key}&directory=${item.absolute_path()}`;
             } else {
-                url = `${location.hostname}/file/?file=${item.id}`;
+                'TODO: make url available';//url = `${location.hostname}/file/?file=${item.id}`;
             }
             await navigator.clipboard.writeText(url);
             print_message('info', 'Lien copié dans le presse - papier', url)
@@ -30,14 +30,14 @@ async function spawn_item_context_action(item) {
         title: "Télécharger",
         action: () => {
             if (item.is_directory) {
-                window.open(`/archive/?repos=${CURRENT_REPOS.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
+                console.error('NOT IMPLEMENTED YET');//window.open(`/archive/?repos=${.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
             } else
-                window.open(`/file/?file=${item.id}`, '_blank').focus();
+                console.error('NOT IMPLEMENTED YET');//window.open(`/file/?file=${item.id}`, '_blank').focus();
         },
         image: '/images/icons/icons8-download-96.png'
     });
 
-    if ((item.is_directory && await permissions.can_user_edit_directory(CURRENT_REPOS, item)) || (item.is_file && await permissions.can_user_edit_file(item.id))) {
+    if (await permissions.can_user_edit_path(PAGE_CONTEXT.repos_path(), item.absolute_path())) {
         actions.push({
             title: "Modifier",
             action: () => {

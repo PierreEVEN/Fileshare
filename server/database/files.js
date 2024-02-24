@@ -116,7 +116,8 @@ class File {
             return null;
         if (normalized_path[0] === '/')
             normalized_path = normalized_path.substring(1);
-        return await db.single().fetch_object(File, 'SELECT * FROM find_file_by_path($1, $2)', [as_data_path(normalized_path), as_id(repos_id)]);
+        console.log(as_data_path(normalized_path), as_id(repos_id));
+        return await db.single().fetch_object(File, 'SELECT * FROM fileshare.files where absolute_path = $1 AND repos = $2', [as_data_path('/' + normalized_path), as_id(repos_id)]);
     }
 }
 

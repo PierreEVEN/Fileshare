@@ -47,4 +47,18 @@ function as_enum(source) {
     return data;
 }
 
-module.exports = {as_hash_key, as_id, as_data_string, as_boolean, as_enum, as_number, as_data_path}
+/**
+ * @param display_name {string}
+ */
+function display_name_to_url(display_name) {
+    display_name = display_name.replaceAll(' ', '-');
+    display_name = display_name.replaceAll('.', '_');
+    display_name = display_name.replaceAll(',', '_');
+    display_name = display_name.replaceAll(';', '_');
+    display_name = display_name.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    if (display_name.match("^[a-zA-Z0-9\-_]+$"))
+        return display_name;
+    return null;
+}
+
+module.exports = {as_hash_key, as_id, as_data_string, as_boolean, as_enum, as_number, as_data_path, display_name_to_url}

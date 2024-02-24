@@ -3,10 +3,10 @@ import {open_modal} from "../../../common/widgets/modal.js";
 const delete_repos_form = require('./delete_repos.hbs')
 
 function delete_repos(e) {
-    open_modal(delete_repos_form({id: e}, {
+    open_modal(delete_repos_form(e, {
         clicked: async () => {
             if (remaining_s <= 0) {
-                await fetch(`/repos/delete/?repos=${e}`, {method:'POST'})
+                await fetch(`/${e.username}/${e.name}/delete`, {method:'POST'})
                 window.location = `/`;
             }
         }

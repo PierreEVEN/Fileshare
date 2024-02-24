@@ -3,50 +3,48 @@ import {parse_fetch_result} from "../../../common/widgets/message_box.js";
 import {close_item_plain, is_opened, open_this_item} from "./item.js";
 import {Filesystem} from "../../../common/tools/filesystem.js";
 import {selector} from "../../../common/tools/selector.js";
-import {CURRENT_REPOS} from "../../../common/tools/utils";
+import {PAGE_CONTEXT} from "../../../common/tools/utils";
+import {LOCAL_USER} from "../../../common/tools/user";
 
 const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
 
-const filesystem = CURRENT_REPOS ? new Filesystem(CURRENT_REPOS.name) : null;
+const filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.display_name) : null;
 const viewport_container = document.getElementById('file-list')
 
 function update_repos_content() {
     if (!filesystem)
         return;
-    fetch(`/${CURRENT_REPOS.owner.name}/${CURRENT_REPOS.name}/data/`, {
-        headers: LOCAL_USER.auth_header()
+    fetch(`${PAGE_CONTEXT.repos_path()}/data`, {
+        headers: {'content-authtoken': LOCAL_USER.get_token()}
     })
         .then(async (response) => await parse_fetch_result(response))
         .then((json) => {
             filesystem.clear();
 
-            const directories = {}
+            const unwrap_dir = (dir_data, parent_dir) => {
+                let created_dir = filesystem.root;
+                if (parent_dir)
+                    created_dir = filesystem.directory_from_path(parent_dir.absolute_path() + "/" + decodeURIComponent(dir_data.name), true)
 
-            // Retrieve dirs
-            json.directories.forEach(dir => {
-                dir.name = decodeURIComponent(dir.name);
-                dir.description = dir.description ? decodeURIComponent(dir.description) : undefined;
-                directories[dir.id] = dir;
-            })
+                created_dir.description = dir_data.description ? decodeURIComponent(dir_data.description) : undefined;
+                created_dir.id = dir_data.id;
 
-            const path_of = dir => (dir.parent_directory ? `${path_of(directories[dir.parent_directory])}/` : '/') + `${dir.name}/`;
+                // Retrieve dirs
+                dir_data.directories.forEach(dir => {
+                    unwrap_dir(dir, created_dir);
+                })
 
-            for (const directory of Object.values(directories)) {
-                const found = filesystem.directory_from_path(path_of(directory), true);
-                found.id = directory.id;
-                found.open_upload = directory.open_upload;
-                found.description = directory.description;
+                // Retrieve dirs
+                dir_data.files.forEach(file => {
+                    if (!file.description || file.description === 'null')
+                        file.description = '';
+                    file.name = decodeURIComponent(file.name);
+                    file.description = file.description ? decodeURIComponent(file.description) : undefined;
+                    filesystem.add_file(file, parent_dir ? parent_dir.absolute_path() : '/');
+                })
             }
-
-            json.files.forEach(item => {
-                if (!item.description || item.description === 'null')
-                    item.description = '';
-                item.name = decodeURIComponent(item.name);
-                item.description = item.description ? decodeURIComponent(item.description) : undefined;
-                filesystem.add_file(item, item.parent_directory ? path_of(directories[item.parent_directory]) : '/');
-            })
-
+            unwrap_dir(json, null);
             selector.set_current_dir(filesystem.root);
         });
 }
@@ -118,7 +116,7 @@ selector.on_changed_dir((new_dir, _) => {
     selector.set_selected_item(null);
     render_directory(new_dir);
 
-    const description = new_dir && new_dir.parent !== null ? new_dir.description : CURRENT_REPOS.description;
+    const description = new_dir && new_dir.parent !== null ? new_dir.description : PAGE_CONTEXT.display_repos.description;
     if (description && description !== '' && description !== 'null') {
         import('../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
             const directory_description = document.getElementById('directory-description')

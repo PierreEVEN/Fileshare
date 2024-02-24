@@ -16,9 +16,9 @@ class Repos {
         this.id = data.id;
         this.description = data.description ? decodeURIComponent(data.description) : null;
         this.name = data.name ? decodeURIComponent(data.name) : null;
+        this.display_name = data.display_name ? decodeURIComponent(data.display_name) : null;
         this.owner = data.owner;
         this.status = data.status;
-        this.access_key = data.access_key ? decodeURIComponent(data.access_key) : null;
         this.max_file_size = data.max_file_size || 200 * 1024 * 1024;
         this.visitor_file_lifetime = data.visitor_file_lifetime || 604800;
         this.allow_visitor_upload = data.allow_visitor_upload || false;
@@ -30,16 +30,16 @@ class Repos {
         assert(this.name);
         assert(!isNaN(this.owner));
         assert(this.status);
-        assert(this.access_key);
+        assert(this.display_name);
         assert(this.max_file_size);
         assert(this.visitor_file_lifetime);
         assert(typeof this.allow_visitor_upload === 'boolean');
         await db.single().query(`INSERT INTO fileshare.repos
-            (id, name, owner, description, status, access_key, max_file_size, visitor_file_lifetime, allow_visitor_upload) VALUES
+            (id, name, owner, description, status, display_name, max_file_size, visitor_file_lifetime, allow_visitor_upload) VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT (id) DO  
-            UPDATE SET id = $1, name = $2, owner = $3, description = $4, status = $5, access_key = $6, max_file_size = $7, visitor_file_lifetime = $8, allow_visitor_upload = $9;`,
-            [as_id(this.id), as_data_string(this.name), as_id(this.owner), as_data_string(this.description), as_enum(this.status), as_data_string(this.access_key), as_number(this.max_file_size), as_number(this.visitor_file_lifetime), as_boolean(this.allow_visitor_upload)]);
+            UPDATE SET id = $1, name = $2, owner = $3, description = $4, status = $5, display_name = $6, max_file_size = $7, visitor_file_lifetime = $8, allow_visitor_upload = $9;`,
+            [as_id(this.id), as_data_string(this.name), as_id(this.owner), as_data_string(this.description), as_enum(this.status), as_data_string(this.display_name), as_number(this.max_file_size), as_number(this.visitor_file_lifetime), as_boolean(this.allow_visitor_upload)]);
         return this;
     }
 
@@ -48,7 +48,6 @@ class Repos {
             await file.delete();
         }
 
-        console.error("Don't use directory here")
         for (const directory of await Directories.from_repos(this.id)) {
             await directory.delete();
         }
@@ -58,6 +57,14 @@ class Repos {
         }
 
         await db.single().query("DELETE FROM fileshare.repos WHERE id = $1", [as_id(this.id)]);
+    }
+
+    async client_ready() {
+        if (!this.username)
+            for (const User of (await db.single().query("SELECT name FROM fileshare.users WHERE id = $1", [as_id(this.owner)])).rows) {
+                this.username = User.name;
+            }
+        return this;
     }
 
     async get_content() {
@@ -189,14 +196,6 @@ class Repos {
         return await db.single().fetch_objects(Repos, `SELECT * FROM fileshare.repos WHERE status = 'public'`);
     }
 
-    /**
-     * @param key {string} Directory id
-     * @return {Promise<Repos|null>}
-     */
-    static async from_access_key(key) {
-        assert(typeof key === 'string')
-        return await db.single().fetch_object(Repos, 'SELECT * FROM fileshare.repos WHERE access_key = $1', [as_data_string(key)]);
-    }
 }
 
 module.exports = {Repos};

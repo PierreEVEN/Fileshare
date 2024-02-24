@@ -1,4 +1,4 @@
-import {humanFileSize, permissions} from "../../../common/tools/utils.js";
+import {humanFileSize, PAGE_CONTEXT, permissions} from "../../../common/tools/utils.js";
 import * as handlebars from "handlebars";
 import {get_mime_icon_path} from "../../../common/tools/mime_utils";
 import {print_message} from "../../../common/widgets/message_box";
@@ -45,12 +45,11 @@ function open_this_item(div, file) {
 
         const download = document.createElement('button');
         download.innerHTML = `<img src="/images/icons/icons8-download-96.png" alt="share">`
-        download.onclick = async () => window.open(`/file/?file=${file.id}`, '_blank').focus();
+        download.onclick = async () => window.open(`${PAGE_CONTEXT.repos_path()}/tree${file.absolute_path()}`, '_blank').focus();
         download.classList.add('plus-button')
         action_buttons.append(download)
 
-
-        if (await permissions.can_user_edit_file(file.id)) {
+        if (file.absolute_path && await permissions.can_user_edit_path(PAGE_CONTEXT.repos_path(), file.absolute_path())) {
             const edit_button = document.createElement('button');
             edit_button.innerHTML = `<img src="/images/icons/icons8-edit-96.png" alt="edit">`
             edit_button.onclick = async () => {

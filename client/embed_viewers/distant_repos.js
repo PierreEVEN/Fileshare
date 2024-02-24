@@ -1,7 +1,10 @@
 import {get_mime_icon_path} from "../common/tools/mime_utils";
+import {PAGE_CONTEXT} from "../common/tools/utils";
 
 function get(item) {
-    const url = `/file/?file=${item.id}`;
+    if (!item.absolute_path)
+        return '<h1>404 - Not Found</h1>';
+    const url = `${PAGE_CONTEXT.repos_path()}/file${item.absolute_path}`;
     const mimetype = item.mimetype.split('/');
     switch (mimetype[0]) {
         case 'image':
@@ -21,33 +24,33 @@ function get(item) {
                             </object>`
                 case 'json':
                 case 'x-json':
-                    return `<document-code src="/file?file=${item.id}" class="language-json"></document-code>`
+                    return `<document-code src="${PAGE_CONTEXT.repos_path()}/file${item.absolute_path()}" class="language-json"></document-code>`
                 case 'javascript':
                 case 'x-javascript':
-                    return `<document-code src="/file?file=${item.id}" class="language-js"></document-code>`
+                    return `<document-code src="${PAGE_CONTEXT.repos_path()}/file${item.absolute_path()}" class="language-js"></document-code>`
             }
             break;
         case 'text':
             switch (mimetype[1]) {
                 case 'plain':
                     if (item.name.includes("log"))
-                        return `<document-code src="/file?file=${item.id}" class="language-log"></document-code>`
+                        return `<document-code src="${PAGE_CONTEXT.repos_path()}/file${item.absolute_path()}" class="language-log"></document-code>`
                     else
-                        return `<document-code src="/file?file=${item.id}" class="language-plain"></document-code>`
+                        return `<document-code src="${PAGE_CONTEXT.repos_path()}/file${item.absolute_path()}" class="language-plain"></document-code>`
                 case 'markdown':
                 case 'x-markdown':
-                    return `<document-markdown src="/file?file=${item.id}"></document-markdown>`;
+                    return `<document-markdown src="${PAGE_CONTEXT.repos_path()}/file${item.absolute_path()}"></document-markdown>`;
                 case 'scss':
                 case 'x-scss':
-                    return `<document-code src="/file?file=${item.id}" class="language-scss"></document-code>`
+                    return `<document-code src="${PAGE_CONTEXT.repos_path()}/file${item.absolute_path()}" class="language-scss"></document-code>`
                 case 'sass':
                 case 'x-sass':
-                    return `<document-code src="/file?file=${item.id}" class="language-scss"></document-code>`
+                    return `<document-code src="${PAGE_CONTEXT.repos_path()}/file${item.absolute_path()}" class="language-scss"></document-code>`
                 case 'css':
                 case 'x-css':
-                    return `<document-code src="/file?file=${item.id}" class="language-css"></document-code>`
+                    return `<document-code src="${PAGE_CONTEXT.repos_path()}/file${item.absolute_path()}" class="language-css"></document-code>`
             }
-            return `<document-embed src="/file?file=${item.id}"></document-embed>`
+            return `<document-embed src="${PAGE_CONTEXT.repos_path()}/file${item.absolute_path()}"></document-embed>`
     }
 
     return `<img class="item-small" src="${get_mime_icon_path(item.mimetype)}" alt="document: ${item.name}"/>`;

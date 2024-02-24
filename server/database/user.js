@@ -15,6 +15,7 @@ class User {
         this.id = data.id;
         this.email = data.email ? decodeURIComponent(data.email) : null;
         this.name = data.name ? decodeURIComponent(data.name) : null;
+        this.display_name = data.display_name ? decodeURIComponent(data.display_name) : null;
         this.allow_contact = data.allow_contact || true;
         this.role = data.role || 'guest';
     }
@@ -27,14 +28,15 @@ class User {
         this.id = this.id || await User.gen_id();
         assert(this.email);
         assert(this.name);
+        assert(this.display_name);
         assert(this.allow_contact);
         assert(this.role);
         await db.single().query(`INSERT INTO fileshare.users
             (id, email, name, allow_contact, role) VALUES
             ($1, $2, $3, $4, $5)
-            ON CONFLICT (id) DO  
-            UPDATE SET id = $1, email = $2, name = $3, allow_contact = $4, role = $5;`,
-            [as_id(this.id), as_data_string(this.email), as_data_string(this.name), as_boolean(this.allow_contact), as_enum(this.role)]);
+            ON CONFLICT (id) DO
+            UPDATE SET id = $1, email = $2, name = $3, allow_contact = $4, role = $5, display_name = $6;`,
+            [as_id(this.id), as_data_string(this.email), as_data_string(this.name), as_boolean(this.allow_contact), as_enum(this.role)], as_data_string(this.display_name));
         return this;
     }
 

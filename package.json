@@ -23,6 +23,7 @@
     "babel-plugin-prismjs": "^2.1.0",
     "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
     "css-loader": "^6.8.1",
     "debug": "~2.6.9",
     "dotenv": "^16.3.1",

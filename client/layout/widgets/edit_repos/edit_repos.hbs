@@ -1,9 +1,9 @@
-<h1>Modifier le dépôt {{name}}</h1>
-<form action="/repos/update/?repos={{access_key}}" method="post">
+<h1>Modifier le dépôt {{display_name}}</h1>
+<form action="/{{username}}/{{name}}/update" method="post">
 <div class="field">
     <p>Nom</p>
-    <label for='name'>
-        <input type="text" name="name" placeholder="Nom" id="name" required value="{{name}}">
+    <label for='display_name'>
+        <input type="text" name="display_name" placeholder="Nom" id="display_name" required value="{{display_name}}">
     </label>
 </div>
 <div class="field">
@@ -28,9 +28,9 @@
 <div class="danger-zone">
     <h2>⚠️Danger zone⚠️</h2>
     <div class="field">
-        <p>Clé d'accès</p>
-        <label for='access_key'>
-            <input type="text" name="access_key" id="access_key" required value="{{access_key}}">
+        <p>Non dans l'url</p>
+        <label for='name'>
+            <input type="text" name="name" id="name" required value="{{name}}">
         </label>
     </div>
     <div class="field">

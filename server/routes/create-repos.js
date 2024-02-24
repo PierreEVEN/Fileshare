@@ -54,7 +54,7 @@ router.post('/', async (req, res) => {
     if (status === 'public')
         public_data().mark_dirty();
 
-    logger.warn(`${request_username(req)} created a new ${status} repos named ${name}`)
+    logger.warn(`${req.log_name} created a new ${status} repos named ${name}`)
 
     res.redirect(`/repos/?repos=${access_key}`);
 });

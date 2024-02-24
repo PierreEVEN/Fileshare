@@ -5,6 +5,9 @@ function prepare_file(file, directory) {
     file.callback_removed = file.callback_removed === undefined ? null : file.callback_removed;
     file.directory = directory;
     file.remove = () => directory.remove_file(file)
+    file.absolute_path = () => {
+        return directory.absolute_path() + file.name;
+    }
     file.is_file = true;
     file.is_directory = false;
     if (!file.timestamp && file.lastModified)
@@ -138,8 +141,8 @@ class Directory {
     /**
      * @return {string}
      */
-    absolute_path() {
-        return this.parent ? `${this.parent.absolute_path()}${this.name}/` : '/';
+    absolute_path(exclude_root = false) {
+        return this.parent ? `${this.parent.absolute_path(exclude_root)}${this.name}/` : '/';
     }
 
     /**
@@ -179,7 +182,7 @@ class Filesystem {
 
     /**
      * @param file
-     * @param path {string}
+     * @param path {string} Directory path
      * @return {null|*}
      */
     add_file(file, path) {

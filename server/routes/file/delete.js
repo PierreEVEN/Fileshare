@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     await req.file.delete();
 
-    logger.warn(`${request_username(req)} deleted file ${req.file.id}`)
+    logger.warn(`${req.log_name} deleted file ${req.file.id}`)
 
     await res.status(200).send();
 })

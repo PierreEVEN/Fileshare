@@ -38,7 +38,7 @@ router.use(async (req, res, next) => {
 /* ###################################### CREATE ROUTER ###################################### */
 
 router.get('/', async function (req, res) {
-    logger.info(`${request_username(req)} downloaded ${req.file.name}#${req.file.id}`)
+    logger.info(`${req.log_name} downloaded ${req.file.name}#${req.file.id}`)
     res.setHeader('Content-Type', `${req.file.mimetype}`)
     res.setHeader('Content-Disposition', 'inline; filename=' + encodeURIComponent(req.file.name));
     return res.sendFile(path.resolve(req.file_path));
@@ -55,7 +55,7 @@ router.post('/update/', async function (req, res) {
     req.file.description = req.body.description;
     await req.file.push();
 
-    logger.warn(`${request_username(req)} updated file ${req.file.id}`)
+    logger.warn(`${req.log_name} updated file ${req.file.id}`)
     return res.redirect(session_data(req).selected_repos ? `/repos/?repos=${await session_data(req).selected_repos.access_key}` : '/');
 })
 

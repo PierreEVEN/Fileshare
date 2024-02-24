@@ -1,4 +1,4 @@
-import {CURRENT_REPOS, permissions} from "../common/tools/utils";
+import {PAGE_CONTEXT, permissions} from "../common/tools/utils";
 
 const drop_box = document.createElement('div');
 drop_box.classList.add('drop-box')
@@ -13,10 +13,10 @@ function reset_style() {
 document.body.addEventListener('dragenter', async (event) => {
     if (!WILL_DROP) {
         WILL_DROP = new Promise(async (resolve) => {
-            if (!CURRENT_REPOS)
+            if (!PAGE_CONTEXT.display_repos)
                 return resolve(false);
             const directory = selector.get_current_directory();
-            if ((directory && directory.parent && await permissions.can_user_upload_to_directory(CURRENT_REPOS, directory)) || await permissions.can_user_upload_to_repos(CURRENT_REPOS)) {
+            if ((directory && directory.parent && await permissions.can_user_upload_to_path(directory)) || await permissions.can_user_upload_to_repos(PAGE_CONTEXT.repos_path())) {
                 resolve(true);
             } else
                 resolve(false);
@@ -48,8 +48,8 @@ document.body.addEventListener('drop', async (event) => {
     event.preventDefault();
 
     if (!WILL_DROP || !await WILL_DROP) {
-        if (CURRENT_REPOS)
-            window.location = `/repos/upload/?repos=${CURRENT_REPOS.access_key}`
+        if (PAGE_CONTEXT.display_repos)
+            window.location = `TODO OPEN UPLOAD PAGE HEHE`
         return;
     }
 

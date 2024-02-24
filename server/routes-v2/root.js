@@ -5,15 +5,20 @@
 const router = require("express").Router();
 const {User} = require("../database/user");
 const {error_404, get_common_data} = require("../session_utils");
+const {logger} = require("../logger");
 
 /********************** [GLOBAL] **********************/
 router.use(async (req, res, next) => {
     // Test auth token
     if (req.headers['content-authtoken']) {
-        req.local_user = await User.from_auth_token(req.headers['content-authtoken'])
+        req.connected_user = await User.from_auth_token(req.headers['content-authtoken'])
     }
     if (req.cookies && req.cookies['authtoken'])
-        req.local_user = await User.from_auth_token(req.cookies['authtoken'])
+        req.connected_user = await User.from_auth_token(req.cookies['authtoken'])
+    req.log_name = req.connected_user ? req.connected_user.name : req.ip;
+
+    logger.info(`[${req.log_name}] : ${req.url}`)
+
     next();
 })
 /********************** [GLOBAL] **********************/

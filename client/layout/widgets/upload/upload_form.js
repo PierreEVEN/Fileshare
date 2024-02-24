@@ -1,5 +1,5 @@
 import {close_modal, is_opened, open_modal} from '../../../common/widgets/modal.js'
-import {CURRENT_REPOS, humanFileSize, seconds_to_str} from "../../../common/tools/utils.js";
+import {PAGE_CONTEXT, humanFileSize, seconds_to_str} from "../../../common/tools/utils.js";
 import {print_message} from "../../../common/widgets/message_box.js";
 import {Filesystem} from "../../../common/tools/filesystem.js";
 import {FilesystemUpload} from "../../../common/tools/filesystem_upload.js";
@@ -9,9 +9,9 @@ import file_hbs from "./file.hbs";
 import directory_hbs from "./directory.hbs";
 import {spawn_context_action} from "../../../common/widgets/context_action";
 
-const url = CURRENT_REPOS ? `/repos/upload/?repos=${CURRENT_REPOS.access_key}` : null;
-let filesystem = CURRENT_REPOS ? new Filesystem(CURRENT_REPOS.name) : null;
-const filesystem_upload = CURRENT_REPOS ? new FilesystemUpload(filesystem, url) : null;
+const url = `${PAGE_CONTEXT.repos_path()}/send`;
+let filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.name) : null;
+const filesystem_upload = PAGE_CONTEXT.display_repos ? new FilesystemUpload(filesystem, url) : null;
 let stop_process = false;
 
 let add_file_button = null;

@@ -1,5 +1,5 @@
 import {print_message} from "../widgets/message_box.js";
-import {CURRENT_REPOS} from "./utils";
+import {PAGE_CONTEXT} from "./utils";
 
 class TransferStats {
     constructor() {
@@ -180,7 +180,7 @@ class FilesystemUpload {
         this.stop();
 
         if (status === 403) {
-            window.location = `/repos/upload/?repos=${CURRENT_REPOS.access_key}`
+            window.location = `/TODO REDIRECT TO UPLOAD ERROR`
         }
 
         print_message('error', `Upload error for ${this.file_in_process ? this.file_in_process.name : 'undefined'} (${status})`, content.toString());
@@ -221,14 +221,14 @@ class FilesystemUpload {
         if (this._byte_sent === 0) {
             this._request.setRequestHeader('content-name', encodeURIComponent(this.file_in_process.name));
             this._request.setRequestHeader('content-size', this.file_in_process.size);
-            this._request.setRequestHeader('timestamp', this.file_in_process.timestamp);
+            this._request.setRequestHeader('content-timestamp', this.file_in_process.timestamp);
             this._request.setRequestHeader('content-mimetype', this.file_in_process.mimetype);
             const absolute_path = (selector.get_current_directory().absolute_path() + this.file_in_process.directory.absolute_path()).replaceAll('//', '/');
             this._request.setRequestHeader('content-path', encodeURIComponent(absolute_path));
             if (this.file_in_process.description)
                 this._request.setRequestHeader('content-description', this.file_in_process.description ? encodeURIComponent(this.file_in_process.description) : '');
         } else {
-            this._request.setRequestHeader('content-id', this._process_file_id);
+            this._request.setRequestHeader('content-token', this._process_file_id);
         }
         this._request.send(data);
         this._received_ack = false;
