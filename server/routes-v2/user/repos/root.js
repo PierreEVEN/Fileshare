@@ -82,6 +82,7 @@ router.get("/data/*", async (req, res) => {
     res.send(await req.display_repos.get_tree(req.display_repos.display_path));
 })
 
+
 router.get("/can-upload/", async (req, res) => {
     if (req.connected_user && req.display_repos) {
         if (await permissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
@@ -114,20 +115,11 @@ router.get("/can-edit/", async (req, res) => {
 router.get("/can-edit/*", async (req, res) => {
     const path = req.url.substring(9);
     if (path.length > 1) {
-        const file = await File.from_path(req.display_repos.id, path);
+        const file = await Item.from_path(req.display_repos.id, path);
         if (file) {
             if (req.connected_user && req.display_repos) {
-                if (await permissions.can_user_edit_file(file, req.connected_user.id))
+                if (await permissions.can_user_edit_item(file, req.connected_user.id))
                     return res.sendStatus(200);
-            }
-        }
-        else {
-            const directory = await Directories.from_path(req.display_repos.id, path);
-            if (directory) {
-                if (req.connected_user && req.display_repos) {
-                    if (await permissions.can_user_edit_directory(directory, req.connected_user.id))
-                        return res.sendStatus(200);
-                }
             }
         }
     }
@@ -251,9 +243,11 @@ router.get('/thumbnail/*', async function (req, res) {
     if (!fs.existsSync('./data_storage/thumbnails'))
         fs.mkdirSync('./data_storage/thumbnails');
 
-    const file = await File.from_path(req.display_repos.id, search_path);
-    if (!file)
+    const file = await Item.from_path(req.display_repos.id, search_path);
+    if (!file || !file.is_regular_file)
         return error_404(req, res);
+
+    await file.as_file();
 
     const thumbnail_path = `data_storage/thumbnails/${file.id}`
 

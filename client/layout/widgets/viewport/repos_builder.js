@@ -15,7 +15,7 @@ const viewport_container = document.getElementById('file-list')
 function update_repos_content() {
     if (!filesystem)
         return;
-    fetch(`${PAGE_CONTEXT.repos_path()}/data`, {
+    fetch(`${PAGE_CONTEXT.repos_path()}/data/`, {
         headers: {'content-authtoken': LOCAL_USER.get_token()}
     })
         .then(async (response) => await parse_fetch_result(response))
@@ -25,15 +25,15 @@ function update_repos_content() {
             const unwrap_item = (item, parent) => {
                 if (item.is_regular_file)
                     parent.add_file(item);
-                else
-                    parent.directory_from_path(item.absolute_path, true);
-
-                for (const child of item.children)
-                    unwrap_item(child, item)
+                else {
+                    filesystem.directory_from_path(item.absolute_path, true);
+                    for (const child of item.children)
+                        unwrap_item(child, item)
+                }
             }
 
-            for (const item of Object.values(json)) {
-                unwrap_item(json, filesystem.root);
+            for (const item of json) {
+                unwrap_item(item, filesystem.root);
             }
             selector.set_current_dir(filesystem.root);
         });

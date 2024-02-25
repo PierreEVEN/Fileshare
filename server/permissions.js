@@ -143,7 +143,7 @@ class Permissions {
      * @param user_id {number}
      * @return {Promise<boolean>}
      */
-    async can_user_edit_file(file, user_id) {
+    async can_user_edit_item(file, user_id) {
         if (!user_id)
             return false;
 

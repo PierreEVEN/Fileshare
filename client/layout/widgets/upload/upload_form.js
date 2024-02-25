@@ -9,7 +9,7 @@ import file_hbs from "./file.hbs";
 import directory_hbs from "./directory.hbs";
 import {spawn_context_action} from "../../../common/widgets/context_action";
 
-const url = `${PAGE_CONTEXT.repos_path()}/send`;
+const url = `${PAGE_CONTEXT.repos_path()}/send/`;
 let filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.name) : null;
 const filesystem_upload = PAGE_CONTEXT.display_repos ? new FilesystemUpload(filesystem, url) : null;
 let stop_process = false;

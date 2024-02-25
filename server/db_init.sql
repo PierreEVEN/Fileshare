@@ -76,7 +76,6 @@ CREATE TABLE IF NOT EXISTS fileshare.items (
         repos BIGSERIAL NOT NULL,
         owner BIGSERIAL NOT NULL,
         name VARCHAR(200) NOT NULL,
-        display_name VARCHAR(200) NOT NULL,
         is_regular_file BOOLEAN NOT NULL,
         description TEXT,
         parent_item BIGINT NULL,

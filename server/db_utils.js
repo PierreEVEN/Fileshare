@@ -13,7 +13,9 @@ function as_id(source) {
 }
 
 function as_number(source) {
-    assert(!isNaN(source));
+    if (isNaN(Number(source)))
+        console.trace();
+    assert(!isNaN(Number(source)), "Data is not a number : " + source);
     return Number(source);
 }
 

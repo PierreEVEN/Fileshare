@@ -61,7 +61,7 @@ class Repos {
         return this;
     }
 
-    async get_tree(initial_path) {
+    async get_tree(initial_path = null) {
         console.warn("TODO : handle path properly")
         const data = await Item.from_repos(this.id);
 
