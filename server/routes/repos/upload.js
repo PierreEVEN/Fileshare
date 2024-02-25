@@ -1,5 +1,5 @@
 const fs = require("fs");
-const {File} = require('../../database/files');
+const {File} = require('../../database/file_data');
 const {
     session_data,
     public_data,

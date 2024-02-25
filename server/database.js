@@ -120,6 +120,23 @@ function single() {
             await client.release();
             clients_opened--;
             return res;
+        },
+        fetch_row: async (query, data) => {
+            await table_created;
+            const client = await pool.connect();
+            clients_opened++;
+            let row = null;
+            const rows = (await query_checked(client, query, data)).rows;
+            if (rows.length > 1) {
+                logger.error(`Query '${query}' resulted in more than one result`)
+                row = rows[0];
+            }
+            else if (rows.length === 1) {
+                row = rows[0];
+            }
+            await client.release();
+            clients_opened--;
+            return row;
         }
     }
 }

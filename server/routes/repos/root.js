@@ -9,7 +9,7 @@ const {
 const {Repos} = require("../../database/repos");
 const {logger} = require("../../logger");
 const perms = require("../../permissions");
-const {File} = require("../../database/files");
+const {File} = require("../../database/file_data");
 const path = require("path");
 const assert = require("assert");
 

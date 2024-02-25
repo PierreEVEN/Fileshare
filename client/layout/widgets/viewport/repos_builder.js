@@ -22,29 +22,19 @@ function update_repos_content() {
         .then((json) => {
             filesystem.clear();
 
-            const unwrap_dir = (dir_data, parent_dir) => {
-                let created_dir = filesystem.root;
-                if (parent_dir)
-                    created_dir = filesystem.directory_from_path(parent_dir.absolute_path() + "/" + decodeURIComponent(dir_data.name), true)
+            const unwrap_item = (item, parent) => {
+                if (item.is_regular_file)
+                    parent.add_file(item);
+                else
+                    parent.directory_from_path(item.absolute_path, true);
 
-                created_dir.description = dir_data.description ? decodeURIComponent(dir_data.description) : undefined;
-                created_dir.id = dir_data.id;
-
-                // Retrieve dirs
-                dir_data.directories.forEach(dir => {
-                    unwrap_dir(dir, created_dir);
-                })
-
-                // Retrieve dirs
-                dir_data.files.forEach(file => {
-                    if (!file.description || file.description === 'null')
-                        file.description = '';
-                    file.name = decodeURIComponent(file.name);
-                    file.description = file.description ? decodeURIComponent(file.description) : undefined;
-                    filesystem.add_file(file, parent_dir ? parent_dir.absolute_path() : '/');
-                })
+                for (const child of item.children)
+                    unwrap_item(child, item)
             }
-            unwrap_dir(json, null);
+
+            for (const item of Object.values(json)) {
+                unwrap_item(json, filesystem.root);
+            }
             selector.set_current_dir(filesystem.root);
         });
 }

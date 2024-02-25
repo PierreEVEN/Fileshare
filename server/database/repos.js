@@ -1,10 +1,9 @@
 const db = require('../database')
 const {gen_uid} = require("../uid_generator");
-const {File} = require('./files')
 const {UserRepos} = require("./user_repos");
 const assert = require("assert");
-const {Directories} = require("./directories");
 const {as_data_string, as_id, as_enum, as_boolean, as_number} = require("../db_utils");
+const {Item} = require("./item");
 
 const id_base = new Set();
 
@@ -44,12 +43,8 @@ class Repos {
     }
 
     async delete() {
-        for (const file of await File.from_repos(this.id)) {
-            await file.delete();
-        }
-
-        for (const directory of await Directories.from_repos(this.id)) {
-            await directory.delete();
+        for (const item of await Item.from_repos(this.id)) {
+            await item.delete();
         }
 
         for (const user_repos of await UserRepos.from_repos(this.id)) {
@@ -61,88 +56,31 @@ class Repos {
 
     async client_ready() {
         if (!this.username)
-            for (const User of (await db.single().query("SELECT name FROM fileshare.users WHERE id = $1", [as_id(this.owner)])).rows) {
+            for (const User of (await db.single().query("SELECT name FROM fileshare.users WHERE id = $1", [as_id(this.owner)])).rows)
                 this.username = User.name;
-            }
         return this;
     }
 
-    async get_content() {
-        const result = {
-            directories: [],
-            files: [],
-        };
-        for (const dir of await Directories.from_repos(this.id)) {
-            dir.name = encodeURI(dir.name);
-            dir.description = dir.description ? encodeURI(dir.description) : undefined;
-            result.directories.push(dir);
-        }
-        for (const file of await File.from_repos(this.id)) {
-            file.name = encodeURI(file.name);
-            file.description = file.description ? encodeURI(file.description) : undefined;
-            result.files.push(file);
+    async get_tree(initial_path) {
+        console.warn("TODO : handle path properly")
+        const data = await Item.from_repos(this.id);
+
+        const roots = [];
+
+        const directories = new Map();
+        for (const item of data) {
+            if (!item.is_regular_file)
+                item.children = [];
+            directories.set(item.id, item);
         }
 
-        return result;
-    }
+        for (const item of data)
+            if (!item.parent_item)
+                roots.push(item);
+            else
+                directories[item.parent_item].children.push(item)
 
-    async get_tree(partial = true) {
-        const {directories, files} = await this.get_content()
-
-        const root = {directories: [], files: [], name: encodeURI(this.name)}
-
-        const dir_map = new Map();
-        directories.forEach((dir) => {
-            let dir_obj = {
-                id: dir.id,
-                name: dir.name,
-                files: [],
-                directories: [],
-            };
-
-            if (!partial) {
-                dir_obj.owner = dir.owner;
-                dir_obj.description = dir.description;
-                dir_obj.is_special = dir.is_special;
-                dir_obj.open_upload = dir.open_upload;
-            }
-
-            dir_map.set(dir.id, dir_obj);
-        })
-
-        directories.forEach((dir) => {
-            if (!dir.parent_directory) {
-                root.directories.push(dir_map.get(dir.id));
-                return;
-            }
-            let parent = dir_map.get(dir.parent_directory);
-            assert(parent);
-            parent.directories.push(dir_map.get(dir.id));
-        })
-
-        files.forEach((file) => {
-            const file_obj = {
-                id: file.id,
-                name: file.name,
-                size: Number(file.size),
-                timestamp: file.timestamp ? Number(file.timestamp) : undefined
-            }
-            if (!partial) {
-                file_obj.owner = file.owner;
-                file_obj.description = file.description;
-                file_obj.mimetype = file.mimetype;
-                file_obj.hash = file.hash;
-            }
-            if (!file.parent_directory) {
-                root.files.push(file_obj);
-                return;
-            }
-            let parent = dir_map.get(file.parent_directory);
-            assert(parent);
-            parent.files.push(file_obj);
-        });
-
-        return root;
+        return roots;
     }
 
     static async gen_id() {

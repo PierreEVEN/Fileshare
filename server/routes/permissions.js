@@ -1,6 +1,6 @@
 const permissions = require('../permissions')
 const {Directories} = require("../database/directories");
-const {File} = require("../database/files");
+const {File} = require("../database/file_data");
 const {Repos} = require("../database/repos");
 const router = require('express').Router();
 

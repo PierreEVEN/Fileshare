@@ -1,6 +1,4 @@
 const conversion_queue = require("../../../file-conversion");
-const {Directories} = require("../../../database/directories");
-const {File} = require("../../../database/files");
 const {logger} = require("../../../logger");
 const fs = require("fs");
 const {as_data_string} = require("../../../db_utils");

@@ -4,7 +4,7 @@ const {request_username, error_403, error_404, require_connection} = require("..
 const {Directories} = require("../database/directories");
 const {Repos} = require("../database/repos");
 const router = require('express').Router();
-const {File} = require('../database/files')
+const {File} = require('../database/file_data')
 const perms = require("../permissions");
 
 router.get('/', async (req, res) => {
