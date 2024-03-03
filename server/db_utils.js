@@ -66,4 +66,18 @@ function display_name_to_url(display_name) {
     return null;
 }
 
+function isEncoded(uri) {
+    uri = uri || '';
+    return uri !== decodeURIComponent(uri);
+}
+
+/**
+ * @param in_path {string}
+ * @return {string}
+ */
+function as_path(in_path) {
+    const path_split = in_path.split('/').filter(Boolean);
+    return '/' + path_split.join('/');
+}
+
 module.exports = {as_hash_key, as_id, as_data_string, as_boolean, as_enum, as_number, as_data_path, display_name_to_url}

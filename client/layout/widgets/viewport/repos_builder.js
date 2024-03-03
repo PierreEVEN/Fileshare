@@ -15,8 +15,11 @@ const viewport_container = document.getElementById('file-list')
 function update_repos_content() {
     if (!filesystem)
         return;
-    fetch(`${PAGE_CONTEXT.repos_path()}/data/`, {
-        headers: {'content-authtoken': LOCAL_USER.get_token()}
+    fetch(`${PAGE_CONTEXT.repos_path()}/content/`, {
+        headers: {
+            'content-authtoken': LOCAL_USER.get_token(),
+            'accept': 'application/json',
+        },
     })
         .then(async (response) => await parse_fetch_result(response))
         .then((json) => {
