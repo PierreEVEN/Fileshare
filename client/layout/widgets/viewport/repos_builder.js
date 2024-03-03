@@ -29,16 +29,18 @@ function update_repos_content() {
                 if (item.is_regular_file) {
                     if (item.absolute_path.endsWith('/'))
                         item.absolute_path = item.absolute_path.substring(0, item.absolute_path.length - 1);
-                    console.log(item.absolute_path);
                     const path_split = item.absolute_path.split('/');
-                    path_split.pop();
-                    const parent_path = path_split.join('/')
-                    filesystem.directory_from_path(parent_path, true).add_file(item);
+                    path_split.pop()
+                    if (path_split.length === 0)
+                        parent.add_file(item);
+                    else
+                        parent.add_file(item, path_split.join('/'));
                 }
                 else {
-                    filesystem.directory_from_path(item.absolute_path, true);
-                    for (const child of item.children)
-                        unwrap_item(child, item)
+                    const dir_item = filesystem.directory_from_path(item.absolute_path, true);
+                    for (const child of item.children) {
+                        unwrap_item(child, dir_item)
+                    }
                 }
             }
 

@@ -6,6 +6,7 @@ const fs = require("fs");
 const {join} = require("path");
 const {logger} = require("./logger");
 const cookieParser = require("cookie-parser");
+const {Item} = require("./database/item");
 
 function setup_app() {
 
