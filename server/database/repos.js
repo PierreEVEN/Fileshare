@@ -63,7 +63,7 @@ class Repos {
 
     async get_tree(initial_path = null) {
         console.warn("TODO : handle path properly")
-        const data = await Item.from_repos(this.id);
+        const data = initial_path ? await Item.inside_directory_recursive(this.id, initial_path.id) : await Item.from_repos(this.id);
 
         const roots = [];
 

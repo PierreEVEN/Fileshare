@@ -163,6 +163,28 @@ class Item {
     }
 
     /**
+     * @param id {number} repos_id
+     * @param directory_id {number}
+     * @return {Promise<Item[]>}
+     */
+    static async inside_directory_recursive(id, directory_id) {
+        const final_assets = []
+        let search_items = await db.single().fetch_objects(Item, 'SELECT * FROM fileshare.items WHERE repos = $1 && parent_item = $2', [as_id(id), as_id(directory_id)]);
+
+        do {
+            const old_search_items = search_items;
+            search_items = [];
+            for (const item of old_search_items) {
+                final_assets.push(item);
+                if (!item.is_regular_file)
+                    search_items = search_items.concat(await db.single().fetch_objects(Item, 'SELECT * FROM fileshare.items WHERE repos = $1 && parent_item = $2', [as_id(id), as_id(item.id)]));
+            }
+        } while (search_items.length !== 0);
+
+        return final_assets;
+    }
+
+    /**
      * @return {Item|null}
      * @param repos {number}
      * @param absolute_path {string}
@@ -237,7 +259,7 @@ class Item {
             const name = path_split.pop();
             const parent = await _internal(repos, path_split);
             data.repos = repos;
-            data.parent_directory = parent ? parent.id : null;
+            data.parent_item = parent ? parent.id : null;
             data.name = name;
             data.is_regular_file = false;
             return await new Item(data).push();

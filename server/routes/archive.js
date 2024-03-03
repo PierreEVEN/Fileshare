@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
     const archive = archiver('zip', {});
 
     for (const file of files) {
-        archive.file(file.storage_path(), {name: (file.parent_directory ? await (await Directories.from_id(file.parent_directory)).get_absolute_path() : '/') + decodeURIComponent(file.name)})
+        archive.file(file.storage_path(), {name: (file.parent_item ? await (await Directories.from_id(file.parent_item)).get_absolute_path() : '/') + decodeURIComponent(file.name)})
     }
 
     logger.info(`Archiving '${repos.access_key}${path}' for ${req.log_name} ...`)

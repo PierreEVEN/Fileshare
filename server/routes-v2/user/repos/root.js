@@ -57,29 +57,33 @@ router.get("/tree/*", async (req, res) => {
     });
 })
 
-router.get('/file/*', async function (req, res) {
-    logger.info(`${req.log_name} downloaded ${req.display_repos.display_path }`)
+router.get("/content/*", async (req, res) => {
+    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : ${req.display_repos.display_path }`)
+
+    // Path is empty or is equal to '/' => return a json with the whole hierarchy
     if (req.display_repos.display_path.length <= 1)
-        res.sendStatus(404, 'Chemin non valide');
+        return res.send(await req.display_repos.get_tree());
 
-    const file = await Item.from_path(req.display_repos.id, req.display_repos.display_path );
-    if (!file)
-        return error_404(req, res, 'Objet inconnu');
+    // Search the requested file or dir
+    const item = await Item.from_path(req.display_repos.id, req.display_repos.display_path);
+    if (!item)
+        return error_404(req, res, `Le fichier ou dossier ${req.display_repos.display_path} n'existe pas`);
 
-    if (file.is_regular_file) {
+    if (item.is_regular_file) {
+        // Send file in response
+        const file_path = item.storage_path();
 
-        const file_path = file.storage_path()
+        if (!fs.existsSync(file_path))
+            return error_404(req, res, 'Document introuvable');
+
+        res.setHeader('Content-Type', `${item.mimetype}`)
+        res.setHeader('Content-Disposition', 'inline; filename=' + encodeURIComponent(item.name));
+        return res.sendFile(path.resolve(file_path));
     }
-    if (!fs.existsSync(file_path))
-        return error_404(req, res, 'Document introuvable');
-
-    res.setHeader('Content-Type', `${file.mimetype}`)
-    res.setHeader('Content-Disposition', 'inline; filename=' + encodeURIComponent(file.name));
-    return res.sendFile(path.resolve(file_path));
-})
-
-router.get("/data/*", async (req, res) => {
-    res.send(await req.display_repos.get_tree(req.display_repos.display_path));
+    else {
+        // Send tree in response
+        res.send(await req.display_repos.get_tree(item));
+    }
 })
 
 
