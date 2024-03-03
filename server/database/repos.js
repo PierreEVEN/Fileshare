@@ -71,14 +71,14 @@ class Repos {
         for (const item of data) {
             if (!item.is_regular_file)
                 item.children = [];
-            directories.set(item.id, item);
+            directories.set(Number(item.id), item);
         }
 
         for (const item of data)
             if (!item.parent_item)
                 roots.push(item);
             else
-                directories[item.parent_item].children.push(item)
+                directories.get(Number(item.parent_item)).children.push(item)
 
         return roots;
     }

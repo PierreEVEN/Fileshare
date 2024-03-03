@@ -104,16 +104,27 @@ CREATE TABLE IF NOT EXISTS fileshare.directory_data (
 
 CREATE OR REPLACE FUNCTION fileshare.ensure_item_does_not_exists() RETURNS TRIGGER AS $$
     DECLARE
-        found_item_id VARCHAR(32);
+        found_item_id BIGINT;
     BEGIN
 
-        SELECT id INTO found_item_id FROM fileshare.items WHERE parent_item = NEW.parent_item AND name = NEW.name and repos = NEW.repos;
-
-        IF found_item_id IS NOT NULL
-        THEN
-            IF found_item_id != NEW.id
+        if NEW.parent_item IS NULL THEN
+            SELECT id INTO found_item_id FROM fileshare.items WHERE parent_item IS NULL AND name = NEW.name and repos = NEW.repos;
+            IF found_item_id IS NOT NULL
             THEN
-                RAISE EXCEPTION 'Cannot insert the same file twice (old id is %)', found_item_id;
+                IF found_item_id != NEW.id
+                THEN
+                    RAISE EXCEPTION 'Cannot insert the same file twice (old id is %)', found_item_id;
+                END IF;
+            END IF;
+        ELSE
+            SELECT id INTO found_item_id FROM fileshare.items WHERE parent_item = NEW.parent_item AND name = NEW.name and repos = NEW.repos;
+
+            IF found_item_id IS NOT NULL
+            THEN
+                IF found_item_id != NEW.id
+                THEN
+                    RAISE EXCEPTION 'Cannot insert the same file twice (old id is %)', found_item_id;
+                END IF;
             END IF;
         END IF;
         RETURN NEW;
@@ -128,7 +139,7 @@ CREATE OR REPLACE TRIGGER ensure_item_does_not_exists
 
 CREATE OR REPLACE PROCEDURE fileshare.regenerate_item_path(item_id BIGINT) AS $$
 	DECLARE
-		path_string VARCHAR := '/';
+		path_string VARCHAR := '';
 		item_name VARCHAR;
 		updated_item BIGINT;
 	BEGIN

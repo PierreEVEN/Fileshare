@@ -35,7 +35,10 @@ function as_data_path(source) {
         split_path[i] = encodeURIComponent(split_path[i].toString())
         assert(/^[A-Za-z0-9-_.!~*'()%]*$/.test(split_path[i]))
     }
-    return split_path.join('/');
+    const generated_path = split_path.filter(Boolean);
+    if (generated_path.length === 0)
+        return '';
+    return '/' + generated_path.join('/');
 }
 
 function as_boolean(source) {

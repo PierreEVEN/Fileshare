@@ -1,8 +1,9 @@
 const db = require('../database')
 const assert = require("assert");
-const {as_data_string, as_id, as_enum, as_boolean, as_number, as_hash_key} = require("../db_utils");
+const {as_data_string, as_id, as_enum, as_boolean, as_number, as_hash_key, as_data_path} = require("../db_utils");
 const path = require("path");
 const fc = require("filecompare");
+const {logger} = require("../logger");
 
 class Item {
     /**
@@ -67,9 +68,9 @@ class Item {
         else {
             const new_item = await db.single().query(`INSERT INTO fileshare.items
             (repos, owner, name, is_regular_file, description, parent_item) VALUES
-            ($1, $2, $3, $4, $5, $6)`,
+            ($1, $2, $3, $4, $5, $6) RETURNING id`,
                 [as_id(this.repos), as_id(this.owner), as_data_string(this.name), as_boolean(this.is_regular_file), as_data_string(this.description), this.parent_item ? as_id(this.parent_item) : null]);
-            this.id = new_item.oid;
+            this.id = new_item.rows[0].id;
         }
         if (this.is_regular_file) {
             assert(this.id !== undefined);
@@ -151,7 +152,7 @@ class Item {
      * @param path {string}
      */
     static async from_path(repos, path) {
-        return await db.single().fetch_object(Item, 'SELECT * FROM fileshare.items WHERE  repos = $1 AND absolute_path = $2', [as_id(repos), as_data_string(path)]);
+        return await db.single().fetch_object(Item, 'SELECT * FROM fileshare.items WHERE  repos = $1 AND absolute_path = $2', [as_id(repos), as_data_path(path)]);
     }
 
     /**
@@ -230,14 +231,17 @@ class Item {
                 return null;
 
             const path = path_split.length === 0 ? '/' : `/${path_split.join('/')}/`;
-            const dir = await Item.from_path(repos, path);
-            if (dir)
-                return dir.is_regular_file ? null : dir;
+            const existing_dir = await Item.from_path(repos, path);
+            if (existing_dir) {
+                if (existing_dir.is_regular_file)
+                    throw Error(`Object ${JSON.stringify(existing_dir)} is not a directory`);
+                return existing_dir;
+            }
 
             const name = path_split.pop();
             const parent = await _internal(repos, path_split);
             data.repos = repos;
-            data.parent_directory = parent ? parent.id : null;
+            data.parent_item = parent ? parent.id : null;
             data.name = name;
             data.is_regular_file = false;
             return await new Item(data).push();

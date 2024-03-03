@@ -31,7 +31,7 @@ async function finalize_file_upload(file_path, metadata, repos, user, file_hash)
             break;
     }
 
-    const parent_directory = (await Item.find_or_create_directory_from_path(repos.id, meta.virtual_path, {owner: user.id}));
+    const parent_item = (await Item.find_or_create_directory_from_path(repos.id, meta.virtual_path, {owner: user.id}));
 
     // Ensure the file doesn't already exists
     const existing_file = await Item.from_path(repos.id, meta.virtual_path + "/" + meta.file_name);
@@ -59,7 +59,7 @@ async function finalize_file_upload(file_path, metadata, repos, user, file_hash)
             description: as_data_string(meta.description),
             mimetype: meta.mimetype,
             size: meta.file_size,
-            parent_directory: parent_directory ? parent_directory.id : null,
+            parent_item: parent_item ? parent_item.id : null,
             hash: file_hash,
             timestamp: meta.timestamp,
         }).push();
