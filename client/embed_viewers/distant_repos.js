@@ -4,6 +4,7 @@ import {PAGE_CONTEXT} from "../common/tools/utils";
 function get(item) {
     if (!item.absolute_path)
         return '<h1>404 - Not Found</h1>';
+
     const url = `${PAGE_CONTEXT.repos_path()}/content${item.absolute_path()}`;
     const mimetype = item.mimetype.split('/');
     switch (mimetype[0]) {

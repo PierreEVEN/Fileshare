@@ -35,11 +35,6 @@ router.use('/', async (req, res, next) => {
     next();
 });
 
-router.use('/:route/*', async (req, res, next) => {
-    req.display_repos.display_path = req.url;
-    next();
-});
-
 /********************** [GLOBAL] **********************/
 
 
@@ -58,16 +53,17 @@ router.get("/tree/*", async (req, res) => {
 })
 
 router.get("/content/*", async (req, res) => {
-    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : ${req.display_repos.display_path }`)
+    const request_path = req.url.substring(8);
+    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : ${request_path}`)
 
     // Path is empty or is equal to '/' => return a json with the whole hierarchy
-    if (req.display_repos.display_path.length <= 1)
+    if (request_path.length <= 1 || request_path === '/')
         return res.send(await req.display_repos.get_tree());
 
     // Search the requested file or dir
-    const item = await Item.from_path(req.display_repos.id, req.display_repos.display_path);
+    const item = await Item.from_path(req.display_repos.id, request_path);
     if (!item)
-        return error_404(req, res, `Le fichier ou dossier ${req.display_repos.display_path} n'existe pas`);
+        return error_404(req, res, `Le fichier ou dossier ${request_path} n'existe pas`);
 
     if (item.is_regular_file) {
         // Send file in response
