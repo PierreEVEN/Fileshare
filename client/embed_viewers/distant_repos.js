@@ -4,11 +4,7 @@ import {PAGE_CONTEXT} from "../common/tools/utils";
 function get(item) {
     if (!item.absolute_path)
         return '<h1>404 - Not Found</h1>';
-<<<<<<< HEAD
-    const url = `${PAGE_CONTEXT.repos_path()}/data${item.absolute_path()}`;
-=======
     const url = `${PAGE_CONTEXT.repos_path()}/content${item.absolute_path()}`;
->>>>>>> c98ff65f3228eabb3b6d23fffb56624c19690647
     const mimetype = item.mimetype.split('/');
     switch (mimetype[0]) {
         case 'image':
