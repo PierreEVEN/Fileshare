@@ -4,12 +4,9 @@ import {get_mime_icon_path, is_mimetype_valid, UNDEFINED_MIME_STRING} from "../c
 /* ################## HELPER {ITEM_THUMBNAIL} ################## */
 const get_item_thumbnail = require('../common/tools/get_item_thumbnail')
 Handlebars.registerHelper("item_thumbnail", (item) => {
-    // CASE : IS DIRECTORY
-    if (item.is_directory) {
-        return new Handlebars.SafeString(`<img src="/images/icons/icons8-folder-96.png" alt="dossier: ${item.name}">`)
-    }
+
     // CASE : IS STANDARD FILE
-    if (item.is_file) {
+    if (item.is_regular_file) {
         if (!is_mimetype_valid(item.mimetype))
             return new Handlebars.SafeString(UNDEFINED_MIME_STRING);
         // Distant repos
@@ -20,6 +17,10 @@ Handlebars.registerHelper("item_thumbnail", (item) => {
         else if (item.lastModified) {
             return new Handlebars.SafeString(get_item_thumbnail.from_local_path(item));
         }
+    }
+    // CASE : IS DIRECTORY
+    else {
+        return new Handlebars.SafeString(`<img src="/images/icons/icons8-folder-96.png" alt="dossier: ${item.name}">`)
     }
 });
 

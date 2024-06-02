@@ -2,7 +2,14 @@
 /*                                         REPOS                                               */
 /***********************************************************************************************/
 
-const {get_common_data, error_404, require_connection, error_403, public_data, events} = require("../../../session_utils");
+const {
+    get_common_data,
+    error_404,
+    require_connection,
+    error_403,
+    public_data,
+    events
+} = require("../../../session_utils");
 const perms = require("../../../permissions");
 const permissions = require("../../../permissions");
 const {logger} = require("../../../logger");
@@ -46,9 +53,10 @@ router.get("/", async (req, res) => {
 })
 
 router.get("/tree/*", async (req, res) => {
+    req.request_path = req.url.substring(5);
     res.render('repos', {
         title: `FileShare - ${req.display_repos.name}`,
-        common: await get_common_data(req),
+        common: await get_common_data(req)
     });
 })
 
@@ -58,12 +66,22 @@ router.get("/content/*", async (req, res) => {
 
     // Path is empty or is equal to '/' => return a json with the whole hierarchy
     if (request_path.length <= 1 || request_path === '/')
-        return res.send(await req.display_repos.get_tree());
+        return res.send(await req.display_repos.get_content());
+
+    return error_404(req, res, `TODO : implement path fetch : ${request_path}`);
+})
+
+router.get("/file/:id", async (req, res) => {
+    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : ${req.params['id']}`)
 
     // Search the requested file or dir
-    const item = await Item.from_path(req.display_repos.id, request_path);
+    const item = await Item.from_id(req.params['id']);
     if (!item)
-        return error_404(req, res, `Le fichier ou dossier ${request_path} n'existe pas`);
+        return error_404(req, res, `Le fichier ou dossier ${req.params['id']} n'existe pas`);
+
+    if (!await permissions.can_user_view_file(item, req.connected_user ? req.connected_user.id : null)) {
+        return error_404(req, res, `Le fichier ou dossier ${req.params['id']} n'existe pas`);
+    }
 
     if (item.is_regular_file) {
         // Send file in response
@@ -75,31 +93,24 @@ router.get("/content/*", async (req, res) => {
         res.setHeader('Content-Type', `${item.mimetype}`)
         res.setHeader('Content-Disposition', 'inline; filename=' + encodeURIComponent(item.name));
         return res.sendFile(path.resolve(file_path));
-    }
-    else {
-        // Send tree in response
-        res.send(await req.display_repos.get_tree(item));
+    } else {
+        return error_404(req, res, `l'element ${item.id} n'est pas un fichier`);
     }
 })
 
-
-router.get("/can-upload/", async (req, res) => {
-    if (req.connected_user && req.display_repos) {
-        if (await permissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
-            return res.sendStatus(200)
-    }
-    res.sendStatus(204);
-})
-
-router.get("/can-upload/*", async (req, res) => {
-    const path = req.url.substring(11);
-    if (path.length > 1) {
-        const directory = await Directories.from_path(req.display_repos.id, path);
+router.get("/can-upload/:id", async (req, res) => {
+    if (req.params['id']) {
+        const directory = await Item.from_id(req.params['id']);
         if (directory) {
             if (req.connected_user && req.display_repos) {
                 if (await permissions.can_user_upload_to_directory(directory, req.connected_user.id))
                     return res.sendStatus(200);
             }
+        }
+    } else {
+        if (req.connected_user && req.display_repos) {
+            if (await permissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
+                return res.sendStatus(200)
         }
     }
     res.sendStatus(204);
@@ -112,15 +123,12 @@ router.get("/can-edit/", async (req, res) => {
     }
     res.sendStatus(204);
 })
-router.get("/can-edit/*", async (req, res) => {
-    const path = req.url.substring(9);
-    if (path.length > 1) {
-        const file = await Item.from_path(req.display_repos.id, path);
-        if (file) {
-            if (req.connected_user && req.display_repos) {
-                if (await permissions.can_user_edit_item(file, req.connected_user.id))
-                    return res.sendStatus(200);
-            }
+router.get("/can-edit/:id", async (req, res) => {
+    const file = await Item.from_id(req.params['id']);
+    if (file) {
+        if (req.connected_user && req.display_repos) {
+            if (await permissions.can_user_edit_item(file, req.connected_user.id))
+                return res.sendStatus(200);
         }
     }
     res.sendStatus(204);
@@ -179,8 +187,7 @@ router.post('/send/*', async (req, res) => {
     const decode_header = (key) => {
         try {
             return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
-        }
-        catch (e) {
+        } catch (e) {
             logger.error("Source headers : " + req.headers[key])
             logger.error(e.toString());
         }
@@ -225,7 +232,10 @@ router.post('/send/*', async (req, res) => {
             logger.info(`${req.log_name} store '${JSON.stringify(upload_in_progress[transfer_token].metadata)}' to repos '${req.display_repos.name}'`)
             const file = await finalize_file_upload(tmp_file_path, upload_in_progress[transfer_token].metadata, req.display_repos, req.connected_user, upload_in_progress[transfer_token].hash_sum.digest('hex'))
             delete upload_in_progress[transfer_token];
-            return res.status(file ? 202 : 400).send(file ? {status: "Finished", file_id: file.id} : {status: "Failed"});
+            return res.status(file ? 202 : 400).send(file ? {
+                status: "Finished",
+                file_id: file.id
+            } : {status: "Failed"});
         } else if (upload_in_progress[transfer_token].received_size > upload_in_progress[transfer_token].metadata.file_size)
             return res.status(413).send({status: "Overflow"});
         else if (generated_transfer_token)
@@ -236,93 +246,95 @@ router.post('/send/*', async (req, res) => {
     })
 });
 
+router.get('/thumbnail/:id', async function (req, res) {
 
-router.get('/thumbnail/*', async function (req, res) {
+        if (!fs.existsSync('./data_storage/thumbnails'))
+            fs.mkdirSync('./data_storage/thumbnails');
 
-    const search_path = req.url.substring(10);
-    if (!fs.existsSync('./data_storage/thumbnails'))
-        fs.mkdirSync('./data_storage/thumbnails');
+        const file = await Item.from_id(req.params['id']);
+        if (!file || !file.is_regular_file)
+            return error_404(req, res);
 
-    const file = await Item.from_path(req.display_repos.id, search_path);
-    if (!file || !file.is_regular_file)
-        return error_404(req, res);
+        if (!await permissions.can_user_view_file(file, req.connected_user ? req.connected_user.id : null)) {
+            return error_404(req, res, `Le fichier ou dossier ${req.params['id']} n'existe pas`);
+        }
 
-    await file.as_file();
+        await file.as_file();
 
-    const thumbnail_path = `data_storage/thumbnails/${file.id}`
+        const thumbnail_path = `data_storage/thumbnails/${file.id}`
 
-    res.setHeader('Content-Disposition', 'attachment; filename=thumbnail_' + encodeURIComponent(file.name));
+        res.setHeader('Content-Disposition', 'attachment; filename=thumbnail_' + encodeURIComponent(file.name));
 
-    const file_path = file.storage_path()
+        const file_path = file.storage_path()
 
-    if (!fs.existsSync(thumbnail_path)) {
-        if ((file.mimetype).startsWith('image/')) {
-            sharp(file_path).resize(100, 100, {
-                fit: 'inside',
-                withoutEnlargement: true,
-                fastShrinkOnLoad: true,
-            }).withMetadata()
-                .toFile(thumbnail_path, async (err, _) => {
-                    if (err) {
-                        logger.error(`failed to generate thumbnail for ${file.id} (${file.name}) : ${JSON.stringify(err)}`);
-                        return res.sendFile(path.resolve(file_path));
-                    } else {
-                        logger.info(`generated thumbnail for ${file.id} (${file.name})`);
-                        return res.sendFile(path.resolve(thumbnail_path));
-                    }
-                });
-        } else if ((file.mimetype).includes('pdf')) {
-            // Doesn't work on windows
-            if (platform() === 'win32')
-                return  res.sendFile(path.resolve('public/images/icons/mime-icons/application/pdf.png'));
-            await new Promise(async (resolve) => {
-                gm(path.resolve(file_path + '')) // The name of your pdf
-                    .setFormat("jpg")
-                    .resize(200) // Resize to fixed 200px width, maintaining aspect ratio
-                    .quality(75) // Quality from 0 to 100
-                    .write(thumbnail_path, async error => {
-                        // Callback function executed when finished
-                        if (!error) {
-                            logger.info(`generated thumbnail for ${file.id} (${file.name})`);
-                            resolve();
-                        } else {
-                            logger.error(`failed to generate thumbnail for ${file.id} (${file.name}) : ${JSON.stringify(error)}`);
+        if (!fs.existsSync(thumbnail_path)) {
+            if ((file.mimetype).startsWith('image/')) {
+                sharp(file_path).resize(100, 100, {
+                    fit: 'inside',
+                    withoutEnlargement: true,
+                    fastShrinkOnLoad: true,
+                }).withMetadata()
+                    .toFile(thumbnail_path, async (err, _) => {
+                        if (err) {
+                            logger.error(`failed to generate thumbnail for ${file.id} (${file.name}) : ${JSON.stringify(err)}`);
                             return res.sendFile(path.resolve(file_path));
+                        } else {
+                            logger.info(`generated thumbnail for ${file.id} (${file.name})`);
+                            return res.sendFile(path.resolve(thumbnail_path));
                         }
                     });
-            });
+            } else if ((file.mimetype).includes('pdf')) {
+                // Doesn't work on windows
+                if (platform() === 'win32')
+                    return res.sendFile(path.resolve('public/images/icons/mime-icons/application/pdf.png'));
+                await new Promise(async (resolve) => {
+                    gm(path.resolve(file_path + '')) // The name of your pdf
+                        .setFormat("jpg")
+                        .resize(200) // Resize to fixed 200px width, maintaining aspect ratio
+                        .quality(75) // Quality from 0 to 100
+                        .write(thumbnail_path, async error => {
+                            // Callback function executed when finished
+                            if (!error) {
+                                logger.info(`generated thumbnail for ${file.id} (${file.name})`);
+                                resolve();
+                            } else {
+                                logger.error(`failed to generate thumbnail for ${file.id} (${file.name}) : ${JSON.stringify(error)}`);
+                                return res.sendFile(path.resolve(file_path));
+                            }
+                        });
+                });
 
-            return res.sendFile(path.resolve(thumbnail_path));
-        } else if ((file.mimetype).startsWith('video/')) {
-            let filename = null;
+                return res.sendFile(path.resolve(thumbnail_path));
+            } else if ((file.mimetype).startsWith('video/')) {
+                let filename = null;
 
-            new ffmpeg(file_path)
-                .on('filenames', async (filenames) => {
-                    filename = filenames[0]
-                })
-                .on('end', async () => {
-                    logger.info(`generated video thumbnail for ${file.id} (${file.name})`)
-                    if (!fs.existsSync(`data_storage/thumbnails/dir_${req.file.id}/${filename}`)) {
-                        logger.error(`Failed to get path to generated thumbnail : 'data_storage/thumbnails/dir_${file.id}/${filename}'`);
+                new ffmpeg(file_path)
+                    .on('filenames', async (filenames) => {
+                        filename = filenames[0]
+                    })
+                    .on('end', async () => {
+                        logger.info(`generated video thumbnail for ${file.id} (${file.name})`)
+                        if (!fs.existsSync(`data_storage/thumbnails/dir_${req.file.id}/${filename}`)) {
+                            logger.error(`Failed to get path to generated thumbnail : 'data_storage/thumbnails/dir_${file.id}/${filename}'`);
+                            return res.sendFile(path.resolve(file_path));
+                        }
+                        fs.renameSync(`data_storage/thumbnails/dir_${file.id}/${filename}`, thumbnail_path);
+                        fs.rmdirSync(`data_storage/thumbnails/dir_${file.id}`)
+                        return res.sendFile(path.resolve(thumbnail_path));
+                    })
+                    .on('error', async (err) => {
+                        logger.error(`Failed generated video thumbnail for ${file.id} (${file.name}) : ${JSON.stringify(err)}`);
                         return res.sendFile(path.resolve(file_path));
-                    }
-                    fs.renameSync(`data_storage/thumbnails/dir_${file.id}/${filename}`, thumbnail_path);
-                    fs.rmdirSync(`data_storage/thumbnails/dir_${file.id}`)
-                    return res.sendFile(path.resolve(thumbnail_path));
-                })
-                .on('error', async (err) => {
-                    logger.error(`Failed generated video thumbnail for ${file.id} (${file.name}) : ${JSON.stringify(err)}`);
-                    return res.sendFile(path.resolve(file_path));
-                })
-                .takeScreenshots({
-                    count: 1,
-                    timemarks: ['0'],
-                    size: '100x100'
-                }, `data_storage/thumbnails/dir_${file.id}`);
+                    })
+                    .takeScreenshots({
+                        count: 1,
+                        timemarks: ['0'],
+                        size: '100x100'
+                    }, `data_storage/thumbnails/dir_${file.id}`);
+            } else
+                return res.sendFile(path.resolve(file_path));
         } else
-            return res.sendFile(path.resolve(file_path));
-    } else
-        return res.sendFile(path.resolve(thumbnail_path));
+            return res.sendFile(path.resolve(thumbnail_path));
     }
 )
 

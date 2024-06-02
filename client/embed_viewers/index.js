@@ -7,11 +7,11 @@ require('./custom_elements/pdf_viewer/pdf-viewer')
 
 function mime_image_generator_helper_big(item) {
     // CASE : IS DIRECTORY
-    if (item.is_directory) {
+    if (!item.is_regular_file) {
         return new Handlebars.SafeString(`<img src="/images/icons/icons8-folder-96.png" alt="dossier: ${item.name}">`)
     }
     // CASE : IS STANDARD FILE
-    if (item.is_file) {
+    else {
         if (!is_mimetype_valid(item.mimetype))
             return new Handlebars.SafeString(`<img class="item-small" src="${get_mime_icon_path(item.mimetype)}" alt="document: ${item.name}"/>`);
         // Distant repos

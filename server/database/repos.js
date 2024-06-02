@@ -61,26 +61,15 @@ class Repos {
         return this;
     }
 
-    async get_tree(initial_path = null) {
-        console.warn("TODO : handle path properly")
-        const data = initial_path ? await Item.inside_directory_recursive(this.id, initial_path.id) : await Item.from_repos(this.id);
-
-        const roots = [];
-
-        const directories = new Map();
-        for (const item of data) {
-            if (!item.is_regular_file)
-                item.children = [];
-            directories.set(Number(item.id), item);
-        }
-
-        for (const item of data)
-            if (!item.parent_item)
-                roots.push(item);
+    async get_content(relative_path = null) {
+        const content = relative_path ? await Item.inside_directory_recursive(this.id, relative_path.id) : await Item.from_repos(this.id);
+        for (const item of content) //@TODO : optimize this step
+            if (item.is_regular_file) {
+                await item.as_file();
+            }
             else
-                directories.get(Number(item.parent_item)).children.push(item)
-
-        return roots;
+                await item.as_directory();
+        return content;
     }
 
     static async gen_id() {

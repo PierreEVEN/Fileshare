@@ -17,5 +17,5 @@ import './widgets/edit_repos/edit_repos_form.js';
 import './drop_box.js';
 
 /* VIEWPORT */
-import './widgets/viewport/path';
+import './widgets/viewport/path_builder';
 import './widgets/upload/upload_form.js';

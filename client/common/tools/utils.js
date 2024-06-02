@@ -56,6 +56,7 @@ class PageContext {
      *      connected_user:{id:number, email; string, name:string, role:string},
      *      display_user:{id:number, description:string, name; string, owner:number, status:string, display_name:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string},
      *      display_repos:{id:number, description:string, name; string, owner:number, status:string, display_name:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string}
+     *      request_path:string,
      *  } || null} */
 
     constructor(data) {
@@ -64,6 +65,7 @@ class PageContext {
         this.connected_user = data.connected_user;
         this.display_user = data.display_user;
         this.display_repos = data.display_repos;
+        this.request_path = decodeURI(data.request_path);
     }
 
     repos_path() {
@@ -94,20 +96,20 @@ class Permissions {
 
     /**
      * @param repos_url {string}
-     * @param path {string}
+     * @param item_id {string}
      * @return {Promise<boolean>}
      */
-    async can_user_edit_path(repos_url, path) {
-        return (await fetch(`${repos_url}/can-edit${path}`)).status === 200;
+    async can_user_edit_item(repos_url, item_id) {
+        return (await fetch(`${repos_url}/can-edit/${item_id ? item_id : ""}`)).status === 200;
     }
 
     /**
      * @param repos_url {string}
-     * @param path {string}
+     * @param object {string}
      * @return {Promise<boolean>}
      */
-    async can_user_upload_to_path(repos_url, path) {
-        return (await fetch(`${repos_url}/can-upload${path}`)).status === 200;
+    async can_user_upload_to_item(repos_url, object) {
+        return (await fetch(`${repos_url}/can-upload/${object ? object : ""}`)).status === 200;
     }
 }
 

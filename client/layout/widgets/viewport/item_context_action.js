@@ -3,6 +3,7 @@ import {close_modal, open_modal} from "../../../common/widgets/modal.js";
 import {print_message} from "../../../common/widgets/message_box.js";
 import {update_repos_content} from "./repos_builder";
 import {PAGE_CONTEXT, permissions} from "../../../common/tools/utils";
+import {selector} from "../../../common/tools/selector";
 
 const edit_dir_hbs = require('./edit_directory.hbs')
 const edit_file_hbs = require('./edit_file.hbs')
@@ -15,11 +16,10 @@ async function spawn_item_context_action(item) {
         title: "Partager",
         action: async () => {
             let url;
-            if (item.is_directory) {
-                'TODO: make url available';//url = `${location.hostname}/repos/?repos=${.access_key}&directory=${item.absolute_path()}`;
-            } else {
-                'TODO: make url available';//url = `${location.hostname}/file/?file=${item.id}`;
-            }
+            if (item.is_regular_file)
+                url = `${location.host}${PAGE_CONTEXT.repos_path()}/file/${item.id}`;
+            else
+                url = `${location.host}${PAGE_CONTEXT.repos_path()}/tree/${item.id}`;
             await navigator.clipboard.writeText(url);
             print_message('info', 'Lien copié dans le presse - papier', url)
         },
@@ -30,14 +30,14 @@ async function spawn_item_context_action(item) {
         title: "Télécharger",
         action: () => {
             if (item.is_directory) {
-                console.error('NOT IMPLEMENTED YET');//window.open(`/archive/?repos=${.access_key}&directory=${item.absolute_path()}`, '_blank').focus();
+                console.error('NOT IMPLEMENTED YET');
             } else
-                console.error('NOT IMPLEMENTED YET');//window.open(`/file/?file=${item.id}`, '_blank').focus();
+                window.open(`${PAGE_CONTEXT.repos_path()}/file/${item.id}`, '_blank').focus();
         },
         image: '/images/icons/icons8-download-96.png'
     });
 
-    if (await permissions.can_user_edit_path(PAGE_CONTEXT.repos_path(), item.absolute_path())) {
+    if (await permissions.can_user_edit_item(selector.get_current_directory(), item.id)) {
         actions.push({
             title: "Modifier",
             action: () => {

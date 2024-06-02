@@ -41,7 +41,8 @@ async function get_common_data(req) {
     data.PAGE_CONTEXT = {
         connected_user: req.connected_user,
         display_user: req.display_user,
-        display_repos: req.display_repos
+        display_repos: req.display_repos,
+        request_path: req.request_path
     }
 
     if (req.connected_user) {

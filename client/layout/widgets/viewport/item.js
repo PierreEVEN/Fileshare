@@ -38,18 +38,18 @@ function open_this_item(div, file) {
         share.innerHTML = `<img src="/images/icons/icons8-url-96.png" alt="share">`
         share.classList.add('plus-button')
         share.onclick = async () => {
-            await navigator.clipboard.writeText(`${location.hostname}/file/?file=${file.id}`);
-            print_message('info', 'Lien copié dans le presse - papier', url)
+            await navigator.clipboard.writeText(`${location.host}${PAGE_CONTEXT.repos_path()}/file/${file.id}`);
+            print_message('info', 'Lien copié dans le presse - papier', await navigator.clipboard.readText())
         }
         action_buttons.append(share)
 
         const download = document.createElement('button');
         download.innerHTML = `<img src="/images/icons/icons8-download-96.png" alt="share">`
-        download.onclick = async () => window.open(`${PAGE_CONTEXT.repos_path()}/tree${file.absolute_path()}`, '_blank').focus();
+        download.onclick = async () => window.open(`${PAGE_CONTEXT.repos_path()}/file/${file.id}`, '_blank').focus();
         download.classList.add('plus-button')
         action_buttons.append(download)
 
-        if (file.absolute_path && await permissions.can_user_edit_path(PAGE_CONTEXT.repos_path(), file.absolute_path())) {
+        if (await permissions.can_user_edit_item(PAGE_CONTEXT.repos_path(), file.id)) {
             const edit_button = document.createElement('button');
             edit_button.innerHTML = `<img src="/images/icons/icons8-edit-96.png" alt="edit">`
             edit_button.onclick = async () => {

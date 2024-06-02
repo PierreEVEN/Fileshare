@@ -27,7 +27,7 @@ if (filesystem_upload) {
     }
 
     filesystem_upload.callback_file_uploaded = (file, file_id) => {
-        get_viewport_filesystem().add_file({
+        get_viewport_filesystem().add_object({
             name: file.name, mimetype: file.mimetype, size: file.size, id: file_id
         }, file.directory.absolute_path());
     }
