@@ -65,34 +65,17 @@ async function spawn_item_context_action(item) {
                 const confirm_button = document.createElement('button')
                 confirm_button.innerText = 'Oui';
                 confirm_button.onclick = async () => {
-                    if (item.is_file) {
-                        const result = await fetch(`/file/delete/?file=${item.id}`, {method: 'POST'});
-                        if (result.status === 200) {
-                            item.remove();
-                            print_message('info', `File removed`, `Successfully removed ${item.name}`);
-                            close_modal();
-                        } else if (result.status === 403) {
-                            window.location = `/auth/signin/`;
-                        } else {
-                            print_message('error', `Failed to remove ${item.name}`, result.status);
-                            update_repos_content();
-                            close_modal();
-                        }
-                    } else if (item.is_directory) {
-                        const result = await fetch(`/directory/delete/?directory=${item.id}`, {method: 'POST'});
-                        if (result.status === 200) {
-                            item.remove();
-                            print_message('info', `Directory removed`, `Successfully removed ${item.name}`);
-                            close_modal();
-                        } else if (result.status === 403) {
-                            window.location = `/auth/signin/`;
-                        } else {
-                            print_message('error', `Failed to remove ${item.name}`, result.status);
-                            update_repos_content();
-                            close_modal();
-                        }
-                    } else
-                        print_message('error', 'Not handled', 'null');
+                    const result = await fetch(`${PAGE_CONTEXT.repos_path()}/remove/${item.id}`, {method: 'POST'});
+                    if (result.status === 200) {
+                        print_message('info', `File removed`, `Successfully removed ${item.name}`);
+                        close_modal();
+                    } else if (result.status === 403) {
+                        window.location = `/auth/signin/`;
+                    } else {
+                        print_message('error', `Failed to remove ${item.name}`, result.status);
+                        update_repos_content();
+                        close_modal();
+                    }
                 }
                 div.append(confirm_button)
                 open_modal(div, '500px', '100px');

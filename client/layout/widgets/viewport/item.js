@@ -3,16 +3,33 @@ import * as handlebars from "handlebars";
 import {get_mime_icon_path} from "../../../common/tools/mime_utils";
 import {print_message} from "../../../common/widgets/message_box";
 import {close_modal, open_modal} from "../../../common/widgets/modal";
-import edit_dir_hbs from "./edit_directory.hbs";
 import edit_file_hbs from "./edit_file.hbs";
-import {update_repos_content} from "./repos_builder";
+import {select_next_element, select_previous_element, update_repos_content} from "./repos_builder";
 
 let opened_item_div = null;
+let overlay = null;
+let last_item = null;
 
 function open_this_item(div, file) {
+    if (last_item === file)
+        return;
+    last_item = file;
+    if ((document.fullScreenElement && document.fullScreenElement !== null) ||
+        (!document.mozFullScreen && !document.webkitIsFullScreen)) {
+        if (document.documentElement.requestFullScreen) {
+            document.documentElement.requestFullScreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+            document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.webkitRequestFullScreen) {
+            document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+        }
+    }
+
     import('../../../embed_viewers').then(async _ => {
         const ctx = {
             'close_item_plain': close_item_plain,
+            'show_previous_item': select_previous_element,
+            'show_next_item': select_next_element,
         };
         if (!opened_item_div) {
             opened_item_div = require('./item.hbs')({
@@ -31,6 +48,8 @@ function open_this_item(div, file) {
                 document.getElementsByClassName('typeicon')[0].src = get_mime_icon_path(file.mimetype);
             })
         }
+        overlay = document.getElementById('file-overlay');
+
         const action_buttons = document.getElementById('file-action-buttons');
         action_buttons.innerHTML = '';
 
@@ -58,7 +77,6 @@ function open_this_item(div, file) {
             }
             edit_button.classList.add('plus-button')
             action_buttons.append(edit_button)
-
             const delete_button = document.createElement('button');
             delete_button.innerHTML = `<img src="/images/icons/icons8-trash-52.png" alt="delete">`
             delete_button.classList.add('plus-button')
@@ -99,6 +117,69 @@ function open_this_item(div, file) {
     });
 }
 
+let hide_overlay_timeout = null;
+
+function show_overlay(time) {
+    if (!overlay)
+        return;
+    overlay.classList.add('overlay-displayed');
+    overlay.classList.remove('overlay-hidden');
+    if (hide_overlay_timeout)
+        clearTimeout(hide_overlay_timeout);
+    hide_overlay_timeout = setTimeout(() => {
+        if (!overlay)
+            return;
+        overlay.classList.remove('overlay-displayed');
+        overlay.classList.add('overlay-hidden');
+    }, time)
+}
+
+window.addEventListener('mousemove', _ => show_overlay(500));
+window.addEventListener('click', _ => show_overlay(2000));
+
+let touchstartX = 0
+let touchendX = 0
+let touchstartY = 0
+let touchendY = 0
+
+function checkDirection() {
+    let changed = false;
+    if (touchendY < touchstartY - window.screen.height / 4 || touchendY > touchstartY + window.screen.height / 4) {
+        close_item_plain();
+        changed = true;
+    } else {
+        if (touchendX < touchstartX - window.screen.width / 5) {
+            select_previous_element();
+            changed = true;
+        }
+        if (touchendX > touchstartX + window.screen.width / 5) {
+            select_next_element();
+            changed = true;
+        }
+    }
+    if (changed) {
+        touchstartX = touchendX;
+        touchstartY = touchendY;
+    }
+}
+
+document.addEventListener('touchstart', e => {
+    touchstartX = e.changedTouches[0].screenX
+    touchstartY = e.changedTouches[0].screenY
+})
+
+document.addEventListener('touchmove', e => {
+
+    touchendX = e.changedTouches[0].screenX
+    touchendY = e.changedTouches[0].screenY
+    if (e.changedTouches.length > 1) {
+        touchstartX = touchendX;
+        touchstartY = touchendY;
+        return;
+    }
+    checkDirection()
+})
+
 window.addEventListener('resize', _ => {
     if (opened_item_div) {
         opened_item_div.style.width = window.innerWidth + 'px';
@@ -107,9 +188,20 @@ window.addEventListener('resize', _ => {
 })
 
 function close_item_plain() {
+    last_item = null;
     if (opened_item_div)
         opened_item_div.remove();
     opened_item_div = null;
+
+    if (!(document.fullScreenElement || (!document.mozFullScreen && !document.webkitIsFullScreen))) {
+        if (document.cancelFullScreen) {
+            document.cancelFullScreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.webkitCancelFullScreen) {
+            document.webkitCancelFullScreen();
+        }
+    }
 }
 
 function is_opened() {

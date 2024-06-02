@@ -223,7 +223,8 @@ class FilesystemUpload {
             this._request.setRequestHeader('content-size', this.file_in_process.size);
             this._request.setRequestHeader('content-timestamp', this.file_in_process.timestamp);
             this._request.setRequestHeader('content-mimetype', this.file_in_process.mimetype);
-            const absolute_path = (selector.get_current_directory().absolute_path() + this.file_in_process.directory.absolute_path()).replaceAll('//', '/');
+            console.log("PATH : " + selector.filesystem.make_string_path_to_object(selector.get_current_directory() + "   +   " +  (this.file_in_process.directory.absolute_path()).replaceAll('//', '/')));
+            const absolute_path = (selector.filesystem.make_string_path_to_object(selector.get_current_directory()) + this.file_in_process.directory.absolute_path().replaceAll('//', '/'));
             this._request.setRequestHeader('content-path', encodeURIComponent(absolute_path));
             if (this.file_in_process.description)
                 this._request.setRequestHeader('content-description', this.file_in_process.description ? encodeURIComponent(this.file_in_process.description) : '');

@@ -91,7 +91,7 @@ class Permissions {
      * @return {Promise<boolean>}
      */
     async can_user_upload_to_repos(repos_url) {
-        return (await fetch(`${repos_url}/can-upload`)).status === 200;
+        return (await fetch(`${repos_url}/can-upload/`)).status === 200;
     }
 
     /**

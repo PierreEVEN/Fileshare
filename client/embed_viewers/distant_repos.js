@@ -12,7 +12,7 @@ function get(item) {
                         <source src="${url}" type="${item.mimetype}">
                     </video>`
         case 'audio':
-            return `<audio controls="true" src="/file/?file=${item.id}"></audio>`
+            return `<audio controls="true" src="${PAGE_CONTEXT.repos_path()}/file/${item.id}"></audio>`
         case 'application':
             switch (mimetype[1]) {
                 case 'x-pdf':

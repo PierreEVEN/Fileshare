@@ -98,8 +98,18 @@ router.get("/file/:id", async (req, res) => {
     }
 })
 
+router.get("/can-upload/", async (req, res) => {
+    if (req.connected_user && req.display_repos) {
+        if (await permissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
+            return res.sendStatus(200)
+    }
+    res.sendStatus(204);
+});
+
 router.get("/can-upload/:id", async (req, res) => {
     if (req.params['id']) {
+        if (!Number.isInteger(req.params['id']))
+            return error_404(req, res);
         const directory = await Item.from_id(req.params['id']);
         if (directory) {
             if (req.connected_user && req.display_repos) {
@@ -145,22 +155,29 @@ router.post('/update/', async function (req, res, _) {
     if (!req.display_repos.name)
         return error_403(req, res, 'Url de dépot invalide');
     req.display_repos.description = req.body.description;
-    if (req.display_repos.status !== req.body.status) {
-        if (req.display_repos.status === 'public' || req.body.status === 'public')
-            public_data().mark_dirty();
-        req.display_repos.status = req.body.status;
-        await events.on_update_repos(req.display_repos);
-    }
-
     req.display_repos.display_name = req.body.display_name;
-
+    req.display_repos.status = req.body.status;
     req.display_repos.max_file_size = req.body.max_file_size;
     req.display_repos.visitor_file_lifetime = req.body.guest_file_lifetime;
     req.display_repos.allow_visitor_upload = req.body.allow_visitor_upload === 'on';
 
-    req.display_repos.push();
+    await req.display_repos.push();
     logger.warn(`${req.log_name} updated repos ${req.display_repos.access_key}`)
     return res.redirect(`/${req.display_user.name}/${req.display_repos.name}/`);
+});
+
+router.post('/remove/:id', async (req, res) => {
+    if (require_connection(req, res))
+        return;
+
+    const item = await Item.from_id(req.params['id']);
+
+    if (!item || !await permissions.can_user_edit_item(item, req.connected_user.id))
+        return error_404(req, res, "forbidden");
+
+    await item.delete();
+    logger.warn(`${req.log_name} deleted file ${item.name}:${item.id}`);
+    res.sendStatus(200);
 });
 
 router.post('/delete/', async (req, res) => {

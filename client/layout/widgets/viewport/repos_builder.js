@@ -12,6 +12,7 @@ const file_hbs = require('./file.hbs');
 
 const filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.display_name) : null;
 const _path_builder = new PathBuilder(filesystem);
+selector.filesystem = filesystem;
 const viewport_container = document.getElementById('file-list')
 
 /**
@@ -183,25 +184,8 @@ selector.bind_on_select_item((item, should_select) => {
     }
 
     if (is_opened() && item)
-        open_this_item(null, item);
+        open_this_item(entry_widgets.get(selector.last_selected_item), filesystem.get_object_data(selector.last_selected_item))
 })
-
-function select_previous_element(elements) {
-    if (!selector.get_selected_item())
-        selector.set_selected_item(selector.get_hover_item())
-
-    let next = false;
-    for (const item of elements) {
-        if (next) {
-            selector.set_selected_item(item);
-            return;
-        }
-        if (item === selector.get_selected_item())
-            next = true;
-    }
-    if (elements.length > 0)
-        selector.set_selected_item(elements[0]);
-}
 
 /**
  * @param object {string}
@@ -225,13 +209,13 @@ function get_object_before(object) {
     return null;
 }
 
-window.addEventListener('navigate', function (event, data) {
-    var direction = data.state.direction;
-    console.log(direction)
-    if (direction === 'back') {
-        console.log("HAHA")
-    }
-})
+function select_previous_element() {
+    selector.select_item(get_object_before(selector.last_selected_item), event.shiftKey, event.ctrlKey);
+}
+
+function select_next_element() {
+    selector.select_item(get_object_after(selector.last_selected_item), event.shiftKey, event.ctrlKey);
+}
 
 document.addEventListener('keydown', (event) => {
     if ((event.key === 'Backspace' || event.key === 'Escape')) {
@@ -246,14 +230,10 @@ document.addEventListener('keydown', (event) => {
         }
     }
     if (event.key === 'ArrowRight') {
-        selector.select_item(get_object_after(selector.last_selected_item), event.shiftKey, event.ctrlKey);
-        if (is_opened())
-            open_this_item(entry_widgets.get(selector.last_selected_item), filesystem.get_object_data(selector.last_selected_item))
+        select_next_element();
     }
     if (event.key === 'ArrowLeft') {
-        selector.select_item(get_object_before(selector.last_selected_item), event.shiftKey, event.ctrlKey);
-        if (is_opened())
-            open_this_item(entry_widgets.get(selector.last_selected_item), filesystem.get_object_data(selector.last_selected_item))
+        select_previous_element();
     }
     if (event.key === 'Enter') {
         if (!selector.last_selected_item || selector.get_hover_item())
@@ -283,4 +263,4 @@ function get_viewport_filesystem() {
 }
 
 update_repos_content();
-export {get_viewport_filesystem, update_repos_content}
+export {get_viewport_filesystem, update_repos_content, select_previous_element, select_next_element}

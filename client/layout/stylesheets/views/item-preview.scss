@@ -61,6 +61,7 @@ document-code {
 /* ############## ITEM PLAIN ################ */
 
 .item-plain {
+    flex-direction: column;
     overflow: hidden;
     position: absolute;
     background-color: rgba(0,0,0,0);
@@ -78,8 +79,9 @@ document-code {
         object-fit: cover;
     }
     audio {
-        width: 98%;
+        width: 75%;
         height: 50px;
+        z-index: 100;
     }
     .item-large {
         width: 100%;
@@ -87,6 +89,67 @@ document-code {
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
+    }
+
+    .cancel-button {
+        border-radius: 10px;
+        width: 50px;
+        margin: 5px;
+        right: 0;
+        min-width: auto;
+        position: absolute;
+        top: 0;
+    }
+
+    #file-overlay {
+        position: absolute;
+        display: flex;
+        transition-duration: 0.5s;
+        height: 100%;
+        width: 100%;
+
+        pointer-events: none;
+        button {
+            pointer-events: auto;
+        }
+
+        .show-next-item {
+            font-size: 3vh;
+            position: absolute;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(to left, #000000a8, #00000000);
+            padding-left: 80px;
+            border: none;
+            transition-duration: 0.25s;
+        }
+
+        .show-next-item:hover {
+            padding-left: 100px;
+            background: linear-gradient(to left, rgba(14, 14, 14, 0.66), #00000000);
+        }
+
+        .show-previous-item {
+            font-size: 3vh;
+            position: absolute;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(to right, #000000a8, #00000000);
+            padding-right: 80px;
+            border: none;
+            transition-duration: 0.25s;
+        }
+        .show-previous-item:hover {
+            padding-right: 100px;
+            background: linear-gradient(to right, rgba(14, 14, 14, 0.66), #00000000);
+        }
+    }
+
+    .overlay-hidden {
+        opacity: 0;
+    }
+    .overlay-displayed {
+        opacity: 100%;
     }
 }
 
@@ -96,29 +159,32 @@ document-code {
 }
 
 .details-panel {
-    width: 400px;
-    min-width: 400px;
+    width: 100%;
+    position: absolute;
     overflow: auto;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    bottom: 0;
 
     .head {
-        background-color: $foreground_1;
-
-        h1 {
-            margin: 10px 0;
-        }
+        background: linear-gradient(rgba(0,0,0,0.0), rgba(0,0,0,1));
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        padding-top: 10vh;
+        align-items: center;
     }
     .stats {
         display: flex;
         flex-direction: row;
-        background-color: $foreground_1;
         padding: 0 10px;
-
+        text-wrap: nowrap;
+        align-items: center;
 
         .typeicon {
-            width: 20px;
+            width: 40px;
             object-fit: contain;
+            opacity: 50%;
         }
 
         :nth-child(2) {
@@ -126,9 +192,9 @@ document-code {
             text-align: initial;
         }
         p {
-            margin: 10px 0 10px 0;
-            font-size: 15px;
+            margin: 20px 0 20px 0;
             width: auto;
+            font-size: 0.5em;
         }
     }
 
@@ -139,6 +205,7 @@ document-code {
     }
     p, h1 {
         width: 100%;
+        font-size: 1.5em;
         text-align: center;
         word-break: break-word;
     }
@@ -147,13 +214,23 @@ document-code {
 #file-action-buttons {
     display: flex;
     flex-direction: row;
+    top: 0;
+    position: absolute;
+    background: linear-gradient(rgba(0,0,0,1), rgba(0,0,0,0));
+    padding-bottom: 10vh;
+    width: 100%;
 
     img {
-        height: 20px;
+        width: 50%;
     }
     .plus-button {
-        width: 100%;
         border-radius: 10px;
+        width: 50px;
+        margin: 5px;
+    }
+
+    .spacer {
+        flex-grow: 1;
     }
 }
 
@@ -168,18 +245,24 @@ document-code {
 }
 
 @media (orientation:portrait) {
-    .item-plain {
+    #file-action-buttons {
         flex-direction: column;
     }
 
     .details-panel {
-        width: 100%;
-        max-height: 30%;
-        min-height: 100px;
-    }
+        .head {
+            padding-bottom: 50px;
+        }
 
-    .item-plain img {
-        width: 100%;
-        height: auto;
+        h1 {
+            font-size: 1em;
+        }
+
+        .stats {
+         p {
+
+             font-size: 0.5em;
+         }
+        }
     }
 }

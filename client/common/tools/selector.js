@@ -23,6 +23,11 @@ class Selector {
          * @type {callback_directory_changed[]}
          */
         this.changed_dir_callbacks = [];
+
+        /**
+         * @type {Filesystem}
+         */
+        this.filesystem = null;
     }
 
     set_hover_item(item) {

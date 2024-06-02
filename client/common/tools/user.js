@@ -119,7 +119,6 @@ class User {
                 cookies.set("authtoken", this._authtoken, this._authtoken_exp)
             else
                 cookies.set("authtoken", this._authtoken, new Date().getTime() + 36000000)
-        console.log(this._authtoken)
         if (this._authtoken_exp)
             cookies.set("authtoken-exp", this._authtoken_exp)
         cookies.save();

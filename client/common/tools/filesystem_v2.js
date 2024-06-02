@@ -17,7 +17,7 @@ class FilesystemObject {
         Object.description = decodeURIComponent(server_data.description);
         Object.parent_item = server_data.parent_item;
         if (Object.is_regular_file) {
-            Object.size = server_data.size;
+            Object.size = Number(server_data.size);
             Object.mimetype = decodeURIComponent(server_data.mimetype);
             Object.timestamp = server_data.timestamp;
         }
@@ -118,10 +118,19 @@ class ObjectInternalMetadata {
         this.children = new Set();
 
         /**
-         *
          * @type {Map<number, ObjectListener>}
          */
         this.listeners = new Map();
+
+        /**
+         * @type {number}
+         */
+        this.content_size = 0;
+
+        /**
+         * @type {number}
+         */
+        this.content_count = 0;
     }
 }
 
@@ -143,7 +152,7 @@ class Filesystem {
         this._content = new Map();
 
         /**
-         * @type {Map<string|null, ObjectInternalMetadata>}
+         * @type {Map<string, ObjectInternalMetadata>}
          * @private
          */
         this._object_internal_metadata = new Map();
@@ -168,26 +177,54 @@ class Filesystem {
     }
 
     /**
-     * @param object_id {FilesystemObject}
+     * @param object {FilesystemObject}
      */
-    add_object(object_id) {
-        console.assert(object_id.id != null);
-        this._content.set(object_id.id, object_id);
-        this._roots.add(object_id.id);
+    add_object(object) {
+        console.assert(object.id != null);
+        this._content.set(object.id, object);
+        this._roots.add(object.id);
 
-        if (!this._object_internal_metadata.has(object_id.id))
-            this._object_internal_metadata.set(object_id.id, new ObjectInternalMetadata());
-
-        if (object_id.parent_item) {
-            let found_data = this._object_internal_metadata.get(object_id.parent_item);
-            if (!found_data) {
-                found_data = new ObjectInternalMetadata();
-                this._object_internal_metadata.set(object_id.parent_item, found_data);
-            }
-            found_data.children.add(object_id.id);
+        let object_metadata = this._object_internal_metadata.get(object.id)
+        if (!object_metadata) {
+            object_metadata = new ObjectInternalMetadata();
+            this._object_internal_metadata.set(object.id, object_metadata);
         }
-        else {
-            this._root_meta_data.children.add(object_id.id);
+
+        if (object.is_regular_file) {
+            object_metadata.content_count = 1;
+            object_metadata.content_size = object.size;
+        }
+
+        if (object.parent_item) {
+            // Update parent sizes recursively
+            let parent_object = object;
+            do {
+                parent_object = object.parent_item ? this._content.get(parent_object.parent_item) : null;
+                if (parent_object) {
+                    const parent_object_metadata = this._object_internal_metadata.get(parent_object.id);
+                    if (parent_object_metadata) {
+                        parent_object_metadata.content_count += object_metadata.content_count;
+                        parent_object_metadata.content_size += object_metadata.content_size;
+                    }
+                }
+                else {
+                    this._root_meta_data.content_count += object_metadata.content_count;
+                    this._root_meta_data.content_size += object_metadata.content_size;
+                }
+            } while (parent_object);
+
+            let parent_metadata = this._object_internal_metadata.get(object.parent_item);
+            if (!parent_metadata) {
+                parent_metadata = new ObjectInternalMetadata();
+                parent_metadata.content_size = object_metadata.content_size;
+                parent_metadata.content_count = object_metadata.content_count;
+                this._object_internal_metadata.set(object.parent_item, parent_metadata);
+            }
+            parent_metadata.children.add(object.id);
+        } else {
+            this._root_meta_data.children.add(object.id);
+            this._root_meta_data.content_size += object_metadata.content_size;
+            this._root_meta_data.content_count += object_metadata.content_count;
         }
         this._root_dirty = true;
     }
@@ -306,6 +343,33 @@ class Filesystem {
             data = this.get_object_data(object);
         }
         return result.reverse();
+    }
+
+    /**
+     * @param object {string}
+     * @return {string}
+     */
+    make_string_path_to_object(object) {
+        let result = "/";
+        let data = this.get_object_data(object);
+        while (data) {
+            result = "/" + data.name + result;
+            object = data.parent_item;
+            data = this.get_object_data(object);
+        }
+        return result;
+    }
+
+    /**
+     * @param object {string}
+     * @return {{size: null, count: null}|{size: number, count: number}}
+     */
+    get_object_content_stats(object) {
+        const metadata = object ? this._object_internal_metadata.get(object) : this._root_meta_data;
+        if (metadata) {
+            return {count: metadata.content_count, size: metadata.content_size}
+        }
+        return {count: null, size: null};
     }
 }
 

@@ -27,7 +27,8 @@ class PathBuilder {
             tool_buttons.innerHTML = '';
 
             const dir_size = document.createElement('p');
-            dir_size.innerText = "TODO : fix file size"; //`${humanFileSize(dir_data.content_size)} / ${dir_data.content_files} fichiers`
+            const stats = this.filesystem.get_object_content_stats(dir_id);
+            dir_size.innerText = `${humanFileSize(stats.size)} / ${stats.count} fichiers`
             tool_buttons.append(dir_size)
 
             if ((await permissions.can_user_upload_to_item(PAGE_CONTEXT.repos_path(), dir_id)) || await permissions.can_user_upload_to_repos(PAGE_CONTEXT.repos_path())) {
