@@ -1,4 +1,8 @@
 const mime = require('mime');
+const {PAGE_CONTEXT} = require("./utils");
+const {LOCAL_USER} = require("./user");
+const {parse_fetch_result} = require("../widgets/message_box");
+const {selector} = require("./selector");
 
 class FilesystemObject {
 
@@ -7,14 +11,14 @@ class FilesystemObject {
      * @return {FilesystemObject}
      * @constructor
      */
-    static FromServer(server_data) {
+    static FromServerData(server_data) {
         const Object = new FilesystemObject();
         Object.id = server_data.id;
         Object.repos = server_data.repos;
         Object.owner = server_data.owner;
         Object.name = decodeURIComponent(server_data.name);
         Object.is_regular_file = server_data.is_regular_file;
-        Object.description = decodeURIComponent(server_data.description);
+        Object.description = server_data.description ? decodeURIComponent(server_data.description) : '';
         Object.parent_item = server_data.parent_item;
         if (Object.is_regular_file) {
             Object.size = Number(server_data.size);
@@ -22,6 +26,26 @@ class FilesystemObject {
             Object.timestamp = server_data.timestamp;
         }
         return Object;
+    }
+
+    /**
+     * @param object_id {string}
+     * @return {Promise<FilesystemObject>}
+     * @constructor
+     */
+    static async FetchFromServer(object_id) {
+        return await new Promise((resolve) => {
+            fetch(`${PAGE_CONTEXT.repos_path()}/content/${object_id}`, {
+                headers: {
+                    'content-authtoken': LOCAL_USER.get_token(),
+                    'accept': 'application/json',
+                },
+            })
+                .then(async (response) => await parse_fetch_result(response))
+                .then((json) => {
+                    resolve(this.FromServerData(json));
+                });
+        });
     }
 
     constructor() {
@@ -74,6 +98,11 @@ class FilesystemObject {
          * @type {number|null}
          */
         this.timestamp = null;
+
+        /**
+         * @type {Filesystem}
+         */
+        this.filesystem = null;
     }
 }
 
@@ -88,6 +117,18 @@ class ObjectListener {
          * @type {callback_object_added}
          */
         this.on_add_object = null;
+
+        /**
+         * Called when an object have been modified
+         * @type {callback_object_added}
+         */
+        this.on_update_object = null;
+
+        /**
+         * Called when an object have been removed
+         * @type {callback_object_added}
+         */
+        this.on_remove_object = null;
 
         /**
          * @type {number}
@@ -181,6 +222,7 @@ class Filesystem {
      */
     add_object(object) {
         console.assert(object.id != null);
+        object.filesystem = this;
         this._content.set(object.id, object);
         this._roots.add(object.id);
 
@@ -206,8 +248,7 @@ class Filesystem {
                         parent_object_metadata.content_count += object_metadata.content_count;
                         parent_object_metadata.content_size += object_metadata.content_size;
                     }
-                }
-                else {
+                } else {
                     this._root_meta_data.content_count += object_metadata.content_count;
                     this._root_meta_data.content_size += object_metadata.content_size;
                 }
@@ -221,12 +262,44 @@ class Filesystem {
                 this._object_internal_metadata.set(object.parent_item, parent_metadata);
             }
             parent_metadata.children.add(object.id);
+            for (const [_, listener] of parent_metadata.listeners)
+                listener.on_add_object(object.id);
         } else {
             this._root_meta_data.children.add(object.id);
             this._root_meta_data.content_size += object_metadata.content_size;
             this._root_meta_data.content_count += object_metadata.content_count;
+            for (const [_, listener] of this._root_meta_data.listeners)
+                listener.on_add_object(object.id);
         }
         this._root_dirty = true;
+    }
+
+    /**
+     * @param object_id {string}
+     */
+    remove_object(object_id) {
+
+        const data = this._content.get(object_id);
+        if (data) {
+
+            const metadata = this._object_internal_metadata.get(object_id);
+            if (metadata) {
+                for (const child of metadata.children)
+                    this.remove_object(child);
+            }
+
+            const parent_metadata = data.parent_item ? this._object_internal_metadata.get(data.parent_item) : this._root_meta_data;
+            if (parent_metadata) {
+                for (const [id, listener] of parent_metadata.listeners)
+                    listener.on_remove_object(object_id)
+            }
+
+            this._object_internal_metadata.delete(object_id);
+            this._content.delete(object_id);
+            if (this._roots.has(object_id))
+                this._roots.delete(object_id);
+            this._root_dirty = true;
+        }
     }
 
     /**

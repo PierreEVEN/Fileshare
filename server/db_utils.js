@@ -22,8 +22,8 @@ function as_number(source) {
 function as_data_string(source) {
     if (!source)
         return '';
-    const data = encodeURIComponent(source.toString());
-    assert(/^[A-Za-z0-9-_.!~*'()%]*$/.test(data))
+    const data = source.toString();
+    assert(/^[A-Za-z0-9-_.!~*'()%]*$/.test(data), data)
     return data;
 }
 

@@ -1,11 +1,12 @@
 import {spawn_item_context_action} from "./item_context_action.js";
 import {parse_fetch_result} from "../../../common/widgets/message_box.js";
-import {close_item_plain, is_opened, open_this_item} from "./item.js";
+import {close_item_plain, is_item_preview_open, open_item_preview} from "./item.js";
 import {Filesystem, FilesystemObject} from "../../../common/tools/filesystem_v2.js";
 import {selector} from "../../../common/tools/selector.js";
 import {PAGE_CONTEXT} from "../../../common/tools/utils";
 import {LOCAL_USER} from "../../../common/tools/user";
 import {PathBuilder} from "./path_builder";
+import {close_modal, is_modal_open} from "../../../common/widgets/modal";
 
 const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
@@ -44,7 +45,7 @@ function update_repos_content() {
             filesystem.clear();
 
             for (const item of json)
-                filesystem.add_object(FilesystemObject.FromServer(item));
+                filesystem.add_object(FilesystemObject.FromServerData(item));
 
             selector.set_current_dir(filesystem.get_object_from_path(PAGE_CONTEXT.request_path));
         });
@@ -89,12 +90,12 @@ function add_file_to_viewport(file) {
             if (event.target.classList.contains('open-context-button'))
                 return;
 
-            open_this_item(file_div, file);
+            open_item_preview(file_div, file);
             selector.select_item(file.id, event.shiftKey, event.ctrlKey, true);
         },
         clicked: event => {
             if (window.matchMedia("(pointer: coarse)").matches) {
-                open_this_item(file_div, file);
+                open_item_preview(file_div, file);
                 selector.select_item(file.id, event.shiftKey, event.ctrlKey, true);
             } else {
                 selector.select_item(file.id, event.shiftKey, event.ctrlKey);
@@ -148,6 +149,25 @@ function render_directory(directory) {
         else
             add_directory_to_viewport(object);
     };
+
+    current_directory_listener.on_remove_object = (object_id) => {
+        let widget = entry_widgets.get(object_id);
+        if (widget)
+            widget.remove();
+    };
+
+    current_directory_listener.on_update_object = (object_id) => {
+        const widget = entry_widgets.get(object_id);
+        if (widget)
+            widget.remove();
+        const new_data = filesystem.get_object_data(object_id);
+        if (new_data) {
+            if (new_data.is_regular_file)
+                add_file_to_viewport(new_data);
+            else
+                add_directory_to_viewport(new_data);
+        }
+    };
 }
 
 selector.on_changed_dir((new_dir, _) => {
@@ -183,8 +203,8 @@ selector.bind_on_select_item((item, should_select) => {
         }
     }
 
-    if (is_opened() && item)
-        open_this_item(entry_widgets.get(selector.last_selected_item), filesystem.get_object_data(selector.last_selected_item))
+    if (is_item_preview_open() && item)
+        open_item_preview(entry_widgets.get(selector.last_selected_item), filesystem.get_object_data(selector.last_selected_item))
 })
 
 /**
@@ -219,7 +239,12 @@ function select_next_element() {
 
 document.addEventListener('keydown', (event) => {
     if ((event.key === 'Backspace' || event.key === 'Escape')) {
-        if (is_opened())
+        if (is_modal_open()) {
+            if (event.key === 'Escape')
+                close_modal();
+            return;
+        }
+        if (is_item_preview_open())
             close_item_plain()
         else {
             const current_data = filesystem.get_object_data(selector.get_current_directory());
@@ -230,12 +255,18 @@ document.addEventListener('keydown', (event) => {
         }
     }
     if (event.key === 'ArrowRight') {
+        if (is_modal_open())
+            return;
         select_next_element();
     }
     if (event.key === 'ArrowLeft') {
+        if (is_modal_open())
+            return;
         select_previous_element();
     }
     if (event.key === 'Enter') {
+        if (is_modal_open())
+            return;
         if (!selector.last_selected_item || selector.get_hover_item())
             selector.select_item(selector.get_hover_item(), event.shiftKey, event.ctrlKey, true);
 
@@ -243,7 +274,7 @@ document.addEventListener('keydown', (event) => {
 
         if (current_data) {
             if (current_data.is_regular_file)
-                open_this_item(entry_widgets.get(current_data.id), current_data);
+                open_item_preview(entry_widgets.get(current_data.id), current_data);
             else
                 selector.set_current_dir(current_data.id);
         }

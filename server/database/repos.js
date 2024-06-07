@@ -13,9 +13,9 @@ class Repos {
      */
     constructor(data) {
         this.id = data.id;
-        this.description = data.description ? decodeURIComponent(data.description) : null;
-        this.name = data.name ? decodeURIComponent(data.name) : null;
-        this.display_name = data.display_name ? decodeURIComponent(data.display_name) : null;
+        this.description = data.description;
+        this.name = data.name;
+        this.display_name = data.display_name;
         this.owner = data.owner;
         this.status = data.status;
         this.max_file_size = data.max_file_size || 200 * 1024 * 1024;

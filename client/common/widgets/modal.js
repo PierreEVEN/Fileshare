@@ -40,9 +40,9 @@ function open_modal(content, custom_width = null, custom_height = null, modal_cl
     return modal_content;
 }
 
-function is_opened() {
+function is_modal_open() {
     return modal.classList.contains('show')
 }
 
-window.modal = {open_modal, close_modal, is_opened}
-export {open_modal, close_modal, is_opened}
+window.modal = {open_modal, close_modal, is_opened: is_modal_open}
+export {open_modal, close_modal, is_modal_open}

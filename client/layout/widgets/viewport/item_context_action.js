@@ -41,10 +41,10 @@ async function spawn_item_context_action(item) {
         actions.push({
             title: "Modifier",
             action: () => {
-                if (item.is_directory)
-                    open_modal(edit_dir_hbs(item));
+                if (item.is_regular_file)
+                    open_modal(edit_file_hbs({path:`${PAGE_CONTEXT.repos_path()}/update/${item.id}`, item:item}));
                 else
-                    open_modal(edit_file_hbs(item));
+                    open_modal(edit_dir_hbs({path:`${PAGE_CONTEXT.repos_path()}/update/${item.id}`, item:item}));
             },
             image: '/images/icons/icons8-edit-96.png'
         });
@@ -67,6 +67,7 @@ async function spawn_item_context_action(item) {
                 confirm_button.onclick = async () => {
                     const result = await fetch(`${PAGE_CONTEXT.repos_path()}/remove/${item.id}`, {method: 'POST'});
                     if (result.status === 200) {
+                        item.filesystem.remove_object(item.id);
                         print_message('info', `File removed`, `Successfully removed ${item.name}`);
                         close_modal();
                     } else if (result.status === 403) {

@@ -40,11 +40,12 @@ router.post('/create-repos', async (req, res) => {
         return error_403(req, res, "Ce nom n'est pas valide");
 
     try {
+        console.log(req.body.name, encodeURIComponent(req.body.name), encodeURI(req.body.name))
         const repos = await new Repos({
-            name: name,
+            name: encodeURIComponent(name),
             owner: req.connected_user.id,
             status: status,
-            display_name: req.body.name
+            display_name: encodeURIComponent(req.body.name)
         }).push();
         logger.warn(`${req.log_name} created a new ${status} repos named ${name}`)
 

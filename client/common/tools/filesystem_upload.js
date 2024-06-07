@@ -75,7 +75,7 @@ class FilesystemUpload {
                 if (this_ref._request.status === 201)
                     this_ref._receive_file_id(this_ref._request.response);
                 else if (this_ref._request.status === 202)
-                    this_ref._receive_file_complete(this_ref._request.response === '' ? null : this_ref._request.response);
+                    this_ref._receive_file_complete(this_ref._request.response === '' ? null : JSON.parse(this_ref._request.response));
                 else
                     this_ref._received_error(this_ref._request.status, this_ref._request.response);
             }
@@ -223,7 +223,6 @@ class FilesystemUpload {
             this._request.setRequestHeader('content-size', this.file_in_process.size);
             this._request.setRequestHeader('content-timestamp', this.file_in_process.timestamp);
             this._request.setRequestHeader('content-mimetype', this.file_in_process.mimetype);
-            console.log("PATH : " + selector.filesystem.make_string_path_to_object(selector.get_current_directory() + "   +   " +  (this.file_in_process.directory.absolute_path()).replaceAll('//', '/')));
             const absolute_path = (selector.filesystem.make_string_path_to_object(selector.get_current_directory()) + this.file_in_process.directory.absolute_path().replaceAll('//', '/'));
             this._request.setRequestHeader('content-path', encodeURIComponent(absolute_path));
             if (this.file_in_process.description)

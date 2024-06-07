@@ -1,4 +1,4 @@
-import {close_modal, is_opened, open_modal} from '../../../common/widgets/modal.js'
+import {close_modal, is_modal_open, open_modal} from '../../../common/widgets/modal.js'
 import {PAGE_CONTEXT, humanFileSize, seconds_to_str} from "../../../common/tools/utils.js";
 import {print_message} from "../../../common/widgets/message_box.js";
 import {Filesystem} from "../../../common/tools/filesystem.js";
@@ -8,6 +8,7 @@ import upload_hbs from "./upload_form.hbs";
 import file_hbs from "./file.hbs";
 import directory_hbs from "./directory.hbs";
 import {spawn_context_action} from "../../../common/widgets/context_action";
+import {FilesystemObject} from "../../../common/tools/filesystem_v2";
 
 const url = `${PAGE_CONTEXT.repos_path()}/send/`;
 let filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.name) : null;
@@ -26,15 +27,14 @@ if (filesystem_upload) {
         print_message('info', 'Tache terminée', 'Mise en ligne des fichiers terminée avec succès.')
     }
 
-    filesystem_upload.callback_file_uploaded = (file, file_id) => {
-        get_viewport_filesystem().add_object({
-            name: file.name, mimetype: file.mimetype, size: file.size, id: file_id
-        }, file.directory.absolute_path());
+    filesystem_upload.callback_file_uploaded = async (_, context) => {
+        const file = await FilesystemObject.FetchFromServer(context.file_id);
+        get_viewport_filesystem().add_object(file);
     }
 }
 
 function add_file_to_upload(file, path) {
-    if (!is_opened()) open_upload_modal_for_files();
+    if (!is_modal_open()) open_upload_modal_for_files();
     filesystem.add_file(file, path ? path : '/');
 }
 

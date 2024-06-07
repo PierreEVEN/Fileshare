@@ -13,7 +13,7 @@ const {
 const perms = require("../../../permissions");
 const permissions = require("../../../permissions");
 const {logger} = require("../../../logger");
-const {display_name_to_url} = require("../../../db_utils");
+const {display_name_to_url, as_data_string} = require("../../../db_utils");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
@@ -60,15 +60,29 @@ router.get("/tree/*", async (req, res) => {
     });
 })
 
-router.get("/content/*", async (req, res) => {
-    const request_path = req.url.substring(8);
-    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : ${request_path}`)
+router.get("/content/", async (req, res) => {
+    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name}`)
 
     // Path is empty or is equal to '/' => return a json with the whole hierarchy
-    if (request_path.length <= 1 || request_path === '/')
-        return res.send(await req.display_repos.get_content());
+    return res.send(await req.display_repos.get_content());
+})
 
-    return error_404(req, res, `TODO : implement path fetch : ${request_path}`);
+router.get("/content/:id", async (req, res) => {
+    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name}`)
+
+    // Search the requested file or dir
+    const item = await Item.from_id(req.params['id']);
+    if (!item)
+        return error_404(req, res, `Le fichier ou dossier ${req.params['id']} n'existe pas`);
+
+    if (item.is_regular_file) {
+        await item.as_file();
+    }
+    else
+        await item.as_directory();
+
+    // Path is empty or is equal to '/' => return a json with the whole hierarchy
+    return res.send(item);
 })
 
 router.get("/file/:id", async (req, res) => {
@@ -144,6 +158,29 @@ router.get("/can-edit/:id", async (req, res) => {
     res.sendStatus(204);
 })
 
+router.post('/update/:id', async function (req, res, _) {
+
+    const item = await Item.from_id(req.params['id']);
+
+
+    if (!await perms.can_user_edit_item(item, req.connected_user.id))
+        return error_403(req, res, 'Accès non autorisé');
+
+    if (item.is_regular_file) {
+        await item.as_file()
+    }
+    else {
+        await item.as_directory()
+        item.open_upload = req.body.open_upload;
+    }
+    item.name = encodeURIComponent(req.body.name);
+    item.description = encodeURIComponent(req.body.description);
+    await item.push();
+
+    logger.warn(`${req.log_name} updated file ${item.id}`);
+    return res.redirect(`/${req.display_user.name}/${req.display_repos.name}/`);
+});
+
 router.post('/update/', async function (req, res, _) {
     if (require_connection(req, res))
         return;
@@ -151,11 +188,11 @@ router.post('/update/', async function (req, res, _) {
     if (!await perms.can_user_edit_repos(req.display_repos, req.connected_user.id))
         return error_403(req, res, 'Vous n\'avez pas les droits pour modifier ce dépot');
 
-    req.display_repos.name = display_name_to_url(req.body.name);
+    req.display_repos.name = encodeURIComponent(display_name_to_url(req.body.name));
     if (!req.display_repos.name)
         return error_403(req, res, 'Url de dépot invalide');
-    req.display_repos.description = req.body.description;
-    req.display_repos.display_name = req.body.display_name;
+    req.display_repos.description = encodeURIComponent(req.body.description);
+    req.display_repos.display_name = encodeURIComponent(req.body.display_name);
     req.display_repos.status = req.body.status;
     req.display_repos.max_file_size = req.body.max_file_size;
     req.display_repos.visitor_file_lifetime = req.body.guest_file_lifetime;
@@ -176,6 +213,7 @@ router.post('/remove/:id', async (req, res) => {
         return error_404(req, res, "forbidden");
 
     await item.delete();
+
     logger.warn(`${req.log_name} deleted file ${item.name}:${item.id}`);
     res.sendStatus(200);
 });

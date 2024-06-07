@@ -13,9 +13,9 @@ class Item {
         this.id = data.id;
         this.repos = data.repos;
         this.owner = data.owner;
-        this.name = data.name ? decodeURIComponent(data.name) : null;
+        this.name = data.name;
         this.is_regular_file = data.is_regular_file;
-        this.description = data.description ? decodeURIComponent(data.description) : null;
+        this.description = data.description;
         this.parent_item = data.parent_item ? data.parent_item : undefined;
         this.absolute_path = data.absolute_path;
         this.size = data.size;
@@ -100,9 +100,7 @@ class Item {
     }
 
     async delete() {
-        let connection = await db.persist();
-
-        for (const file of await connection.fetch_objects(Item, "SELECT * FROM fileshare.items WHERE parent_item = $1", [as_id(this.id)])) {
+        for (const file of await db.single().fetch_objects(Item, "SELECT * FROM fileshare.items WHERE parent_item = $1", [as_id(this.id)])) {
             await file.delete();
         }
 
@@ -225,12 +223,16 @@ class Item {
      * @return {Item|null}
      */
     static async from_data(hash, file_path, repos) {
-        const file_with_same_hash = await db.single().rows('SELECT * from fileshare.file_data WHERE id IN (SELECT id FROM fileshare.file_data WHERE repos = $1) AND hash = $2', [as_id(repos), as_hash_key(hash)]);
+        const file_with_same_hash = await db.single().rows('SELECT * from fileshare.file_data WHERE id IN (SELECT id FROM fileshare.items WHERE repos = $1) AND hash = $2', [as_id(repos), as_hash_key(hash)]);
 
-        for (const file of file_with_same_hash)
-            if (await new Promise((resolve) => { fc(file_path, new Item(file).storage_path(), (res) => resolve(res)) })) {
-                return await new Item(file).as_file();
+        for (const file of file_with_same_hash) {
+            let full_file = await Item.from_id(file.id);
+            if (await new Promise(async (resolve) => {
+                fc(file_path, full_file.storage_path(), (res) => resolve(res))
+            })) {
+                return await full_file.as_file();
             }
+        }
         return null;
     }
 
@@ -264,7 +266,7 @@ class Item {
             const parent = await _internal(repos, path_split);
             data.repos = repos;
             data.parent_item = parent ? parent.id : null;
-            data.name = name;
+            data.name = encodeURIComponent(name);
             data.is_regular_file = false;
             return await new Item(data).push();
         }

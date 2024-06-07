@@ -65,6 +65,9 @@ class PageContext {
         this.connected_user = data.connected_user;
         this.display_user = data.display_user;
         this.display_repos = data.display_repos;
+        this.display_repos.name = decodeURIComponent(data.display_repos.name)
+        this.display_repos.description = decodeURIComponent(data.display_repos.description)
+        this.display_repos.display_name = decodeURIComponent(data.display_repos.display_name)
         this.request_path = decodeURI(data.request_path);
     }
 

@@ -9,9 +9,9 @@ div.outliner
         div.repos-list
             each repos in common.user_repos
                 if locals.common.selected_repos && locals.common.selected_repos.id === repos.id
-                    button(onclick="window.location.href = '/" + repos.username + "/" + repos.name + "'").selected-repos #{repos.display_name}
+                    button(onclick="window.location.href = '/" + repos.username + "/" + repos.name + "'").selected-repos #{decodeURIComponent(repos.display_name)}
                 else
-                    button(onclick="window.location.href = '/" + repos.username + "/" + repos.name + "'") #{repos.display_name}
+                    button(onclick="window.location.href = '/" + repos.username + "/" + repos.name + "'") #{decodeURIComponent(repos.display_name)}
 
     div.hseparator
     div.category
@@ -20,9 +20,9 @@ div.outliner
     div.repos-list
         each repos in common.tracked_repos
             if locals.common.selected_repos && locals.common.selected_repos.id === repos.repos.id
-                button(onclick="window.location.href = #{common.get_url_for_repos(repos)}").selected-repos #{repos.repos.name}
+                button(onclick="window.location.href = #{common.get_url_for_repos(repos)}").selected-repos #{decodeURIComponent(repos.repos.name)}
             else
-                button(onclick="window.location.href = '/repos/?repos=" + repos.repos.access_key + "'") #{repos.repos.name}
+                button(onclick="window.location.href = '/repos/?repos=" + repos.repos.access_key + "'") #{decodeURIComponent(repos.repos.name)}
 
     div.hseparator
     div.category
@@ -31,9 +31,9 @@ div.outliner
     div.repos-list
         each repos in common.repos_list
             if locals.common.selected_repos && locals.common.selected_repos.id === repos.id
-                button(onclick="window.location.href = '/repos/?repos=" + repos.access_key + "'").selected-repos #{repos.name}
+                button(onclick="window.location.href = '/repos/?repos=" + repos.access_key + "'").selected-repos #{decodeURIComponent(repos.name)}
             else
-                button(onclick="window.location.href = '/repos/?repos=" + repos.access_key + "'") #{repos.name}
+                button(onclick="window.location.href = '/repos/?repos=" + repos.access_key + "'") #{decodeURIComponent(repos.name)}
 
 if locals.force_open_create_repos
     script(type='module').

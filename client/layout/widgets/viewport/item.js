@@ -10,7 +10,7 @@ let opened_item_div = null;
 let overlay = null;
 let last_item = null;
 
-function open_this_item(div, file) {
+function open_item_preview(div, file) {
     if (last_item === file)
         return;
     last_item = file;
@@ -68,12 +68,12 @@ function open_this_item(div, file) {
         download.classList.add('plus-button')
         action_buttons.append(download)
 
-        if (await permissions.can_user_edit_item(PAGE_CONTEXT.repos_path(), file.id)) {
+        if (await permissions.can_user_edit_item(PAGE_CONTEXT.repos_path(), file.id) && file.is_regular_file) {
             const edit_button = document.createElement('button');
             edit_button.innerHTML = `<img src="/images/icons/icons8-edit-96.png" alt="edit">`
             edit_button.onclick = async () => {
                 close_item_plain();
-                open_modal(edit_file_hbs(file));
+                open_modal(edit_file_hbs({path:`${PAGE_CONTEXT.repos_path()}/update/${file.id}`, item:file}));
             }
             edit_button.classList.add('plus-button')
             action_buttons.append(edit_button)
@@ -98,7 +98,7 @@ function open_this_item(div, file) {
                 confirm_button.onclick = async () => {
                     const result = await fetch(`/file/delete/?file=${file.id}`, {method: 'POST'});
                     if (result.status === 200) {
-                        file.remove();
+                        file.filesystem.remove_object(file.id);
                         print_message('info', `File removed`, `Successfully removed ${file.name}`);
                         close_modal();
                     } else if (result.status === 403) {
@@ -204,8 +204,8 @@ function close_item_plain() {
     }
 }
 
-function is_opened() {
+function is_item_preview_open() {
     return !!opened_item_div;
 }
 
-export {open_this_item, is_opened, close_item_plain}
+export {open_item_preview, is_item_preview_open, close_item_plain}
