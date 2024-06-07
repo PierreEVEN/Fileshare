@@ -36,8 +36,8 @@ async function finalize_file_upload(file_path, metadata, repos, user, file_hash)
     // Ensure the file doesn't already exists
     let existing_file = await Item.from_path(repos.id, meta.virtual_path + "/" + encodeURIComponent(meta.file_name));
     if (await Item.from_data(file_hash, path, repos.id)) {
-        logger.error("A file with the same data already exists")
-        return null;
+        logger.warn("A file with the same data already exists")
+        return {already_exists:true};
     }
 
     if (existing_file) {

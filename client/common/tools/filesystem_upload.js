@@ -73,7 +73,7 @@ class FilesystemUpload {
             }
             if (this_ref._request.readyState === 4 && !is_quick) { // header received
                 if (this_ref._request.status === 201)
-                    this_ref._receive_file_id(this_ref._request.response);
+                    this_ref._receive_file_id(JSON.parse(this_ref._request.response));
                 else if (this_ref._request.status === 202)
                     this_ref._receive_file_complete(this_ref._request.response === '' ? null : JSON.parse(this_ref._request.response));
                 else
@@ -135,7 +135,7 @@ class FilesystemUpload {
             return;
 
         this._byte_sent += this.max_batch_size;
-        this._process_file_id = file_id;
+        this._process_file_id = file_id["content-token"];
         this._received_ack = true;
         if (this.is_running)
             this._continue_current_file();
@@ -177,14 +177,19 @@ class FilesystemUpload {
     }
 
     _received_error(status, content) {
-        this.stop();
 
         if (status === 403) {
             window.location = `/TODO REDIRECT TO UPLOAD ERROR`
         }
-
-        print_message('error', `Upload error for ${this.file_in_process ? this.file_in_process.name : 'undefined'} (${status})`, content.toString());
-        console.error('Error :\n', content);
+        if (status === 409) {
+            print_message('warning', `File already exists in the current repository`, content.toString());
+            console.error(`Error ${status} :`, content);
+            this._receive_file_complete();
+        } else {
+            this.stop();
+            print_message('error', `Upload error for ${this.file_in_process ? this.file_in_process.name : 'undefined'} (${status})`, content.toString());
+            console.error(`Error ${status} :`, content);
+        }
     }
 
     _process_new_file() {

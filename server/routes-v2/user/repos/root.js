@@ -272,8 +272,9 @@ router.post('/send/*', async (req, res) => {
     }
 
     const tmp_file_path = path.join(tmp_dir_path, transfer_token);
+
     // Create and store empty file if size is zero
-    if (upload_in_progress[transfer_token].metadata.file_size === 0)
+    if (generated_transfer_token && upload_in_progress[transfer_token].metadata.file_size === 0)
         fs.closeSync(fs.openSync(tmp_file_path, 'w'));
 
     req.on('data', chunk => {
@@ -287,7 +288,7 @@ router.post('/send/*', async (req, res) => {
             logger.info(`${req.log_name} store '${JSON.stringify(upload_in_progress[transfer_token].metadata)}' to repos '${req.display_repos.name}'`)
             const file = await finalize_file_upload(tmp_file_path, upload_in_progress[transfer_token].metadata, req.display_repos, req.connected_user, upload_in_progress[transfer_token].hash_sum.digest('hex'))
             delete upload_in_progress[transfer_token];
-            return res.status(file ? 202 : 400).send(file ? {
+            return res.status(file ? (file.already_exists ? 409 : 202) : 400).send(file ? {
                 status: "Finished",
                 file_id: file.id
             } : {status: "Failed"});
