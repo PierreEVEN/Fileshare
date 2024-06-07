@@ -13,9 +13,9 @@ class User {
      */
     constructor(data) {
         this.id = data.id;
-        this.email = data.email ? decodeURIComponent(data.email) : null;
-        this.name = data.name ? decodeURIComponent(data.name) : null;
-        this.display_name = data.display_name ? decodeURIComponent(data.display_name) : null;
+        this.email = data.email;
+        this.name = data.name;
+        this.display_name = data.display_name;
         this.allow_contact = data.allow_contact || true;
         this.role = data.role || 'guest';
     }

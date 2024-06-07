@@ -8,9 +8,9 @@ const {session_data} = require("../../session_utils");
 const router = require("express").Router();
 
 router.post("/create-user/", async (req, res) => {
-    let name = req.body.username;
-    let email = req.body.email;
-    let password = req.body.password;
+    let name = encodeURIComponent(req.body.username);
+    let email = encodeURIComponent(req.body.email);
+    let password = encodeURIComponent(req.body.password);
 
     if (name && password && email) {
         if (await User.exists(name, email)) {
