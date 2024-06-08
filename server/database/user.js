@@ -1,9 +1,10 @@
-const db = require('../database')
-const {gen_uid, gen_uhash} = require("../uid_generator");
+const db = require('./tools/database')
+const {gen_uid, gen_uhash} = require("./tools/uid_generator");
 const {Repos} = require("./repos")
 const bcrypt = require("bcrypt");
 const assert = require("assert");
-const {as_data_string, as_id, as_boolean, as_enum, as_hash_key, as_number} = require("../db_utils");
+const {as_data_string, as_id, as_boolean, as_enum, as_hash_key, as_number, as_token} = require("./tools/db_utils");
+const {ServerString} = require("../server_string");
 
 const id_base = new Set();
 
@@ -12,34 +13,59 @@ class User {
      * @param data {Object}
      */
     constructor(data) {
-        this.id = data.id;
-        this.email = data.email;
-        this.name = data.name;
-        this.display_name = data.display_name;
+        /**
+         * @type {number}
+         */
+        this.id = Number(data.id);
+        /**
+         * @type {ServerString}
+         */
+        this.email = ServerString.FromDB(data.email);
+        /**
+         * @type {ServerString}
+         */
+        this.name = ServerString.FromDB(data.name);
+        /**
+         * @type {boolean}
+         */
         this.allow_contact = data.allow_contact || true;
-        this.role = data.role || 'guest';
+        /**
+         * @type {string}
+         */
+        this.role = String(data.role || 'guest');
     }
 
+    /**
+     * Is this user allowed to create a repository
+     * @return {boolean}
+     */
     can_create_repos() {
         return this.role === 'admin' || this.role === 'vip';
     }
 
+    /**
+     * Update user data
+     * @return {Promise<User>}
+     */
     async push() {
         this.id = this.id || await User.gen_id();
         assert(this.email);
         assert(this.name);
-        assert(this.display_name);
         assert(this.allow_contact);
         assert(this.role);
         await db.single().query(`INSERT INTO fileshare.users
             (id, email, name, allow_contact, role) VALUES
             ($1, $2, $3, $4, $5)
             ON CONFLICT (id) DO
-            UPDATE SET id = $1, email = $2, name = $3, allow_contact = $4, role = $5, display_name = $6;`,
-            [as_id(this.id), as_data_string(this.email), as_data_string(this.name), as_boolean(this.allow_contact), as_enum(this.role)], as_data_string(this.display_name));
+            UPDATE SET id = $1, email = $2, name = $3, allow_contact = $4, role = $5;`,
+            [as_id(this.id), this.email.encoded(), this.name.encoded(), as_boolean(this.allow_contact), as_enum(this.role)]);
         return this;
     }
 
+    /**
+     * Create a new auth token
+     * @return {Promise<(string|number)[]>}
+     */
     async gen_auth_token() {
         const connection = await db.persist();
         const token = await gen_uhash(async (id) => await connection.found('SELECT * FROM fileshare.authtoken WHERE token = $1', [as_data_string(id)]), id_base);
@@ -51,14 +77,22 @@ class User {
         await db.single().query(`INSERT INTO fileshare.authtoken
             (owner, token, expdate) VALUES
             ($1, $2, $3);`,
-            [as_id(this.id), as_data_string(token), as_number(exp_date)]);
+            [as_id(this.id), token.toString(), as_number(exp_date)]);
         return [token, exp_date];
     }
 
+    /**
+     * @param token {string}
+     * @return {Promise<void>}
+     */
     async delete_auth_token(token) {
-        await db.single().query("DELETE FROM fileshare.authtoken WHERE owner = $1 AND token = $2", [as_id(this.id), as_data_string(token)]);
+        await db.single().query("DELETE FROM fileshare.authtoken WHERE owner = $1 AND token = $2", [as_id(this.id), as_token(token)]);
     }
 
+    /**
+     * Delete a user and all of it's uploaded data
+     * @return {Promise<void>}
+     */
     async delete() {
 
         for (const repos of await Repos.from_owner(this.id))
@@ -67,17 +101,15 @@ class User {
         await db.single().query("DELETE FROM fileshare.users WHERE id = $1", [as_id(this.id)]);
     }
 
-
-    publicData() {
-        let cloneUser = Object.assign({}, this);
-        cloneUser.id = null;
-        if (!cloneUser.allow_contact)
-            cloneUser.email = null;
-        return cloneUser;
-    }
-
+    /**
+     * Create a new user
+     * @return {Promise<User>}
+     */
     static async create(data) {
-        const user = new User(data);
+        const user = new User({
+            name: new ServerString(data.name).encoded(),
+            email: new ServerString(data.email).encoded()
+        });
         assert(data.password);
         assert(user.email);
         assert(user.name);
@@ -86,7 +118,7 @@ class User {
         await db.single().query(`INSERT INTO fileshare.users
             (id, email, password_hash, name, allow_contact, role) VALUES
             ($1, $2, $3, $4, $5, $6)`,
-            [as_id(user.id || await User.gen_id()), as_data_string(user.email), as_hash_key(await bcrypt.hash(data.password, 10)), as_data_string(user.name), as_boolean(user.allow_contact), as_enum(user.role)]);
+            [as_id(user.id || await User.gen_id()), user.email.encoded(), as_hash_key(await bcrypt.hash(data.password, 10)), user.name.encoded(), as_boolean(user.allow_contact), as_enum(user.role)]);
         return await User.from_credentials(data.email, data.password);
     }
     static async gen_id() {
@@ -101,7 +133,7 @@ class User {
      * @return {Promise<User|null>}
      */
     static async from_auth_token(token) {
-        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE id IN (SELECT owner FROM fileshare.authtoken WHERE token = $1)', [as_data_string(token)]);
+        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE id IN (SELECT owner FROM fileshare.authtoken WHERE token = $1)', [as_token(token)]);
     }
 
     /**
@@ -117,16 +149,19 @@ class User {
      * @return {Promise<User|null>}
      */
     static async from_name(name) {
-        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE LOWER(name) = LOWER($1)', [as_data_string(name)]);
+        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE LOWER(name) = LOWER($1)', [name.toString()]);
     }
 
     /**
+     * Use credentials to retrieve a given user
+     * @param login {ServerString}
+     * @param password {string}
      * @return {Promise<User | null>}
      */
     static async from_credentials(login, password) {
         let found_user = null;
-        for (let user of (await db.single().query('SELECT * FROM fileshare.users WHERE name = $1 OR email = $2', [as_data_string(login), as_data_string(login)])).rows) {
-            if (bcrypt.compareSync(password, user['password_hash'].toString())) {
+        for (let user of (await db.single().query('SELECT * FROM fileshare.users WHERE name = $1 OR email = $2', [new ServerString(login).encoded(), new ServerString(login).encoded()])).rows) {
+            if (bcrypt.compareSync(as_hash_key(password), user['password_hash'].toString())) {
                 found_user = user;
                 break;
             }
@@ -135,10 +170,13 @@ class User {
     }
 
     /**
+     * Test if a user with the given login or email already exists
+     * @param login {ServerString}
+     * @param email {ServerString}
      * @return {Promise<boolean>}
      */
     static async exists(login, email) {
-        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE name = $1 OR email = $2', [as_data_string(login), as_data_string(email)]);
+        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE name = $1 OR email = $2', [new ServerString(login).encoded(), new ServerString(email).encoded()]);
     }
 }
 

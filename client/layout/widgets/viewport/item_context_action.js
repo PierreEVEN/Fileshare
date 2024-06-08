@@ -1,9 +1,10 @@
 import {spawn_context_action} from "../../../common/widgets/context_action.js";
 import {close_modal, open_modal} from "../../../common/widgets/modal.js";
-import {print_message} from "../../../common/widgets/message_box.js";
+import {parse_fetch_result, print_message} from "../../../common/widgets/message_box.js";
 import {update_repos_content} from "./repos_builder";
 import {PAGE_CONTEXT, permissions} from "../../../common/tools/utils";
 import {selector} from "../../../common/tools/selector";
+import {ClientString} from "../../../common/tools/client_string";
 
 const edit_dir_hbs = require('./edit_directory.hbs')
 const edit_file_hbs = require('./edit_file.hbs')
@@ -15,11 +16,7 @@ async function spawn_item_context_action(item) {
     actions.push({
         title: "Partager",
         action: async () => {
-            let url;
-            if (item.is_regular_file)
-                url = `${location.host}${PAGE_CONTEXT.repos_path()}/file/${item.id}`;
-            else
-                url = `${location.host}${PAGE_CONTEXT.repos_path()}/tree/${item.id}`;
+            let url = `${location.host}${PAGE_CONTEXT.repos_path()}/file/${item.id}`;
             await navigator.clipboard.writeText(url);
             print_message('info', 'Lien copié dans le presse - papier', url)
         },
@@ -42,9 +39,49 @@ async function spawn_item_context_action(item) {
             title: "Modifier",
             action: () => {
                 if (item.is_regular_file)
-                    open_modal(edit_file_hbs({path:`${PAGE_CONTEXT.repos_path()}/update/${item.id}`, item:item}));
+                    open_modal(edit_file_hbs({path:`${PAGE_CONTEXT.repos_path()}/update/${item.id}`, item:item},
+                        {
+                            submit: async () => {
+                                const data = {
+                                    name: ClientString.FromClient(document.getElementById('name').value),
+                                    description: ClientString.FromClient(document.getElementById('description').value)
+                                }
+                                await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/update/${item.id}`,
+                                    {
+                                        method: 'POST',
+                                        headers: {
+                                            'Accept': 'application/json',
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify(data)
+                                    }));
+
+                                close_modal();
+                            }
+                        }));
                 else
-                    open_modal(edit_dir_hbs({path:`${PAGE_CONTEXT.repos_path()}/update/${item.id}`, item:item}));
+                    open_modal(edit_dir_hbs({path:`${PAGE_CONTEXT.repos_path()}/update/${item.id}`, item:item},
+
+                        {
+                            submit: async () => {
+                                const data = {
+                                    name: ClientString.FromClient(document.getElementById('name').value),
+                                    description: ClientString.FromClient(document.getElementById('description').value),
+                                    open_upload: document.getElementById('open_upload').value === "on",
+                                }
+                                await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/update/${item.id}`,
+                                    {
+                                        method: 'POST',
+                                        headers: {
+                                            'Accept': 'application/json',
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify(data)
+                                    }));
+
+                                close_modal();
+                            }
+                        }));
             },
             image: '/images/icons/icons8-edit-96.png'
         });

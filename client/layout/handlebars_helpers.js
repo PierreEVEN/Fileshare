@@ -39,5 +39,5 @@ Handlebars.registerHelper("ctx", function (options) {
 /* ################## HELPER {MARKDOWN} ################## */
 Handlebars.registerHelper("markdown", function (options) {
     const converter = new (require('showdown')).Converter();
-    return new Handlebars.SafeString(converter.makeHtml(options));
+    return new Handlebars.SafeString(converter.makeHtml(options.toString()));
 });

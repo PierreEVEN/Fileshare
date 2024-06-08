@@ -3,6 +3,7 @@ const {PAGE_CONTEXT} = require("./utils");
 const {LOCAL_USER} = require("./user");
 const {parse_fetch_result} = require("../widgets/message_box");
 const {selector} = require("./selector");
+const {ClientString} = require("./client_string");
 
 class FilesystemObject {
 
@@ -16,13 +17,13 @@ class FilesystemObject {
         Object.id = server_data.id;
         Object.repos = server_data.repos;
         Object.owner = server_data.owner;
-        Object.name = decodeURIComponent(server_data.name);
+        Object.name = new ClientString(server_data.name);
         Object.is_regular_file = server_data.is_regular_file;
-        Object.description = server_data.description ? decodeURIComponent(server_data.description) : '';
+        Object.description = server_data.description ? new ClientString(server_data.description) : ClientString.FromClient('');
         Object.parent_item = server_data.parent_item;
         if (Object.is_regular_file) {
             Object.size = Number(server_data.size);
-            Object.mimetype = decodeURIComponent(server_data.mimetype);
+            Object.mimetype = new ClientString(server_data.mimetype);
             Object.timestamp = server_data.timestamp;
         }
         return Object;
@@ -65,7 +66,7 @@ class FilesystemObject {
         this.owner = null;
 
         /**
-         * @type {string|null}
+         * @type {ClientString|null}
          */
         this.name = null;
 
@@ -75,7 +76,7 @@ class FilesystemObject {
         this.is_regular_file = null;
 
         /**
-         * @type {string|null}
+         * @type {ClientString|null}
          */
         this.description = null;
 
@@ -90,7 +91,7 @@ class FilesystemObject {
         this.size = 0;
 
         /**
-         * @type {string|null}
+         * @type {ClientString|null}
          */
         this.mimetype = null;
 
@@ -177,14 +178,14 @@ class ObjectInternalMetadata {
 
 class Filesystem {
     /**
-     * @param filesystem_name {string}
+     * @param filesystem_name {ClientString}
      */
     constructor(filesystem_name) {
 
         /**
-         * @type {string}
+         * @type {ClientString}
          */
-        this.name = filesystem_name;
+        this.name = new ClientString(filesystem_name);
 
         /**
          * @type {Map<string, FilesystemObject>}
@@ -371,7 +372,7 @@ class Filesystem {
                 for (const child of metadata.children) {
                     const child_object = this._content.get(child)
                     if (child_object)
-                        if (child_object.name === name) {
+                        if (child_object.name.plain() === name) {
                             file = child;
                             break;
                         }

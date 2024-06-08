@@ -2,7 +2,7 @@ import {get_mime_icon_path} from "./mime_utils";
 import {PAGE_CONTEXT} from "./utils";
 
 function from_distant_repos(item) {
-    const mime = item.mimetype.split('/');
+    const mime = item.mimetype.plain().split('/');
     switch (mime[0]) {
         case 'video':
             return `<div class="item-small">
@@ -24,7 +24,7 @@ function from_distant_repos(item) {
 }
 
 function from_local_path(item) {
-    switch (item.mimetype.split('/')[0]) {
+    switch (item.mimetype.plain().split('/')[0]) {
         case 'image':
             return `<img class="item-small" src="${URL.createObjectURL(item)}" alt="image: ${item.name}" onError="this.onError = null; this.src='/images/icons/mime-icons/image.png'"/>`
         case 'video':

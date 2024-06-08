@@ -1,4 +1,5 @@
 import {parse_fetch_result} from "../widgets/message_box";
+import {ClientString} from "./client_string";
 
 class CookieString {
     constructor(data) {
@@ -30,13 +31,13 @@ class CookieString {
 
     save() {
         for (const cookie of document.cookie.split(";")) {
-            document.cookie = `${cookie}; SameSite=Strict; expires=${new Date(0).toUTCString()}`
+            document.cookie = `${cookie}; SameSite=Strict; expires=${new Date(0).toUTCString()}; path=/`
         }
         for (const [key, value] of this._cookies.entries()) {
             if (value.exp)
-                document.cookie = `${key}=${value.value}; SameSite=Strict; expire=${new Date(value.exp).toUTCString()}`
+                document.cookie = `${key}=${value.value}; SameSite=Strict; expire=${new Date(value.exp).toUTCString()}; path=/`
             else
-                document.cookie = `${key}=${value.value}; SameSite=Strict`
+                document.cookie = `${key}=${value.value}; SameSite=Strict; path=/`
         }
     }
 }
@@ -62,14 +63,19 @@ class User {
         return header;
     }
 
+    /**
+     * @param username {ClientString}
+     * @param password {string}
+     * @return {Promise<void>}
+     */
     async login(username, password) {
-        const data = new URLSearchParams();
-        data.append('username', username);
-        data.append('password', password);
         const authtoken = await parse_fetch_result(await fetch('/api/create-authtoken',
             {
                 method: 'POST',
-                body: data
+                body: {
+                    username: new ClientString(username),
+                    password: String(password)
+                }
             }));
         if (authtoken.token) {
             this._authtoken = authtoken.token;
@@ -79,21 +85,28 @@ class User {
         }
     }
 
+    /**
+     * @param username {ClientString}
+     * @param email {ClientString}
+     * @param password {string}
+     * @return {Promise<void>}
+     */
     async register(username, email, password) {
-        const data = new URLSearchParams();
-
-        data.append('username', username);
-        data.append('email', email);
-        data.append('password',password);
         const authtoken = await parse_fetch_result(await fetch('/api/create-user',
             {
                 method: 'POST',
-                body: data
+                body: {
+                    username: new ClientString(username),
+                    email: new ClientString(email),
+                    password: String(password)
+                }
             }));
-        this._authtoken = authtoken.token;
-        this._authtoken_exp = authtoken.expiration_date;
-        this.save_cookies();
-        window.location = `/${username}/`
+        if (authtoken.token) {
+            this._authtoken = authtoken.token;
+            this._authtoken_exp = authtoken.expiration_date;
+            this.save_cookies();
+            window.location = `/${username}/`
+        }
     }
 
     async logout() {

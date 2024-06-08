@@ -1,5 +1,6 @@
 import {selector} from "../../../common/tools/selector.js";
 import {PAGE_CONTEXT, humanFileSize, permissions} from "../../../common/tools/utils";
+import {ClientString} from "../../../common/tools/client_string";
 
 const current_path = document.getElementById('current-path');
 const tool_buttons = document.getElementById('viewport_toolbar');
@@ -54,7 +55,7 @@ class PathBuilder {
         }
 
         const button = document.createElement('button')
-        button.innerText = this.filesystem.name;
+        button.innerText = this.filesystem.name.plain();
         button.onclick = () => {
             selector.set_current_dir(null);
         }
@@ -77,12 +78,12 @@ class PathBuilder {
 
             // Add button for each directory of the current path
             const button = document.createElement('button')
-            button.innerText = dir_data.name;
+            button.innerText = dir_data.name.toString();
             button.onclick = () => {
                 selector.set_current_dir(dir);
             }
             current_path.append(button);
-            full_path_string += dir_data.name + "/";
+            full_path_string += dir_data.name.plain() + "/";
         }
 
         window.history.pushState(full_path_string, null, `${PAGE_CONTEXT.repos_path()}/tree${full_path_string}`);

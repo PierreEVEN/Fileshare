@@ -12,7 +12,7 @@ const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
 
 const filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.display_name) : null;
-const _path_builder = new PathBuilder(filesystem);
+const _ = new PathBuilder(filesystem);
 selector.filesystem = filesystem;
 const viewport_container = document.getElementById('file-list')
 
@@ -47,7 +47,7 @@ function update_repos_content() {
             for (const item of json)
                 filesystem.add_object(FilesystemObject.FromServerData(item));
 
-            selector.set_current_dir(filesystem.get_object_from_path(PAGE_CONTEXT.request_path));
+            selector.set_current_dir(filesystem.get_object_from_path(PAGE_CONTEXT.request_path.plain()));
         });
 }
 
@@ -174,7 +174,8 @@ selector.on_changed_dir((new_dir, _) => {
     entry_widgets.clear();
     render_directory(new_dir);
 
-    const description = new_dir && new_dir.parent !== null ? new_dir.description : PAGE_CONTEXT.display_repos.description;
+    const dir_data = filesystem.get_object_data(new_dir)
+    const description = new_dir && dir_data && dir_data.parent_item !== null ? dir_data.description.plain() : PAGE_CONTEXT.display_repos.description.plain();
     if (description && description !== '' && description !== 'null') {
         import('../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
             const directory_description = document.getElementById('directory-description')

@@ -1,7 +1,11 @@
 const Handlebars = require('handlebars');
 
+/**
+ * @param mimetype {ClientString}
+ * @return {string}
+ */
 function get_mime_alias(mimetype) {
-    switch (mimetype) {
+    switch (mimetype.plain()) {
         case 'application/x-zip':
         case 'application/x-zip-compressed':
             return 'application/zip';
@@ -11,14 +15,18 @@ function get_mime_alias(mimetype) {
         case 'text/pug':
             return 'text/template';
     }
-    return mimetype;
+    return mimetype.plain();
 }
 
+/**
+ * @param mimetype {ClientString}
+ * @return {boolean}
+ */
 function is_mimetype_valid(mimetype) {
     if (!mimetype)
         return false;
 
-    switch (mimetype) {
+    switch (mimetype.plain()) {
         case '':
         case 'undefined':
         case 'null':
@@ -28,6 +36,10 @@ function is_mimetype_valid(mimetype) {
     return true;
 }
 
+/**
+ * @param mimetype {ClientString}
+ * @return {string}
+ */
 function get_mime_icon_path(mimetype) {
     if (!is_mimetype_valid(mimetype))
         return '/images/icons/no-mime-icon.png';

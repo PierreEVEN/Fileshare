@@ -1,4 +1,4 @@
-const {logger} = require("./logger");
+const {logger} = require("../../logger");
 const fs = require("fs");
 const path = require("path");
 const postgres = require('pg');
@@ -18,7 +18,7 @@ pool.on('error', (err, _) => {
 
 const table_created = (async () => {
     let connection = await pool.connect();
-    await connection.query(fs.readFileSync('server/db_init.sql').toString());
+    await connection.query(fs.readFileSync('server/database/tools/db_init.sql').toString());
 
     const storage_path = path.resolve(process.env.FILE_STORAGE_PATH)
     if (!fs.existsSync(storage_path))

@@ -1,15 +1,24 @@
-const db = require('../database')
+const db = require('./tools/database')
 const assert = require("assert");
-const {as_id, as_enum} = require("../db_utils");
+const {as_id, as_enum} = require("./tools/db_utils");
 
 class UserRepos {
     /**
      * @param data {Object}
      */
     constructor(data) {
-        this.owner = data.owner;
-        this.repos = data.repos;
-        this.access_type = data.access_type;
+        /**
+         * @type {number}
+         */
+        this.owner = Number(data.owner);
+        /**
+         * @type {number}
+         */
+        this.repos = Number(data.repos);
+        /**
+         * @type {string}
+         */
+        this.access_type = String(data.access_type);
     }
 
     can_edit() {

@@ -1,8 +1,8 @@
-const conversion_queue = require("../../../file-conversion");
+const conversion_queue = require("./file-conversion");
 const {logger} = require("../../../logger");
 const fs = require("fs");
-const {as_data_string} = require("../../../db_utils");
 const {Item} = require("../../../database/item");
+const {ServerString} = require("../../../server_string");
 
 const upload_in_progress = {};
 
@@ -42,20 +42,21 @@ async function finalize_file_upload(file_path, metadata, repos, user, file_hash)
 
     if (existing_file) {
         if (!existing_file.is_regular_file) {
-            logger.error("There already is a folder at this path")
+            logger.error("There already is a folder at this path : " + existing_file.absolute_path)
             return null;
         }
         logger.warn(`File ${JSON.stringify(metadata)} with the same name already exists, but with different data inside. Replacing with new one`);
         fs.renameSync(path, existing_file.storage_path());
         existing_file.size = meta.file_size;
         existing_file.hash = file_hash;
-        existing_file.mimetype = encodeURIComponent(meta.mimetype);
+        existing_file.mimetype = new ServerString(meta.mimetype);
         existing_file.timestamp = meta.timestamp;
         await existing_file.push();
         return existing_file;
     }
 
     try {
+
         const file_meta = await new Item({
             repos: repos.id,
             owner: user.id,

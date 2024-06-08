@@ -16,5 +16,5 @@
             <input type="checkbox" name="open_upload" id="open_upload" {{#if item.open_upload}}checked{{/if}}>
         </label>
     </div>
-    <input type="submit" value="Valider">
+    <input type="button" value="Valider" onclick="{{ctx 'submit()'}}">
 </form>

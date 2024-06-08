@@ -3,10 +3,11 @@
 /***********************************************************************************************/
 
 
+const {HttpResponse} = require("../utils/errors");
 const router = require("express").Router();
 
 router.get("/", (req, res) => {
-    console.assert(false, "NOT IMPLEMENTED YET : display user settings");
+    return new HttpResponse(HttpResponse.NOT_IMPLEMENTED).redirect_error(req, res);
 })
 
 module.exports = router;

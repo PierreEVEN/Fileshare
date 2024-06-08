@@ -4,8 +4,9 @@
 
 const router = require("express").Router();
 const {User} = require("../database/user");
-const {error_404, get_common_data} = require("../session_utils");
+const {get_common_data} = require("../session_utils");
 const {logger} = require("../logger");
+const {HttpResponse} = require("./utils/errors");
 
 /********************** [GLOBAL] **********************/
 router.use(async (req, res, next) => {
@@ -37,7 +38,7 @@ const user_router = require("express").Router();
 user_router.use('/:username/', async (req, res, next) => {
     req.display_user = await User.from_name(req.params['username']);
     if (!req.display_user)
-        return error_404(req, res);
+        return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown user").redirect_error(req, res);
     next();
 });
 user_router.use('/:username/', require('./user/root'))

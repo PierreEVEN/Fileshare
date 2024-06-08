@@ -5,6 +5,11 @@ function as_hash_key(source) {
     assert(/^[A-Za-z0-9$./_-]*$/.test(source))
     return data;
 }
+
+/**
+ * @param source {number}
+ * @return {number|null}
+ */
 function as_id(source) {
     if (!source)
         return null;
@@ -12,6 +17,10 @@ function as_id(source) {
     return Number(source);
 }
 
+/**
+ * @param source {number}
+ * @return {number}
+ */
 function as_number(source) {
     if (isNaN(Number(source)))
         console.trace();
@@ -19,17 +28,26 @@ function as_number(source) {
     return Number(source);
 }
 
-function as_data_string(source) {
+/**
+ * @param source {string}
+ * @return {string}
+ */
+function as_token(source) {
     if (!source)
         return '';
+
     const data = source.toString();
     if (!/^[A-Za-z0-9-_.!~*'()%]*$/.test(data)) {
-        console.log("invalid field : " + data)
+        console.log("invalid token field : " + data)
         assert(/^[A-Za-z0-9-_.!~*'()%]*$/.test(data), data)
     }
     return data;
 }
 
+/**
+ * @param source {string}
+ * @return {string}
+ */
 function as_data_path(source) {
     if (!source)
         return '';
@@ -44,11 +62,18 @@ function as_data_path(source) {
     return '/' + generated_path.join('/');
 }
 
+/**
+ * @param source {boolean}
+ * @return {boolean}
+ */
 function as_boolean(source) {
     return !!source;
 }
 
-
+/**
+ * @param source
+ * @return {string}
+ */
 function as_enum(source) {
     const data = source.toLowerCase().trim();
     assert(/^[A-Za-z0-9-_]*$/.test(source))
@@ -56,7 +81,9 @@ function as_enum(source) {
 }
 
 /**
+ * Convert a string to a url-compatible string
  * @param display_name {string}
+ * @return {string|null}
  */
 function display_name_to_url(display_name) {
     display_name = display_name.replaceAll(' ', '-');
@@ -69,18 +96,4 @@ function display_name_to_url(display_name) {
     return null;
 }
 
-function isEncoded(uri) {
-    uri = uri || '';
-    return uri !== decodeURIComponent(uri);
-}
-
-/**
- * @param in_path {string}
- * @return {string}
- */
-function as_path(in_path) {
-    const path_split = in_path.split('/').filter(Boolean);
-    return '/' + path_split.join('/');
-}
-
-module.exports = {as_hash_key, as_id, as_data_string, as_boolean, as_enum, as_number, as_data_path, display_name_to_url}
+module.exports = {as_hash_key, as_id, as_token, as_boolean, as_enum, as_number, as_data_path, display_name_to_url}

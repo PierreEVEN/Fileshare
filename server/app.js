@@ -4,10 +4,9 @@ const {error_404} = require("./session_utils");
 require('./logger');
 const fs = require("fs");
 const {join} = require("path");
-const {logger} = require("./logger");
 const cookieParser = require("cookie-parser");
-const {Item} = require("./database/item");
-
+const {HttpResponse} = require("./routes-v2/utils/errors");
+const {HttpError} = require("http-errors");
 function setup_app() {
 
     if (!process.env.FILE_STORAGE_PATH)
@@ -47,7 +46,7 @@ function set_routes(app, server) {
     app.use('/', require('./routes-v2/root'));
     // catch 404
     app.use(async (req, res) => {
-        return error_404(req, res);
+        await new HttpResponse(HttpResponse.NOT_FOUND, "Page not found").redirect_error(req, res);
     });
 }
 

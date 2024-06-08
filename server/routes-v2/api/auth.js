@@ -4,51 +4,37 @@
 
 const {User} = require("../../database/user");
 const {logger} = require("../../logger");
-const {session_data} = require("../../session_utils");
+const {ServerString} = require("../../server_string");
+const {HttpResponse} = require("../utils/errors");
 const router = require("express").Router();
 
 router.post("/create-user/", async (req, res) => {
-    let name = encodeURIComponent(req.body.username);
-    let email = encodeURIComponent(req.body.email);
-    let password = encodeURIComponent(req.body.password);
+    let name = new ServerString(req.body.username);
+    let email = new ServerString(req.body.email);
+    let password = req.body.password;
 
     if (name && password && email) {
         if (await User.exists(name, email)) {
-            return res.status(401).send(JSON.stringify({
-                message: {
-                    severity: 'error',
-                    title: 'Impossible de créer le compte',
-                    content: 'Un utilisateur avec le même nom ou le même mot de passe existe déjà'
-                }
-            }))
+            return await new HttpResponse(HttpResponse.UNAUTHORIZED, "An user with this same name or email already exists!").redirect_error(req, res);
         }
 
-        const new_user = await User.create({
-            email: email,
-            name: name,
-            password: password
-        });
-
-        const [token, exp_date] = await new_user.gen_auth_token();
-
-        res.send({
-            token: token,
-            expiration_date: exp_date
-        });
+        const found_user = await User.from_credentials(new ServerString(req.body.username), req.body.password);
+        logger.info(`User '${req.body.username}' is trying to generate a new auth token`);
+        if (found_user) {
+            const [token, exp_date] = await found_user.gen_auth_token();
+            res.send({
+                token: token,
+                expiration_date: exp_date
+            });
+        }
         logger.info(`User '${req.body.username} created a new account'`);
     } else {
-        return res.status(401).send(JSON.stringify({
-            message: {
-                severity: 'error',
-                title: 'Erreur de connexion',
-                content: 'Informations manquantes'
-            }
-        }))
+        return await new HttpResponse(HttpResponse.UNAUTHORIZED, "Missing information").redirect_error(req, res);
     }
 })
 
 router.post("/create-authtoken/", async (req, res) => {
-    const found_user = await User.from_credentials(encodeURIComponent(req.body.username), encodeURIComponent(req.body.password));
+    const found_user = await User.from_credentials(new ServerString(req.body.username), req.body.password);
     logger.info(`User '${req.body.username}' is trying to generate a new auth token`);
     if (found_user) {
         const [token, exp_date] = await found_user.gen_auth_token();
@@ -60,14 +46,7 @@ router.post("/create-authtoken/", async (req, res) => {
         logger.info(`Generated auth token for user '${req.body.username}'`);
     }
     else {
-        res.send({
-            message: {
-                severity: 'error',
-                title: 'Ce compte n\'existe pas',
-                content: 'Un utilisateur avec le même nom ou le même mot de passe existe déjà'
-            }
-        })
-        console.assert(false, "NOT IMPLEMENTED YET : handle proper error log");
+        return await new HttpResponse(HttpResponse.UNAUTHORIZED, "There is no known user using those credentials").redirect_error(req, res);
     }
 })
 
@@ -76,7 +55,7 @@ router.post("/delete-authtoken/:authtoken", async (req, res) => {
     if (found_user) {
         logger.info(`User '${found_user.name}' is trying to delete its token`);
         await req.connected_user.delete_auth_token(req.params['authtoken']);
-        res.sendStatus(200);
+        res.sendStatus(HttpResponse.OK);
     }
     else {
         console.assert(false, "NOT IMPLEMENTED YET : handle proper error log");

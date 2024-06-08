@@ -1,3 +1,5 @@
+import {ClientString} from "./client_string";
+
 function humanFileSize(bytes) {
     const thresh = 1024;
 
@@ -53,29 +55,36 @@ function seconds_to_str(in_seconds) {
 class PageContext {
     /**
      * @param data {{
-     *      connected_user:{id:number, email; string, name:string, role:string},
-     *      display_user:{id:number, description:string, name; string, owner:number, status:string, display_name:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string},
-     *      display_repos:{id:number, description:string, name; string, owner:number, status:string, display_name:string, max_file_size:number, visitor_file_lifetime:string, allow_visitor_upload:string}
-     *      request_path:string,
+     *      connected_user:{id:number, email: ClientString, name:ClientString, role:string},
+     *      display_user:{id:number, name: ClientString},
+     *      display_repos:{id:number, description:ClientString, name: ClientString, owner:number, status:string, display_name:ClientString, max_file_size:number, visitor_file_lifetime:number, allow_visitor_upload:number}
+     *      request_path:ClientString,
      *  } || null} */
 
     constructor(data) {
         if (!data)
             return;
         this.connected_user = data.connected_user;
+        if (this.connected_user) {
+            this.connected_user.name = new ClientString(this.connected_user.name);
+            this.connected_user.email = new ClientString(this.connected_user.email);
+        }
         this.display_user = data.display_user;
+        if (this.display_user) {
+            this.display_user.name = new ClientString(this.display_user.name);
+        }
         this.display_repos = data.display_repos;
         if (data.display_repos) {
-            this.display_repos.name = decodeURIComponent(data.display_repos.name)
-            this.display_repos.description = decodeURIComponent(data.display_repos.description)
-            this.display_repos.display_name = decodeURIComponent(data.display_repos.display_name)
+            this.display_repos.name = new ClientString(data.display_repos.name)
+            this.display_repos.description = new ClientString(data.display_repos.description)
+            this.display_repos.display_name = new ClientString(data.display_repos.display_name)
         }
-        this.request_path = decodeURI(data.request_path);
+        this.request_path = ClientString.FromClient(decodeURI(data.request_path));
     }
 
     repos_path() {
         if (this.display_user && this.display_repos)
-            return `/${this.display_user.name}/${this.display_repos.name}`
+            return `/${this.display_user.name.for_url()}/${this.display_repos.name.for_url()}`
         return null;
     }
 }

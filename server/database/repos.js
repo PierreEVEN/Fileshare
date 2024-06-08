@@ -1,9 +1,10 @@
-const db = require('../database')
-const {gen_uid} = require("../uid_generator");
+const db = require('./tools/database')
+const {gen_uid} = require("./tools/uid_generator");
 const {UserRepos} = require("./user_repos");
 const assert = require("assert");
-const {as_data_string, as_id, as_enum, as_boolean, as_number} = require("../db_utils");
+const {as_id, as_enum, as_boolean, as_number} = require("./tools/db_utils");
 const {Item} = require("./item");
+const {ServerString} = require("../server_string");
 
 const id_base = new Set();
 
@@ -12,17 +13,48 @@ class Repos {
      * @param data {Object}
      */
     constructor(data) {
-        this.id = data.id;
-        this.description = data.description;
-        this.name = data.name;
-        this.display_name = data.display_name;
-        this.owner = data.owner;
-        this.status = data.status;
-        this.max_file_size = data.max_file_size || 200 * 1024 * 1024;
-        this.visitor_file_lifetime = data.visitor_file_lifetime || 604800;
+        /**
+         * @type {number}
+         */
+        this.id = Number(data.id);
+        /**
+         * @type {ServerString}
+         */
+        this.description = ServerString.FromDB(data.description);
+        /**
+         * @type {ServerString}
+         */
+        this.name = ServerString.FromDB(data.name);
+        /**
+         * @type {ServerString}
+         */
+        this.display_name = ServerString.FromDB(data.display_name);
+        /**
+         * @type {number}
+         */
+        this.owner = Number(data.owner);
+        /**
+         * @type {string}
+         */
+        this.status = data.status.toString();
+        /**
+         * @type {number}
+         */
+        this.max_file_size = Number(data.max_file_size || 200 * 1024 * 1024);
+        /**
+         * @type {number}
+         */
+        this.visitor_file_lifetime = Number(data.visitor_file_lifetime || 604800);
+        /**
+         * @type {boolean}
+         */
         this.allow_visitor_upload = data.allow_visitor_upload || false;
     }
 
+    /**
+     * Create or update repository
+     * @return {Promise<Repos>}
+     */
     async push() {
         this.id = this.id || await Repos.gen_id()
         this.description = this.description ? this.description : '';
@@ -38,10 +70,14 @@ class Repos {
             ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT (id) DO  
             UPDATE SET id = $1, name = $2, owner = $3, description = $4, status = $5, display_name = $6, max_file_size = $7, visitor_file_lifetime = $8, allow_visitor_upload = $9;`,
-            [as_id(this.id), as_data_string(this.name), as_id(this.owner), as_data_string(this.description), as_enum(this.status), as_data_string(this.display_name), as_number(this.max_file_size), as_number(this.visitor_file_lifetime), as_boolean(this.allow_visitor_upload)]);
+            [as_id(this.id), this.name.encoded(), as_id(this.owner), this.description.encoded(), as_enum(this.status), this.display_name.encoded(), as_number(this.max_file_size), as_number(this.visitor_file_lifetime), as_boolean(this.allow_visitor_upload)]);
         return this;
     }
 
+    /**
+     * Delete this item and all the content included
+     * @return {Promise<void>}
+     */
     async delete() {
         for (const item of await Item.from_repos(this.id)) {
             await item.delete();
@@ -54,6 +90,10 @@ class Repos {
         await db.single().query("DELETE FROM fileshare.repos WHERE id = $1", [as_id(this.id)]);
     }
 
+    /**
+     * Will this object with required data for client // @TODO Improve this (temporary fix)
+     * @return {Promise<Repos>}
+     */
     async client_ready() {
         if (!this.username)
             for (const User of (await db.single().query("SELECT name FROM fileshare.users WHERE id = $1", [as_id(this.owner)])).rows)
@@ -61,8 +101,8 @@ class Repos {
         return this;
     }
 
-    async get_content(relative_path = null) {
-        const content = relative_path ? await Item.inside_directory_recursive(this.id, relative_path.id) : await Item.from_repos(this.id);
+    async get_content() {
+        const content = await Item.from_repos(this.id);
         for (const item of content) //@TODO : optimize this step
             if (item.is_regular_file) {
                 await item.as_file();
@@ -72,6 +112,10 @@ class Repos {
         return content;
     }
 
+    /**
+     * Create a new repos ID
+     * @return {Promise<number>}
+     */
     static async gen_id() {
         const connection = await db.persist();
         const id = await gen_uid(async (id) => await connection.found('SELECT * FROM fileshare.repos WHERE id = $1', [as_id(id)]), id_base);
@@ -80,6 +124,7 @@ class Repos {
     }
 
     /**
+     * Get repos data from ID
      * @param id {number} Directory id
      * @return {Promise<Repos|null>}
      */
@@ -89,16 +134,18 @@ class Repos {
     }
 
     /**
-     * @param name {string}
+     * Find repos by name
+     * @param name {ServerString}
      * @param owner {User}
      * @return {Promise<Repos|null>}
      */
     static async from_name(name, owner) {
         assert(!isNaN(owner.id))
-        return await db.single().fetch_object(Repos, 'SELECT * FROM fileshare.repos WHERE LOWER(name) = LOWER($1) AND owner = $2', [as_data_string(name), as_data_string(owner.id)]);
+        return await db.single().fetch_object(Repos, 'SELECT * FROM fileshare.repos WHERE LOWER(name) = LOWER($1) AND owner = $2', [name.encoded(), as_id(owner.id)]);
     }
 
     /**
+     * Find all repos possessed by a given user
      * @param id {number} user id
      * @return {Promise<Repos[]>}
      */
@@ -108,6 +155,7 @@ class Repos {
     }
 
     /**
+     * Get all repos visible to a given user
      * @param id {number} user id
      * @return {Promise<Repos[]>}
      */
@@ -117,6 +165,7 @@ class Repos {
     }
 
     /**
+     * Get all repos visible from anyone
      * @return {Promise<Repos[]>}
      */
     static async with_public_access() {

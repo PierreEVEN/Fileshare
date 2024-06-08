@@ -1,5 +1,5 @@
 const ffmpeg = require('fluent-ffmpeg');
-const {logger} = require("./logger");
+const {logger} = require("../../../logger");
 
 class FileConversionQueue {
     constructor() {

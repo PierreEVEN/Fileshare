@@ -1,15 +1,20 @@
 import {humanFileSize, PAGE_CONTEXT, permissions} from "../../../common/tools/utils.js";
 import * as handlebars from "handlebars";
 import {get_mime_icon_path} from "../../../common/tools/mime_utils";
-import {print_message} from "../../../common/widgets/message_box";
+import {parse_fetch_result, print_message} from "../../../common/widgets/message_box";
 import {close_modal, open_modal} from "../../../common/widgets/modal";
 import edit_file_hbs from "./edit_file.hbs";
 import {select_next_element, select_previous_element, update_repos_content} from "./repos_builder";
+import {ClientString} from "../../../common/tools/client_string";
 
 let opened_item_div = null;
 let overlay = null;
 let last_item = null;
 
+/**
+ * @param div {HTMLElement}
+ * @param file {FilesystemObject}
+ */
 function open_item_preview(div, file) {
     if (last_item === file)
         return;
@@ -40,10 +45,10 @@ function open_item_preview(div, file) {
             document.body.append(opened_item_div);
         } else {
             import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown => {
-                document.getElementById('item-title').innerText = file.name;
+                document.getElementById('item-title').innerText = file.name.plain();
                 document.getElementById('item-size').innerText = humanFileSize(file.size);
-                document.getElementById('item-mime-type').innerText = file.mimetype;
-                document.getElementById('item-description').innerHTML = file.description && file.description !== '' ? showdown.convert_text(file.description) : '';
+                document.getElementById('item-mime-type').innerText = file.mimetype.plain();
+                document.getElementById('item-description').innerHTML = file.description && file.description.plain() !== '' ? showdown.convert_text(file.description.plain()) : '';
                 document.getElementById('item-content').innerHTML = handlebars.compile('{{item_image item}}')({item: file});
                 document.getElementsByClassName('typeicon')[0].src = get_mime_icon_path(file.mimetype);
             })
@@ -73,7 +78,26 @@ function open_item_preview(div, file) {
             edit_button.innerHTML = `<img src="/images/icons/icons8-edit-96.png" alt="edit">`
             edit_button.onclick = async () => {
                 close_item_plain();
-                open_modal(edit_file_hbs({path:`${PAGE_CONTEXT.repos_path()}/update/${file.id}`, item:file}));
+                open_modal(edit_file_hbs({path: `${PAGE_CONTEXT.repos_path()}/update/${file.id}`, item: file},
+                    {
+                        submit: async () => {
+                            const data = {
+                                name: ClientString.FromClient(document.getElementById('name').value),
+                                description: ClientString.FromClient(document.getElementById('description').value)
+                            }
+                            await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/update/${item.id}`,
+                                {
+                                    method: 'POST',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(data)
+                                }));
+
+                            close_modal();
+                        }
+                    }));
             }
             edit_button.classList.add('plus-button')
             action_buttons.append(edit_button)

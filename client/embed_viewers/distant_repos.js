@@ -3,7 +3,7 @@ import {PAGE_CONTEXT} from "../common/tools/utils";
 
 function get(item) {
     const url = `${PAGE_CONTEXT.repos_path()}/file/${item.id}`;
-    const mimetype = item.mimetype.split('/');
+    const mimetype = item.mimetype.plain().split('/');
     switch (mimetype[0]) {
         case 'image':
             return `<img class="item-large" src="${url}" alt="image: ${item.name}" onError="this.onError = null; this.src='/images/icons/mime-icons/image.png'"/>`

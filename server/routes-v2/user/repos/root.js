@@ -4,16 +4,12 @@
 
 const {
     get_common_data,
-    error_404,
     require_connection,
-    error_403,
-    public_data,
-    events
 } = require("../../../session_utils");
 const perms = require("../../../permissions");
 const permissions = require("../../../permissions");
 const {logger} = require("../../../logger");
-const {display_name_to_url, as_data_string} = require("../../../db_utils");
+const {display_name_to_url} = require("../../../database/tools/db_utils");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
@@ -23,20 +19,18 @@ const {platform} = require("os");
 const gm = require("gm");
 const ffmpeg = require("fluent-ffmpeg");
 const {Item} = require("../../../database/item");
+const {HttpResponse} = require("../../utils/errors");
+const {ServerString} = require("../../../server_string");
 const router = require("express").Router();
 
 /********************** [GLOBAL] **********************/
 router.use('/', async (req, res, next) => {
     if (!req.display_repos)
-        return error_404(req, res);
+        return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
 
     if (!await perms.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null)) {
-        // Redirect to signin page if user is not connected
-        if (!req.connected_user)
-            return require_connection(req, res);
-
         // This user is not allowed to access this repos
-        return error_403(req, res);
+        return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
     }
 
     next();
@@ -71,9 +65,11 @@ router.get("/content/:id", async (req, res) => {
     logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name}`)
 
     // Search the requested file or dir
+    if (Number.isNaN(Number(req.params['id'])))
+        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-    if (!item)
-        return error_404(req, res, `Le fichier ou dossier ${req.params['id']} n'existe pas`);
+    if (!item || !await perms.can_user_view_file(item, req.connected_user.id))
+        return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
     if (item.is_regular_file) {
         await item.as_file();
@@ -81,7 +77,6 @@ router.get("/content/:id", async (req, res) => {
     else
         await item.as_directory();
 
-    // Path is empty or is equal to '/' => return a json with the whole hierarchy
     return res.send(item);
 })
 
@@ -89,26 +84,28 @@ router.get("/file/:id", async (req, res) => {
     logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : ${req.params['id']}`)
 
     // Search the requested file or dir
+    if (Number.isNaN(Number(req.params['id'])))
+        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-    if (!item)
-        return error_404(req, res, `Le fichier ou dossier ${req.params['id']} n'existe pas`);
-
-    if (!await permissions.can_user_view_file(item, req.connected_user ? req.connected_user.id : null)) {
-        return error_404(req, res, `Le fichier ou dossier ${req.params['id']} n'existe pas`);
-    }
+    if (!item || !await perms.can_user_view_file(item, req.connected_user.id))
+        return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
     if (item.is_regular_file) {
         // Send file in response
         const file_path = item.storage_path();
 
         if (!fs.existsSync(file_path))
-            return error_404(req, res, 'Document introuvable');
+            return new HttpResponse(HttpResponse.GONE, "The requested resource was removed from this server").redirect_error(req, res);
 
         res.setHeader('Content-Type', `${item.mimetype}`)
-        res.setHeader('Content-Disposition', 'inline; filename=' + encodeURIComponent(item.name));
+        res.setHeader('Content-Disposition', 'inline; filename=' + item.name.encoded());
         return res.sendFile(path.resolve(file_path));
     } else {
-        return error_404(req, res, `l'element ${item.id} n'est pas un fichier`);
+        req.request_path = item.absolute_path.plain();
+        res.render('repos', {
+            title: `FileShare - ${req.display_repos.name}`,
+            common: await get_common_data(req)
+        });
     }
 })
 
@@ -121,21 +118,16 @@ router.get("/can-upload/", async (req, res) => {
 });
 
 router.get("/can-upload/:id", async (req, res) => {
-    if (req.params['id']) {
-        if (!Number.isInteger(req.params['id']))
-            return error_404(req, res);
-        const directory = await Item.from_id(req.params['id']);
-        if (directory) {
-            if (req.connected_user && req.display_repos) {
-                if (await permissions.can_user_upload_to_directory(directory, req.connected_user.id))
-                    return res.sendStatus(200);
-            }
-        }
-    } else {
-        if (req.connected_user && req.display_repos) {
-            if (await permissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
-                return res.sendStatus(200)
-        }
+    // Search the requested file or dir
+    if (Number.isNaN(Number(req.params['id'])))
+        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
+    const item = await Item.from_id(req.params['id']);
+    if (!item || !await perms.can_user_view_file(item, req.connected_user.id))
+    return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
+
+    if (req.connected_user && req.display_repos) {
+        if (await permissions.can_user_upload_to_directory(item, req.connected_user.id))
+            return res.sendStatus(200);
     }
     res.sendStatus(204);
 })
@@ -148,10 +140,16 @@ router.get("/can-edit/", async (req, res) => {
     res.sendStatus(204);
 })
 router.get("/can-edit/:id", async (req, res) => {
-    const file = await Item.from_id(req.params['id']);
-    if (file) {
+    // Search the requested file or dir
+    if (Number.isNaN(Number(req.params['id'])))
+        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
+    const item = await Item.from_id(req.params['id']);
+    if (!item || !await perms.can_user_view_file(item, req.connected_user.id))
+        return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
+
+    if (item) {
         if (req.connected_user && req.display_repos) {
-            if (await permissions.can_user_edit_item(file, req.connected_user.id))
+            if (await permissions.can_user_edit_item(item, req.connected_user.id))
                 return res.sendStatus(200);
         }
     }
@@ -159,12 +157,12 @@ router.get("/can-edit/:id", async (req, res) => {
 })
 
 router.post('/update/:id', async function (req, res, _) {
-
+    // Search the requested file or dir
+    if (Number.isNaN(Number(req.params['id'])))
+        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-
-
-    if (!await perms.can_user_edit_item(item, req.connected_user.id))
-        return error_403(req, res, 'Accès non autorisé');
+    if (!item || !await perms.can_user_edit_item(item, req.connected_user.id))
+        return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
     if (item.is_regular_file) {
         await item.as_file()
@@ -173,26 +171,24 @@ router.post('/update/:id', async function (req, res, _) {
         await item.as_directory()
         item.open_upload = req.body.open_upload;
     }
-    item.name = encodeURIComponent(req.body.name);
-    item.description = encodeURIComponent(req.body.description);
+    item.name = new ServerString(req.body.name);
+    item.description = new ServerString(req.body.description);
     await item.push();
 
     logger.warn(`${req.log_name} updated file ${item.id}`);
-    return res.redirect(`/${req.display_user.name}/${req.display_repos.name}/`);
+    return res.sendStatus(HttpResponse.OK);
 });
 
 router.post('/update/', async function (req, res, _) {
-    if (require_connection(req, res))
-        return;
-
     if (!await perms.can_user_edit_repos(req.display_repos, req.connected_user.id))
-        return error_403(req, res, 'Vous n\'avez pas les droits pour modifier ce dépot');
+        return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to edit this repository").redirect_error(req, res);
 
-    req.display_repos.name = encodeURIComponent(display_name_to_url(req.body.name));
-    if (!req.display_repos.name)
-        return error_403(req, res, 'Url de dépot invalide');
-    req.display_repos.description = encodeURIComponent(req.body.description);
-    req.display_repos.display_name = encodeURIComponent(req.body.display_name);
+    req.display_repos.name = ServerString.FromURL(display_name_to_url(new ServerString(req.body.name).plain()));
+
+    req.display_repos.description = new ServerString(req.body.description);
+    req.display_repos.display_name = new ServerString(req.body.display_name);
+    if (!req.display_repos.name || !req.display_repos.display_name || !req.display_repos.description)
+        return new HttpResponse(HttpResponse.BAD_REQUEST, "Invalid repository name").redirect_error(req, res);
     req.display_repos.status = req.body.status;
     req.display_repos.max_file_size = req.body.max_file_size;
     req.display_repos.visitor_file_lifetime = req.body.guest_file_lifetime;
@@ -200,22 +196,22 @@ router.post('/update/', async function (req, res, _) {
 
     await req.display_repos.push();
     logger.warn(`${req.log_name} updated repos ${req.display_repos.access_key}`)
-    return res.redirect(`/${req.display_user.name}/${req.display_repos.name}/`);
+    return res.sendStatus(HttpResponse.OK);
 });
 
 router.post('/remove/:id', async (req, res) => {
-    if (require_connection(req, res))
-        return;
 
+    // Search the requested file or dir
+    if (Number.isNaN(Number(req.params['id'])))
+        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-
-    if (!item || !await permissions.can_user_edit_item(item, req.connected_user.id))
-        return error_404(req, res, "forbidden");
+    if (!item || !await perms.can_user_edit_item(item, req.connected_user.id))
+        return new HttpResponse(HttpResponse.NOT_FOUND, "You don't have the required authorizations to delete this file").redirect_error(req, res);
 
     await item.delete();
 
     logger.warn(`${req.log_name} deleted file ${item.name}:${item.id}`);
-    res.sendStatus(200);
+    return res.sendStatus(HttpResponse.OK);
 });
 
 router.post('/delete/', async (req, res) => {
@@ -223,7 +219,7 @@ router.post('/delete/', async (req, res) => {
         return;
 
     if (req.display_repos.owner !== req.connected_user.id)
-        return error_403(req, res, "Seul le possesseur d'un dépot peut le supprimer");
+        return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to delete this repository").redirect_error(req, res);
 
     await req.display_repos.delete();
     logger.warn(`${req.log_name} deleted repos ${req.display_repos.access_key}`)
@@ -235,9 +231,8 @@ router.post('/send/*', async (req, res) => {
     if (!fs.existsSync(tmp_dir_path))
         fs.mkdirSync(tmp_dir_path, {recursive: true});
 
-    if (!await perms.can_user_upload_to_repos(req.display_repos, req.connected_user.id)) {
-        return error_403(req, res);
-    }
+    if (!await perms.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
+        return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to upload files here").redirect_error(req, res);
 
     const decode_header = (key) => {
         try {
@@ -309,22 +304,22 @@ router.get('/thumbnail/:id', async function (req, res) {
 
         const file = await Item.from_id(req.params['id']);
         if (!file || !file.is_regular_file)
-            return error_404(req, res);
+            return new HttpResponse(HttpResponse.NOT_ACCEPTABLE, "The requested object is not a regular file").redirect_error(req, res);
 
-        if (!await permissions.can_user_view_file(file, req.connected_user ? req.connected_user.id : null)) {
-            return error_404(req, res, `Le fichier ou dossier ${req.params['id']} n'existe pas`);
-        }
+        if (!await permissions.can_user_view_file(file, req.connected_user ? req.connected_user.id : null))
+            return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
         await file.as_file();
 
         const thumbnail_path = `data_storage/thumbnails/${file.id}`
 
-        res.setHeader('Content-Disposition', 'attachment; filename=thumbnail_' + encodeURIComponent(file.name));
+        res.setHeader('Content-Disposition', 'attachment; filename=thumbnail_' + file.name.encoded());
 
         const file_path = file.storage_path()
 
         if (!fs.existsSync(thumbnail_path)) {
-            if ((file.mimetype).startsWith('image/')) {
+            const mimetype = file.mimetype.plain();
+            if (mimetype.startsWith('image/')) {
                 sharp(file_path).resize(100, 100, {
                     fit: 'inside',
                     withoutEnlargement: true,
@@ -339,15 +334,15 @@ router.get('/thumbnail/:id', async function (req, res) {
                             return res.sendFile(path.resolve(thumbnail_path));
                         }
                     });
-            } else if ((file.mimetype).includes('pdf')) {
+            } else if (mimetype.includes('pdf')) {
                 // Doesn't work on windows
                 if (platform() === 'win32')
                     return res.sendFile(path.resolve('public/images/icons/mime-icons/application/pdf.png'));
                 await new Promise(async (resolve) => {
                     gm(path.resolve(file_path + '')) // The name of your pdf
                         .setFormat("jpg")
-                        .resize(200) // Resize to fixed 200px width, maintaining aspect ratio
-                        .quality(75) // Quality from 0 to 100
+                        .resize(100) // Resize to fixed 200px width, maintaining aspect ratio
+                        .quality(70) // Quality from 0 to 100
                         .write(thumbnail_path, async error => {
                             // Callback function executed when finished
                             if (!error) {
@@ -361,7 +356,7 @@ router.get('/thumbnail/:id', async function (req, res) {
                 });
 
                 return res.sendFile(path.resolve(thumbnail_path));
-            } else if ((file.mimetype).startsWith('video/')) {
+            } else if (mimetype.startsWith('video/')) {
                 let filename = null;
 
                 new ffmpeg(file_path)
@@ -370,7 +365,7 @@ router.get('/thumbnail/:id', async function (req, res) {
                     })
                     .on('end', async () => {
                         logger.info(`generated video thumbnail for ${file.id} (${file.name})`)
-                        if (!fs.existsSync(`data_storage/thumbnails/dir_${req.file.id}/${filename}`)) {
+                        if (!fs.existsSync(`data_storage/thumbnails/dir_${file.id}/${filename}`)) {
                             logger.error(`Failed to get path to generated thumbnail : 'data_storage/thumbnails/dir_${file.id}/${filename}'`);
                             return res.sendFile(path.resolve(file_path));
                         }
