@@ -48,7 +48,7 @@ router.post("/create-user/", async (req, res) => {
 })
 
 router.post("/create-authtoken/", async (req, res) => {
-    const found_user = await User.from_credentials(req.body.username, req.body.password);
+    const found_user = await User.from_credentials(encodeURIComponent(req.body.username), encodeURIComponent(req.body.password));
     logger.info(`User '${req.body.username}' is trying to generate a new auth token`);
     if (found_user) {
         const [token, exp_date] = await found_user.gen_auth_token();
