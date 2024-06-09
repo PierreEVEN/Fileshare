@@ -4,6 +4,7 @@ import {print_message, parse_fetch_result} from "../../../common/widgets/message
 import signin from './signin.hbs';
 import signup from './signup.hbs';
 import {LOCAL_USER} from "../../../common/tools/user";
+import {ClientString} from "../../../common/tools/client_string";
 
 function open_modal_signin() {
     open_modal(signin(), '500px', '400px', 'auth');
@@ -14,7 +15,7 @@ function open_modal_signup() {
 }
 
 async function post_signin() {
-    await LOCAL_USER.login(document.getElementById('username').value, document.getElementById('password').value);
+    await LOCAL_USER.login(ClientString.FromClient(document.getElementById('username').value), document.getElementById('password').value);
 }
 
 async function post_signup() {
@@ -22,7 +23,7 @@ async function post_signup() {
         await print_message('error', 'Email invalide', 'veuillez spécifier un email valide');
         return;
     }
-    await LOCAL_USER.register(document.getElementById('username').value, document.getElementById('email').value, document.getElementById('password').value);
+    await LOCAL_USER.register(ClientString.FromClient(document.getElementById('username').value), ClientString.FromClient(document.getElementById('email').value), document.getElementById('password').value);
 }
 
 async function logout() {

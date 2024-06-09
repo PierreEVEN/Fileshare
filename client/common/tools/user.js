@@ -72,10 +72,14 @@ class User {
         const authtoken = await parse_fetch_result(await fetch('/api/create-authtoken',
             {
                 method: 'POST',
-                body: {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
                     username: new ClientString(username),
                     password: String(password)
-                }
+                })
             }));
         if (authtoken.token) {
             this._authtoken = authtoken.token;
@@ -95,11 +99,15 @@ class User {
         const authtoken = await parse_fetch_result(await fetch('/api/create-user',
             {
                 method: 'POST',
-                body: {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
                     username: new ClientString(username),
                     email: new ClientString(email),
                     password: String(password)
-                }
+                })
             }));
         if (authtoken.token) {
             this._authtoken = authtoken.token;
