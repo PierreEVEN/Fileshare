@@ -102,14 +102,7 @@ class Repos {
     }
 
     async get_content() {
-        const content = await Item.from_repos(this.id);
-        for (const item of content) //@TODO : optimize this step
-            if (item.is_regular_file) {
-                await item.as_file();
-            }
-            else
-                await item.as_directory();
-        return content;
+        return await Item.from_repos(this.id);
     }
 
     /**

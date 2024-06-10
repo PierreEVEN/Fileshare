@@ -214,7 +214,7 @@ class Item {
      * @return {Promise<Item[]>}
      */
     static async from_repos(id) {
-        return await db.single().fetch_objects(Item, 'SELECT * FROM fileshare.items WHERE repos = $1', [as_id(id)]);
+        return await db.single().fetch_objects(Item, 'SELECT item.*, file.size, file.mimetype, file.hash, file.timestamp, directory.open_upload FROM fileshare.items item LEFT JOIN fileshare.file_data file ON item.id = file.id LEFT JOIN fileshare.directory_data directory ON item.id = directory.id WHERE repos = $1', [as_id(id)]);
     }
 
     /**

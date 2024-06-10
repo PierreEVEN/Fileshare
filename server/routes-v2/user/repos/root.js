@@ -275,7 +275,13 @@ router.post('/send/*', async (req, res) => {
     req.on('data', chunk => {
         upload_in_progress[transfer_token].received_size += Buffer.byteLength(chunk);
         upload_in_progress[transfer_token].hash_sum.update(chunk)
-        fs.appendFileSync(tmp_file_path, chunk);
+        try {
+            fs.appendFileSync(tmp_file_path, chunk);
+        }
+        catch (e) {
+            console.assert("Failed to write data : ", e);
+            process.exit(-1)
+        }
     })
 
     req.on('end', async () => {
