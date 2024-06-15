@@ -1,15 +1,39 @@
 const ffmpeg = require('fluent-ffmpeg');
 const {logger} = require("../../../logger");
 
+class FileConversionHandle {
+    /**
+     * @param owner {FileUpload}
+     * @param on_success
+     */
+    constructor(owner, on_success) {
+        this.on_success = on_success;
+        this.owner = owner;
+    }
+
+    video(path, new_format) {
+        this.path = path;
+        this.new_format = new_format;
+        FileConversionQueue.push_video(this);
+        return this;
+    }
+}
+
 class FileConversionQueue {
     constructor() {
+        /**
+         * @type {FileConversionHandle[]}
+         */
         this.video_conversion_queue = []
     }
 
-    push_video(path, new_format, on_success) {
-        logger.info(`Pushed new video for conversion '${path}' to ${new_format}`);
-        this.video_conversion_queue.push({path: path, new_format: new_format, on_success: on_success});
-        this.proc_next_video()
+    /**
+     * @param handle {FileConversionHandle}
+     */
+    static push_video(handle) {
+        logger.info(`Pushed new video for conversion '${handle.path}' to ${handle.new_format}`);
+        conversion_queue.video_conversion_queue.push(handle);
+        conversion_queue.proc_next_video()
     }
 
     proc_next_video() {
@@ -27,6 +51,9 @@ class FileConversionQueue {
                 next_proc.on_success(next_proc.path + '_converted');
                 this_ref.proc_next_video();
             })
+            .on('progress', logProgress => {
+                next_proc.owner.processing_status = logProgress.percent / 100;
+            })
             .on('error', function(err) {
                 logger.error(`Failed to convert video '${next_proc.path}' to ${next_proc.new_format} : ${JSON.stringify(err)}`);
                 this_ref.proc_next_video();
@@ -37,4 +64,4 @@ class FileConversionQueue {
 
 const conversion_queue = new FileConversionQueue();
 
-module.exports = conversion_queue
+module.exports = {FileConversionQueue, FileConversionHandle}

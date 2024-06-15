@@ -97,7 +97,7 @@ class Permissions {
      * @return {Promise<boolean>}
      */
     async can_user_edit_repos(repos_url) {
-        return (await fetch(`${repos_url}/can-edit`)).status === 200;
+        return (await fetch(`${repos_url}/permissions/edit`)).status === 200;
     }
 
     /**
@@ -105,7 +105,7 @@ class Permissions {
      * @return {Promise<boolean>}
      */
     async can_user_upload_to_repos(repos_url) {
-        return (await fetch(`${repos_url}/can-upload/`)).status === 200;
+        return (await fetch(`${repos_url}/permissions/upload`)).status === 200;
     }
 
     /**
@@ -114,7 +114,7 @@ class Permissions {
      * @return {Promise<boolean>}
      */
     async can_user_edit_item(repos_url, item_id) {
-        return (await fetch(`${repos_url}/can-edit/${item_id ? item_id : ""}`)).status === 200;
+        return (await fetch(`${repos_url}/permissions/edit/${item_id ? item_id : ""}`)).status === 200;
     }
 
     /**
@@ -122,8 +122,8 @@ class Permissions {
      * @param object {string}
      * @return {Promise<boolean>}
      */
-    async can_user_upload_to_item(repos_url, object) {
-        return (await fetch(`${repos_url}/can-upload/${object ? object : ""}`)).status === 200;
+    async can_user_upload_to_directory(repos_url, object) {
+        return (await fetch(`${repos_url}/permissions/upload/${object ? object : ""}`)).status === 200;
     }
 }
 

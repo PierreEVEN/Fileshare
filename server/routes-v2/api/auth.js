@@ -34,7 +34,6 @@ router.post("/create-user/", async (req, res) => {
 })
 
 router.post("/create-authtoken/", async (req, res) => {
-    console.log(req.body)
     const found_user = await User.from_credentials(new ServerString(req.body.username), req.body.password);
     logger.info(`User '${new ServerString(req.body.username).plain()}' is trying to generate a new auth token`);
     if (found_user) {

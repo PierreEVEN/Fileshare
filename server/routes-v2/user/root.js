@@ -5,8 +5,8 @@
 const {get_common_data} = require("../../session_utils");
 const {Repos} = require("../../database/repos");
 const {HttpResponse} = require("../utils/errors");
-const perms = require("../../permissions");
 const {ServerString} = require("../../server_string");
+const {ServerPermissions} = require("../../permissions");
 const router = require("express").Router();
 
 /********************** [GLOBAL] **********************/
@@ -32,7 +32,7 @@ repos_router.use('/:repos/', async (req, res, next) => {
     if (!req.display_repos)
         return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
 
-    if (!await perms.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null))
+    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null))
         return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
 
     next();

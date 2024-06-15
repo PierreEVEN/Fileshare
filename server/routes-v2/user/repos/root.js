@@ -6,14 +6,12 @@ const {
     get_common_data,
     require_connection,
 } = require("../../../session_utils");
-const perms = require("../../../permissions");
-const permissions = require("../../../permissions");
 const {logger} = require("../../../logger");
 const {display_name_to_url} = require("../../../database/tools/db_utils");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
-const {upload_in_progress, finalize_file_upload} = require("./utils");
+const {upload_in_progress, finalize_file_upload, FileUpload} = require("./upload");
 const sharp = require("sharp");
 const {platform} = require("os");
 const gm = require("gm");
@@ -21,6 +19,7 @@ const ffmpeg = require("fluent-ffmpeg");
 const {Item} = require("../../../database/item");
 const {HttpResponse} = require("../../utils/errors");
 const {ServerString} = require("../../../server_string");
+const {ServerPermissions} = require("../../../permissions");
 const router = require("express").Router();
 
 /********************** [GLOBAL] **********************/
@@ -28,10 +27,9 @@ router.use('/', async (req, res, next) => {
     if (!req.display_repos)
         return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
 
-    if (!await perms.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null)) {
+    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null))
         // This user is not allowed to access this repos
         return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
-    }
 
     next();
 });
@@ -68,12 +66,11 @@ router.get("/content/:id", async (req, res) => {
     if (Number.isNaN(Number(req.params['id'])))
         return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-    if (!item || !await perms.can_user_view_file(item, req.connected_user.id))
+    if (!item || !await ServerPermissions.can_user_access_item(item, req.connected_user.id))
         return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
-    if (item.is_regular_file) {
+    if (item.is_regular_file)
         await item.as_file();
-    }
     else
         await item.as_directory();
 
@@ -87,7 +84,7 @@ router.get("/file/:id", async (req, res) => {
     if (Number.isNaN(Number(req.params['id'])))
         return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-    if (!item || !await perms.can_user_view_file(item, req.connected_user.id))
+    if (!item || !await ServerPermissions.can_user_access_item(item, req.connected_user.id))
         return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
     if (item.is_regular_file) {
@@ -109,65 +106,17 @@ router.get("/file/:id", async (req, res) => {
     }
 })
 
-router.get("/can-upload/", async (req, res) => {
-    if (req.connected_user && req.display_repos) {
-        if (await permissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
-            return res.sendStatus(200)
-    }
-    res.sendStatus(204);
-});
-
-router.get("/can-upload/:id", async (req, res) => {
-    // Search the requested file or dir
-    if (Number.isNaN(Number(req.params['id'])))
-        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
-    const item = await Item.from_id(req.params['id']);
-    if (!item || !await perms.can_user_view_file(item, req.connected_user.id))
-    return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
-
-    if (req.connected_user && req.display_repos) {
-        if (await permissions.can_user_upload_to_directory(item, req.connected_user.id))
-            return res.sendStatus(200);
-    }
-    res.sendStatus(204);
-})
-
-router.get("/can-edit/", async (req, res) => {
-    if (req.connected_user && req.display_repos) {
-        if (await permissions.can_user_edit_repos(req.display_repos, req.connected_user.id))
-            return res.sendStatus(200)
-    }
-    res.sendStatus(204);
-})
-router.get("/can-edit/:id", async (req, res) => {
-    // Search the requested file or dir
-    if (Number.isNaN(Number(req.params['id'])))
-        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
-    const item = await Item.from_id(req.params['id']);
-    if (!item || !await perms.can_user_view_file(item, req.connected_user.id))
-        return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
-
-    if (item) {
-        if (req.connected_user && req.display_repos) {
-            if (await permissions.can_user_edit_item(item, req.connected_user.id))
-                return res.sendStatus(200);
-        }
-    }
-    res.sendStatus(204);
-})
-
 router.post('/update/:id', async function (req, res, _) {
     // Search the requested file or dir
     if (Number.isNaN(Number(req.params['id'])))
         return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-    if (!item || !await perms.can_user_edit_item(item, req.connected_user.id))
+    if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
         return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
     if (item.is_regular_file) {
         await item.as_file()
-    }
-    else {
+    } else {
         await item.as_directory()
         item.open_upload = req.body.open_upload;
     }
@@ -180,7 +129,7 @@ router.post('/update/:id', async function (req, res, _) {
 });
 
 router.post('/update/', async function (req, res, _) {
-    if (!await perms.can_user_edit_repos(req.display_repos, req.connected_user.id))
+    if (!await ServerPermissions.can_user_configure_repos(req.display_repos, req.connected_user.id))
         return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to edit this repository").redirect_error(req, res);
 
     req.display_repos.name = ServerString.FromURL(display_name_to_url(new ServerString(req.body.name).plain()));
@@ -205,7 +154,7 @@ router.post('/remove/:id', async (req, res) => {
     if (Number.isNaN(Number(req.params['id'])))
         return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-    if (!item || !await perms.can_user_edit_item(item, req.connected_user.id))
+    if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
         return new HttpResponse(HttpResponse.NOT_FOUND, "You don't have the required authorizations to delete this file").redirect_error(req, res);
 
     await item.delete();
@@ -227,78 +176,70 @@ router.post('/delete/', async (req, res) => {
 });
 
 router.post('/send/*', async (req, res) => {
-    const tmp_dir_path = path.join(path.resolve(process.env.FILE_STORAGE_PATH), 'tmp');
-    if (!fs.existsSync(tmp_dir_path))
-        fs.mkdirSync(tmp_dir_path, {recursive: true});
 
-    if (!await perms.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
+    // @TODO Allow user to upload to a specific directory with specific upload permissions
+    if (!await ServerPermissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
         return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to upload files here").redirect_error(req, res);
 
-    const decode_header = (key) => {
-        try {
-            return req.headers[key] ? decodeURIComponent(req.headers[key]) : null
-        } catch (e) {
-            logger.error("Source headers : " + req.headers[key])
-            logger.error(e.toString());
-        }
+    let uploading_file = FileUpload.from_headers(req.headers);
+    if (!uploading_file) {
+        console.warn("Cannot upload : the current stream doesn't exists on the server");
+        return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Cannot upload : the current stream doesn't exists on the server").redirect_error(req, res);
     }
 
-    let transfer_token = decode_header('content-token'); // null if this was the first chunk
-    let generated_transfer_token = false;
-    // If no transfer token was found, initialize a file transfer
-    if (!transfer_token) {
-        do {
-            transfer_token = crypto.randomBytes(16).toString("hex");
-        } while (fs.existsSync(path.join(tmp_dir_path, transfer_token)))
-        generated_transfer_token = true;
-        upload_in_progress[transfer_token] = {
-            received_size: 0,
-            metadata: {
-                file_name: decode_header('content-name'),
-                file_size: Number(decode_header('content-size')),
-                timestamp: decode_header('content-timestamp'),
-                mimetype: decode_header('content-mimetype') || 'application/octet-stream',
-                virtual_path: decode_header('content-path') || '/',
-                file_description: decode_header('content-description'),
-                file_id: transfer_token,
-            },
-            hash_sum: crypto.createHash('sha256'),
-        }
-    }
-
-    const tmp_file_path = path.join(tmp_dir_path, transfer_token);
-
-    // Create and store empty file if size is zero
-    if (generated_transfer_token && upload_in_progress[transfer_token].metadata.file_size === 0)
-        fs.closeSync(fs.openSync(tmp_file_path, 'w'));
+    let sent_response = false;
 
     req.on('data', chunk => {
-        upload_in_progress[transfer_token].received_size += Buffer.byteLength(chunk);
-        upload_in_progress[transfer_token].hash_sum.update(chunk)
-        try {
-            fs.appendFileSync(tmp_file_path, chunk);
-        }
-        catch (e) {
-            console.assert("Failed to write data : ", e);
-            process.exit(-1)
+        // If null, the connection have already been interrupted
+        if (uploading_file) {
+            const error = uploading_file.append_bytes(chunk);
+            if (error && !sent_response) {
+                console.warn("Upload failed : ", error.message);
+                uploading_file.clear();
+                new HttpResponse(HttpResponse.NOT_ACCEPTABLE, error.message).redirect_error(req, res);
+                sent_response = true;
+            }
         }
     })
 
     req.on('end', async () => {
-        if (upload_in_progress[transfer_token].received_size === upload_in_progress[transfer_token].metadata.file_size) {
-            logger.info(`${req.log_name} store '${JSON.stringify(upload_in_progress[transfer_token].metadata)}' to repos '${req.display_repos.name}'`)
-            const file = await finalize_file_upload(tmp_file_path, upload_in_progress[transfer_token].metadata, req.display_repos, req.connected_user, upload_in_progress[transfer_token].hash_sum.digest('hex'))
-            delete upload_in_progress[transfer_token];
-            return res.status(file ? (file.already_exists ? 409 : 202) : 400).send(file ? {
-                status: "Finished",
-                file_id: file.id
-            } : {status: "Failed"});
-        } else if (upload_in_progress[transfer_token].received_size > upload_in_progress[transfer_token].metadata.file_size)
-            return res.status(413).send({status: "Overflow"});
-        else if (generated_transfer_token)
-            return res.status(201).send({status: "Partial-init", "content-token": transfer_token});
-        else {
-            return res.status(200).send({status: "Partial-continue"});
+        // If null, the connection have already been interrupted
+        if (uploading_file) {
+            if (uploading_file.received_size === uploading_file.metadata.file_size) { // Finished
+                // Should we require a conversion step
+                if (uploading_file.process_file()) {
+                    res.status(200).send({
+                        stream_id: uploading_file.upload_token,
+                        process_percent: uploading_file.processing_status
+                    })
+                } else if (await uploading_file.compare_existing_file(req.display_repos)) {
+                    res.status(200).send({
+                        stream_id: uploading_file.upload_token,
+                        process_percent: 0.99
+                    })
+                } else {
+                    const result = await uploading_file.finalize(req.connected_user, req.display_repos);
+                    if (result.error && result.error.status_code !== HttpResponse.OK)
+                        return result.error.redirect_error(req, res);
+                    if (!result.file)
+                        return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Invalid file data : unhandled error case").redirect_error(req, res);
+                    res.status(200).send({
+                        stream_id: uploading_file.upload_token,
+                        process_percent: uploading_file.processing_status,
+                        file_id: result.file.id,
+                        message: result.error ? result.error.response_message : ""
+                    })
+                    uploading_file.clear();
+                }
+            } else {
+                if (sent_response)
+                    return;
+                sent_response = true;
+                return res.status(200).send({
+                    stream_id: uploading_file.upload_token,
+                    process_percent: uploading_file.processing_status
+                })
+            }
         }
     })
 });
@@ -312,7 +253,7 @@ router.get('/thumbnail/:id', async function (req, res) {
         if (!file || !file.is_regular_file)
             return new HttpResponse(HttpResponse.NOT_ACCEPTABLE, "The requested object is not a regular file").redirect_error(req, res);
 
-        if (!await permissions.can_user_view_file(file, req.connected_user ? req.connected_user.id : null))
+        if (!await ServerPermissions.can_user_access_item(file, req.connected_user ? req.connected_user.id : null))
             return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
         await file.as_file();
@@ -395,5 +336,6 @@ router.get('/thumbnail/:id', async function (req, res) {
     }
 )
 
+router.use('/permissions/', require('./permissions/root'))
 
 module.exports = router;

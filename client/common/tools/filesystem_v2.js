@@ -332,7 +332,7 @@ class Filesystem {
 
     /**
      * @param parent_id {String|null}
-     * @param sorter {callback_sorter}
+     * @param sorter {callback_sorter|null}
      * @return {String[]}
      */
     get_objects_in_directory(parent_id, sorter = (a, b) => {
@@ -346,7 +346,9 @@ class Filesystem {
             if (metadata)
                 objects = metadata.children;
         }
-        return Array.from(objects).sort(sorter);
+        if (sorter)
+            return Array.from(objects).sort(sorter);
+        return Array.from(objects)
     }
 
     /**

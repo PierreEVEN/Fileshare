@@ -1,14 +1,12 @@
 const express = require('express');
 const session = require('express-session');
-const {error_404} = require("./session_utils");
 require('./logger');
 const fs = require("fs");
 const {join} = require("path");
 const cookieParser = require("cookie-parser");
 const {HttpResponse} = require("./routes-v2/utils/errors");
-const {HttpError} = require("http-errors");
-function setup_app() {
 
+function setup_app() {
     if (!process.env.FILE_STORAGE_PATH)
         process.env.FILE_STORAGE_PATH = 'data_storage'
 

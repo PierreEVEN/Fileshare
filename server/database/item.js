@@ -4,6 +4,7 @@ const {as_id, as_enum, as_boolean, as_number, as_hash_key, as_data_path} = requi
 const path = require("path");
 const fc = require("filecompare");
 const {ServerString} = require("../server_string");
+const fs = require("node:fs");
 
 class Item {
     /**
@@ -15,9 +16,9 @@ class Item {
          */
         this.id = Number(data.id);
         /**
-         * @type {string}
+         * @type {number}
          */
-        this.repos = data.repos.toString();
+        this.repos = Number(data.repos);
         /**
          * @type {number}
          */
@@ -221,14 +222,20 @@ class Item {
      * Find file item from data (used to find duplications)
      * @param hash {string}
      * @param file_path {string}
-     * @param repos {string}
-     * @return {Item|null}
+     * @param repos {number}
+     * @return {Promise<Item|null>}
      */
     static async from_data(hash, file_path, repos) {
         const file_with_same_hash = await db.single().rows('SELECT * from fileshare.file_data WHERE id IN (SELECT id FROM fileshare.items WHERE repos = $1) AND hash = $2', [as_id(repos), as_hash_key(hash)]);
 
         for (const file of file_with_same_hash) {
             let full_file = await Item.from_id(file.id);
+            if (full_file.size === 0)
+                continue;
+            if (!fs.existsSync(full_file.storage_path())) {
+                console.error(`Cannot find stored file ${full_file.storage_path()} (${full_file.name}) #4897865`)
+                continue;
+            }
             if (await new Promise(async (resolve) => {
                 fc(file_path, full_file.storage_path(), (res) => resolve(res))
             })) {

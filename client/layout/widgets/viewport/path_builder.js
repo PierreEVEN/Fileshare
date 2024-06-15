@@ -32,7 +32,7 @@ class PathBuilder {
             dir_size.innerText = `${humanFileSize(stats.size)} / ${stats.count} fichiers`
             tool_buttons.append(dir_size)
 
-            if ((await permissions.can_user_upload_to_item(PAGE_CONTEXT.repos_path(), dir_id)) || await permissions.can_user_upload_to_repos(PAGE_CONTEXT.repos_path())) {
+            if ((await permissions.can_user_upload_to_directory(PAGE_CONTEXT.repos_path(), dir_id)) || await permissions.can_user_upload_to_repos(PAGE_CONTEXT.repos_path())) {
                 const upload_button = document.createElement('button');
                 upload_button.onclick = () => upload.open_or_update_modal();
                 upload_button.innerText = '+';

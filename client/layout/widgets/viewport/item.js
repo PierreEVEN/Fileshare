@@ -47,7 +47,7 @@ function open_item_preview(div, file) {
             import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown => {
                 document.getElementById('item-title').innerText = file.name.plain();
                 document.getElementById('item-size').innerText = humanFileSize(file.size);
-                document.getElementById('item-mime-type').innerText = file.mimetype.plain();
+                document.getElementById('item-mime-type').innerText = file.mimetype ? file.mimetype.plain() : '';
                 document.getElementById('item-description').innerHTML = file.description && file.description.plain() !== '' ? showdown.convert_text(file.description.plain()) : '';
                 document.getElementById('item-content').innerHTML = handlebars.compile('{{item_image item}}')({item: file});
                 document.getElementsByClassName('typeicon')[0].src = get_mime_icon_path(file.mimetype);

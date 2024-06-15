@@ -12,6 +12,14 @@
     height: 100%;
     background-color: $progress-bar;
     position: absolute;
-    transition-duration: 0.5s;
+    transition-duration: 0.05s;
+  }
+
+  .sub-progress-bar {
+    width: 0;
+    height: 100%;
+    background-color: $sub-progress-bar;
+    position: absolute;
+    transition-duration: 0.05s;
   }
 }
