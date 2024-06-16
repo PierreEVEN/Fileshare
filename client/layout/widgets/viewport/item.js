@@ -6,10 +6,13 @@ import {close_modal, open_modal} from "../../../common/widgets/modal";
 import edit_file_hbs from "./edit_file.hbs";
 import {select_next_element, select_previous_element, update_repos_content} from "./repos_builder";
 import {ClientString} from "../../../common/tools/client_string";
+import {ItemCarousel} from "./item_carousel";
 
 let opened_item_div = null;
 let overlay = null;
 let last_item = null;
+
+let tile = null;
 
 /**
  * @param div {HTMLElement}
@@ -18,6 +21,11 @@ let last_item = null;
 function open_item_preview(div, file) {
     if (last_item === file)
         return;
+
+    if (!tile)
+        tile = new ItemCarousel(file);
+    return;
+
     last_item = file;
     if ((document.fullScreenElement && document.fullScreenElement !== null) ||
         (!document.mozFullScreen && !document.webkitIsFullScreen)) {
