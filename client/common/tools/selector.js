@@ -1,21 +1,23 @@
-
-class Selector {
-    constructor() {
+class Navigator {
+    /**
+     * @param filesystem {Filesystem}
+     */
+    constructor(filesystem) {
         this.last_hover_item = null;
         this.hover_item_callbacks = [];
 
         /**
-         * @type {Set<string>}
+         * @type {Set<number>}
          */
         this.selected_items = new Set();
         this.last_selected_item = null;
         this.selected_item_callbacks = [];
 
-        this.last_directory = undefined;
+        this.current_directory = undefined;
 
         /**
          * @callback callback_directory_changed
-         * @param {string} new_item
+         * @param {number} new_item
          * @param {boolean} is_selected
          */
 
@@ -27,7 +29,7 @@ class Selector {
         /**
          * @type {Filesystem}
          */
-        this.filesystem = null;
+        this.filesystem = filesystem;
     }
 
     set_hover_item(item) {
@@ -47,12 +49,12 @@ class Selector {
     }
 
     /**
-     * @param item {string}
+     * @param item {number}
      * @param shift_key {boolean}
      * @param ctrl_key {boolean}
      * @param force_select {boolean}
      */
-    select_item(item, shift_key, ctrl_key, force_select= false) {
+    select_item(item, shift_key, ctrl_key, force_select = false) {
         this.last_selected_item = item;
         if (!shift_key) {
             if (ctrl_key) {
@@ -105,16 +107,17 @@ class Selector {
     }
 
     set_current_dir(item) {
+        this.last_hover_item = null;
         this.clear_selection();
-        if (item !== this.last_directory) {
+        if (item !== this.current_directory) {
+            this.current_directory = item;
             for (const callback of this.changed_dir_callbacks)
-                callback(item, this.last_directory)
+                callback(item)
         }
-        this.last_directory = item;
     }
 
     get_current_directory() {
-        return this.last_directory;
+        return this.current_directory;
     }
 
     /**
@@ -125,7 +128,4 @@ class Selector {
     }
 }
 
-const selector = new Selector();
-
-window.selector = selector
-export {selector}
+export {Navigator}

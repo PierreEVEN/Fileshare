@@ -3,13 +3,12 @@ import {PAGE_CONTEXT, humanFileSize, seconds_to_str} from "../../../common/tools
 import {print_message} from "../../../common/widgets/message_box.js";
 import {Filesystem} from "../../../common/tools/filesystem.js";
 import {FilesystemUpload} from "../../../common/tools/filesystem_upload.js";
-import {get_viewport_filesystem} from "../viewport/repos_builder.js";
 import upload_hbs from "./upload_form.hbs";
 import file_hbs from "./file.hbs";
 import directory_hbs from "./directory.hbs";
 import {spawn_context_action} from "../../../common/widgets/context_action";
 import {FilesystemObject} from "../../../common/tools/filesystem_v2";
-import {selector} from "../../../common/tools/selector";
+import {REPOS_BUILDER} from "../viewport/repos_builder"
 
 const url = `${PAGE_CONTEXT.repos_path()}/send/`;
 let filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.name) : null;
@@ -30,7 +29,7 @@ if (filesystem_upload) {
 
     filesystem_upload.callback_file_uploaded = async (_, context) => {
         const file = await FilesystemObject.FetchFromServer(context.file_id);
-        get_viewport_filesystem().add_object(file);
+        REPOS_BUILDER.filesystem.add_object(file);
     }
 }
 
@@ -84,11 +83,11 @@ function cleanup_path(viewport_filesystem, search_dir, viewport_id) {
 }
 
 function cleanup_button() {
-    const viewport_filesystem = get_viewport_filesystem()
+    const viewport_filesystem = REPOS_BUILDER.filesystem
     if (!viewport_filesystem)
         return;
 
-    cleanup_path(viewport_filesystem, filesystem.root, selector.get_current_directory())
+    cleanup_path(viewport_filesystem, filesystem.root, REPOS_BUILDER.navigator.get_current_directory())
 }
 
 function open_upload_modal_for_files() {

@@ -1,9 +1,8 @@
 import {spawn_context_action} from "../../../common/widgets/context_action.js";
 import {close_modal, open_modal} from "../../../common/widgets/modal.js";
 import {parse_fetch_result, print_message} from "../../../common/widgets/message_box.js";
-import {update_repos_content} from "./repos_builder";
+import {REPOS_BUILDER} from "./repos_builder";
 import {PAGE_CONTEXT, permissions} from "../../../common/tools/utils";
-import {selector} from "../../../common/tools/selector";
 import {ClientString} from "../../../common/tools/client_string";
 
 const edit_dir_hbs = require('./edit_directory.hbs')
@@ -34,7 +33,7 @@ async function spawn_item_context_action(item) {
         image: '/images/icons/icons8-download-96.png'
     });
 
-    if (await permissions.can_user_edit_item(selector.get_current_directory(), item.id)) {
+    if (await permissions.can_user_edit_item(REPOS_BUILDER.navigator.get_current_directory(), item.id)) {
         actions.push({
             title: "Modifier",
             action: () => {

@@ -1,19 +1,17 @@
-import {selector} from "../../../common/tools/selector.js";
 import {PAGE_CONTEXT, humanFileSize, permissions} from "../../../common/tools/utils";
-import {ClientString} from "../../../common/tools/client_string";
 
 const current_path = document.getElementById('current-path');
 const tool_buttons = document.getElementById('viewport_toolbar');
 
 class PathBuilder {
     /**
-     * @param filesystem {Filesystem}
+     * @param navigator {Navigator}
      */
-    constructor(filesystem) {
-        this.filesystem = filesystem;
+    constructor(navigator) {
+        this.navigator = navigator;
 
         const self = this;
-        selector.on_changed_dir(async function (new_dir)  {
+        this.navigator.on_changed_dir(async function (new_dir)  {
             await self.update_dir(new_dir)
         })
     }
@@ -28,7 +26,7 @@ class PathBuilder {
             tool_buttons.innerHTML = '';
 
             const dir_size = document.createElement('p');
-            const stats = this.filesystem.get_object_content_stats(dir_id);
+            const stats = this.navigator.filesystem.get_object_content_stats(dir_id);
             dir_size.innerText = `${humanFileSize(stats.size)} / ${stats.count} fichiers`
             tool_buttons.append(dir_size)
 
@@ -41,7 +39,7 @@ class PathBuilder {
             }
 
             const download_button = document.createElement('button');
-            download_button.onclick = () => window.open(`${PAGE_CONTEXT.repos_path()}/download` + (selector.get_current_directory() ? selector.get_current_directory().absolute_path() : '/'), '_blank').focus();
+            download_button.onclick = () => window.open(`${PAGE_CONTEXT.repos_path()}/download` + (this.navigator.get_current_directory() ? this.navigator.get_current_directory().absolute_path() : '/'), '_blank').focus();
             download_button.innerHTML = `<img src='/images/icons/icons8-download-96.png' alt='download'>`
             tool_buttons.append(download_button);
 
@@ -55,9 +53,9 @@ class PathBuilder {
         }
 
         const button = document.createElement('button')
-        button.innerText = this.filesystem.name.plain();
+        button.innerText = this.navigator.filesystem.name.plain();
         button.onclick = () => {
-            selector.set_current_dir(null);
+            this.navigator.set_current_dir(null);
         }
         current_path.append(button);
 
@@ -66,8 +64,8 @@ class PathBuilder {
         current_path.append(separator);
 
         let full_path_string = "/";
-        for (const dir of this.filesystem.make_path_to_object(dir_id)) {
-            const dir_data = this.filesystem.get_object_data(dir);
+        for (const dir of this.navigator.filesystem.make_path_to_object(dir_id)) {
+            const dir_data = this.navigator.filesystem.get_object_data(dir);
 
             if (dir_data.parent_item) {
                 // Add separator between directories
@@ -80,7 +78,7 @@ class PathBuilder {
             const button = document.createElement('button')
             button.innerText = dir_data.name.toString();
             button.onclick = () => {
-                selector.set_current_dir(dir);
+                this.navigator.set_current_dir(dir);
             }
             current_path.append(button);
             full_path_string += dir_data.name.plain() + "/";

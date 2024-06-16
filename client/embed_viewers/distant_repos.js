@@ -3,10 +3,11 @@ import {PAGE_CONTEXT} from "../common/tools/utils";
 
 function get(item) {
     const url = `${PAGE_CONTEXT.repos_path()}/file/${item.id}`;
+    const thumbnail_url = `${PAGE_CONTEXT.repos_path()}/thumbnail/${item.id}`;
     const mimetype = item.mimetype.plain().split('/');
     switch (mimetype[0]) {
         case 'image':
-            return `<img class="item-large" src="${url}" alt="image: ${item.name}" onError="this.onError = null; this.src='/images/icons/mime-icons/image.png'"/>`
+            return `<lazy-img class="item-large" src="${url}" alternate-src="${thumbnail_url}""/>`
         case 'video':
             return `<video class="item-large video-js" preload="auto" data-setup="{}" autoplay="true" preload="auto" controls="true" height="100%" width="100%">
                         <source src="${url}" type="${item.mimetype}">

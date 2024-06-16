@@ -26,6 +26,7 @@ body {
   font-family: Bahnschrift;
   overflow: hidden;
 
+  touch-action: pinch-zoom;
   .app-container {
     display: flex;
     flex-direction: column;

@@ -1,298 +1,417 @@
 import {spawn_item_context_action} from "./item_context_action.js";
 import {parse_fetch_result} from "../../../common/widgets/message_box.js";
-import {close_item_plain, is_item_preview_open, open_item_preview} from "./item.js";
 import {Filesystem, FilesystemObject} from "../../../common/tools/filesystem_v2.js";
-import {selector} from "../../../common/tools/selector.js";
+import {Navigator} from "../../../common/tools/selector.js";
 import {PAGE_CONTEXT} from "../../../common/tools/utils";
 import {LOCAL_USER} from "../../../common/tools/user";
 import {PathBuilder} from "./path_builder";
 import {close_modal, is_modal_open} from "../../../common/widgets/modal";
+import {ItemCarousel} from "./item_carousel";
 
 const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
 
-const filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.display_name) : null;
-const _ = new PathBuilder(filesystem);
-selector.filesystem = filesystem;
-const viewport_container = document.getElementById('file-list')
+class DirectoryContent {
+    /**
+     * @param navigator{Navigator}
+     */
+    constructor(navigator) {
+        /**
+         * @type {Navigator}
+         */
+        this.navigator = navigator;
 
-/**
- * @type {ObjectListener|null}
- */
-let current_directory_listener = null;
+        /**
+         * @type {{id:number, data:FilesystemObject}[]}
+         */
+        this.objects = [];
 
-/**
- * @type {Map<string, HTMLElement>}
- */
-const entry_widgets = new Map();
+        /**
+         * @type {HTMLElement}
+         */
+        this.viewport_container = document.getElementById('file-list');
 
-/**
- * @type {string[]}
- */
-let page_content = [];
+        /**
+         * @type {Map<number, HTMLElement>}
+         */
+        this.entry_widgets = new Map();
 
-function update_repos_content() {
-    if (!filesystem)
-        return;
-    fetch(`${PAGE_CONTEXT.repos_path()}/content/`, {
-        headers: {
-            'content-authtoken': LOCAL_USER.get_token(),
-            'accept': 'application/json',
-        },
-    })
-        .then(async (response) => await parse_fetch_result(response))
-        .then((json) => {
-            filesystem.clear();
+        /**
+         * @type {ItemCarousel}
+         */
+        this.item_carousel = null;
 
-            for (const item of json)
-                filesystem.add_object(FilesystemObject.FromServerData(item));
-
-            selector.set_current_dir(filesystem.get_object_from_path(PAGE_CONTEXT.request_path.plain()));
-        });
-}
-
-/**
- * @param dir {FilesystemObject}
- */
-function add_directory_to_viewport(dir) {
-    const dir_div = directory_hbs({item: dir}, {
-        dblclicked: event => {
-            if (!event.target.classList.contains('open-context-button'))
-                selector.set_current_dir(dir.id);
-        },
-        clicked: event => {
-            if (window.matchMedia("(pointer: coarse)").matches)
-                selector.set_current_dir(dir.id);
+        /**
+         * @type {ObjectListener}
+         */
+        this.current_directory_listener = navigator.filesystem.create_listener(navigator.get_current_directory());
+        this.current_directory_listener.on_add_object = (object_id) => {
+            const object = navigator.filesystem.get_object_data(object_id);
+            if (object.is_regular_file)
+                this._on_file_added(object);
             else
-                selector.select_item(dir.id, event.shiftKey, event.ctrlKey);
-        },
-        enter: () => selector.set_hover_item(dir.id),
-        leave: () => {
-            if (selector.get_hover_item() === dir.id)
-                selector.set_hover_item(null);
-        },
-        context_menu: event => {
-            spawn_item_context_action(dir);
-            event.preventDefault();
-        },
-    });
-    entry_widgets.set(dir.id, dir_div)
-    dir_div.object = dir;
-    viewport_container.append(dir_div);
-}
+                this._on_directory_added(object);
+        };
 
-/**
- * @param file {FilesystemObject}
- */
-function add_file_to_viewport(file) {
-    const file_div = file_hbs({item: file}, {
-        dblclicked: event => {
-            if (event.target.classList.contains('open-context-button'))
-                return;
+        this.current_directory_listener.on_remove_object = (object_id) => {
+            this._on_item_removed(object_id)
+        };
 
-            open_item_preview(file_div, file);
-            selector.select_item(file.id, event.shiftKey, event.ctrlKey, true);
-        },
-        clicked: event => {
-            if (window.matchMedia("(pointer: coarse)").matches) {
-                open_item_preview(file_div, file);
-                selector.select_item(file.id, event.shiftKey, event.ctrlKey, true);
-            } else {
-                selector.select_item(file.id, event.shiftKey, event.ctrlKey);
+        this.current_directory_listener.on_update_object = (object_id) => {
+            this._on_item_removed(object_id);
+            const new_data = navigator.filesystem.get_object_data(object_id);
+            if (new_data) {
+                if (new_data.is_regular_file)
+                    this._on_file_added(new_data);
+                else
+                    this._on_directory_added(new_data);
             }
-        },
-        enter: () => selector.set_hover_item(file.id),
-        leave: () => {
-            if (selector.get_hover_item() === file.id)
-                selector.set_hover_item(null);
-        },
-        context_menu: event => {
-            spawn_item_context_action(file);
-            event.preventDefault();
-        },
-    });
-    entry_widgets.set(file.id, file_div)
-    file_div.object = file;
-    viewport_container.append(file_div);
-}
+        };
 
-/**
- * @param directory {string|null}
- */
-function render_directory(directory) {
-    if (!viewport_container)
-        return;
+        this.navigator.bind_on_select_item((item, should_select) => {
+            const widget = this.entry_widgets.get(item)
+            if (widget) {
+                if (should_select) {
+                    widget.classList.add("selected");
+                    widget.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
+                } else {
+                    widget.classList.remove("selected");
+                }
+            }
 
-    viewport_container.innerHTML = null;
+            if (this.item_carousel)
+                this.item_carousel.scroll_to(-this.get_item_index(item), this.item_carousel.get_offset_y());
+        })
 
-    page_content = filesystem.get_objects_in_directory(directory);
-    for (const object_id of page_content) {
-        const object = filesystem.get_object_data(object_id);
-        if (!object.is_regular_file)
-            add_directory_to_viewport(object);
+        this.regen_content();
     }
 
-    for (const object_id of page_content) {
-        const object = filesystem.get_object_data(object_id);
-        if (object.is_regular_file)
-            add_file_to_viewport(object);
+    destroy() {
+        this.current_directory_listener.destroy();
     }
 
-    if (current_directory_listener)
-        current_directory_listener.destroy();
+    directories_data() {
+        const data = [];
+        for (const object of this.objects)
+            if (!object.data.is_regular_file)
+                data.push(object.data);
+        return data;
+    }
 
-    current_directory_listener = filesystem.create_listener(directory);
-    current_directory_listener.on_add_object = (object_id) => {
-        const object = filesystem.get_object_data(object_id);
-        if (object.is_regular_file)
-            add_file_to_viewport(object);
-        else
-            add_directory_to_viewport(object);
-    };
+    files_data() {
+        const data = [];
+        for (const object of this.objects)
+            if (object.data.is_regular_file)
+                data.push(object.data);
+        return data;
+    }
 
-    current_directory_listener.on_remove_object = (object_id) => {
-        let widget = entry_widgets.get(object_id);
+    regen_content() {
+        for (const object of this.navigator.filesystem.get_objects_in_directory(this.navigator.get_current_directory()))
+            this.objects.push({id: object, data: this.navigator.filesystem.get_object_data(object)});
+        this.viewport_container.innerHTML = null;
+        for (const object of this.directories_data())
+            this._on_directory_added(object);
+        for (const object of this.files_data())
+            this._on_file_added(object);
+    }
+
+    /**
+     * @param directory {FilesystemObject}
+     * @private
+     */
+    _on_directory_added(directory) {
+        const dir_div = directory_hbs({item: directory}, {
+            dblclicked: event => {
+                if (!event.target.classList.contains('open-context-button'))
+                    this.navigator.set_current_dir(directory.id);
+            },
+            clicked: event => {
+                if (window.matchMedia("(pointer: coarse)").matches)
+                    this.navigator.set_current_dir(directory.id);
+                else
+                    this.navigator.select_item(directory.id, event.shiftKey, event.ctrlKey);
+            },
+            enter: () => this.navigator.set_hover_item(directory.id),
+            leave: () => {
+                if (this.navigator.get_hover_item() === directory.id)
+                    this.navigator.set_hover_item(null);
+            },
+            context_menu: event => {
+                spawn_item_context_action(directory);
+                event.preventDefault();
+            },
+        });
+        this.entry_widgets.set(directory.id, dir_div)
+        dir_div.object = directory;
+        this.viewport_container.append(dir_div);
+    }
+
+    /**
+     * @param file {FilesystemObject}
+     * @private
+     */
+    _on_file_added(file) {
+        const file_div = file_hbs({item: file}, {
+            dblclicked: event => {
+                if (event.target.classList.contains('open-context-button'))
+                    return;
+
+                this.navigator.select_item(file.id, event.shiftKey, event.ctrlKey, true);
+                this.open_item_carousel();
+            },
+            clicked: event => {
+                if (window.matchMedia("(pointer: coarse)").matches) {
+                    this.navigator.select_item(file.id, event.shiftKey, event.ctrlKey, true);
+                    this.open_item_carousel();
+                } else {
+                    this.navigator.select_item(file.id, event.shiftKey, event.ctrlKey);
+                }
+            },
+            enter: () => this.navigator.set_hover_item(file.id),
+            leave: () => {
+                if (this.navigator.get_hover_item() === file.id)
+                    this.navigator.set_hover_item(null);
+            },
+            context_menu: event => {
+                spawn_item_context_action(file);
+                event.preventDefault();
+            },
+        });
+        this.entry_widgets.set(file.id, file_div)
+        file_div.object = file;
+        this.viewport_container.append(file_div);
+    }
+
+    /**
+     * @param item {number}
+     * @private
+     */
+    _on_item_removed(item) {
+        let widget = this.entry_widgets.get(item);
         if (widget)
             widget.remove();
-    };
+        this.entry_widgets.delete(item);
+        for (let i = 0; i < this.objects.length; ++i)
+            if (this.objects[i].id === item)
+                return this.objects.splice(i, 1);
+    }
 
-    current_directory_listener.on_update_object = (object_id) => {
-        const widget = entry_widgets.get(object_id);
-        if (widget)
-            widget.remove();
-        const new_data = filesystem.get_object_data(object_id);
-        if (new_data) {
-            if (new_data.is_regular_file)
-                add_file_to_viewport(new_data);
-            else
-                add_directory_to_viewport(new_data);
+    /**
+     * @param object {number|null}
+     * @return {number|null}
+     */
+    get_item_index(object) {
+        if (!object && this.objects.length !== 0)
+            return null;
+        if (this.objects.length === 0)
+            return null;
+        for (let i = 0; i < this.objects.length; ++i)
+            if (this.objects[i].id === object)
+                return i;
+        return null;
+    }
+
+    /**
+     * @param index {number|null}
+     * @return {number|null}
+     */
+    get_item_at_index(index) {
+        if (index >= this.objects.length || index < 0)
+            return null;
+        return this.objects[index].id;
+    }
+
+    /**
+     * @param object {number}
+     * @param only_files {boolean}
+     * @return {number|null}
+     */
+    get_item_after(object, only_files = false) {
+        const file_index = this.get_item_index(object);
+        if (file_index === null)
+            return this.objects.length !== 0 ? this.objects[0].id : null;
+        for (let i = 0; i < this.objects.length; ++i) {
+            const id = (i + file_index + 1) % this.objects.length;
+            if (!only_files || this.objects[id].data.is_regular_file)
+                return this.objects[id].id;
         }
-    };
+        return null;
+    }
+
+    /**
+     * @param object {number}
+     * @param only_files {boolean}
+     * @return {number|null}
+     */
+    get_item_before(object, only_files = false) {
+        const file_index = this.get_item_index(object);
+        if (file_index === null)
+            return this.objects.length !== 0 ? this.objects[this.objects.length - 1].id : null;
+        for (let i = this.objects.length - 1; i >= 0; --i) {
+            const id = (i + file_index) % this.objects.length;
+            if (!only_files || this.objects[id].data.is_regular_file)
+                return this.objects[id].id;
+        }
+        return null;
+    }
+
+    open_item_carousel() {
+        if (this.item_carousel)
+            this.item_carousel.close();
+
+        this.item_carousel = new ItemCarousel(this);
+    }
+
+    close_carousel() {
+        if (this.item_carousel)
+            this.item_carousel.close();
+        delete this.item_carousel;
+        this.item_carousel = null;
+    }
 }
 
-selector.on_changed_dir((new_dir, _) => {
-    entry_widgets.clear();
-    render_directory(new_dir);
+class ReposBuilder {
+    constructor(repo) {
+        this.repo = repo;
 
-    const dir_data = filesystem.get_object_data(new_dir)
-    const description = new_dir && dir_data && dir_data.parent_item !== null ? dir_data.description.plain() : PAGE_CONTEXT.display_repos.description.plain();
-    if (description && description !== '' && description !== 'null') {
-        import('../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
-            const directory_description = document.getElementById('directory-description')
-            if (directory_description) {
-                directory_description.innerHTML = showdown.convert_text(description)
-                directory_description.style.padding = '20px';
+        /**
+         * @type {Filesystem}
+         */
+        this.filesystem = new Filesystem(this.repo.display_name);
+
+        /**
+         * @type {Navigator}
+         */
+        this.navigator = new Navigator(this.filesystem);
+
+        /**
+         * @type {PathBuilder}
+         */
+        this.path_builder = new PathBuilder(this.navigator);
+
+        /**
+         * @type {DirectoryContent}
+         */
+        this.directory_content = new DirectoryContent(this.navigator);
+
+        this.navigator.on_changed_dir((new_dir) => {
+            this.directory_content.destroy();
+            this.directory_content = new DirectoryContent(this.navigator);
+
+            // Show directory or repo description
+            const dir_data = this.filesystem.get_object_data(new_dir)
+            const description = new_dir && dir_data && dir_data.parent_item !== null ? dir_data.description.plain() : PAGE_CONTEXT.display_repos.description.plain();
+            if (description && description !== '' && description !== 'null') {
+                import('../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
+                    const directory_description = document.getElementById('directory-description')
+                    if (directory_description) {
+                        directory_description.innerHTML = showdown.convert_text(description)
+                        directory_description.style.padding = '20px';
+                    }
+                })
+            } else {
+                const directory_description = document.getElementById('directory-description')
+                if (directory_description) {
+                    directory_description.innerText = '';
+                    directory_description.style.padding = '0';
+                }
             }
         })
-    } else {
-        const directory_description = document.getElementById('directory-description')
-        if (directory_description) {
-            directory_description.innerText = '';
-            directory_description.style.padding = '0';
-        }
-    }
-})
 
-selector.bind_on_select_item((item, should_select) => {
-    const widget = entry_widgets.get(item)
-    if (widget) {
-        if (should_select) {
-            widget.classList.add("selected");
-            widget.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
-        } else {
-            widget.classList.remove("selected");
-        }
-    }
+        this.fetch_repos_content().then(() => {
+            this.navigator.set_current_dir(this.filesystem.get_object_from_path(PAGE_CONTEXT.request_path.plain()));
+        })
 
-    if (is_item_preview_open() && item)
-        open_item_preview(entry_widgets.get(selector.last_selected_item), filesystem.get_object_data(selector.last_selected_item))
-})
+        window.addEventListener('popstate', function (event) {
+            if (!event.state)
+                return;
 
-/**
- * @param object {string}
- * @return {string|null}
- */
-function get_object_after(object) {
-    if (!object && page_content.length !== 0)
-        return page_content[0];
-    for (let i = 0; i < page_content.length; ++i)
-        if (page_content[i] === object)
-            return page_content[(i + 1) % page_content.length];
-    return null;
-}
+            const dir = this.filesystem.get_object_from_path(event.state)
+            this.navigator.set_current_dir(dir);
+        }, false);
 
-function get_object_before(object) {
-    if (!object && page_content.length !== 0)
-        return page_content[page_content.length - 1];
-    for (let i = 0; i < page_content.length; ++i)
-        if (page_content[i] === object)
-            return page_content[(i - 1 + page_content.length) % page_content.length];
-    return null;
-}
-
-function select_previous_element() {
-    selector.select_item(get_object_before(selector.last_selected_item), event.shiftKey, event.ctrlKey);
-}
-
-function select_next_element() {
-    selector.select_item(get_object_after(selector.last_selected_item), event.shiftKey, event.ctrlKey);
-}
-
-document.addEventListener('keydown', (event) => {
-    if ((event.key === 'Backspace' || event.key === 'Escape')) {
-        if (is_modal_open()) {
-            if (event.key === 'Escape')
-                close_modal();
-            return;
-        }
-        if (is_item_preview_open())
-            close_item_plain()
-        else {
-            const current_data = filesystem.get_object_data(selector.get_current_directory());
-            if (current_data) {
-                selector.set_current_dir(current_data.parent_item)
-                selector.select_item(current_data.id, false, false);
+        document.addEventListener('keydown', (event) => {
+            if ((event.key === 'Backspace' || event.key === 'Escape')) {
+                if (is_modal_open()) {
+                    if (event.key === 'Escape')
+                        close_modal();
+                    return;
+                }
+                if (this.directory_content.item_carousel) {
+                    this.directory_content.close_carousel();
+                }
+                else {
+                    const current_data = this.filesystem.get_object_data(this.navigator.get_current_directory());
+                    if (current_data) {
+                        this.navigator.set_current_dir(current_data.parent_item)
+                        this.navigator.select_item(current_data.id, false, false);
+                    }
+                }
             }
-        }
+            if (event.key === 'ArrowRight') {
+                if (is_modal_open())
+                    return;
+                this.select_next_element(event);
+            }
+            if (event.key === 'ArrowLeft') {
+                if (is_modal_open())
+                    return;
+                this.select_previous_element(event);
+            }
+            if (event.key === 'ArrowUp') {
+                if (is_modal_open())
+                    return;
+                const item_per_row = this.directory_content.viewport_container.offsetWidth / 120;
+                for (let i = 1; i < item_per_row; ++i)
+                    this.select_previous_element(event);
+            }
+            if (event.key === 'ArrowDown') {
+                if (is_modal_open())
+                    return;
+                const item_per_row = this.directory_content.viewport_container.offsetWidth / 120;
+                for (let i = 1; i < item_per_row; ++i)
+                    this.select_next_element(event);
+            }
+            if (event.key === 'Enter') {
+                if (is_modal_open())
+                    return;
+                const current_data = this.filesystem.get_object_data(this.navigator.last_selected_item);
+                if (current_data) {
+                    if (current_data.is_regular_file) {
+                        this.directory_content.open_item_carousel();
+                    }
+                    else
+                        this.navigator.set_current_dir(current_data.id);
+                }
+            }
+        }, false);
     }
-    if (event.key === 'ArrowRight') {
-        if (is_modal_open())
-            return;
-        select_next_element();
+
+    async fetch_repos_content() {
+        this.filesystem.clear();
+        await fetch(`${PAGE_CONTEXT.repos_path()}/content/`, {
+            headers: {
+                'content-authtoken': LOCAL_USER.get_token(),
+                'accept': 'application/json',
+            },
+        })
+            .then(async (response) => await parse_fetch_result(response))
+            .then((json) => {
+                for (const item of json)
+                    this.filesystem.add_object(FilesystemObject.FromServerData(item));
+            });
     }
-    if (event.key === 'ArrowLeft') {
-        if (is_modal_open())
-            return;
-        select_previous_element();
+
+    select_previous_element(event) {
+        this.navigator.select_item(this.directory_content.get_item_before(this.navigator.last_selected_item, !!this.directory_content.item_carousel), event.shiftKey, event.ctrlKey);
     }
-    if (event.key === 'Enter') {
-        if (is_modal_open())
-            return;
-        if (!selector.last_selected_item || selector.get_hover_item())
-            selector.select_item(selector.get_hover_item(), event.shiftKey, event.ctrlKey, true);
 
-        const current_data = filesystem.get_object_data(selector.last_selected_item);
-
-        if (current_data) {
-            if (current_data.is_regular_file)
-                open_item_preview(entry_widgets.get(current_data.id), current_data);
-            else
-                selector.set_current_dir(current_data.id);
-        }
+    select_next_element(event) {
+        this.navigator.select_item(this.directory_content.get_item_after(this.navigator.last_selected_item, !!this.directory_content.item_carousel), event.shiftKey, event.ctrlKey);
     }
-}, false);
-
-window.addEventListener('popstate', function (event) {
-    if (!event.state)
-        return;
-
-    const dir = filesystem.get_object_from_path(event.state)
-    selector.set_current_dir(dir);
-}, false);
-
-function get_viewport_filesystem() {
-    return filesystem;
 }
 
-update_repos_content();
-export {get_viewport_filesystem, update_repos_content, select_previous_element, select_next_element}
+const REPOS_BUILDER = PAGE_CONTEXT.display_repos ? new ReposBuilder(PAGE_CONTEXT.display_repos) : null;
+
+export {REPOS_BUILDER}

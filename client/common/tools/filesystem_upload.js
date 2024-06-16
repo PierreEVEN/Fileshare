@@ -1,5 +1,5 @@
 import {print_message} from "../widgets/message_box.js";
-import {PAGE_CONTEXT} from "./utils";
+import {REPOS_BUILDER} from "../../layout/widgets/viewport/repos_builder"
 
 class TransferStats {
     constructor() {
@@ -286,7 +286,7 @@ class UploadStream {
             this._request.setRequestHeader('content-size', this._file_stream.file.size);
             this._request.setRequestHeader('content-timestamp', this._file_stream.file.timestamp);
             this._request.setRequestHeader('content-mimetype', this._file_stream.file.mimetype);
-            const absolute_path = (selector.filesystem.make_string_path_to_object(selector.get_current_directory()) + this._file_stream.file.directory.absolute_path().replaceAll('//', '/'));
+            const absolute_path = (REPOS_BUILDER.navigator.filesystem.make_string_path_to_object(REPOS_BUILDER.navigator.get_current_directory()) + this._file_stream.file.directory.absolute_path().replaceAll('//', '/'));
             this._request.setRequestHeader('content-path', encodeURIComponent(absolute_path));
             if (this._file_stream.file.description)
                 this._request.setRequestHeader('content-description', this._file_stream.file.description ? encodeURIComponent(this._file_stream.file.description) : '');

@@ -2,7 +2,6 @@ const mime = require('mime');
 const {PAGE_CONTEXT} = require("./utils");
 const {LOCAL_USER} = require("./user");
 const {parse_fetch_result} = require("../widgets/message_box");
-const {selector} = require("./selector");
 const {ClientString} = require("./client_string");
 
 class FilesystemObject {
@@ -30,7 +29,7 @@ class FilesystemObject {
     }
 
     /**
-     * @param object_id {string}
+     * @param object_id {number}
      * @return {Promise<FilesystemObject>}
      * @constructor
      */
@@ -51,17 +50,17 @@ class FilesystemObject {
 
     constructor() {
         /**
-         * @type {string|null}
+         * @type {number|null}
          */
         this.id = null;
 
         /**
-         * @type {string|null}
+         * @type {number|null}
          */
         this.repos = null;
 
         /**
-         * @type {string|null}
+         * @type {number|null}
          */
         this.owner = null;
 
@@ -81,7 +80,7 @@ class FilesystemObject {
         this.description = null;
 
         /**
-         * @type {string|null}
+         * @type {number|null}
          */
         this.parent_item = null;
 
@@ -155,7 +154,7 @@ class ObjectListener {
 class ObjectInternalMetadata {
     constructor() {
         /**
-         * @type {Set<String>}
+         * @type {Set<number>}
          */
         this.children = new Set();
 
@@ -188,13 +187,13 @@ class Filesystem {
         this.name = new ClientString(filesystem_name);
 
         /**
-         * @type {Map<string, FilesystemObject>}
+         * @type {Map<number, FilesystemObject>}
          * @private
          */
         this._content = new Map();
 
         /**
-         * @type {Map<string, ObjectInternalMetadata>}
+         * @type {Map<number, ObjectInternalMetadata>}
          * @private
          */
         this._object_internal_metadata = new Map();
@@ -206,7 +205,7 @@ class Filesystem {
         this._root_meta_data = new ObjectInternalMetadata();
 
         /**
-         * @type {Set<string>}
+         * @type {Set<number>}
          * @private
          */
         this._roots = new Set();
@@ -276,7 +275,7 @@ class Filesystem {
     }
 
     /**
-     * @param object_id {string}
+     * @param object_id {number}
      */
     remove_object(object_id) {
 
@@ -304,7 +303,7 @@ class Filesystem {
     }
 
     /**
-     * @return {Set<string>}
+     * @return {Set<number>}
      */
     get_roots() {
         if (this._root_dirty) {
@@ -317,7 +316,7 @@ class Filesystem {
     }
 
     /**
-     * @param file_id {String}
+     * @param file_id {number}
      * @return {FilesystemObject}
      */
     get_object_data(file_id) {
@@ -331,9 +330,9 @@ class Filesystem {
      */
 
     /**
-     * @param parent_id {String|null}
+     * @param parent_id {number|null}
      * @param sorter {callback_sorter|null}
-     * @return {String[]}
+     * @return {number[]}
      */
     get_objects_in_directory(parent_id, sorter = (a, b) => {
         return a.name > b.name;
@@ -353,7 +352,7 @@ class Filesystem {
 
     /**
      * @param path {string}
-     * @return {null|string}
+     * @return {null|number}
      */
     get_object_from_path(path) {
         path = path.trim();
@@ -407,7 +406,7 @@ class Filesystem {
     }
 
     /**
-     * @param object {string}
+     * @param object {number}
      * @return {string[]}
      */
     make_path_to_object(object) {
@@ -422,7 +421,7 @@ class Filesystem {
     }
 
     /**
-     * @param object {string}
+     * @param object {number}
      * @return {string}
      */
     make_string_path_to_object(object) {
@@ -437,7 +436,7 @@ class Filesystem {
     }
 
     /**
-     * @param object {string}
+     * @param object {number}
      * @return {{size: null, count: null}|{size: number, count: number}}
      */
     get_object_content_stats(object) {

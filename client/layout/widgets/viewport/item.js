@@ -239,5 +239,3 @@ function close_item_plain() {
 function is_item_preview_open() {
     return !!opened_item_div;
 }
-
-export {open_item_preview, is_item_preview_open, close_item_plain}

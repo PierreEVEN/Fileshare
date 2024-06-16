@@ -1,4 +1,5 @@
 import {PAGE_CONTEXT, permissions} from "../common/tools/utils";
+import {REPOS_BUILDER} from "./widgets/viewport/repos_builder"
 
 const drop_box = document.createElement('div');
 drop_box.classList.add('drop-box')
@@ -15,7 +16,7 @@ document.body.addEventListener('dragenter', async (event) => {
         WILL_DROP = new Promise(async (resolve) => {
             if (!PAGE_CONTEXT.display_repos)
                 return resolve(false);
-            const directory = selector.get_current_directory();
+            const directory = REPOS_BUILDER.navigator.get_current_directory();
             if ((directory && directory.parent && await permissions.can_user_upload_to_directory(directory)) || await permissions.can_user_upload_to_repos(PAGE_CONTEXT.repos_path())) {
                 resolve(true);
             } else
