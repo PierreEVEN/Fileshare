@@ -22,7 +22,6 @@ const {ServerPermissions} = require("../../../permissions");
 const router = require("express").Router();
 const archiver = require('archiver');
 const json_compress = require('compress-json')
-const jsonpack = require('jsonpack')
 
 /********************** [GLOBAL] **********************/
 router.use('/', async (req, res, next) => {
@@ -60,9 +59,7 @@ router.get("/content/", async (req, res) => {
     const time_b = performance.now()
     json_compress.trimUndefinedRecursively(data)
     const time_c = performance.now()
-    data = jsonpack.pack(data)
-    const time_d = performance.now()
-    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : Fetch : ${time_b - time_a}ms, Trim : ${time_c - time_b}ms, Compress : ${time_d - time_c}ms`)
+    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : Fetch : ${time_b - time_a}ms, Trim : ${time_c - time_b}ms`)
     return res.send(data);
 })
 
