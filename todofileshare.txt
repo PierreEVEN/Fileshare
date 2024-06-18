@@ -1,6 +1,15 @@
 # GOOD TO KNOW
 
 TODO
+- Fix le bouton retour en arrière (prendre en compte le carousel)
+- Fix le carousel : video et image qui se charge même si pas affiché (charge 2 par 2)
+- Améliorer les contrôles du carousel
+- Fix les infos en changeant de fichier dans le carousel.
+- Optimiser le fetch de content de gros repos
+
+
+
+
 - Table of unavailable usernames ("settings")
 - Table of unavailable repos names ()
 - Compte : booleen = publique ou non

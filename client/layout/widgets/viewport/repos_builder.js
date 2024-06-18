@@ -7,6 +7,7 @@ import {LOCAL_USER} from "../../../common/tools/user";
 import {PathBuilder} from "./path_builder";
 import {close_modal, is_modal_open} from "../../../common/widgets/modal";
 import {ItemCarousel} from "./item_carousel";
+import { unpack } from 'jsonpack'
 
 const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
@@ -389,6 +390,7 @@ class ReposBuilder {
     }
 
     async fetch_repos_content() {
+        const time_a = performance.now()
         this.filesystem.clear();
         await fetch(`${PAGE_CONTEXT.repos_path()}/content/`, {
             headers: {
@@ -398,8 +400,15 @@ class ReposBuilder {
         })
             .then(async (response) => await parse_fetch_result(response))
             .then((json) => {
-                for (const item of json)
+                const time_b = performance.now()
+                const decompressed = unpack(json)
+                const time_c = performance.now()
+
+                for (const item of decompressed)
                     this.filesystem.add_object(FilesystemObject.FromServerData(item));
+                const time_d = performance.now()
+
+                console.log(`Retrieved repo content. Fetch : ${time_b - time_a}ms, Unpack : ${time_c - time_b}ms, Display : ${time_d - time_c}ms`)
             });
     }
 

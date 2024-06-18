@@ -1,3 +1,4 @@
+
 const message_box = document.getElementById('message-box')
 const message_box_message = document.getElementById('message-box-message')
 let message_timeout = null;
@@ -25,11 +26,10 @@ async function parse_fetch_result(result) {
 
     let jsonData = undefined;
     try {
-        jsonData = await result.json();
+        jsonData = await result.text();
+        jsonData = JSON.parse(jsonData)
     }
     catch {
-        if (result.response && typeof(result.response) === 'string')
-            jsonData = JSON.parse(result.response)
     }
 
     if (jsonData) {
@@ -41,6 +41,7 @@ async function parse_fetch_result(result) {
         if (result.status !== 200 && result.status !== 201 &&result.status !== 202)
             print_message("Error", "Unknown error", `${result.status} : ${result.statusText}`)
     }
+    return jsonData;
 }
 
 function close_message() {

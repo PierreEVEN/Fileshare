@@ -10,8 +10,7 @@ const {logger} = require("../../../logger");
 const {display_name_to_url} = require("../../../database/tools/db_utils");
 const path = require("path");
 const fs = require("fs");
-const crypto = require("crypto");
-const {upload_in_progress, finalize_file_upload, FileUpload} = require("./upload");
+const {FileUpload} = require("./upload");
 const sharp = require("sharp");
 const {platform} = require("os");
 const gm = require("gm");
@@ -22,6 +21,8 @@ const {ServerString} = require("../../../server_string");
 const {ServerPermissions} = require("../../../permissions");
 const router = require("express").Router();
 const archiver = require('archiver');
+const json_compress = require('compress-json')
+const jsonpack = require('jsonpack')
 
 /********************** [GLOBAL] **********************/
 router.use('/', async (req, res, next) => {
@@ -55,9 +56,11 @@ router.get("/tree/*", async (req, res) => {
 
 router.get("/content/", async (req, res) => {
     logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name}`)
-
-    // Path is empty or is equal to '/' => return a json with the whole hierarchy
-    return res.send(await req.display_repos.get_content());
+    let data = await req.display_repos.get_content();
+    json_compress.trimUndefinedRecursively(data)
+    data = jsonpack.pack(data)
+    console.log(data)
+    return res.send(data);
 })
 
 router.get("/content/:id", async (req, res) => {
