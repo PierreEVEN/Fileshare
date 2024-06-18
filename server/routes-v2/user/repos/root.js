@@ -55,11 +55,14 @@ router.get("/tree/*", async (req, res) => {
 })
 
 router.get("/content/", async (req, res) => {
-    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name}`)
+    const time_a = performance.now()
     let data = await req.display_repos.get_content();
+    const time_b = performance.now()
     json_compress.trimUndefinedRecursively(data)
+    const time_c = performance.now()
     data = jsonpack.pack(data)
-    console.log(data)
+    const time_d = performance.now()
+    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : Fetch : ${time_b - time_a}ms, Trim : ${time_c - time_b}ms, Compress : ${time_d - time_c}ms`)
     return res.send(data);
 })
 
