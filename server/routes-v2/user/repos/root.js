@@ -67,9 +67,8 @@ router.get("/content/:id", async (req, res) => {
     if (Number.isNaN(Number(req.params['id'])))
         return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-    if (!item || !await ServerPermissions.can_user_access_item(item, req.connected_user.id))
+    if (!item || !await ServerPermissions.can_user_access_item(item, req.connected_user ? req.connected_user.id : null))
         return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
-
     if (item.is_regular_file)
         await item.as_file();
     else
@@ -109,7 +108,7 @@ router.get("/file/:id", async (req, res) => {
     if (Number.isNaN(Number(req.params['id'])))
         return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
     const item = await Item.from_id(req.params['id']);
-    if (!item || !await ServerPermissions.can_user_access_item(item, req.connected_user.id))
+    if (!item || !await ServerPermissions.can_user_access_item(item, req.connected_user ? req.connected_user.id : null))
         return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
     if (item.is_regular_file) {
