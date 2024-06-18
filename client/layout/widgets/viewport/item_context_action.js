@@ -25,10 +25,7 @@ async function spawn_item_context_action(item) {
     actions.push({
         title: "Télécharger",
         action: () => {
-            if (item.is_directory) {
-                console.error('NOT IMPLEMENTED YET');
-            } else
-                window.open(`${PAGE_CONTEXT.repos_path()}/file/${item.id}`, '_blank').focus();
+            window.open(`${PAGE_CONTEXT.repos_path()}/file/${item.id}`, '_blank').focus();
         },
         image: '/images/icons/icons8-download-96.png'
     });

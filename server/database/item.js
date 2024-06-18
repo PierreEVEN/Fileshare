@@ -36,7 +36,7 @@ class Item {
          */
         this.description = ServerString.FromDB(data.description);
         /**
-         * @type {string|null}
+         * @type {number|null}
          */
         this.parent_item = data.parent_item ? Number(data.parent_item) : undefined;
         /**
@@ -191,6 +191,14 @@ class Item {
     }
 
     /**
+     @return {Promise<Item[]>}
+     */
+    async get_files_inside_recursive() {
+        assert(typeof this.absolute_path.plain() === 'string' && this.absolute_path.plain() !== '');
+        return await db.single().fetch_objects(Item, `SELECT * FROM fileshare.items WHERE repos = $1 AND is_regular_file = 'yes' AND STARTS_WITH(absolute_path, $2)`, [this.repos, this.absolute_path.encoded()]);
+    }
+
+    /**
      * Find item from ID
      * @param id {number} item id
      * @return {Item|null}
@@ -206,7 +214,7 @@ class Item {
      * @param path {string}
      */
     static async from_path(repos, path) {
-        return await db.single().fetch_object(Item, 'SELECT * FROM fileshare.items WHERE  repos = $1 AND absolute_path = $2', [as_id(repos), as_data_path(path)]);
+        return await db.single().fetch_object(Item, 'SELECT * FROM fileshare.items WHERE repos = $1 AND absolute_path = $2', [as_id(repos), as_data_path(path)]);
     }
 
     /**

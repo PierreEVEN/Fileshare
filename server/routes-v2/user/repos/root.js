@@ -21,6 +21,7 @@ const {HttpResponse} = require("../../utils/errors");
 const {ServerString} = require("../../../server_string");
 const {ServerPermissions} = require("../../../permissions");
 const router = require("express").Router();
+const archiver = require('archiver');
 
 /********************** [GLOBAL] **********************/
 router.use('/', async (req, res, next) => {
@@ -77,6 +78,30 @@ router.get("/content/:id", async (req, res) => {
     return res.send(item);
 })
 
+router.get("/file", async (req, res) => {
+    logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name}`)
+
+    // Search the requested file or dir
+    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user.id))
+        return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
+
+    const items = await req.display_repos.get_content();
+    const archive = archiver('zip', {});
+    for (const file of items) {
+        if (file.is_regular_file)
+            archive.file(file.storage_path(), {name: (file.parent_item ? (await Item.from_id(file.parent_item)).absolute_path.plain() : '') + "/" + file.name.plain()})
+    }
+
+    logger.info(`Archiving '${req.display_repos.display_name}/' for ${req.connected_user ? req.connected_user.name : 'Unknown user'} ...`)
+    res.attachment(`${req.display_repos.name.encoded()}.zip`);
+    archive.on('error', err => {
+        logger.error('Archive failed :', err.toString())
+        res.status(500).send({message: err})
+    });
+    archive.pipe(res);
+    await archive.finalize();
+})
+
 router.get("/file/:id", async (req, res) => {
     logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : ${req.params['id']}`)
 
@@ -98,11 +123,22 @@ router.get("/file/:id", async (req, res) => {
         res.setHeader('Content-Disposition', 'inline; filename=' + item.name.encoded());
         return res.sendFile(path.resolve(file_path));
     } else {
-        req.request_path = item.absolute_path.plain();
-        res.render('repos', {
-            title: `FileShare - ${req.display_repos.name}`,
-            common: await get_common_data(req)
+        let files = await item.get_files_inside_recursive();
+        const archive = archiver('zip', {});
+
+        for (const file of files) {
+            archive.file(file.storage_path(), {name: (await Item.from_id(file.parent_item)).absolute_path.plain() + "/" + file.name.plain()})
+        }
+
+        logger.info(`Archiving '${req.display_repos.display_name.plain()}/${item.absolute_path.plain()}' for ${req.connected_user ? req.connected_user.name : 'Unknown user'} ...`)
+
+        res.attachment(`${item.name.encoded()}.zip`);
+        archive.on('error', err => {
+            logger.error('Archive failed :', err.toString())
+            res.status(500).send({message: err})
         });
+        archive.pipe(res);
+        await archive.finalize();
     }
 })
 

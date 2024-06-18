@@ -39,7 +39,7 @@ class PathBuilder {
             }
 
             const download_button = document.createElement('button');
-            download_button.onclick = () => window.open(`${PAGE_CONTEXT.repos_path()}/download` + (this.navigator.get_current_directory() ? this.navigator.get_current_directory().absolute_path() : '/'), '_blank').focus();
+            download_button.onclick = () => window.open(`${PAGE_CONTEXT.repos_path()}/file${dir_id ? "/" + dir_id : ''}`, '_blank').focus();
             download_button.innerHTML = `<img src='/images/icons/icons8-download-96.png' alt='download'>`
             tool_buttons.append(download_button);
 
