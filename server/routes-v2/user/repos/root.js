@@ -81,7 +81,7 @@ router.get("/file", async (req, res) => {
     logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name}`)
 
     // Search the requested file or dir
-    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user.id))
+    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null))
         return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
     const items = await req.display_repos.get_content();
