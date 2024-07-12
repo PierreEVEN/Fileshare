@@ -106,9 +106,10 @@ class User {
      * @return {Promise<User>}
      */
     static async create(data) {
+
         const user = new User({
-            name: new ServerString(data.name).encoded(),
-            email: new ServerString(data.email).encoded()
+            name: ServerString.FromDB(data.name).encoded(),
+            email: ServerString.FromDB(data.email).encoded()
         });
         assert(data.password);
         assert(user.email);

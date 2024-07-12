@@ -15,7 +15,7 @@ async function spawn_item_context_action(item) {
     actions.push({
         title: "Partager",
         action: async () => {
-            let url = `${location.host}${PAGE_CONTEXT.repos_path()}/file/${item.id}`;
+            let url = `${location.origin}${PAGE_CONTEXT.repos_path()}/file/${item.id}`;
             await navigator.clipboard.writeText(url);
             print_message('info', 'Lien copié dans le presse - papier', url)
         },

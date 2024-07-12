@@ -70,7 +70,7 @@ function open_item_preview(div, file) {
         share.innerHTML = `<img src="/images/icons/icons8-url-96.png" alt="share">`
         share.classList.add('plus-button')
         share.onclick = async () => {
-            await navigator.clipboard.writeText(`${location.host}${PAGE_CONTEXT.repos_path()}/file/${file.id}`);
+            await navigator.clipboard.writeText(`${location.origin}${PAGE_CONTEXT.repos_path()}/file/${file.id}`);
             print_message('info', 'Lien copié dans le presse - papier', await navigator.clipboard.readText())
         }
         action_buttons.append(share)

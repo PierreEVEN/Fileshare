@@ -17,17 +17,25 @@ router.post("/create-user/", async (req, res) => {
         if (await User.exists(name, email)) {
             return await new HttpResponse(HttpResponse.UNAUTHORIZED, "An user with this same name or email already exists!").redirect_error(req, res);
         }
+        await User.create({
+            name: name.encoded(),
+            email: email.encoded(),
+            password: password,
+        })
 
-        const found_user = await User.from_credentials(new ServerString(req.body.username), req.body.password);
-        logger.info(`User '${req.body.username}' is trying to generate a new auth token`);
+        const found_user = await User.from_credentials(name, password);
+        logger.info(`User '${name.plain()}' is trying to generate a new auth token`);
         if (found_user) {
             const [token, exp_date] = await found_user.gen_auth_token();
             res.send({
                 token: token,
                 expiration_date: exp_date
             });
+            logger.info(`User '${name.plain()} created a new account'`);
         }
-        logger.info(`User '${req.body.username} created a new account'`);
+        else {
+            return await new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Failed to find newly created user!").redirect_error(req, res);
+        }
     } else {
         return await new HttpResponse(HttpResponse.UNAUTHORIZED, "Missing information").redirect_error(req, res);
     }
