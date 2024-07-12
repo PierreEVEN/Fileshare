@@ -1,0 +1,12 @@
+<div class="admin-user">
+    <p>{{id}}</p>
+    <p>{{name}}</p>
+    <p>{{email}}</p>
+    <p>role</p>
+    <select name="{{role}}" onchange="{{ctx 'set_role(event)'}}">
+        <option value="guest" {{#if is_guest}}selected{{/if}}>Guest</option>
+        <option value="vip" {{#if is_vip}}selected{{/if}}>Vip</option>
+        <option value="admin" {{#if is_admin}}selected{{/if}}>Admin</option>
+    </select>
+    <p>{{allow_contact}}</p>
+</div>

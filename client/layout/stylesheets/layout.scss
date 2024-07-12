@@ -36,6 +36,8 @@ body {
   }
 }
 
+@import "administration/administration";
+
 @import "components/context_action";
 @import "components/main/outliner";
 @import "components/main/toolbar";

@@ -33,6 +33,7 @@ router.get('/', async function (req, res) {
 
 router.use('/api', require('./api/root'));
 router.use('/settings/', require('./settings/root'));
+router.use('/administration/', require('./settings/administration'));
 
 const user_router = require("express").Router();
 user_router.use('/:username/', async (req, res, next) => {

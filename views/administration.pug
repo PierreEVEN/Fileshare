@@ -1,0 +1,14 @@
+extends layout
+
+block content
+    div.admin-panel
+        h2 Stats
+        div#AdminStats
+        h2 Users
+        div#AdminUserList
+        h2 Repositories
+        div#AdminReposList
+
+
+    script(type='module').
+        new administration.AdministrationPanel(document.getElementById("AdminStats"), document.getElementById("AdminUserList"), document.getElementById("AdminReposList"));

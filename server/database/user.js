@@ -44,6 +44,14 @@ class User {
     }
 
     /**
+     * Is this user is a super user
+     * @return {boolean}
+     */
+    is_admin() {
+        return this.role === 'admin';
+    }
+
+    /**
      * Update user data
      * @return {Promise<User>}
      */

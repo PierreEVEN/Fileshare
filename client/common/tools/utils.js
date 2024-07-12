@@ -30,24 +30,24 @@ function seconds_to_str(in_seconds) {
     let temp = Math.floor(milliseconds / 1000);
     const years = Math.floor(temp / 31536000);
     if (years) {
-        return years + ' années' + numberEnding(years);
+        return years + ' année' + numberEnding(years);
     }
 
     const days = Math.floor((temp %= 31536000) / 86400);
     if (days) {
-        return days + ' jours' + numberEnding(days);
+        return days + ' jour' + numberEnding(days);
     }
     const hours = Math.floor((temp %= 86400) / 3600);
     if (hours) {
-        return hours + ' heures' + numberEnding(hours);
+        return hours + ' heure' + numberEnding(hours);
     }
     const minutes = Math.floor((temp %= 3600) / 60);
     if (minutes) {
-        return minutes + ' minutes' + numberEnding(minutes);
+        return minutes + ' minute' + numberEnding(minutes);
     }
     const seconds = temp % 60;
     if (seconds) {
-        return seconds + ' secondes' + numberEnding(seconds);
+        return seconds + ' seconde' + numberEnding(seconds);
     }
     return '0s';
 }

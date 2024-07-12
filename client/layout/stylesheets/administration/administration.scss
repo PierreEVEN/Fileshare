@@ -1,0 +1,16 @@
+
+.admin-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-grow: 1;
+
+  .admin-user {
+    display: flex;
+    flex-direction: row;
+
+    p {
+      margin: 5px;
+    }
+  }
+}

@@ -19,3 +19,5 @@ import './drop_box.js';
 /* VIEWPORT */
 import './widgets/viewport/path_builder';
 import './widgets/upload/upload_form.js';
+
+import './administration/administration_panel';
