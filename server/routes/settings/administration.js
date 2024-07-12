@@ -57,7 +57,7 @@ router.get("/stats", async (req, res) => {
             }
         }
         if (fs.existsSync('data_storage/thumbnails/')) {
-            thumbnail_count = fs.readdirSync('/').length;
+            thumbnail_count = fs.readdirSync('data_storage/thumbnails/').length;
         }
     }
 
