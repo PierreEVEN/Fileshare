@@ -32,8 +32,17 @@ repos_router.use('/:repos/', async (req, res, next) => {
     if (!req.display_repos)
         return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
 
-    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null))
+    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null)) {
+        // Ask the user to connect
+        if (!req.connected_user) {
+            return res.render('fileshare', {
+                title: `${this.status_code} - ${HttpResponse.error_code_to_string(this.status_code)}`,
+                common: await get_common_data(req),
+                force_login: true,
+            })
+        }
         return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
+    }
 
     next();
 });

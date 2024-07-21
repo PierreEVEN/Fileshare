@@ -1,6 +1,8 @@
 extends layout
 
 block content
-  h1= message
-  if locals.status
-    h2= locals.status
+  div
+    h1= message
+    h2 Woops, looks like something went wrong !
+    if locals.status
+      p= locals.status

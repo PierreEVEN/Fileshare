@@ -28,9 +28,10 @@ router.use('/', async (req, res, next) => {
     if (!req.display_repos)
         return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
 
-    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null))
+    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null)) {
         // This user is not allowed to access this repos
         return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
+    }
 
     next();
 });

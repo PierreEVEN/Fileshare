@@ -78,7 +78,8 @@ class DirectoryContent {
             if (widget) {
                 if (should_select) {
                     widget.classList.add("selected");
-                    widget.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"});
+                    widget.scrollIntoView({behavior: "smooth", block: "nearest" +
+                            "", inline: "nearest"});
                 } else {
                     widget.classList.remove("selected");
                 }
