@@ -374,12 +374,19 @@ router.get('/thumbnail/:id', async function (req, res) {
     }
 )
 
-router.post('make-directory', async (req, res) => {
+router.post('/make-directory', async (req, res) => {
     if (!await ServerPermissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
         return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to create directory here").redirect_error(req, res);
+
+    const name = new ServerString(req.body.name);
+    const new_dir = await Item.create_directory(req.display_repos.id, req.connected_user.id, null, name, req.body.open_upload);
+    if (new_dir && new_dir.id)
+        return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+    return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
+
 })
 
-router.post('make-directory/:id', async (req, res) => {
+router.post('/make-directory/:id', async (req, res) => {
     const parent = Item.from_id(req.params['id'])
 
     if (parent.is_regular_file)
@@ -389,12 +396,11 @@ router.post('make-directory/:id', async (req, res) => {
         return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to create directory here").redirect_error(req, res);
 
     const name = new ServerString(req.body.name);
-    console.log(req.body);
-
-    const new_dir = Item.create_directory(req.display_repos.id, req.connected_user.id, parent, name, req.body.open_upload);
+    const new_dir = await Item.create_directory(req.display_repos.id, req.connected_user.id, parent, name, req.body.open_upload);
     if (new_dir && new_dir.id)
-        return new HttpResponse(HttpResponse.OK);
-    return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR)
+        return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+    return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
+
 })
 
 router.use('/permissions/', require('./permissions/root'))

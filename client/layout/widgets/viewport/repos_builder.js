@@ -98,8 +98,7 @@ class DirectoryContent {
                 action: async () => {
                     const make_directory = make_directory_hbs({}, {
                         mkdir: async () => {
-                            console.log(this.navigator.get_current_directory())
-                            await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make_directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
+                            await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
                                 {
                                     method: 'POST',
                                     headers: {
@@ -111,6 +110,7 @@ class DirectoryContent {
                                         open_upload:false,
                                     })
                                 }));
+                            close_modal();
                     }
                     })
                     open_modal(make_directory, '500px', '250px', 'make-directory')

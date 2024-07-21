@@ -155,7 +155,7 @@ class HttpResponse {
     async redirect_error(req, res) {
         logger.warn(`Redirect with error ${this.status_code} - ${HttpResponse.error_code_to_string(this.status_code)} : ${this.response_message}`)
         if (req.method === 'POST') {
-            return await res.status(this.status_code).send({
+            return await res.status(this.status_code).send(this.status_code === 200 ? '' : {
                 message: {
                     title: `${this.status_code} - ${HttpResponse.error_code_to_string(this.status_code)}`,
                     content: this.response_message

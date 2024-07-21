@@ -307,7 +307,12 @@ class Item {
         data.name = name.encoded();
         data.open_upload = open_upload;
         data.is_regular_file = false;
-        return await new Item(data).push();
+        try {
+            return await new Item(data).push();
+        }
+        catch (e) {
+            return null;
+        }
     }
 }
 
