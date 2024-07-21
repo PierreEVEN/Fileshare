@@ -1,9 +1,16 @@
 import Handlebars from "handlebars";
 import {get_mime_icon_path, is_mimetype_valid, UNDEFINED_MIME_STRING} from "../common/tools/mime_utils";
+import {ClientString} from "../common/tools/client_string";
 
 /* ################## HELPER {ITEM_THUMBNAIL} ################## */
 const get_item_thumbnail = require('../common/tools/get_item_thumbnail')
 Handlebars.registerHelper("item_thumbnail", (item) => {
+
+    //@TODO : remove this temporary fix and use the new filesystem
+    if (item.is_file) {
+        item.is_regular_file = true;
+        item.mimetype = ClientString.FromClient(item.mimetype)
+    }
 
     // CASE : IS STANDARD FILE
     if (item.is_regular_file) {

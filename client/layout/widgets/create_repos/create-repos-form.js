@@ -1,6 +1,4 @@
 import {open_modal} from "../../../common/widgets/modal.js";
-import {LOCAL_USER} from "../../../common/tools/user";
-import {parse_fetch_result} from "../../../common/widgets/message_box";
 
 const create_repos = require('./create_repos.hbs')
 

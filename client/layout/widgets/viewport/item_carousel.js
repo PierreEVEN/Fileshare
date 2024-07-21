@@ -79,7 +79,7 @@ class ItemCarousel {
         this.carousel_container = this.carousel.getElementsByClassName('item-carousel')[0];
 
         window.addEventListener('resize', _ => {
-            this.carousel_container.style.width = window.innerWidth + 'px';
+            this.carousel_conitainer.style.width = window.innerWidth + 'px';
             this.carousel_container.style.height = window.innerHeight + 'px';
         })
 

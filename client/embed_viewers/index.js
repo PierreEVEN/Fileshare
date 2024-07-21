@@ -6,7 +6,7 @@ require('./custom_elements/document/markdown')
 require('./custom_elements/lazy_image/lazy_image')
 require('./custom_elements/pdf_viewer/pdf-viewer')
 
-function mime_image_generator_helper_big(item) {
+    function mime_image_generator_helper_big(item) {
     // CASE : IS DIRECTORY
     if (!item.is_regular_file) {
         return new Handlebars.SafeString(`<img src="/images/icons/icons8-folder-96.png" alt="dossier: ${item.name}">`)

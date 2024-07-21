@@ -1,15 +1,20 @@
 import {spawn_item_context_action} from "./item_context_action.js";
-import {parse_fetch_result} from "../../../common/widgets/message_box.js";
+import {parse_fetch_result, print_message} from "../../../common/widgets/message_box.js";
 import {Filesystem, FilesystemObject} from "../../../common/tools/filesystem_v2.js";
 import {Navigator} from "../../../common/tools/selector.js";
 import {PAGE_CONTEXT} from "../../../common/tools/utils";
 import {LOCAL_USER} from "../../../common/tools/user";
 import {PathBuilder} from "./path_builder";
-import {close_modal, is_modal_open} from "../../../common/widgets/modal";
+import {close_modal, is_modal_open, open_modal} from "../../../common/widgets/modal";
 import {ItemCarousel} from "./item_carousel";
+import {spawn_context_action} from "../../../common/widgets/context_action";
+import {ClientString} from "../../../common/tools/client_string";
 
 const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
+
+
+const make_directory_hbs = require('./menus/make_directory.hbs')
 
 class DirectoryContent {
     /**
@@ -84,6 +89,38 @@ class DirectoryContent {
         })
 
         this.regen_content();
+
+        this.viewport_container.oncontextmenu  = event => {
+
+            const actions = [];
+            actions.push({
+                title: "Nouveau Dossier",
+                action: async () => {
+                    const make_directory = make_directory_hbs({}, {
+                        mkdir: async () => {
+                            console.log(this.navigator.get_current_directory())
+                            await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make_directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
+                                {
+                                    method: 'POST',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        name: ClientString.FromClient(document.getElementById('name').value),
+                                        open_upload:false,
+                                    })
+                                }));
+                    }
+                    })
+                    open_modal(make_directory, '500px', '250px', 'make-directory')
+                },
+                image: '/images/icons/icons8-add-folder-48.png'
+            });
+
+            spawn_context_action(actions);
+                event.preventDefault();
+            }
     }
 
     destroy() {

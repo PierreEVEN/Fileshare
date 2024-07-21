@@ -374,6 +374,29 @@ router.get('/thumbnail/:id', async function (req, res) {
     }
 )
 
+router.post('make-directory', async (req, res) => {
+    if (!await ServerPermissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
+        return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to create directory here").redirect_error(req, res);
+})
+
+router.post('make-directory/:id', async (req, res) => {
+    const parent = Item.from_id(req.params['id'])
+
+    if (parent.is_regular_file)
+        return new HttpResponse(HttpResponse.FORBIDDEN, "Cannot create directory inside file").redirect_error(req, res);
+
+    if (!parent || !await ServerPermissions.can_user_upload_to_directory(parent, req.connected_user.id))
+        return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to create directory here").redirect_error(req, res);
+
+    const name = new ServerString(req.body.name);
+    console.log(req.body);
+
+    const new_dir = Item.create_directory(req.display_repos.id, req.connected_user.id, parent, name, req.body.open_upload);
+    if (new_dir && new_dir.id)
+        return new HttpResponse(HttpResponse.OK);
+    return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR)
+})
+
 router.use('/permissions/', require('./permissions/root'))
 
 module.exports = router;

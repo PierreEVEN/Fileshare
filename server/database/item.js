@@ -289,6 +289,26 @@ class Item {
 
         return await _internal(repos, absolute_path.split('/').filter(Boolean));
     }
+
+    /**
+     * @param repos_id {number}
+     * @param owner_id {number}
+     * @param parent {Item|null} Parent directory
+     * @param name {ServerString}
+     * @param open_upload {Boolean}
+     * @return {Promise<Item>}
+     * @constructor
+     */
+    static async create_directory(repos_id, owner_id, parent, name, open_upload) {
+        const data = {};
+        data.owner = owner_id;
+        data.repos = repos_id;
+        data.parent_item = parent ? parent.id : null;
+        data.name = name.encoded();
+        data.open_upload = open_upload;
+        data.is_regular_file = false;
+        return await new Item(data).push();
+    }
 }
 
 module.exports = {Item}
