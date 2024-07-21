@@ -89,36 +89,36 @@ class DirectoryContent {
         })
 
         this.regen_content();
+        if (this.viewport_container)
+            this.viewport_container.oncontextmenu = event => {
 
-        this.viewport_container.oncontextmenu  = event => {
+                const actions = [];
+                actions.push({
+                    title: "Nouveau Dossier",
+                    action: async () => {
+                        const make_directory = make_directory_hbs({}, {
+                            mkdir: async () => {
+                                await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
+                                    {
+                                        method: 'POST',
+                                        headers: {
+                                            'Accept': 'application/json',
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            name: ClientString.FromClient(document.getElementById('name').value),
+                                            open_upload: false,
+                                        })
+                                    }));
+                                close_modal();
+                            }
+                        })
+                        open_modal(make_directory, '500px', '250px', 'make-directory')
+                    },
+                    image: '/images/icons/icons8-add-folder-48.png'
+                });
 
-            const actions = [];
-            actions.push({
-                title: "Nouveau Dossier",
-                action: async () => {
-                    const make_directory = make_directory_hbs({}, {
-                        mkdir: async () => {
-                            await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
-                                {
-                                    method: 'POST',
-                                    headers: {
-                                        'Accept': 'application/json',
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        name: ClientString.FromClient(document.getElementById('name').value),
-                                        open_upload:false,
-                                    })
-                                }));
-                            close_modal();
-                    }
-                    })
-                    open_modal(make_directory, '500px', '250px', 'make-directory')
-                },
-                image: '/images/icons/icons8-add-folder-48.png'
-            });
-
-            spawn_context_action(actions);
+                spawn_context_action(actions);
                 event.preventDefault();
             }
     }
@@ -146,7 +146,8 @@ class DirectoryContent {
     regen_content() {
         for (const object of this.navigator.filesystem.get_objects_in_directory(this.navigator.get_current_directory()))
             this.objects.push({id: object, data: this.navigator.filesystem.get_object_data(object)});
-        this.viewport_container.innerHTML = null;
+        if (this.viewport_container)
+            this.viewport_container.innerHTML = null;
         for (const object of this.directories_data())
             this._on_directory_added(object);
         for (const object of this.files_data())
@@ -181,7 +182,8 @@ class DirectoryContent {
         });
         this.entry_widgets.set(directory.id, dir_div)
         dir_div.object = directory;
-        this.viewport_container.append(dir_div);
+        if (this.viewport_container)
+            this.viewport_container.append(dir_div);
     }
 
     /**
@@ -377,8 +379,7 @@ class ReposBuilder {
                 }
                 if (this.directory_content.item_carousel) {
                     this.directory_content.close_carousel();
-                }
-                else {
+                } else {
                     const current_data = this.filesystem.get_object_data(this.navigator.get_current_directory());
                     if (current_data) {
                         this.navigator.set_current_dir(current_data.parent_item)
@@ -417,8 +418,7 @@ class ReposBuilder {
                 if (current_data) {
                     if (current_data.is_regular_file) {
                         this.directory_content.open_item_carousel();
-                    }
-                    else
+                    } else
                         this.navigator.set_current_dir(current_data.id);
                 }
             }

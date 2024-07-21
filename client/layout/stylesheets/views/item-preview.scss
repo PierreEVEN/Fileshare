@@ -65,7 +65,7 @@ document-code {
     overflow: hidden;
     position: absolute;
     background-color: rgba(0,0,0,0);
-    height: 100vh;
+    height: 100dvh;
     z-index: 10000;
     animation: item-grow 0.2s ease-in;
     animation-fill-mode: forwards;
@@ -238,7 +238,7 @@ document-code {
     100% {
         background-color: $background_2;
         width: 100vw;
-        height: 100vh;
+        height: 100dvh;
         top: 0;
         left: 0;
     }

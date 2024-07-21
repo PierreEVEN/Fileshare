@@ -62,5 +62,10 @@
     p {
       margin-right: 15px;
     }
+    @media (orientation : portrait) {
+      p {
+        display: none;
+      }
+    }
   }
 }
