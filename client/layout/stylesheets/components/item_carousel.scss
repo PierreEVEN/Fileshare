@@ -3,7 +3,7 @@
   overflow: hidden;
   position: absolute;
   background-color: rgba(0,0,0,0);
-  height: 100dvh;
+  height: 100vh;
   animation: item-grow 0.2s ease-in;
   animation-fill-mode: forwards;
   justify-content: center;
@@ -104,6 +104,11 @@
   }
 }
 
+@media(orientation: portrait) {
+  .item-carousel {
+    height: 100dvh;
+  }
+}
 .overlay-hidden {
   opacity: 0;
 }

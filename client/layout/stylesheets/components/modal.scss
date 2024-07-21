@@ -18,7 +18,7 @@
 
     position: absolute;
     width: 100vw;
-    height: 100dvh;
+    height: 100vh;
     z-index: 100000;
 
     background-color: rgba(0, 0, 0, 0);
@@ -84,5 +84,12 @@
                 }
             }
         }
+    }
+}
+
+
+@media(orientation: portrait) {
+    .modal-container {
+        height: 100dvh;
     }
 }

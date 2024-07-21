@@ -65,7 +65,7 @@ document-code {
     overflow: hidden;
     position: absolute;
     background-color: rgba(0,0,0,0);
-    height: 100dvh;
+    height: 100vh;
     z-index: 10000;
     animation: item-grow 0.2s ease-in;
     animation-fill-mode: forwards;
@@ -150,6 +150,12 @@ document-code {
     }
     .overlay-displayed {
         opacity: 100%;
+    }
+}
+
+@media(orientation: portrait) {
+    .item-plain {
+        height: 100dvh;
     }
 }
 
