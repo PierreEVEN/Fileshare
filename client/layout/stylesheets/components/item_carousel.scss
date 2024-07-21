@@ -7,6 +7,7 @@
   animation: item-grow 0.2s ease-in;
   animation-fill-mode: forwards;
   justify-content: center;
+  z-index: 100;
 
   .tile {
     position: absolute;
@@ -62,9 +63,10 @@
   height: 100%;
   width: 100%;
   pointer-events: none;
-  transition-duration: 0.5s;
+  transition-duration: 0.25s;
   top: 0;
   bottom: 0;
+  z-index: 101;
 
   button {
     pointer-events: auto;

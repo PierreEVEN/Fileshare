@@ -8,6 +8,7 @@
   height: 100%;
   flex-direction: column;
   background-color: $background_2;
+  z-index: 2;
 
   .category {
     display: flex;
@@ -50,5 +51,60 @@
       background-color: rgba(0, 111, 238, 0.37);
       border: 1px #0070f0 dashed;
     }
+  }
+}
+
+.outliner-bg {
+  display: none;
+}
+
+.outliner-burger {
+  display: none;
+}
+
+@media (orientation: portrait) {
+
+  .outliner-burger {
+    display: flex;
+    position: absolute;
+    z-index: 1;
+    button {
+      background-image: url("~/public/images/icons/icons8-menu-96.png");
+      background-size: contain;
+      background-color: transparent;
+      width: 50px;
+      height: 50px;
+      min-width: unset;
+    }
+  }
+
+  .outliner {
+    position: absolute;
+    width: 0;
+    transition-duration: 0.25s;
+    overflow: hidden;
+  }
+
+  .outliner-extended {
+    width: 250px;
+    max-width: 100%;
+  }
+
+  .outliner-bg {
+    position: absolute;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.27);
+    backdrop-filter: blur(10px);
+    z-index: 1;
+    transition-duration: 0.25s;
+    pointer-events: auto;
+  }
+
+  .outliner-bg-hidden {
+    background-color: transparent;
+    backdrop-filter: unset;
+    pointer-events: none;
   }
 }

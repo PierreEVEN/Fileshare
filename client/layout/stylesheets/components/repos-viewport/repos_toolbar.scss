@@ -41,7 +41,7 @@
       height: 100%;
       min-width: 0;
       border-radius: 0;
-      background-color: rgba(0,0,0,0);
+      background-color: rgba(0, 0, 0, 0);
       align-items: center;
       justify-content: center;
       flex-direction: row;
@@ -49,23 +49,33 @@
       &:hover {
         background-color: lighten($toolbar, 10%);
       }
+
       &:active {
         background-color: lighten($toolbar, 20%);
       }
     }
   }
+
   .tool-buttons {
     display: flex;
     flex-direction: row;
     align-items: center;
     right: 0;
+
     p {
       margin-right: 15px;
     }
-    @media (orientation : portrait) {
+
+    @media (orientation: portrait) {
       p {
         display: none;
       }
     }
+  }
+}
+
+@media (orientation: portrait) {
+  .repos-toolbar {
+    padding-left: 50px;
   }
 }

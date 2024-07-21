@@ -35,6 +35,22 @@ div.outliner
             else
                 button(onclick="window.location.href = '/repos/?repos=" + repos.access_key + "'") #{repos.name.plain()}
 
+div.outliner-bg.outliner-bg-hidden(onclick="window.close_outliner()")
+
+div.outliner-burger
+    button(onclick="window.open_outliner()")
+
+script(type='module').
+    window.open_outliner = () => {
+        document.getElementsByClassName('outliner-bg')[0].classList.remove('outliner-bg-hidden');
+        document.getElementsByClassName('outliner')[0].classList.add('outliner-extended');
+    }
+
+    window.close_outliner = () => {
+        document.getElementsByClassName('outliner-bg')[0].classList.add('outliner-bg-hidden');
+        document.getElementsByClassName('outliner')[0].classList.remove('outliner-extended');
+    }
+
 if locals.force_open_create_repos
     script(type='module').
         create_repos.open_create_repos_modal()
