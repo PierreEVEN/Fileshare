@@ -99,7 +99,7 @@ class DirectoryContent {
                     action: async () => {
                         const make_directory = make_directory_hbs({}, {
                             mkdir: async () => {
-                                await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
+                                await parse_fetch_resu      lt(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
                                     {
                                         method: 'POST',
                                         headers: {
