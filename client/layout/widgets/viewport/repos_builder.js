@@ -9,6 +9,8 @@ import {close_modal, is_modal_open, open_modal} from "../../../common/widgets/mo
 import {ItemCarousel} from "./item_carousel";
 import {spawn_context_action} from "../../../common/widgets/context_action";
 import {ClientString} from "../../../common/tools/client_string";
+import {CarouselList} from "../components/carousel/carousel_list/carousel_list";
+import {Carousel} from "../components/carousel/carousel";
 
 const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
@@ -42,7 +44,7 @@ class DirectoryContent {
         this.entry_widgets = new Map();
 
         /**
-         * @type {ItemCarousel}
+         * @type {Carousel}
          */
         this.item_carousel = null;
 
@@ -300,7 +302,9 @@ class DirectoryContent {
         if (this.item_carousel)
             this.item_carousel.close();
 
-        this.item_carousel = new ItemCarousel(this);
+        const item_list = new CarouselList(this.navigator);
+        item_list.build_visual(document.getElementById('item-preview-carousel-list'))
+        this.item_carousel = new Carousel(item_list, document.getElementById('item-preview-carousel'));
     }
 
     close_carousel() {

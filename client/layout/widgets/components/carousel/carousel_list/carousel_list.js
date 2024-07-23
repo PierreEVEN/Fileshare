@@ -18,19 +18,22 @@ class CarouselList {
      */
     build_visual(container) {
         const carousel_list = carousel_list_hbs({}, {});
-        container.append(carousel_list);
-        const carousel_list_div = document.getElementById('carousel-list');
+        const carousel_list_div = carousel_list.getElementsByClassName('carousel-list')[0];
 
 
         for (const object of this.objects) {
             const meta_data = navigator.filesystem.get_object_data(object);
             if (meta_data.is_regular_file) {
-                carousel_list_item_hbs({meta_data}, {
+                const item = carousel_list_item_hbs(meta_data, {
                     on_click: () => {
 
                     }
                 });
+                carousel_list_div.append(item);
             }
         }
+        container.append(carousel_list);
     }
 }
+
+export {CarouselList}
