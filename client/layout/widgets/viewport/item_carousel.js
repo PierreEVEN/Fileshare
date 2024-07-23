@@ -1,5 +1,4 @@
 import * as handlebars from "handlebars";
-import {select_next_element, select_previous_element} from "./repos_builder";
 import {humanFileSize} from "../../../common/tools/utils";
 
 function lerp(a, b, f) {
