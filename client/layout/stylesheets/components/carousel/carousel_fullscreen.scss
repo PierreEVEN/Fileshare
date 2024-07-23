@@ -1,0 +1,23 @@
+#carousel-fullscreen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+
+  background-color: rgba(0, 0, 0, 0.83);
+  z-index: 100;
+}
+
+#carousel-fullscreen-list {
+  display: flex;
+  position: absolute;
+  bottom: 10px;
+  left: 5%;
+  right: 5%;
+  height: 90px;
+  z-index: 101;
+
+  background-color: #02020273;
+}

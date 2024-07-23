@@ -1,0 +1,54 @@
+
+.carousel-item {
+  width: 100%;
+  height: 100%;
+}
+
+.carousel-list-scroller {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  overflow: scroll;
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+
+  &::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+
+  .carousel-list {
+    display: flex;
+    flex-direction: row;
+    width: fit-content;
+    height: 100%;
+
+    .carousel-item {
+      .carousel-item-button {
+        height: 90px;
+        width: 110px;
+        min-width: unset;
+        padding: 2px;
+
+        background-color: rgba(64,66,106,0);
+        border-radius: 5px;
+        border: 2px rgba(64,66,106,0) solid;
+        transition-duration: 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+
+        &:hover {
+          border: 2px #5b6574 solid;
+        }
+        &:active {
+          background-color: black;
+        }
+        &.selected {
+          background-color: #102646;;
+          border: 2px #888fb8 solid;
+        }
+      }
+    }
+  }
+}

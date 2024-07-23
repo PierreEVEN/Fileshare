@@ -55,7 +55,8 @@ body {
 @import "components/main/viewport";
 @import "components/modal";
 @import "components/item";
-@import "components/item_carousel";
+@import "components/carousel/carousel_fullscreen";
+@import "components/carousel/carousel";
 @import "components/progress-bar";
 @import "components/repos-viewport/repos_toolbar";
 

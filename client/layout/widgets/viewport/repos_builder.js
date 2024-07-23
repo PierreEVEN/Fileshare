@@ -101,7 +101,7 @@ class DirectoryContent {
                     action: async () => {
                         const make_directory = make_directory_hbs({}, {
                             mkdir: async () => {
-                                await parse_fetch_resu      lt(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
+                                await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
                                     {
                                         method: 'POST',
                                         headers: {
@@ -302,9 +302,10 @@ class DirectoryContent {
         if (this.item_carousel)
             this.item_carousel.close();
 
+        const container = Carousel.get_fullscreen_container();
         const item_list = new CarouselList(this.navigator);
-        item_list.build_visual(document.getElementById('item-preview-carousel-list'))
-        this.item_carousel = new Carousel(item_list, document.getElementById('item-preview-carousel'));
+        item_list.build_visual(container.list_container)
+        this.item_carousel = new Carousel(item_list, container.background_container);
     }
 
     close_carousel() {
