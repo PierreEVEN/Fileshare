@@ -1,5 +1,9 @@
 
-.carousel-item {
+.carousel-viewport {
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
 }
@@ -21,34 +25,128 @@
     flex-direction: row;
     width: fit-content;
     height: 100%;
+    overflow-y: clip;
+
+    background-color: rgba(0, 0, 0, 0.83);
 
     .carousel-item {
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
       .carousel-item-button {
         height: 90px;
         width: 110px;
         min-width: unset;
-        padding: 2px;
-
         background-color: rgba(64,66,106,0);
-        border-radius: 5px;
-        border: 2px rgba(64,66,106,0) solid;
+        border-left: 1px rgba(37, 37, 50, 0.57) solid;
+        border-right: 1px rgba(37, 37, 50, 0.57) solid;
         transition-duration: 0.15s;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-direction: column;
 
+
+
+        img.item-small {
+          max-width: 90px;
+          max-height: 70px;
+          transition-duration: 0.25s;
+        }
         &:hover {
-          border: 2px #5b6574 solid;
+          border: 2px #6c86aa solid;
+
+          img.item-small {
+            max-width: 107px;
+            max-height: 100px;
+          }
         }
         &:active {
           background-color: black;
         }
-        &.selected {
+      }
+
+      &.selected {
+        .carousel-item-button {
           background-color: #102646;;
           border: 2px #888fb8 solid;
+
+          img.item-small {
+            max-width: 107px;
+            max-height: 100px;
+          }
         }
       }
     }
   }
+}
+
+.carousel-overlay {
+  position: absolute;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  transition-duration: 0.25s;
+  top: 0;
+  bottom: 0;
+  z-index: 101;
+
+  pointer-events: none;
+  button {
+    pointer-events: auto;
+  }
+
+
+  .details-panel {
+    width: 100%;
+    position: absolute;
+    overflow: auto;
+    display: flex;
+    flex-direction: row;
+
+    .head {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      padding-top: 5px;
+      align-items: center;
+    }
+    .stats {
+      display: flex;
+      flex-direction: row;
+      padding: 0 10px;
+      text-wrap: nowrap;
+      align-items: center;
+
+      .typeicon {
+        width: 40px;
+        object-fit: contain;
+      }
+
+      :nth-child(2) {
+        flex-grow: 1;
+        text-align: initial;
+      }
+      p {
+        margin: 20px 0 20px 0;
+        width: auto;
+        font-size: 0.5em;
+      }
+    }
+
+    .details {
+      padding: 0 10px;
+      background-color: $background_1;
+      flex-grow: 1;
+    }
+    p, h1 {
+      width: 100%;
+      font-size: 1.5em;
+      text-align: center;
+      word-break: break-word;
+    }
+  }
+
 }

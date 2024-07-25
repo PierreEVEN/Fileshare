@@ -1,6 +1,7 @@
 @import "../common/colors";
 
 document-code {
+    display: flex;
     div.code-toolbar {
         .toolbar {
             background: none;
@@ -65,7 +66,7 @@ document-code {
     overflow: hidden;
     position: absolute;
     background-color: rgba(0,0,0,0);
-    height: 100vh;
+    height: 100dvh;
     z-index: 10000;
     animation: item-grow 0.2s ease-in;
     animation-fill-mode: forwards;
@@ -112,37 +113,6 @@ document-code {
         button {
             pointer-events: auto;
         }
-
-        .show-next-item {
-            font-size: 3vh;
-            position: absolute;
-            right: 0;
-            height: 100%;
-            background: linear-gradient(to left, #000000a8, #00000000);
-            padding-left: 80px;
-            border: none;
-            transition-duration: 0.25s;
-        }
-
-        .show-next-item:hover {
-            padding-left: 100px;
-            background: linear-gradient(to left, rgba(14, 14, 14, 0.66), #00000000);
-        }
-
-        .show-previous-item {
-            font-size: 3vh;
-            position: absolute;
-            left: 0;
-            height: 100%;
-            background: linear-gradient(to right, #000000a8, #00000000);
-            padding-right: 80px;
-            border: none;
-            transition-duration: 0.25s;
-        }
-        .show-previous-item:hover {
-            padding-right: 100px;
-            background: linear-gradient(to right, rgba(14, 14, 14, 0.66), #00000000);
-        }
     }
 
     .overlay-hidden {
@@ -153,9 +123,11 @@ document-code {
     }
 }
 
-@media(orientation: portrait) {
-    .item-plain {
-        height: 100dvh;
+@supports (-webkit-backdrop-filter: blur(1px)) {
+    .safari-only {
+        .item-plain {
+            height: 100vh;
+        }
     }
 }
 
@@ -164,65 +136,11 @@ document-code {
     height: 100%;
 }
 
-.details-panel {
-    width: 100%;
-    position: absolute;
-    overflow: auto;
-    display: flex;
-    flex-direction: row;
-    bottom: 0;
-
-    .head {
-        background: linear-gradient(rgba(0,0,0,0.0), rgba(0,0,0,1));
-        display: flex;
-        flex-direction: row;
-        width: 100%;
-        padding-top: 10vh;
-        align-items: center;
-    }
-    .stats {
-        display: flex;
-        flex-direction: row;
-        padding: 0 10px;
-        text-wrap: nowrap;
-        align-items: center;
-
-        .typeicon {
-            width: 40px;
-            object-fit: contain;
-            opacity: 50%;
-        }
-
-        :nth-child(2) {
-            flex-grow: 1;
-            text-align: initial;
-        }
-        p {
-            margin: 20px 0 20px 0;
-            width: auto;
-            font-size: 0.5em;
-        }
-    }
-
-    .details {
-        padding: 0 10px;
-        background-color: $background_1;
-        flex-grow: 1;
-    }
-    p, h1 {
-        width: 100%;
-        font-size: 1.5em;
-        text-align: center;
-        word-break: break-word;
-    }
-}
-
 #file-action-buttons {
     display: flex;
     flex-direction: row;
     top: 0;
     position: absolute;
-    background: linear-gradient(rgba(0,0,0,1), rgba(0,0,0,0));
     padding-bottom: 10vh;
     width: 100%;
 

@@ -86,9 +86,6 @@ class DirectoryContent {
                     widget.classList.remove("selected");
                 }
             }
-
-            if (this.item_carousel)
-                this.item_carousel.scroll_to(-this.get_item_index(item), this.item_carousel.get_offset_y());
         })
 
         this.regen_content();
@@ -299,13 +296,19 @@ class DirectoryContent {
     }
 
     open_item_carousel() {
-        if (this.item_carousel)
+        if (this.item_carousel) {
             this.item_carousel.close();
+            this.item_carousel = null;
+        }
 
         const container = Carousel.get_fullscreen_container();
+        container.root.style.display = 'flex';
         const item_list = new CarouselList(this.navigator);
         item_list.build_visual(container.list_container)
-        this.item_carousel = new Carousel(item_list, container.background_container);
+        this.item_carousel = new Carousel(item_list, container.background_container, this.navigator.filesystem.get_object_data(this.navigator.last_selected_item));
+        this.item_carousel.on_close = () => {
+            container.root.style.display = 'none';
+        }
     }
 
     close_carousel() {

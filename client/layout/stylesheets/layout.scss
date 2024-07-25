@@ -18,8 +18,8 @@
 body {
   background-color: #282f3d;
   display: table;
-  height: 100vw;
-  width: 100vh;
+  width: 100vw;
+  height: 100dvh;
   margin: 0;
   padding: 0;
   color: $text-color;
@@ -32,21 +32,17 @@ body {
     flex-direction: column;
     overflow: hidden;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
   }
-
-  @media(orientation: portrait) {
-    .app-container {
-      height: 100dvh;
+  @supports (-webkit-backdrop-filter: blur(1px)) {
+    .safari-only {
+      .app-container {
+        height: 100dvh;
+      }
     }
   }
 }
 
-@media(orientation: portrait) {
-  body {
-    height: 100vh;
-  }
-}
 @import "administration/administration";
 
 @import "components/context_action";
