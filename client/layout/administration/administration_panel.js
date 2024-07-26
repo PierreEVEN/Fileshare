@@ -1,5 +1,5 @@
 import {LOCAL_USER} from "../../common/tools/user";
-import {parse_fetch_result} from "../../common/widgets/message_box";
+import {parse_fetch_result} from "../widgets/components/message_box";
 import {ClientString} from "../../common/tools/client_string";
 import {humanFileSize, seconds_to_str} from "../../common/tools/utils";
 

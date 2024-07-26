@@ -1,7 +1,7 @@
-import {close_modal, open_modal} from "../../../common/widgets/modal.js";
+import {close_modal, open_modal} from "../components/modal.js";
 import {delete_repos} from "../delete_repos/delete_repos_form";
 import {ClientString} from "../../../common/tools/client_string";
-import {parse_fetch_result} from "../../../common/widgets/message_box";
+import {parse_fetch_result} from "../components/message_box";
 
 const edit_repos_form = require('./edit_repos.hbs')
 

@@ -21,16 +21,23 @@ class CarouselList {
     }
 
     select_item(meta_data) {
-
-        if (this._last_selected)
+        if (this._last_selected) {
             this._last_selected.classList.remove('selected');
+        }
         this._last_selected = this.element_map.get(meta_data.id);
 
         this._last_selected.classList.add('selected');
 
         if (this.on_select_item)
             this.on_select_item(meta_data);
-        this._last_selected.scrollIntoView();
+        const bounds = this._last_selected.getBoundingClientRect();
+        if (bounds.x + bounds.width / 2 - window.innerWidth / 2 > 0) {
+            if (this._last_selected.nextSibling)
+                this._last_selected.nextSibling.scrollIntoView({ behavior: "smooth"});
+        }
+        else
+            if (this._last_selected.previousSibling)
+                this._last_selected.previousSibling.scrollIntoView({ behavior: "smooth"});
     }
 
     /**
@@ -38,9 +45,19 @@ class CarouselList {
      */
     build_visual(container) {
         container.innerHTML = '';
-        const carousel_list = carousel_list_hbs({}, {});
+        const carousel_list = carousel_list_hbs({}, {
+            move_left: () => {
+
+            },
+
+            move_right: () => {
+
+            }
+
+        });
         const carousel_list_div = carousel_list.getElementsByClassName('carousel-list')[0];
 
+        this.container = carousel_list_div;
         carousel_list_div.addEventListener('wheel', e => {
             carousel_list.scrollLeft += (e.deltaY * 0.5);
         })

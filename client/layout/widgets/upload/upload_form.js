@@ -1,12 +1,12 @@
-import {close_modal, is_modal_open, open_modal} from '../../../common/widgets/modal.js'
+import {close_modal, is_modal_open, open_modal} from '../components/modal.js'
 import {PAGE_CONTEXT, humanFileSize, seconds_to_str} from "../../../common/tools/utils.js";
-import {print_message} from "../../../common/widgets/message_box.js";
+import {print_message} from "../components/message_box.js";
 import {Filesystem} from "../../../common/tools/filesystem.js";
 import {FilesystemUpload} from "../../../common/tools/filesystem_upload.js";
 import upload_hbs from "./upload_form.hbs";
 import file_hbs from "./file.hbs";
 import directory_hbs from "./directory.hbs";
-import {spawn_context_action} from "../../../common/widgets/context_action";
+import {spawn_context_action} from "../components/context_action";
 import {FilesystemObject} from "../../../common/tools/filesystem_v2";
 import {REPOS_BUILDER} from "../viewport/repos_builder"
 

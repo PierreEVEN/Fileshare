@@ -1,15 +1,14 @@
 import {spawn_item_context_action} from "./item_context_action.js";
-import {parse_fetch_result, print_message} from "../../../common/widgets/message_box.js";
+import {parse_fetch_result} from "../components/message_box.js";
 import {Filesystem, FilesystemObject} from "../../../common/tools/filesystem_v2.js";
-import {Navigator} from "../../../common/tools/selector.js";
+import {Navigator} from "../../../common/tools/navigator.js";
 import {PAGE_CONTEXT} from "../../../common/tools/utils";
 import {LOCAL_USER} from "../../../common/tools/user";
 import {PathBuilder} from "./path_builder";
-import {close_modal, is_modal_open, open_modal} from "../../../common/widgets/modal";
-import {ItemCarousel} from "./item_carousel";
-import {spawn_context_action} from "../../../common/widgets/context_action";
+import {close_modal, is_modal_open, open_modal} from "../components/modal";
+import {spawn_context_action} from "../components/context_action";
 import {ClientString} from "../../../common/tools/client_string";
-import {CarouselList} from "../components/carousel/carousel_list/carousel_list";
+import {CarouselList} from "../components/carousel/list/carousel_list";
 import {Carousel} from "../components/carousel/carousel";
 
 const directory_hbs = require('./directory.hbs');

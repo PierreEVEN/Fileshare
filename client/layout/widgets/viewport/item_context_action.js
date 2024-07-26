@@ -1,12 +1,12 @@
-import {spawn_context_action} from "../../../common/widgets/context_action.js";
-import {close_modal, open_modal} from "../../../common/widgets/modal.js";
-import {parse_fetch_result, print_message} from "../../../common/widgets/message_box.js";
+import {spawn_context_action} from "../components/context_action.js";
+import {close_modal, open_modal} from "../components/modal.js";
+import {parse_fetch_result, print_message} from "../components/message_box.js";
 import {REPOS_BUILDER} from "./repos_builder";
 import {PAGE_CONTEXT, permissions} from "../../../common/tools/utils";
 import {ClientString} from "../../../common/tools/client_string";
 
-const edit_dir_hbs = require('./edit_directory.hbs')
-const edit_file_hbs = require('./edit_file.hbs')
+const edit_dir_hbs = require('./menus/edit_directory.hbs')
+const edit_file_hbs = require('./menus/edit_file.hbs')
 
 async function spawn_item_context_action(item) {
     if (!PAGE_CONTEXT.display_repos)

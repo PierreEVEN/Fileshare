@@ -1,4 +1,4 @@
-import {print_message} from "../widgets/message_box.js";
+import {print_message} from "../../layout/widgets/components/message_box.js";
 import {REPOS_BUILDER} from "../../layout/widgets/viewport/repos_builder"
 
 class TransferStats {

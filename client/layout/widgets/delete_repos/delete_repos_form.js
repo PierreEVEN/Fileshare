@@ -1,4 +1,4 @@
-import {open_modal} from "../../../common/widgets/modal.js";
+import {open_modal} from "../components/modal.js";
 
 const delete_repos_form = require('./delete_repos.hbs')
 

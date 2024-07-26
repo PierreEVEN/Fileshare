@@ -1,4 +1,4 @@
-import {parse_fetch_result} from "../widgets/message_box";
+import {parse_fetch_result} from "../../layout/widgets/components/message_box";
 import {ClientString} from "./client_string";
 
 class CookieString {

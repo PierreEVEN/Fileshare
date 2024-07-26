@@ -55,8 +55,8 @@ class Navigator {
      * @param force_select {boolean}
      */
     select_item(item, shift_key, ctrl_key, force_select = false) {
-        this.last_selected_item = item;
         if (!shift_key) {
+            this.last_selected_item = item;
             if (ctrl_key) {
                 if (this.selected_items.has(item) && !force_select) {
                     this.selected_items.delete(item);
@@ -79,6 +79,9 @@ class Navigator {
                         callback(item, true)
                 }
             }
+        }
+        else {
+
         }
     }
 

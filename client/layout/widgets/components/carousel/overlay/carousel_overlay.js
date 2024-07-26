@@ -1,4 +1,4 @@
-import {humanFileSize} from "../../../../common/tools/utils";
+import {humanFileSize} from "../../../../../common/tools/utils";
 
 class CarouselOverlay {
     /**

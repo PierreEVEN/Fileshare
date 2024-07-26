@@ -1,5 +1,5 @@
-import {open_modal} from "../../../common/widgets/modal.js";
-import {print_message} from "../../../common/widgets/message_box.js";
+import {open_modal} from "../components/modal.js";
+import {print_message} from "../components/message_box.js";
 
 import signin from './signin.hbs';
 import signup from './signup.hbs';

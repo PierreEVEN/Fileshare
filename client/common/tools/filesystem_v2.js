@@ -1,7 +1,7 @@
 const mime = require('mime');
 const {PAGE_CONTEXT} = require("./utils");
 const {LOCAL_USER} = require("./user");
-const {parse_fetch_result} = require("../widgets/message_box");
+const {parse_fetch_result} = require("../../layout/widgets/components/message_box");
 const {ClientString} = require("./client_string");
 
 class FilesystemObject {

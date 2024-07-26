@@ -1,4 +1,4 @@
-import {open_modal} from "../../../common/widgets/modal.js";
+import {open_modal} from "../components/modal.js";
 
 const create_repos = require('./create_repos.hbs')
 

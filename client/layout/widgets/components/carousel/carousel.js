@@ -1,5 +1,5 @@
-import {CarouselViewport} from "./carousel_viewport";
-import {CarouselOverlay} from "./carousel_overlay";
+import {CarouselViewport} from "./viewport/carousel_viewport";
+import {CarouselOverlay} from "./overlay/carousel_overlay";
 
 const carousel_fullscreen_hbs = require('./carousel_fullscreen.hbs');
 
@@ -21,7 +21,7 @@ class Carousel {
             });
         }
 
-        list.on_select_item(base_item);
+        list.select_item(base_item);
 
         this.container = container;
     }
