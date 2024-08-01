@@ -1,6 +1,16 @@
 @import "../common/colors";
 
 .modal-container {
+    position: absolute;
+    width: 100vw;
+    height: 100dvh;
+    z-index: 100000;
+
+    background-color: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    opacity: 0;
+    transition-duration: 0.1s;
+
     h1 {
         font-size: 24px;
         font-weight: 100;
@@ -15,16 +25,6 @@
     .cancel-button {
         margin-right: 5px;
     }
-
-    position: absolute;
-    width: 100vw;
-    height: 100dvh;
-    z-index: 100000;
-
-    background-color: rgba(0, 0, 0, 0);
-    pointer-events: none;
-    opacity: 0;
-    transition-duration: 0.1s;
 
     &.show {
         background-color: rgba(0, 0, 0, 0.5);

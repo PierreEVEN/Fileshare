@@ -19,13 +19,13 @@ $button_yes: #00ff04;
 
 
 @function item_hover($base) {
-  @return adjust-color($base, $hue: -2%, $lightness: -15%);
+  @return adjust-color($base, $hue: -2deg, $lightness: -15%);
 }
 
 @function item_active($base) {
-  @return adjust-color($base, $hue: 5%, $lightness: -20%);
+  @return adjust-color($base, $hue: 5deg, $lightness: -20%);
 }
 
 @function item_focused($base) {
-  @return adjust-color($base, $hue: 0%, $lightness: -10%);
+  @return adjust-color($base, $hue: 0deg, $lightness: -10%);
 }

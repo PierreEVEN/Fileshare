@@ -8,7 +8,7 @@ module.exports = {
             import: './client/embed_viewers/index.js',
             dependOn: ['index'],
         },
-        pdf_worker: "pdfjs-dist/build/pdf.worker.entry",
+        pdf_worker: "pdfjs-dist/build/pdf.worker.mjs",
     },
     output: {
         filename: '[name].js',
