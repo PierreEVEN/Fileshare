@@ -344,6 +344,7 @@ class ReposBuilder {
 
         this.navigator.on_changed_dir((new_dir) => {
             this.directory_content.destroy();
+
             this.directory_content = new DirectoryContent(this.navigator);
 
             // Show directory or repo description

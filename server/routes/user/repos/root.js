@@ -262,10 +262,13 @@ router.post('/send/*', async (req, res) => {
                         return result.error.redirect_error(req, res);
                     if (!result.file)
                         return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Invalid file data : unhandled error case").redirect_error(req, res);
+                    json_compress.trimUndefinedRecursively(result.file)
+                    json_compress.trimUndefinedRecursively(result.created_directories)
                     res.status(200).send({
                         stream_id: uploading_file.upload_token,
                         process_percent: uploading_file.processing_status,
-                        file_id: result.file.id,
+                        file: result.file,
+                        created_directories: result.created_directories,
                         message: result.error ? result.error.response_message : ""
                     })
                     uploading_file.clear();
@@ -403,6 +406,8 @@ router.post('/make-directory/:id', async (req, res) => {
     return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
 
 })
+
+
 
 router.use('/permissions/', require('./permissions/root'))
 

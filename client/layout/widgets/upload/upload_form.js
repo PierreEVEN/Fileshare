@@ -178,13 +178,17 @@ function open_upload_modal_for_files() {
         if (uploaded_bytes === file_uploaded_bytes && process_percent < 1.0)
             global_status_text.innerText += `\npost processing : ${Math.round(process_percent * 100)}%`
     }
-    filesystem_upload.on_stop = () => {
+    filesystem_upload.on_stop = (finished) => {
         add_file_button.style.display = "block";
         upload_button.style.display = "block";
         global_status_div.style.display = 'none';
         cancel_upload.value = "Annuler";
         cancel_upload.onclick = close_modal;
         stop_process = true;
+        if (finished) {
+            close_modal();
+            print_message("Info", "Upload finished", "Successfully uploaded content")
+        }
     }
     modal_parent.on_close_modal = () => {
         if (filesystem_upload.is_running) {

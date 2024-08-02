@@ -254,12 +254,15 @@ class Item {
     }
 
     /**
-     * @return {Promise<Item|null>}
+     * @return {Promise<{wanted_directory:Item, created_directories:Item[]}|null>}
      * @param repos {number}
      * @param absolute_path {string}
      * @param data {Object}
      */
     static async find_or_create_directory_from_path(repos, absolute_path, data) {
+
+        const created_directories = [];
+
         /**
          @param repos {number}
          @param path_split {string[]}
@@ -284,10 +287,15 @@ class Item {
             data.parent_item = parent ? parent.id : null;
             data.name = encodeURIComponent(name);
             data.is_regular_file = false;
-            return await new Item(data).push();
+            const created_dir = await new Item(data).push();
+            created_directories.push(created_dir);
+            return created_dir;
         }
 
-        return await _internal(repos, absolute_path.split('/').filter(Boolean));
+        return {
+            wanted_directory: await _internal(repos, absolute_path.split('/').filter(Boolean)),
+            created_directories: created_directories
+        };
     }
 
     /**

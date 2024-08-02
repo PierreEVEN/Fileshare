@@ -1,5 +1,6 @@
 import {print_message} from "../../layout/widgets/components/message_box.js";
 import {REPOS_BUILDER} from "../../layout/widgets/viewport/repos_builder"
+import {FilesystemObject} from "./filesystem_v2";
 
 class TransferStats {
     constructor() {
@@ -110,7 +111,6 @@ class UploadStream {
     /**
      * @callback callback_file_sent
      * @param file {File}
-     * @param file_id {number}
      */
 
     /**
@@ -198,12 +198,6 @@ class UploadStream {
          * @private
          */
         this._chunk_progress = 0;
-
-        /**
-         * @type {null|number}
-         * @private
-         */
-        this._file_id = null;
     }
 
     go() {
@@ -219,7 +213,7 @@ class UploadStream {
 
     /**
      * @param code {number}
-     * @param data {object: {stream_id:string, process_percent:number, message:string, file_id:number}}
+     * @param data {object: {stream_id:string, process_percent:number, message:string, file:object, created_directories:object[]}}
      */
     _handle_result(code, data) {
         if (code !== 200 || !data) {
@@ -251,8 +245,13 @@ class UploadStream {
          */
         this._stream_id = data.stream_id;
 
-        if (data.file_id && !Number.isNaN(Number(data.file_id)))
-            this._file_id = Number(data.file_id);
+        if (data.created_directories)
+            for (const directory of data.created_directories)
+                REPOS_BUILDER.filesystem.add_object(FilesystemObject.FromServerData(directory));
+
+        if (data.file) {
+            REPOS_BUILDER.filesystem.add_object(FilesystemObject.FromServerData(data.file));
+        }
         this._push_next_chunk();
     }
 
@@ -277,11 +276,11 @@ class UploadStream {
                 }, 500);
                 return;
             } else
-                return this._on_file_sent(this._file_stream.file, this._file_id);
+                return this._on_file_sent(this._file_stream.file);
         }
 
         this._request.open("POST", this._url);
-        if (!this._stream_id) { // @TODO : FIX HEADERS (probably something wrong here)
+        if (!this._stream_id) {
             this._request.setRequestHeader('content-name', encodeURIComponent(this._file_stream.file.name));
             this._request.setRequestHeader('content-size', this._file_stream.file.size);
             this._request.setRequestHeader('content-timestamp', this._file_stream.file.timestamp);
@@ -394,7 +393,7 @@ class FilesystemUpload {
         const this_ref = this;
         const new_file = this._filesystem.get_random_file();
         if (!new_file)
-            return this.stop();
+            return this.stop(true);
         this._current_stream = new UploadStream(new ChunkedFileStream(new_file), this.url,
             (file, sent_chunks, total_chunks, sent_bytes, total_bytes, process_percent) => {
                 if (this_ref.callback_update_progress) {
@@ -408,7 +407,7 @@ class FilesystemUpload {
                 delete this_ref._current_stream;
                 this_ref._next();
             }, (file) => {
-                this_ref.stop();
+                this_ref.stop(false);
             })
         this._current_stream.go();
     }
@@ -419,11 +418,11 @@ class FilesystemUpload {
             this._current_stream.hold();
     }
 
-    stop() {
+    stop(finished) {
         this.pause();
         delete this._current_stream;
         if (this.on_stop)
-            this.on_stop()
+            this.on_stop(finished)
     }
 }
 

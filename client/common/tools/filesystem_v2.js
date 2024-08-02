@@ -13,7 +13,7 @@ class FilesystemObject {
      */
     static FromServerData(server_data) {
         const Object = new FilesystemObject();
-        Object.id = server_data.id;
+        Object.id = Number(server_data.id);
         Object.repos = server_data.repos;
         Object.owner = server_data.owner;
         Object.name = new ClientString(server_data.name);
@@ -262,14 +262,16 @@ class Filesystem {
                 this._object_internal_metadata.set(object.parent_item, parent_metadata);
             }
             parent_metadata.children.add(object.id);
-            for (const [_, listener] of parent_metadata.listeners)
+            for (const [_, listener] of parent_metadata.listeners) {
                 listener.on_add_object(object.id);
+            }
         } else {
             this._root_meta_data.children.add(object.id);
             this._root_meta_data.content_size += object_metadata.content_size;
             this._root_meta_data.content_count += object_metadata.content_count;
-            for (const [_, listener] of this._root_meta_data.listeners)
+            for (const [_, listener] of this._root_meta_data.listeners) {
                 listener.on_add_object(object.id);
+            }
         }
         this._root_dirty = true;
     }
@@ -398,7 +400,8 @@ class Filesystem {
             } while (metadata.listeners.has(id));
 
             const listener = new ObjectListener()
-            listener.id = id;
+            listener._id = id;
+            listener._parent = metadata;
             metadata.listeners.set(id, listener);
             return listener;
         }

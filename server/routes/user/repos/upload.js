@@ -292,8 +292,6 @@ async function finalize_file_upload(uploading_file, repos, user) {
         existing_file = await Item.from_path(repos.id, meta.virtual_path + "/" + meta.file_name.encoded());
     }
 
-    const parent_item = (await Item.find_or_create_directory_from_path(repos.id, meta.virtual_path.plain(), {owner: user.id}));
-
     if (existing_file) {
         if (!existing_file.is_regular_file) {
             return {
@@ -317,6 +315,7 @@ async function finalize_file_upload(uploading_file, repos, user) {
     }
 
     try {
+        const parent_item = (await Item.find_or_create_directory_from_path(repos.id, meta.virtual_path.plain(), {owner: user.id}));
 
         const file_meta = await new Item({
             repos: repos.id,
@@ -326,17 +325,19 @@ async function finalize_file_upload(uploading_file, repos, user) {
             description: meta.file_description.encoded(),
             mimetype: meta.mimetype.encoded(),
             size: meta.file_size,
-            parent_item: parent_item ? parent_item.id : null,
+            parent_item: parent_item.wanted_directory ? parent_item.wanted_directory.id : null,
             hash: uploading_file.gen_hash(),
             timestamp: meta.timestamp,
         }).push();
 
         if (uploading_file.metadata.file_size !== 0)
             fs.renameSync(path, file_meta.storage_path());
+
         return {
             error: null,
             warn: null,
             file: file_meta,
+            created_directories: parent_item.created_directories,
         }
     } catch (error) {
         return {
