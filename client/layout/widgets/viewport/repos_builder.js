@@ -1,5 +1,5 @@
 import {spawn_item_context_action} from "./item_context_action.js";
-import {parse_fetch_result} from "../components/message_box.js";
+import {parse_fetch_result, print_message} from "../components/message_box.js";
 import {Filesystem, FilesystemObject} from "../../../common/tools/filesystem_v2.js";
 import {Navigator} from "../../../common/tools/navigator.js";
 import {PAGE_CONTEXT} from "../../../common/tools/utils";
@@ -97,6 +97,13 @@ class DirectoryContent {
                     action: async () => {
                         const make_directory = make_directory_hbs({}, {
                             mkdir: async () => {
+                                const re = /[<>:"\/\\|?*\x00-\x1F]|^(?:aux|con|clock\$|nul|prn|com[1-9]|lpt[1-9])$/i;
+                                if(re.test(document.getElementById('name').value)) {
+                                    print_message(Error, "Invalid directory name", document.getElementById('name').value);
+                                    return;
+                                }
+
+
                                 await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
                                     {
                                         method: 'POST',
