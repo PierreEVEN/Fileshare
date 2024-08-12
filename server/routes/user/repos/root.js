@@ -385,14 +385,13 @@ router.post('/make-directory', async (req, res) => {
     const name = new ServerString(req.body.name);
     const new_dir = await Item.create_directory(req.display_repos.id, req.connected_user.id, null, name, req.body.open_upload);
     if (new_dir && new_dir.id)
-        return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+        return res.send(new_dir);
     return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
-
 })
 
 router.post('/make-directory/:id', async (req, res) => {
-    const parent = Item.from_id(req.params['id'])
 
+    const parent = await Item.from_id(req.params['id'])
     if (parent.is_regular_file)
         return new HttpResponse(HttpResponse.FORBIDDEN, "Cannot create directory inside file").redirect_error(req, res);
 
@@ -402,7 +401,7 @@ router.post('/make-directory/:id', async (req, res) => {
     const name = new ServerString(req.body.name);
     const new_dir = await Item.create_directory(req.display_repos.id, req.connected_user.id, parent, name, req.body.open_upload);
     if (new_dir && new_dir.id)
-        return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+        return res.send(new_dir);
     return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
 
 })
