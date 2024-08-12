@@ -158,15 +158,13 @@ CREATE OR REPLACE PROCEDURE fileshare.regenerate_item_path_with_children(item_id
 	DECLARE
 		items_to_update BIGINT[];
 		child_item_id BIGINT;
-		child_item_cursor CURSOR FOR SELECT id FROM fileshare.items WHERE parent_item = item_id;
+		rec RECORD;
 	BEGIN
 		CALL fileshare.regenerate_item_path(item_id);
-		OPEN child_item_cursor;
-		LOOP
-			FETCH child_item_cursor INTO child_item_id;
-			EXIT WHEN NOT FOUND;
-			CALL regenerate_item_path_with_children(child_item_id);
-		END LOOP;
+		FOR rec IN SELECT id FROM fileshare.items WHERE parent_item = item_id
+           LOOP
+			CALL fileshare.regenerate_item_path_with_children(rec.id);
+           END LOOP;
 	END;
 	$$ LANGUAGE plpgsql;
 

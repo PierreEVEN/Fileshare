@@ -109,13 +109,16 @@ class Navigator {
         this.selected_item_callbacks.push(callback)
     }
 
-    set_current_dir(item) {
+    set_current_dir(item, skip_push_state = false) {
         this.last_hover_item = null;
         this.clear_selection();
         if (item !== this.current_directory) {
             this.current_directory = item;
             for (const callback of this.changed_dir_callbacks)
                 callback(item)
+            if (!skip_push_state) {
+                history.pushState(item, "", window.location.href);
+            }
         }
     }
 

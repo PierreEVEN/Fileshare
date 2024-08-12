@@ -89,7 +89,7 @@ class DirectoryContent {
 
         this.regen_content();
         if (this.viewport_container)
-            this.viewport_container.oncontextmenu = event => {
+            this.viewport_container.parentElement.oncontextmenu = event => {
 
                 const actions = [];
                 actions.push({
@@ -104,7 +104,7 @@ class DirectoryContent {
                                 }
 
 
-                                await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory().id : ''}`,
+                                const new_dir = await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/make-directory${this.navigator.get_current_directory() ? '/' + this.navigator.get_current_directory() : ''}`,
                                     {
                                         method: 'POST',
                                         headers: {
@@ -116,6 +116,9 @@ class DirectoryContent {
                                             open_upload: false,
                                         })
                                     }));
+                                if (new_dir && new_dir.id) {
+                                    REPOS_BUILDER.filesystem.add_object(FilesystemObject.FromServerData(new_dir));
+                                }
                                 close_modal();
                             }
                         })
@@ -378,12 +381,11 @@ class ReposBuilder {
             this.navigator.set_current_dir(this.filesystem.get_object_from_path(PAGE_CONTEXT.request_path.plain()));
         })
 
+        const this_ref = this;
         window.addEventListener('popstate', function (event) {
             if (!event.state)
                 return;
-
-            const dir = this.filesystem.get_object_from_path(event.state)
-            this.navigator.set_current_dir(dir);
+            this_ref.navigator.set_current_dir(event.state.id, true);
         }, false);
 
         document.addEventListener('keydown', (event) => {

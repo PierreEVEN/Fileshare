@@ -3,7 +3,7 @@ const {gen_uid, gen_uhash} = require("./tools/uid_generator");
 const {Repos} = require("./repos")
 const bcrypt = require("bcrypt");
 const assert = require("assert");
-const {as_data_string, as_id, as_boolean, as_enum, as_hash_key, as_number, as_token} = require("./tools/db_utils");
+const {as_id, as_boolean, as_enum, as_hash_key, as_number, as_token} = require("./tools/db_utils");
 const {ServerString} = require("../server_string");
 
 const id_base = new Set();
@@ -127,7 +127,7 @@ class User {
         await db.single().query(`INSERT INTO fileshare.users
             (id, email, password_hash, name, allow_contact, role) VALUES
             ($1, $2, $3, $4, $5, $6)`,
-            [as_id(user.id || await User.gen_id()), user.email.encoded(), as_hash_key(await bcrypt.hash(data.password, 10)), user.name.encoded(), as_boolean(user.allow_contact), as_enum(user.role)]);
+            [as_id(user.id || await User.gen_id()), user.email.encoded(), as_hash_key(data.password), user.name.encoded(), as_boolean(user.allow_contact), as_enum(user.role)]);
         return await User.from_credentials(data.email, data.password);
     }
     static async gen_id() {
@@ -170,7 +170,7 @@ class User {
     static async from_credentials(login, password) {
         let found_user = null;
         for (let user of (await db.single().query('SELECT * FROM fileshare.users WHERE name = $1 OR email = $2', [new ServerString(login).encoded(), new ServerString(login).encoded()])).rows) {
-            if (bcrypt.compareSync(as_hash_key(password), user['password_hash'].toString())) {
+            if (bcrypt.compareSync(password, user['password_hash'].toString())) {
                 found_user = user;
                 break;
             }

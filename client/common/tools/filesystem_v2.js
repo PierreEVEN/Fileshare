@@ -25,6 +25,10 @@ class FilesystemObject {
             Object.mimetype = new ClientString(server_data.mimetype);
             Object.timestamp = server_data.timestamp;
         }
+        else {
+            Object.open_upload = server_data.open_upload;
+        }
+
         return Object;
     }
 

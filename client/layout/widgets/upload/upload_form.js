@@ -12,7 +12,6 @@ import {REPOS_BUILDER} from "../viewport/repos_builder"
 
 const url = `${PAGE_CONTEXT.repos_path()}/send/`;
 let filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.name) : null;
-const filesystem_upload = PAGE_CONTEXT.display_repos ? new FilesystemUpload(filesystem, url) : null;
 let stop_process = false;
 
 let add_file_button = null;
@@ -20,18 +19,6 @@ let cancel_upload = null;
 let upload_button = null;
 let global_status_div = null;
 let global_status_text = null;
-
-if (filesystem_upload) {
-    filesystem_upload.callback_finished = () => {
-        close_modal();
-        print_message('info', 'Tache terminée', 'Mise en ligne des fichiers terminée avec succès.')
-    }
-
-    filesystem_upload.callback_file_uploaded = async (_, context) => {
-        const file = await FilesystemObject.FetchFromServer(context.file_id);
-        REPOS_BUILDER.filesystem.add_object(file);
-    }
-}
 
 function add_file_to_upload(file, path) {
     if (!is_modal_open()) open_upload_modal_for_files();
@@ -90,7 +77,22 @@ function cleanup_button() {
     cleanup_path(viewport_filesystem, filesystem.root, REPOS_BUILDER.navigator.get_current_directory())
 }
 
+let filesystem_upload = null;
 function open_upload_modal_for_files() {
+
+    filesystem_upload = PAGE_CONTEXT.display_repos ? new FilesystemUpload(filesystem, url) : null;
+    if (filesystem_upload) {
+        filesystem_upload.callback_finished = () => {
+            close_modal();
+            print_message('info', 'Tache terminée', 'Mise en ligne des fichiers terminée avec succès.')
+        }
+
+        filesystem_upload.callback_file_uploaded = async (_, context) => {
+            const file = await FilesystemObject.FetchFromServer(context.file_id);
+            REPOS_BUILDER.filesystem.add_object(file);
+        }
+    }
+
     filesystem.clear();
     const gen_dir = (dir, parent_div) => {
         const ctx = {};

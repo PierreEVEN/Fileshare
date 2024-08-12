@@ -30,7 +30,7 @@
         #directory-description {
             max-width: 30%;
             background-color: $background_1;
-            overflow-y: unset;
+            overflow: scroll;
             img {
                 max-width: 100%;
             }

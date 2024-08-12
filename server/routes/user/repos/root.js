@@ -116,6 +116,7 @@ router.get("/file/:id", async (req, res) => {
         return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
     if (item.is_regular_file) {
+        await item.as_file();
         // Send file in response
         const file_path = item.storage_path();
 
@@ -126,6 +127,7 @@ router.get("/file/:id", async (req, res) => {
         res.setHeader('Content-Disposition', 'inline; filename=' + item.name.encoded());
         return res.sendFile(path.resolve(file_path));
     } else {
+        await item.as_directory();
         let files = await item.get_files_inside_recursive();
         const archive = archiver('zip', {});
 
@@ -180,7 +182,8 @@ router.post('/update/', async function (req, res, _) {
     req.display_repos.status = req.body.status;
     req.display_repos.max_file_size = req.body.max_file_size;
     req.display_repos.visitor_file_lifetime = req.body.guest_file_lifetime;
-    req.display_repos.allow_visitor_upload = req.body.allow_visitor_upload === 'on';
+
+    req.display_repos.allow_visitor_upload = req.body.allow_visitor_upload === 'on' || req.body.allow_visitor_upload === true;
 
     await req.display_repos.push();
     logger.warn(`${req.log_name} updated repos ${req.display_repos.access_key}`)
@@ -216,10 +219,15 @@ router.post('/delete/', async (req, res) => {
 
 router.post('/send/*', async (req, res) => {
 
-    // @TODO Allow user to upload to a specific directory with specific upload permissions
-    if (!await ServerPermissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
-        return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to upload files here").redirect_error(req, res);
-
+    console.log(req.path.substring(6))
+    if (!await ServerPermissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id)) {
+        let valid = false;
+        const parent_directory = await Item.from_id(Number(req.path.substring(6)));
+        if (parent_directory)
+            valid = await ServerPermissions.can_user_upload_to_directory(parent_directory, req.connected_user.id);
+        if (!valid)
+            return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to upload files here").redirect_error(req, res);
+    }
     let uploading_file = FileUpload.from_headers(req.headers);
     if (!uploading_file) {
         console.warn("Cannot upload : the current stream doesn't exists on the server");
@@ -385,14 +393,13 @@ router.post('/make-directory', async (req, res) => {
     const name = new ServerString(req.body.name);
     const new_dir = await Item.create_directory(req.display_repos.id, req.connected_user.id, null, name, req.body.open_upload);
     if (new_dir && new_dir.id)
-        return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+        return res.send(new_dir);
     return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
-
 })
 
 router.post('/make-directory/:id', async (req, res) => {
-    const parent = Item.from_id(req.params['id'])
 
+    const parent = await Item.from_id(req.params['id'])
     if (parent.is_regular_file)
         return new HttpResponse(HttpResponse.FORBIDDEN, "Cannot create directory inside file").redirect_error(req, res);
 
@@ -402,7 +409,7 @@ router.post('/make-directory/:id', async (req, res) => {
     const name = new ServerString(req.body.name);
     const new_dir = await Item.create_directory(req.display_repos.id, req.connected_user.id, parent, name, req.body.open_upload);
     if (new_dir && new_dir.id)
-        return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+        return res.send(new_dir);
     return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
 
 })

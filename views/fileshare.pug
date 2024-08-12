@@ -1,6 +1,9 @@
 extends layout
 
 block content
-    div
-        h1 Bienvenue sur FileShare.
-        p Sélectionnez le dépôt que vous souhaitez consulter sur la liste à gauche.
+    div(style="padding-left:20px;")
+        h1(style="padding-top: 50px;") Bienvenue sur FileShare.
+        if (common.PAGE_CONTEXT.connected_user)
+            p Sélectionnez ou créez un dépot dans la liste à gauche.
+        else
+            p Connectez vous ou créez un compte pour mettre en ligne vos fichiers
