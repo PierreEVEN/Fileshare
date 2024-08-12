@@ -85,7 +85,6 @@ class AdministrationPanel {
             .then(async (response) => await parse_fetch_result(response))
             .then((json) => {
                 for (let repos of json) {
-                    console.log(repos)
                     this.repo_list_div.append(repos_hbs({
                         id: repos.id,
                         name: new ClientString(repos.name).plain(),

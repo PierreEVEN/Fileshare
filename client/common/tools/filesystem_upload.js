@@ -1,6 +1,7 @@
 import {print_message} from "../../layout/widgets/components/message_box.js";
 import {REPOS_BUILDER} from "../../layout/widgets/viewport/repos_builder"
 import {FilesystemObject} from "./filesystem_v2";
+import {PAGE_CONTEXT} from "./utils";
 
 class TransferStats {
     constructor() {
@@ -322,7 +323,7 @@ class FilesystemUpload {
         /**
          * @type {string}
          */
-        this.url = url;
+        this.url = `${PAGE_CONTEXT.repos_path()}/send/${REPOS_BUILDER.navigator.get_current_directory() ? REPOS_BUILDER.navigator.get_current_directory() : ''}`;
 
         this.total_content_size = this._filesystem.root.content_size;
         this.total_content_sent = 0;

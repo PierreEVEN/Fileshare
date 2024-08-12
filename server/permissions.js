@@ -57,6 +57,8 @@ class ServerPermissions {
             return true;
 
         // Anyone can upload to a repos that is open to public upload
+        if (directory.open_upload === undefined)
+            await directory.as_directory()
         if (directory.open_upload)
             return true;
 

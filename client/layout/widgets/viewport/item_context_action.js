@@ -30,7 +30,7 @@ async function spawn_item_context_action(item) {
         image: '/images/icons/icons8-download-96.png'
     });
 
-    if (await permissions.can_user_edit_item(REPOS_BUILDER.navigator.get_current_directory(), item.id)) {
+    if (await permissions.can_user_edit_item(PAGE_CONTEXT.repos_path(), item.id)) {
         actions.push({
             title: "Modifier",
             action: () => {
@@ -63,7 +63,7 @@ async function spawn_item_context_action(item) {
                                 const data = {
                                     name: ClientString.FromClient(document.getElementById('name').value),
                                     description: ClientString.FromClient(document.getElementById('description').value),
-                                    open_upload: document.getElementById('open_upload').value === "on",
+                                    open_upload: document.getElementById('open_upload').checked,
                                 }
                                 await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/update/${item.id}`,
                                     {

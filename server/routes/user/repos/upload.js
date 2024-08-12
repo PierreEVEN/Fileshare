@@ -155,7 +155,7 @@ class FileUpload {
         try {
             fs.appendFileSync(this.tmp_file_path, chunk);
         } catch (e) {
-            console.log("Failed to append bytes : ", e.toString());
+            console.error("Failed to append bytes : ", e.toString());
             return {
                 message: "Failed to append bytes : " + JSON.stringify(e)
             }

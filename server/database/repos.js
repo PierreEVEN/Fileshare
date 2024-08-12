@@ -48,7 +48,7 @@ class Repos {
         /**
          * @type {boolean}
          */
-        this.allow_visitor_upload = data.allow_visitor_upload || false;
+        this.allow_visitor_upload = data.allow_visitor_upload;
     }
 
     /**

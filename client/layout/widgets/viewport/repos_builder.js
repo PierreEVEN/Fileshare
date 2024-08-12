@@ -385,8 +385,6 @@ class ReposBuilder {
         window.addEventListener('popstate', function (event) {
             if (!event.state)
                 return;
-
-            console.log(event.state)
             this_ref.navigator.set_current_dir(event.state.id, true);
         }, false);
 

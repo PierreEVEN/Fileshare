@@ -151,7 +151,7 @@ class Item {
                 [as_number(this.id), as_number(this.size), this.mimetype.encoded(), as_hash_key(this.hash), as_number(this.timestamp)]);
         } else {
             assert(this.id !== undefined);
-            if (typeof (this.open_upload) === 'boolean')
+            if (typeof (this.open_upload) !== 'boolean')
                 this.open_upload = false;
             await db.single().query(`INSERT INTO fileshare.directory_data
                 (id, open_upload) VALUES

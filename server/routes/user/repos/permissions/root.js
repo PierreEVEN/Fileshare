@@ -1,7 +1,5 @@
-const permissions = require("../../../../permissions");
 const {HttpResponse} = require("../../../utils/errors");
 const {Item} = require("../../../../database/item");
-const perms = require("../../../../permissions");
 const {ServerPermissions} = require("../../../../permissions");
 
 const router = require("express").Router();
@@ -26,9 +24,11 @@ router.get("/upload/:id", async (req, res) => {
         return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
 
     const item = await Item.from_id(req.params['id']);
-    if (item && req.connected_user && req.display_repos)
+    if (item && req.connected_user && req.display_repos) {
+        await item.as_directory();
         if (await ServerPermissions.can_user_upload_to_directory(item, req.connected_user.id))
             return res.sendStatus(HttpResponse.OK);
+    }
     return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
 })
 

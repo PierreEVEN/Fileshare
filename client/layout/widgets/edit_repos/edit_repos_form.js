@@ -19,7 +19,7 @@ function edit_repos(e) {
                 guest_file_lifetime: document.getElementById('guest_file_lifetime').value,
                 name: ClientString.FromClient(document.getElementById('name').value),
                 status: document.getElementById('status').value,
-                allow_visitor_upload: document.getElementById('allow_visitor_upload').value === "on",
+                allow_visitor_upload: document.getElementById('allow_visitor_upload').checked,
             }
             await parse_fetch_result(await fetch(`/${e.username}/${e.name.plain()}/update`,
                 {

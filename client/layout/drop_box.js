@@ -17,7 +17,7 @@ document.body.addEventListener('dragenter', async (event) => {
             if (!PAGE_CONTEXT.display_repos)
                 return resolve(false);
             const directory = REPOS_BUILDER.navigator.get_current_directory();
-            if ((directory && directory.parent && await permissions.can_user_upload_to_directory(directory)) || await permissions.can_user_upload_to_repos(PAGE_CONTEXT.repos_path())) {
+            if ((directory && await permissions.can_user_upload_to_directory(PAGE_CONTEXT.repos_path(), directory)) || await permissions.can_user_upload_to_repos(PAGE_CONTEXT.repos_path())) {
                 resolve(true);
             } else
                 resolve(false);

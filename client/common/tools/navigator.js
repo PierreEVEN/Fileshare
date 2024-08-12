@@ -118,7 +118,6 @@ class Navigator {
                 callback(item)
             if (!skip_push_state) {
                 history.pushState(item, "", window.location.href);
-                console.log("push", item)
             }
         }
     }
