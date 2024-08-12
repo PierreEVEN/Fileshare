@@ -47,7 +47,10 @@ class CarouselList {
         container.innerHTML = '';
         const carousel_list = carousel_list_hbs({}, {
             move_left: () => {
+                console.log("left")
 
+
+                //document.addEventListener('keydown', (event) => {
             },
 
             move_right: () => {
@@ -69,7 +72,7 @@ class CarouselList {
             if (meta_data.is_regular_file) {
                 const callbacks = {};
                 const item = carousel_list_item_hbs({item: meta_data}, callbacks);
-                this.element_map.set(meta_data.id, item)
+                this.element_map.set(meta_data.id, item);
                 callbacks.on_click = () => {
                     this.select_item(meta_data)
                 }

@@ -404,24 +404,24 @@ class ReposBuilder {
                 }
             }
             if (event.key === 'ArrowRight') {
-                if (is_modal_open())
+                if (is_modal_open() || (this.directory_content && this.directory_content.item_carousel))
                     return;
                 this.select_next_element(event);
             }
             if (event.key === 'ArrowLeft') {
-                if (is_modal_open())
+                if (is_modal_open() || (this.directory_content && this.directory_content.item_carousel))
                     return;
                 this.select_previous_element(event);
             }
             if (event.key === 'ArrowUp') {
-                if (is_modal_open())
+                if (is_modal_open() || (this.directory_content && this.directory_content.item_carousel))
                     return;
                 const item_per_row = this.directory_content.viewport_container.offsetWidth / 120;
                 for (let i = 1; i < item_per_row; ++i)
                     this.select_previous_element(event);
             }
             if (event.key === 'ArrowDown') {
-                if (is_modal_open())
+                if (is_modal_open() || (this.directory_content && this.directory_content.item_carousel))
                     return;
                 const item_per_row = this.directory_content.viewport_container.offsetWidth / 120;
                 for (let i = 1; i < item_per_row; ++i)
