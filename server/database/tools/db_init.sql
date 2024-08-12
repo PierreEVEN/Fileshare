@@ -165,7 +165,7 @@ CREATE OR REPLACE PROCEDURE fileshare.regenerate_item_path_with_children(item_id
 		LOOP
 			FETCH child_item_cursor INTO child_item_id;
 			EXIT WHEN NOT FOUND;
-			CALL regenerate_item_path_with_children(child_item_id);
+			CALL fileshare.regenerate_item_path_with_children(child_item_id);
 		END LOOP;
 	END;
 	$$ LANGUAGE plpgsql;
