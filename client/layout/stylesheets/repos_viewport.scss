@@ -30,7 +30,7 @@
         #directory-description {
             max-width: 30%;
             background-color: $background_1;
-            overflow-y: unset;
+            overflow: scroll;
             img {
                 max-width: 100%;
             }
@@ -43,7 +43,6 @@
                 max-height: 30%;
                 width: 100%;
                 max-width: none;
-                overflow: scroll;
             }
         }
     }
