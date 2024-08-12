@@ -117,7 +117,7 @@ class Navigator {
             for (const callback of this.changed_dir_callbacks)
                 callback(item)
             if (!skip_push_state) {
-                history.pushState(item, "", "");
+                history.pushState(item, "", window.location.href);
                 console.log("push", item)
             }
         }
