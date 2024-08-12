@@ -15,25 +15,14 @@ div.outliner
 
     div.hseparator
     div.category
-        p Dépôts suivis
+        p Derniers dépôts
     div.hseparator
-    div.repos-list
+    div.repos-list(id='last-repos-list')
         each repos in common.tracked_repos
             if locals.common.selected_repos && locals.common.selected_repos.id === repos.repos.id
                 button(onclick="window.location.href = #{common.get_url_for_repos(repos)}").selected-repos #{repos.repos.name.plain()}
             else
                 button(onclick="window.location.href = '/repos/?repos=" + repos.repos.access_key + "'") #{repos.repos.name.plain()}
-
-    div.hseparator
-    div.category
-        p Dépôts publiques
-    div.hseparator
-    div.repos-list
-        each repos in common.repos_list
-            if locals.common.selected_repos && locals.common.selected_repos.id === repos.id
-                button(onclick="window.location.href = '/repos/?repos=" + repos.access_key + "'").selected-repos #{repos.name.plain()}
-            else
-                button(onclick="window.location.href = '/repos/?repos=" + repos.access_key + "'") #{repos.name.plain()}
 
 div.outliner-bg.outliner-bg-hidden(onclick="window.close_outliner()")
 

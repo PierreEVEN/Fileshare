@@ -441,6 +441,9 @@ class ReposBuilder {
                 }
             }
         }, false);
+
+
+        LOCAL_USER.push_last_repos(this.repo.id);
     }
 
     async fetch_repos_content() {

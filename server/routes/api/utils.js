@@ -7,6 +7,8 @@ const {Repos} = require("../../database/repos");
 const {logger} = require("../../logger");
 const {display_name_to_url} = require("../../database/tools/db_utils");
 const {HttpResponse} = require("../utils/errors");
+const {ServerPermissions} = require("../../permissions");
+const {User} = require("../../database/user");
 const router = require("express").Router();
 
 router.get('/server-time/', (req, res) => {
@@ -56,5 +58,22 @@ router.post('/create-repos', async (req, res) => {
         return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, `Failed to create repository : ${error}`).redirect_error(req, res);
     }
 });
+
+
+
+router.post("/repos-data", async (req, res) => {
+    const data = [];
+    for (const repos of req.body) {
+        const repo_data = await Repos.from_id(repos);
+        if (!repo_data)
+            continue;
+        if (await ServerPermissions.can_user_view_repos(repo_data, req.connected_user ? req.connected_user.id : undefined)) {
+            const owner = await User.from_id(repo_data.owner);
+            repo_data.username = owner.name;
+            data.push(repo_data);
+        }
+    }
+    return res.send(data)
+})
 
 module.exports = router;

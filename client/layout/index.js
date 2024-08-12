@@ -15,6 +15,7 @@ import './widgets/viewport/repos_builder.js';
 import './widgets/delete_repos/delete_repos_form.js';
 import './widgets/edit_repos/edit_repos_form.js';
 import './drop_box.js';
+import './widgets/viewport/file_list_customization.js'
 
 /* VIEWPORT */
 import './widgets/viewport/path_builder';

@@ -49,11 +49,56 @@ class User {
         this._last_uri = document.documentURI;
         if (this._authtoken)
             this._authtoken_exp = cookies.read("authtoken-exp");
+        /**
+         * @type {string | null}
+         * @private
+         */
+        this._last_repos = cookies.read("last-repos")
+        if (!this._last_repos)
+            this._last_repos = "";
         this.save_cookies();
     }
 
     get_token() {
         return this._authtoken;
+    }
+
+    /**
+     * @returns {Promise<[]>}
+     */
+    async get_last_repos() {
+        const repos = this._last_repos.split('.').filter(Boolean);
+        return await parse_fetch_result(await fetch('/api/repos-data',
+            {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(repos)
+            }));
+    }
+
+    /**
+     * @param repos_id {string}
+     */
+    push_last_repos(repos_id) {
+        let repos_list = this._last_repos.split('.').filter(Boolean);
+        if (repos_list.length > 10) {
+            repos_list = repos_list.reverse();
+            repos_list.pop();
+            repos_list = repos_list.reverse();
+        }
+        const new_repos_list = [];
+        for (const repo of repos_list)
+            if (String(repos_id) !== String(repo))
+                new_repos_list.push(repo)
+
+        new_repos_list.push(repos_id)
+        this._last_repos = '';
+        for (const item of new_repos_list)
+            this._last_repos += `${item}.`;
+        this.save_cookies();
     }
 
     auth_header(header) {
@@ -142,6 +187,7 @@ class User {
                 cookies.set("authtoken", this._authtoken, new Date().getTime() + 36000000)
         if (this._authtoken_exp)
             cookies.set("authtoken-exp", this._authtoken_exp)
+        cookies.set("last-repos", this._last_repos)
         cookies.save();
     }
 }

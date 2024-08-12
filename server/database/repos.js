@@ -64,7 +64,8 @@ class Repos {
         assert(this.display_name);
         assert(this.max_file_size);
         assert(this.visitor_file_lifetime);
-        assert(typeof this.allow_visitor_upload === 'boolean');
+        if (typeof this.allow_visitor_upload !== 'boolean')
+            this.allow_visitor_upload = false;
         await db.single().query(`INSERT INTO fileshare.repos
             (id, name, owner, description, status, display_name, max_file_size, visitor_file_lifetime, allow_visitor_upload) VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9)

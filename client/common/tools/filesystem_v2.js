@@ -1,4 +1,3 @@
-const mime = require('mime');
 const {PAGE_CONTEXT} = require("./utils");
 const {LOCAL_USER} = require("./user");
 const {parse_fetch_result} = require("../../layout/widgets/components/message_box");
