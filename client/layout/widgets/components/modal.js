@@ -37,6 +37,10 @@ function open_modal(content, custom_width = null, custom_height = null, modal_cl
     else
         modal_content.append(content);
     modal_content.on_close_modal = null;
+
+    const inputs = modal_content.getElementsByTagName('input');
+    if (inputs.length !== 0)
+        inputs[0].focus();
     return modal_content;
 }
 

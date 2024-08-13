@@ -1,7 +1,9 @@
-<div class='object-button' ondblclick="{{ctx 'dblclicked(event)'}}" onclick="{{ctx 'clicked(event)'}}" onmouseenter="{{ctx 'enter()'}}" onmouseleave="{{ctx 'leave()'}}" oncontextmenu="{{ctx 'context_menu(event)'}}">
-    <button class="open-context-button" onclick="{{ctx 'context_menu(event)'}}">...</button>
+<div class='object-button' ondblclick="{{ctx 'dblclicked(event)'}}" onclick="{{ctx 'clicked(event)'}}"
+     onmouseenter="{{ctx 'enter()'}}" onmouseleave="{{ctx 'leave()'}}" oncontextmenu="{{ctx 'context_menu(event)'}}">
     <div class="item-preview folder">
-        {{item_thumbnail item}}
+        <div class="item_thumbnail">
+            {{item_thumbnail item}}
+        </div>
         <p>{{item.name}}</p>
     </div>
 </div>

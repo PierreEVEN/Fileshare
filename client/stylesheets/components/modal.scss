@@ -1,0 +1,101 @@
+@import "../common/colors";
+
+.modal-container {
+  position: absolute;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 100000;
+
+  background-color: rgba(0, 0, 0, 0);
+  pointer-events: none;
+  opacity: 0;
+  transition-duration: 0.1s;
+
+  h1 {
+    font-size: 24px;
+    font-weight: 100;
+    margin-bottom: 25px;
+    margin-top: 50px;
+  }
+
+  .plus-button {
+    margin-right: auto;
+  }
+
+  .cancel-button {
+    margin-right: 5px;
+  }
+
+  &.show {
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 100%;
+    pointer-events: all;
+    transition-duration: 0.1s;
+  }
+
+  .modal-box {
+    background-color: $background_1;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px $border-default dotted;
+    border-radius: 5px;
+
+    .floating-top-right.cancel-button {
+      min-width: 0;
+      width: 30px;
+      height: 30px;
+      border-width: 1px;
+      padding: 0;
+    }
+
+    #modal-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: fit-content;
+      height: fit-content;
+      overflow-y: auto;
+      overflow-x: clip;
+      max-height: 90vh;
+      max-width: 90vw;
+      padding-bottom: 30px;
+
+      form {
+        padding: 0 60px 0 60px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .field {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        font-size: 14px;
+        width: 420px;
+
+        p {
+          margin-right: 1em;
+        }
+
+        label {
+          display: flex;
+          flex-grow: 1;
+        }
+      }
+
+      #extension {
+        width: 30px;
+        flex-grow: 0;
+      }
+    }
+  }
+}
+
+
+@media(orientation: portrait) {
+  .modal-container {
+    height: 100dvh;
+  }
+}

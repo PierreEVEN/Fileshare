@@ -1,6 +1,9 @@
 import {CarouselViewport} from "./viewport/carousel_viewport";
 import {CarouselOverlay} from "./overlay/carousel_overlay";
 
+require('./carousel.scss')
+require('./carousel_fullscreen.scss')
+
 const carousel_fullscreen_hbs = require('./carousel_fullscreen.hbs');
 
 let FULLSCREEN_CONTAINER = null;

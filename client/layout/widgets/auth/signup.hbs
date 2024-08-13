@@ -1,23 +1,25 @@
 <h1>Créer un compte</h1>
-<div class="field">
-    <label for='username'>
-        <input type="text" name="username" placeholder="Nom / e-mail" id="username" required>
-    </label>
-</div>
-<div class="field">
-    <label for='email'>
-        <input type="email" name="email" placeholder="e-mail" id="email" required>
-    </label>
-</div>
-<div class="field">
-    <label for='password'>
-        <input type="password" name="password" placeholder="Mot de passe" id="password" required>
-    </label>
-</div>
+<form onsubmit="{{ctx 'signup(event)'}}">
+    <div class="field">
+        <label for='username'>
+            <input type="text" name="username" placeholder="Nom / e-mail" id="username" required>
+        </label>
+    </div>
+    <div class="field">
+        <label for='email'>
+            <input type="email" name="email" placeholder="e-mail" id="email" required>
+        </label>
+    </div>
+    <div class="field">
+        <label for='password'>
+            <input type="password" name="password" placeholder="Mot de passe" id="password" required>
+        </label>
+    </div>
 
-<input type="submit" value="Créer un compte" onclick="window.auth.post_signup()">
-<a id="forgot-password" href="mailto: evenpierre@orange.fr"></a>
-<div class='footer'>
-    <p>Déjà membre ?</p> <a href="javascript:window.auth.open_modal_signin();">Se connecter à votre
-    compte</a>
-</div>
+    <input type="submit" value="Créer un compte"">
+    <a id="forgot-password" href="mailto: evenpierre@orange.fr"></a>
+    <div class='footer'>
+        <p>Déjà membre ?</p> <a href="javascript:window.auth.open_modal_signin();">Se connecter à votre
+        compte</a>
+    </div>
+</form>

@@ -132,6 +132,11 @@ class Navigator {
     on_changed_dir(callback) {
         this.changed_dir_callbacks.push(callback)
     }
+
+    cut_selection() {
+        this.clipboard_items = this.selected_items;
+        this.clear_selection();
+    }
 }
 
 export {Navigator}

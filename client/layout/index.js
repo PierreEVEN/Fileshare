@@ -1,4 +1,4 @@
-require('./stylesheets/layout.scss');
+require('../stylesheets/layout.scss');
 
 import './handlebars_helpers';
 

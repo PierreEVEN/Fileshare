@@ -1,0 +1,25 @@
+@import "../../../stylesheets/common/colors";
+
+.auth {
+  form {
+    align-items: center;
+    .Username {
+      margin-top: 30px;
+      margin-right: 20px;
+    }
+
+    #forgot-password {
+      margin-top: 30px;
+    }
+
+    .footer {
+      bottom: 10px;
+      font-size: 15px;
+      color: $border-default;
+
+      a {
+        margin-left: 8px;
+      }
+    }
+  }
+}

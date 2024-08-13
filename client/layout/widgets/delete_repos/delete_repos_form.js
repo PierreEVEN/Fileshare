@@ -1,5 +1,7 @@
 import {open_modal} from "../components/modal.js";
 
+require('./delete-repos.scss')
+
 const delete_repos_form = require('./delete_repos.hbs')
 
 function delete_repos(e) {

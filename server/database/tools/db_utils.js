@@ -38,7 +38,7 @@ function as_token(source) {
 
     const data = source.toString();
     if (!/^[A-Za-z0-9-_.!~*'()%]*$/.test(data)) {
-        console.log("invalid token field : " + data)
+        console.error("invalid token field : " + data)
         assert(/^[A-Za-z0-9-_.!~*'()%]*$/.test(data), data)
     }
     return data;

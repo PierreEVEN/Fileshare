@@ -166,7 +166,7 @@ router.post('/update/:id', async function (req, res, _) {
     await item.push();
 
     logger.warn(`${req.log_name} updated file ${item.id}`);
-    return res.sendStatus(HttpResponse.OK);
+    return res.send(item);
 });
 
 router.post('/update/', async function (req, res, _) {
@@ -218,8 +218,6 @@ router.post('/delete/', async (req, res) => {
 });
 
 router.post('/send/*', async (req, res) => {
-
-    console.log(req.path.substring(6))
     if (!await ServerPermissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id)) {
         let valid = false;
         const parent_directory = await Item.from_id(Number(req.path.substring(6)));

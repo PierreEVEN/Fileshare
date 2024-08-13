@@ -1,4 +1,4 @@
-import {get_mime_icon_path} from "../common/tools/mime_utils";
+    import {get_mime_icon_path} from "../common/tools/mime_utils";
 import {PAGE_CONTEXT} from "../common/tools/utils";
 
 function get(item) {

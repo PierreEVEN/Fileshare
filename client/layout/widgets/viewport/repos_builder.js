@@ -14,6 +14,7 @@ import {Carousel} from "../components/carousel/carousel";
 const directory_hbs = require('./directory.hbs');
 const file_hbs = require('./file.hbs');
 
+require('./item.scss')
 
 const make_directory_hbs = require('./menus/make_directory.hbs')
 
@@ -96,7 +97,8 @@ class DirectoryContent {
                     title: "Nouveau Dossier",
                     action: async () => {
                         const make_directory = make_directory_hbs({}, {
-                            mkdir: async () => {
+                            mkdir: async (e) => {
+                                e.preventDefault();
                                 const re = /[<>:"\/\\|?*\x00-\x1F]|^(?:aux|con|clock\$|nul|prn|com[1-9]|lpt[1-9])$/i;
                                 if(re.test(document.getElementById('name').value)) {
                                     print_message(Error, "Invalid directory name", document.getElementById('name').value);
@@ -164,6 +166,30 @@ class DirectoryContent {
     }
 
     /**
+     * @param item {FilesystemObject}
+     * @param element {HTMLElement}
+     * @private
+     */
+    _add_element_decorations(item, element) {
+        if (item.owner !== PAGE_CONTEXT.display_repos.owner)
+        {
+            const user_icon = document.createElement('img');
+            user_icon.classList.add('user-icon');
+            user_icon.src = '/images/icons/icons8-user-60.png';
+            element.append(user_icon)
+        }
+        if (!item.is_regular_file) {
+            if (item.open_upload) {
+                const open_upload_icon = document.createElement('img');
+                open_upload_icon.classList.add('open-upload-icon');
+                open_upload_icon.src = '/images/icons/icons8-check-60.png';
+
+                element.getElementsByTagName('img')[0].src = '/images/icons/icons8-opened-folder-96.png';
+            }
+        }
+    }
+
+    /**
      * @param directory {FilesystemObject}
      * @private
      */
@@ -190,6 +216,7 @@ class DirectoryContent {
             },
         });
         this.entry_widgets.set(directory.id, dir_div)
+        this._add_element_decorations(directory, dir_div);
         dir_div.object = directory;
         if (this.viewport_container)
             this.viewport_container.append(dir_div);
@@ -227,6 +254,7 @@ class DirectoryContent {
             },
         });
         this.entry_widgets.set(file.id, file_div)
+        this._add_element_decorations(file, file_div);
         file_div.object = file;
         this.viewport_container.append(file_div);
     }
@@ -463,7 +491,7 @@ class ReposBuilder {
                     this.filesystem.add_object(FilesystemObject.FromServerData(item));
                 const time_c = performance.now()
 
-                console.log(`Retrieved repo content. Fetch : ${time_b - time_a}ms, Display : ${time_c - time_b}ms`)
+                console.info(`Retrieved repo content. Fetch : ${time_b - time_a}ms, Display : ${time_c - time_b}ms`)
             });
     }
 

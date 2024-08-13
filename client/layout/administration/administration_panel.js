@@ -3,6 +3,8 @@ import {parse_fetch_result} from "../widgets/components/message_box";
 import {ClientString} from "../../common/tools/client_string";
 import {humanFileSize, seconds_to_str} from "../../common/tools/utils";
 
+require('./administration.scss');
+
 const user_hbs = require('./user.hbs');
 const repos_hbs = require('./repos.hbs');
 const stats_hbs = require('./stats.hbs');

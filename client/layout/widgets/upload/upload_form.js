@@ -10,6 +10,8 @@ import {spawn_context_action} from "../components/context_action";
 import {FilesystemObject} from "../../../common/tools/filesystem_v2";
 import {REPOS_BUILDER} from "../viewport/repos_builder"
 
+require('./upload.scss')
+
 const url = `${PAGE_CONTEXT.repos_path()}/send/`;
 let filesystem = PAGE_CONTEXT.display_repos ? new Filesystem(PAGE_CONTEXT.display_repos.name) : null;
 let stop_process = false;
