@@ -48,6 +48,20 @@ class Navigator {
         this.hover_item_callbacks.push(callback)
     }
 
+    enter_touch_selection_mode(enter = true) {
+        this.is_touch_selection_mode = enter;
+        if (enter) {
+            document.getElementById('mobile-selection-header').classList.add('mobile-selection-mode');
+            document.getElementById('mobile-selection-button').onclick = () => {
+                this.enter_touch_selection_mode(false);
+            }
+        } else {
+            this.is_touch_selection_mode = false;
+            document.getElementById('mobile-selection-header').classList.remove('mobile-selection-mode');
+            this.clear_selection();
+        }
+    }
+
     /**
      * @param item {number}
      * @param shift_key {boolean}
@@ -55,6 +69,25 @@ class Navigator {
      * @param force_select {boolean}
      */
     select_item(item, shift_key, ctrl_key, force_select = false) {
+
+        this.last_selected_item = item;
+        if (this.selected_items.has(item) && !force_select) {
+            this.selected_items.delete(item);
+            for (const callback of this.selected_item_callbacks)
+                callback(item, false)
+        } else {
+            this.selected_items.add(item);
+            for (const callback of this.selected_item_callbacks)
+                callback(item, true)
+        }
+        if (this.is_touch_selection_mode) {
+            document.getElementById('mobile-selection-info').innerText = `${this.selected_items.size} ${this.selected_items.size > 1 ? 'objets sélectionnés' : 'objet sélectionné'}`
+            if (this.selected_items.size === 0) {
+                this.enter_touch_selection_mode(false)
+            }
+        }
+        return;
+
         if (!shift_key) {
             this.last_selected_item = item;
             if (ctrl_key) {
@@ -79,8 +112,7 @@ class Navigator {
                         callback(item, true)
                 }
             }
-        }
-        else {
+        } else {
 
         }
     }

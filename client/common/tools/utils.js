@@ -127,7 +127,13 @@ class Permissions {
     }
 }
 
+function is_touch_device() {
+    return (('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (navigator.msMaxTouchPoints > 0));
+}
+
 const permissions = new Permissions();
 
 window.utils = {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions}
-export {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions}
+export {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions, is_touch_device}

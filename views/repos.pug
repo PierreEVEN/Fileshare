@@ -9,7 +9,12 @@ block content
             div(id="viewport_toolbar").tool-buttons
         div.hseparator
         div.repos_content
-            div(id='file-list')
+            div(id='file-list-box')
+                div(id='mobile-selection-header')
+                    p(id='mobile-selection-info') 5 objets sélectionnés
+                    button(id='mobile-selection-button' class='cancel-button') x
+                div(id='file-list-scroll-box')
+                    div(id='file-list')
             div(id='directory-description')
 
     if locals.force_show_upload

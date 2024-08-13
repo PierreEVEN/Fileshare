@@ -1,7 +1,6 @@
 import {LOCAL_USER} from "../../../common/tools/user";
 import {ClientString} from "../../../common/tools/client_string";
-import {PAGE_CONTEXT} from "../../../common/tools/utils";
-
+import {PAGE_CONTEXT, permissions} from "../../../common/tools/utils";
 
 async function update_last_repos() {
     const repos_list = document.getElementById('last-repos-list')
@@ -22,3 +21,16 @@ async function update_last_repos() {
 }
 
 update_last_repos();
+
+/*
+async function open_repos_context_menu()
+if (await permissions.can_user_edit_repos(PAGE_CONTEXT.repos_path())) {
+    const edit_button = document.createElement('button');
+    edit_button.onclick = () => edit_repos.edit_repos(PAGE_CONTEXT.display_repos);
+    edit_button.innerHTML = `<img src='/images/icons/icons8-edit-96.png' alt='modifier'>`;
+    edit_button.classList.add('plus-button')
+    tool_buttons.append(edit_button);
+}
+
+export {}
+*/

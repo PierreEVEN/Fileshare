@@ -7,3 +7,4 @@
 - Barre de recherche (par nom)
 - Ameliorer le design de la description
 - Pourvoir couper / coller
+- Contrôler le compte utilisateur

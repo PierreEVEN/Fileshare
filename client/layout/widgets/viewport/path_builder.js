@@ -42,14 +42,6 @@ class PathBuilder {
             download_button.onclick = () => window.open(`${PAGE_CONTEXT.repos_path()}/file${dir_id ? "/" + dir_id : ''}`, '_blank').focus();
             download_button.innerHTML = `<img src='/images/icons/icons8-download-96.png' alt='download'>`
             tool_buttons.append(download_button);
-
-            if (await permissions.can_user_edit_repos(PAGE_CONTEXT.repos_path())) {
-                const edit_button = document.createElement('button');
-                edit_button.onclick = () => edit_repos.edit_repos(PAGE_CONTEXT.display_repos);
-                edit_button.innerHTML = `<img src='/images/icons/icons8-edit-96.png' alt='modifier'>`;
-                edit_button.classList.add('plus-button')
-                tool_buttons.append(edit_button);
-            }
         }
 
         const button = document.createElement('button')
