@@ -1,4 +1,5 @@
 import {is_touch_device} from "../../../common/tools/utils";
+import {REPOS_BUILDER} from "./repos_builder";
 
 const make_directory_hbs = require("./menus/make_directory.hbs");
 const {print_message, parse_fetch_result} = require("../components/message_box");
@@ -89,6 +90,10 @@ class DirectoryContent {
         const file_background = document.getElementById('file-list-box');
         if (file_background)
             file_background.oncontextmenu = event => {
+                if (event.target !== file_background && event.target !== document.getElementById('file-list')) {
+                    event.preventDefault();
+                    return;
+                }
                 const actions = [];
                 actions.push({
                     title: "Nouveau Dossier",
@@ -126,6 +131,14 @@ class DirectoryContent {
                     image: '/images/icons/icons8-add-folder-48.png'
                 });
 
+                if (navigator.clipboard_items && navigator.clipboard_items.length !== 0)
+                    actions.push({
+                        title: "Coller ici",
+                        action: async () => {
+                            await navigator.move_clipboard_to_parent(navigator.get_current_directory())
+                        },
+                        image: '/images/icons/icons8-paste-96.png'
+                    })
                 spawn_context_action(actions);
                 event.preventDefault();
             }
@@ -215,9 +228,8 @@ class DirectoryContent {
                 if (is_touch_device()) {
                     if (this.navigator.is_touch_selection_mode) {
                         spawn_item_context_action(directory);
-                        this.navigator.select_item(file.id, event.shiftKey, event.ctrlKey, true);
-                    }
-                    else {
+                        this.navigator.select_item(directory.id, event.shiftKey, event.ctrlKey, true);
+                    } else {
                         this.navigator.enter_touch_selection_mode();
                         this.navigator.select_item(directory.id, event.shiftKey, event.ctrlKey);
                     }
@@ -270,8 +282,7 @@ class DirectoryContent {
                     if (this.navigator.is_touch_selection_mode) {
                         spawn_item_context_action(file);
                         this.navigator.select_item(file.id, event.shiftKey, event.ctrlKey, true);
-                    }
-                    else {
+                    } else {
                         this.navigator.enter_touch_selection_mode();
                         this.navigator.select_item(file.id, event.shiftKey, event.ctrlKey);
                     }

@@ -23,7 +23,6 @@
       overflow: hidden;
 
 
-
       #mobile-selection-header {
         height: 50px;
         width: 100%;
@@ -39,16 +38,37 @@
           flex-grow: 1;
         }
 
-        #mobile-selection-button {
+        #mobile-selection-close-button {
           min-width: unset;
-          width: 40px;
-          height: 37px;
-          margin: 5px;
+          width: 60px;
+          background-color: transparent;
+          height: 100%;
+          margin-right: 20px;
+
+          img {
+            width: 30px;
+          }
+        }
+
+        #mobile-selection-action-buttons {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+
+          button {
+            min-width: unset;
+            margin: 0 10px;
+
+            img {
+              width: 25px;
+            }
+          }
         }
       }
 
       #file-list-scroll-box {
         overflow: auto;
+
         #file-list {
           flex-grow: 1;
           display: grid;

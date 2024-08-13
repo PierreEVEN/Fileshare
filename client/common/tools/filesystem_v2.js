@@ -281,29 +281,32 @@ class Filesystem {
 
     /**
      * @param object_id {number}
+     * @param only_dereference {boolean} Don't delete children if set to true
      */
-    remove_object(object_id) {
+    remove_object(object_id, only_dereference = false) {
 
         const data = this._content.get(object_id);
         if (data) {
-
             const metadata = this._object_internal_metadata.get(object_id);
-            if (metadata) {
+            if (metadata && !only_dereference) {
                 for (const child of metadata.children)
                     this.remove_object(child);
             }
 
             const parent_metadata = data.parent_item ? this._object_internal_metadata.get(data.parent_item) : this._root_meta_data;
             if (parent_metadata) {
+                parent_metadata.children.delete(object_id)
                 for (const [id, listener] of parent_metadata.listeners)
                     listener.on_remove_object(object_id)
             }
 
-            this._object_internal_metadata.delete(object_id);
+            if (!only_dereference)
+                this._object_internal_metadata.delete(object_id);
             this._content.delete(object_id);
-            if (this._roots.has(object_id))
+            if (this._roots.has(object_id)) {
                 this._roots.delete(object_id);
-            this._root_dirty = true;
+                this._root_dirty = true;
+            }
         }
     }
 

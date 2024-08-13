@@ -1,3 +1,8 @@
+import {PAGE_CONTEXT} from "./utils";
+import {LOCAL_USER} from "./user";
+import {parse_fetch_result} from "../../layout/widgets/components/message_box";
+import {ClientString} from "./client_string";
+
 class Navigator {
     /**
      * @param filesystem {Filesystem}
@@ -34,8 +39,7 @@ class Navigator {
 
     set_hover_item(item) {
         if (item !== this.last_hover_item) {
-            for (const callback of this.hover_item_callbacks)
-                callback(item, this.last_hover_item)
+            for (const callback of this.hover_item_callbacks) callback(item, this.last_hover_item)
         }
         this.last_hover_item = item;
     }
@@ -52,9 +56,28 @@ class Navigator {
         this.is_touch_selection_mode = enter;
         if (enter) {
             document.getElementById('mobile-selection-header').classList.add('mobile-selection-mode');
-            document.getElementById('mobile-selection-button').onclick = () => {
+            document.getElementById('mobile-selection-close-button').onclick = () => {
                 this.enter_touch_selection_mode(false);
             }
+            const action_div = document.getElementById('mobile-selection-action-buttons');
+            action_div.innerHTML = '';
+            const cut_button = document.createElement('button');
+            const cut_image = document.createElement('img');
+            cut_image.src = '/images/icons/icons8-cut-48.png'
+            cut_button.append(cut_image)
+            cut_button.onclick = () => {
+                this.cut_selection()
+            }
+            cut_button.classList.add('plus-button')
+            action_div.append(cut_button);
+
+            const remove_button = document.createElement('button');
+            const remove_image = document.createElement('img');
+            remove_image.src = '/images/icons/icons8-trash-52.png'
+            remove_button.append(remove_image)
+            remove_button.classList.add('cancel-button')
+            action_div.append(remove_button);
+
         } else {
             this.is_touch_selection_mode = false;
             document.getElementById('mobile-selection-header').classList.remove('mobile-selection-mode');
@@ -69,19 +92,16 @@ class Navigator {
      * @param force_select {boolean}
      */
     select_item(item, shift_key, ctrl_key, force_select = false) {
-
         this.last_selected_item = item;
         if (this.selected_items.has(item) && !force_select) {
             this.selected_items.delete(item);
-            for (const callback of this.selected_item_callbacks)
-                callback(item, false)
+            for (const callback of this.selected_item_callbacks) callback(item, false)
         } else {
             this.selected_items.add(item);
-            for (const callback of this.selected_item_callbacks)
-                callback(item, true)
+            for (const callback of this.selected_item_callbacks) callback(item, true)
         }
         if (this.is_touch_selection_mode) {
-            document.getElementById('mobile-selection-info').innerText = `${this.selected_items.size} ${this.selected_items.size > 1 ? 'objets sélectionnés' : 'objet sélectionné'}`
+            document.getElementById('mobile-selection-info').innerText = `${this.selected_items.size}`
             if (this.selected_items.size === 0) {
                 this.enter_touch_selection_mode(false)
             }
@@ -93,23 +113,18 @@ class Navigator {
             if (ctrl_key) {
                 if (this.selected_items.has(item) && !force_select) {
                     this.selected_items.delete(item);
-                    for (const callback of this.selected_item_callbacks)
-                        callback(item, false)
+                    for (const callback of this.selected_item_callbacks) callback(item, false)
                 } else {
                     this.selected_items.add(item);
-                    for (const callback of this.selected_item_callbacks)
-                        callback(item, true)
+                    for (const callback of this.selected_item_callbacks) callback(item, true)
                 }
             } else {
                 const will_unselect = this.selected_items.has(item) && this.selected_items.size === 1 && !force_select;
-                for (const last of this.selected_items)
-                    for (const callback of this.selected_item_callbacks)
-                        callback(last, false);
+                for (const last of this.selected_items) for (const callback of this.selected_item_callbacks) callback(last, false);
                 this.selected_items.clear();
                 if (!will_unselect) {
                     this.selected_items.add(item);
-                    for (const callback of this.selected_item_callbacks)
-                        callback(item, true)
+                    for (const callback of this.selected_item_callbacks) callback(item, true)
                 }
             }
         } else {
@@ -120,17 +135,15 @@ class Navigator {
     view_item(item) {
         if (!this.selected_items.has(item)) {
             this.selected_items.add(item);
-            for (const callback of this.selected_item_callbacks)
-                callback(item, true)
+            for (const callback of this.selected_item_callbacks) callback(item, true)
         }
 
     }
 
     clear_selection() {
+        if (this.is_touch_selection_mode) this.enter_touch_selection_mode(false);
         this.last_selected_item = null;
-        for (const item of this.selected_items)
-            for (const callback of this.selected_item_callbacks)
-                callback(item, false);
+        for (const item of this.selected_items) for (const callback of this.selected_item_callbacks) callback(item, false);
         this.selected_items.clear();
     }
 
@@ -146,8 +159,7 @@ class Navigator {
         this.clear_selection();
         if (item !== this.current_directory) {
             this.current_directory = item;
-            for (const callback of this.changed_dir_callbacks)
-                callback(item)
+            for (const callback of this.changed_dir_callbacks) callback(item)
             if (!skip_push_state) {
                 history.pushState(item, "", window.location.href);
             }
@@ -166,8 +178,39 @@ class Navigator {
     }
 
     cut_selection() {
-        this.clipboard_items = this.selected_items;
+        /**
+         * @type {number[]}
+         */
+        this.clipboard_items = Array.from(this.selected_items);
         this.clear_selection();
+    }
+
+    /**
+     * @param parent_id {number | null}
+     * @returns {Promise<void>}
+     */
+    async move_clipboard_to_parent(parent_id) {
+        if (!this.clipboard_items || this.clipboard_items.length === 0)
+            return;
+        const res = await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/move-item/${parent_id ? parent_id : ''}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                item_ids: this.clipboard_items
+            })
+        }));
+        if (!res.message) {
+            for (const item of this.clipboard_items) {
+                const old_item = this.filesystem.get_object_data(item);
+                this.filesystem.remove_object(item, true)
+                old_item.parent_item = parent_id;
+                this.filesystem.add_object(old_item);
+            }
+        }
+        delete this.clipboard_items;
     }
 }
 

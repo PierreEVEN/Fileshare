@@ -181,3 +181,31 @@ CREATE OR REPLACE FUNCTION fileshare.make_item_path_up_to_date() RETURNS TRIGGER
 CREATE OR REPLACE TRIGGER trig_ins_ensure_items_path_up_to_date
 	AFTER INSERT OR UPDATE ON fileshare.items
 	FOR EACH ROW EXECUTE FUNCTION fileshare.make_item_path_up_to_date();
+
+-- ################################## DIRECTORY RECURSION ##################################
+
+CREATE OR REPLACE PROCEDURE fileshare.prevent_recursive_directories_func(tested_item_id BIGINT, current_dir_id BIGINT) AS $$
+	DECLARE
+		parent_id BIGINT;
+	BEGIN
+		IF tested_item_id = current_dir_id THEN
+			RAISE EXCEPTION 'Recursion in hierarchy detected';
+		END IF;
+		IF current_dir_id IS NOT NULL THEN
+			SELECT parent_item INTO parent_id FROM fileshare.items WHERE id = current_dir_id;
+			CALL fileshare.prevent_recursive_directories_func(tested_item_id, parent_id);
+		END IF;
+	END;
+	$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION fileshare.prevent_recursive_directories() RETURNS TRIGGER AS $$
+	DECLARE
+	BEGIN
+		CALL fileshare.prevent_recursive_directories_func(OLD.id, NEW.parent_item);
+		RETURN NEW;
+	END;
+	$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trig_prevent_recursive_directories
+	BEFORE INSERT OR UPDATE ON fileshare.items
+	FOR EACH ROW EXECUTE FUNCTION fileshare.prevent_recursive_directories();

@@ -412,7 +412,81 @@ router.post('/make-directory/:id', async (req, res) => {
 
 })
 
+router.post('/move-item/:id', async (req, res) => {
+    const new_parent = await Item.from_id(req.params.id);
+    if (!new_parent || new_parent.is_regular_file)
+        return new HttpResponse(HttpResponse.BAD_REQUEST, 'Parent is not a directory').redirect_error(req, res);
+    if (!req.connected_user)
+        return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
 
+    if (!await ServerPermissions.can_user_upload_to_directory(new_parent,  req.connected_user.id))
+        return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
+
+    /**
+     * @type {Item[]}
+     */
+    const moved_items = [];
+    for (const item_id of req.body.item_ids) {
+        const item = await Item.from_id(item_id);
+        if (!item)
+            return new HttpResponse(HttpResponse.NOT_FOUND, 'Item not found').redirect_error(req, res);
+        if (!await ServerPermissions.can_user_edit_item(item,  req.connected_user.id))
+            return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
+        moved_items.push(item);
+    }
+
+    for (const item of moved_items)
+    {
+        item.parent_item = new_parent.id;
+        if (item.is_regular_file)
+            await item.as_file()
+        else
+            await item.as_directory();
+        try {
+            await item.push();
+        }
+        catch (e) {
+            console.log(e);
+            return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, e.toString()).redirect_error(req, res);
+        }
+    }
+
+    return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+});
+
+router.post('/move-item/', async (req, res) => {
+
+    if (!req.connected_user)
+        return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
+
+    if (!await ServerPermissions.can_user_upload_to_repos(req.display_repos,  req.connected_user.id))
+        return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
+
+    /**
+     * @type {Item[]}
+     */
+    const moved_items = [];
+    for (const item_id of req.body.item_ids) {
+        const item = await Item.from_id(item_id);
+        if (!item)
+            return new HttpResponse(HttpResponse.NOT_FOUND, 'Item not found').redirect_error(req, res);
+        if (!await ServerPermissions.can_user_edit_item(item,  req.connected_user.id))
+            return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
+        moved_items.push(item);
+    }
+
+    for (const item of moved_items)
+    {
+        item.parent_item = undefined;
+        if (item.is_regular_file)
+            await item.as_file()
+        else
+            await item.as_directory()
+        await item.push();
+    }
+
+    return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+});
 
 router.use('/permissions/', require('./permissions/root'))
 

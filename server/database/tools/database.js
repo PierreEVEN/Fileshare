@@ -59,7 +59,7 @@ async function query_checked(client, query, data) {
     return await client.query(query, data)
         .catch(err => {
             logger.error(`Request failed : '${query}'\n${data ? JSON.stringify(Object.values(data)) : '[]'}\n${err.toString()}`)
-            throw new Error();
+            throw new Error(err);
         });
 }
 
