@@ -92,20 +92,30 @@ class Navigator {
      * @param force_select {boolean}
      */
     select_item(item, shift_key, ctrl_key, force_select = false) {
-        this.last_selected_item = item;
         if (this.selected_items.has(item) && !force_select) {
             this.selected_items.delete(item);
             for (const callback of this.selected_item_callbacks) callback(item, false)
         } else {
-            this.selected_items.add(item);
-            for (const callback of this.selected_item_callbacks) callback(item, true)
+            if (!this.selected_items.has(item)) {
+                if (!this.is_touch_selection_mode) {
+                    if (!shift_key && !ctrl_key)
+                        this.clear_selection();
+                    else {
+
+                    }
+                }
+                this.selected_items.add(item);
+                for (const callback of this.selected_item_callbacks) callback(item, true)
+            }
         }
+
         if (this.is_touch_selection_mode) {
             document.getElementById('mobile-selection-info').innerText = `${this.selected_items.size}`
             if (this.selected_items.size === 0) {
                 this.enter_touch_selection_mode(false)
             }
         }
+        this.last_selected_item = item;
         return;
 
         if (!shift_key) {

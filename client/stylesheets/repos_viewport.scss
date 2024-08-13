@@ -123,7 +123,7 @@
   padding: 10px;
   border-radius: 5px;
   border: 2px rgba(64, 66, 106, 0) solid;
-  transition-duration: 0.15s;
+  transition-duration: 0.05s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,7 +134,7 @@
   }
 
   &:active {
-    background-color: black;
+    background-color: #102646;
   }
 
   &.selected {

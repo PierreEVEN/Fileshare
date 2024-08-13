@@ -1,10 +1,11 @@
 
 # TODO
-- Ameliorer controles carousel
-- Bouton retour sur mobile revient au debut et pas a la page d'avant
+- Ajouter une corbeille
+- Contrôler le compte utilisateur
+- Ameliorer controles carousel et les infos affichees
+- Ameliorer le design de la description
 - Conversion automatique HEVC => AV1
 - Nouveaux types d'affichages (par type / par taille / par nom)
 - Barre de recherche (par nom)
-- Ameliorer le design de la description
-- Pourvoir couper / coller
-- Contrôler le compte utilisateur
+- Ajouter le shift selection
+- Bouton retour sur mobile revient au debut et pas a la page d'avant

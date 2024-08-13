@@ -39,5 +39,4 @@ function edit_repos(e) {
     }), null, null, 'edit-repos');
 }
 
-window.edit_repos = {edit_repos}
 export {edit_repos}

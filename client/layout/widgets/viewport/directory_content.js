@@ -234,6 +234,7 @@ class DirectoryContent {
                         this.navigator.select_item(directory.id, event.shiftKey, event.ctrlKey);
                     }
                 } else {
+                    this.navigator.select_item(directory.id, event.shiftKey, event.ctrlKey, true);
                     spawn_item_context_action(directory);
                 }
                 event.preventDefault();
@@ -287,6 +288,7 @@ class DirectoryContent {
                         this.navigator.select_item(file.id, event.shiftKey, event.ctrlKey);
                     }
                 } else {
+                    this.navigator.select_item(directory.id, event.shiftKey, event.ctrlKey, true);
                     spawn_item_context_action(file);
                 }
                 event.preventDefault();
