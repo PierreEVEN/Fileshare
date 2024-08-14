@@ -5,6 +5,7 @@
   position: relative;
   display: flex;
   width: 200px;
+  min-width: 200px;
   height: 100%;
   flex-direction: column;
   background-color: $background_2;

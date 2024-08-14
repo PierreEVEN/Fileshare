@@ -1,6 +1,7 @@
 
 # TODO
 - Contrôler le compte utilisateur
+- améliorer le design de la corbeille
 - pouvoir ajouter des utilisateurs à un dépot (/ sous-dossier)
 - Ameliorer controles carousel et les infos affichees
 - Ameliorer le design de la description

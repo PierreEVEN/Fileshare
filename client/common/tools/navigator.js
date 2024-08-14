@@ -116,30 +116,6 @@ class Navigator {
             }
         }
         this.last_selected_item = item;
-        return;
-
-        if (!shift_key) {
-            this.last_selected_item = item;
-            if (ctrl_key) {
-                if (this.selected_items.has(item) && !force_select) {
-                    this.selected_items.delete(item);
-                    for (const callback of this.selected_item_callbacks) callback(item, false)
-                } else {
-                    this.selected_items.add(item);
-                    for (const callback of this.selected_item_callbacks) callback(item, true)
-                }
-            } else {
-                const will_unselect = this.selected_items.has(item) && this.selected_items.size === 1 && !force_select;
-                for (const last of this.selected_items) for (const callback of this.selected_item_callbacks) callback(last, false);
-                this.selected_items.clear();
-                if (!will_unselect) {
-                    this.selected_items.add(item);
-                    for (const callback of this.selected_item_callbacks) callback(item, true)
-                }
-            }
-        } else {
-
-        }
     }
 
     view_item(item) {

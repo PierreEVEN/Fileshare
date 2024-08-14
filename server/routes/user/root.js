@@ -24,6 +24,13 @@ router.get("/", async (req, res) => {
     });
 })
 
+router.get("/settings/", async (req, res) => {
+    res.render('user_settings', {
+        title: 'Paramètres utilisateur',
+        common: await get_common_data(req)
+    });
+})
+
 const repos_router = require("express").Router();
 repos_router.use('/:repos/', async (req, res, next) => {
     if (!req.display_user)
