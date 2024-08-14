@@ -98,7 +98,7 @@ router.get("/file", async (req, res) => {
     if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null))
         return new HttpResponse(HttpResponse.NOT_FOUND, "The requested file or directory does not exists or is not accessible").redirect_error(req, res);
 
-    const items = await req.display_repos.get_content();
+    const items = await Item.from_repos(req.display_repos.id);
     const archive = archiver('zip', {});
     for (const file of items) {
         if (file.is_regular_file)
