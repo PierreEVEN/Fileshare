@@ -102,10 +102,6 @@ class Repos {
         return this;
     }
 
-    async get_content() {
-        return await Item.from_repos(this.id);
-    }
-
     /**
      * Create a new repos ID
      * @return {Promise<number>}

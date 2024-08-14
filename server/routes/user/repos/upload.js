@@ -306,6 +306,11 @@ async function finalize_file_upload(uploading_file, repos, user) {
         existing_file.hash = uploading_file.gen_hash();
         existing_file.mimetype = new ServerString(meta.mimetype);
         existing_file.timestamp = meta.timestamp;
+        // If the item already exists, move out of the trash
+        if (existing_file.in_trash) {
+            existing_file.parent_item = (await Item.find_or_create_directory_from_path(repos.id, meta.virtual_path.plain(), {owner: user.id}));
+            existing_file.in_trash = false;
+        }
         await existing_file.push();
         console.info(`File ${meta.file_name} with the same name already exists, but with different data inside. Replacing with new one`)
         return {
@@ -316,7 +321,6 @@ async function finalize_file_upload(uploading_file, repos, user) {
 
     try {
         const parent_item = (await Item.find_or_create_directory_from_path(repos.id, meta.virtual_path.plain(), {owner: user.id}));
-
         const file_meta = await new Item({
             repos: repos.id,
             owner: user.id,

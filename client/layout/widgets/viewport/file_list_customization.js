@@ -4,6 +4,7 @@ import {PAGE_CONTEXT, permissions} from "../../../common/tools/utils";
 import {spawn_context_action} from "../components/context_action";
 import {edit_repos} from "../edit_repos/edit_repos_form";
 import {parse_fetch_result} from "../components/message_box";
+import {REPOS_BUILDER} from "./repos_builder";
 
 async function update_last_repos() {
     const repos_list = document.getElementById('last-repos-list')
@@ -39,26 +40,36 @@ for (const button of document.getElementsByClassName('repos-list-item')) {
 
 async function open_repos_context_menu(repos_id) {
     const actions = [];
+
+    if (await permissions.can_user_edit_repos(PAGE_CONTEXT.repos_path())) {
+        actions.push({
+            title: "Modifier",
+            action: async () => {
+                const repos_data = await parse_fetch_result(await fetch('/api/repos-data',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify([repos_id])
+                    }));
+                if (repos_data.length === 1) {
+                    repos_data[0].name = new ClientString(repos_data[0].name).plain();
+                    repos_data[0].description = new ClientString(repos_data[0].description).plain();
+                    repos_data[0].display_name = new ClientString(repos_data[0].display_name).plain();
+                    edit_repos(repos_data[0]);
+                }
+            },
+            image: '/images/icons/icons8-edit-96.png'
+        });
+    }
     actions.push({
-        title: "Modifier",
+        title: "Corbeille",
         action: async () => {
-            const repos_data = await parse_fetch_result(await fetch('/api/repos-data',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify([repos_id])
-                }));
-            if (repos_data.length === 1) {
-                repos_data[0].name = new ClientString(repos_data[0].name).plain();
-                repos_data[0].description = new ClientString(repos_data[0].description).plain();
-                repos_data[0].display_name = new ClientString(repos_data[0].display_name).plain();
-                edit_repos(repos_data[0]);
-            }
+            await REPOS_BUILDER.go_to_trash(true);
         },
-        image: '/images/icons/icons8-edit-96.png'
+        image: '/images/icons/icons8-trash-96.png'
     });
     spawn_context_action(actions);
 }

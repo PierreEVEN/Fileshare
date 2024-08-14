@@ -165,6 +165,8 @@ class DirectoryContent {
     }
 
     regen_content() {
+        this.objects = [];
+        this.viewport_container.innerHTML = '';
         for (const object of this.navigator.filesystem.get_objects_in_directory(this.navigator.get_current_directory()))
             this.objects.push({id: object, data: this.navigator.filesystem.get_object_data(object)});
         if (this.viewport_container)
@@ -207,12 +209,12 @@ class DirectoryContent {
             dblclicked: event => {
                 if (is_touch_device())
                     return;
-                if (!event.target.classList.contains('open-context-button'))
+                if (!event.target.classList.contains('open-context-button') && !REPOS_BUILDER.is_looking_trash)
                     this.navigator.set_current_dir(directory.id);
             },
             clicked: event => {
                 if (is_touch_device()) {
-                    if (!this.navigator.is_touch_selection_mode)
+                    if (!this.navigator.is_touch_selection_mode && !REPOS_BUILDER.is_looking_trash)
                         this.navigator.set_current_dir(directory.id);
                     else
                         this.navigator.select_item(directory.id, event.shiftKey, event.ctrlKey);
@@ -288,7 +290,7 @@ class DirectoryContent {
                         this.navigator.select_item(file.id, event.shiftKey, event.ctrlKey);
                     }
                 } else {
-                    this.navigator.select_item(directory.id, event.shiftKey, event.ctrlKey, true);
+                    this.navigator.select_item(file.id, event.shiftKey, event.ctrlKey, true);
                     spawn_item_context_action(file);
                 }
                 event.preventDefault();

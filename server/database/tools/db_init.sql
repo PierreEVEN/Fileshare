@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS fileshare.items (
         description TEXT,
         parent_item BIGINT NULL,
         absolute_path VARCHAR DEFAULT NULL,
+        in_trash BOOLEAN DEFAULT FALSE NOT NULL,
         FOREIGN KEY(Repos) REFERENCES fileshare.repos(id),
         FOREIGN KEY(owner) REFERENCES fileshare.users(id),
         FOREIGN KEY(parent_item) REFERENCES fileshare.items(id)
@@ -209,3 +210,36 @@ CREATE OR REPLACE FUNCTION fileshare.prevent_recursive_directories() RETURNS TRI
 CREATE OR REPLACE TRIGGER trig_prevent_recursive_directories
 	BEFORE INSERT OR UPDATE ON fileshare.items
 	FOR EACH ROW EXECUTE FUNCTION fileshare.prevent_recursive_directories();
+
+
+-- ################################## AUTO SET IN TRASH ##################################
+
+CREATE OR REPLACE PROCEDURE fileshare.move_children_to_trash(parent BIGINT, set_in_trash BOOLEAN) AS $$
+	DECLARE
+		parent_id BIGINT;
+		rec RECORD;
+	BEGIN
+		UPDATE fileshare.items SET in_trash = set_in_trash WHERE id = parent;
+		FOR rec IN SELECT id FROM fileshare.items WHERE parent_item = parent
+           LOOP
+			CALL fileshare.move_children_to_trash(rec.id, set_in_trash);
+        END LOOP;
+	END;
+	$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION fileshare.move_items_to_trashs() RETURNS TRIGGER AS $$
+	DECLARE
+	BEGIN
+		IF NOT OLD.in_trash = NEW.in_trash THEN
+			CALL fileshare.move_children_to_trash(NEW.id, NEW.in_trash);
+		END IF;
+		RETURN NEW;
+	END;
+	$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trig_move_trash_recursive
+	AFTER UPDATE ON fileshare.items
+	FOR EACH ROW EXECUTE FUNCTION fileshare.move_items_to_trashs();
+
+
+ALTER TABLE fileshare.items ADD COLUMN IF NOT EXISTS in_trash BOOLEAN DEFAULT false NOT NULL;

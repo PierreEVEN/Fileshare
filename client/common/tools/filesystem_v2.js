@@ -19,6 +19,7 @@ class FilesystemObject {
         Object.is_regular_file = server_data.is_regular_file;
         Object.description = server_data.description ? new ClientString(server_data.description) : ClientString.FromClient('');
         Object.parent_item = server_data.parent_item;
+        Object.is_trash = server_data.is_trash;
         if (Object.is_regular_file) {
             Object.size = Number(server_data.size);
             Object.mimetype = new ClientString(server_data.mimetype);
@@ -86,6 +87,11 @@ class FilesystemObject {
          * @type {number|null}
          */
         this.parent_item = null;
+
+        /**
+         * @type {boolean}
+         */
+        this.is_trash = false;
 
         /**
          * @type {number}

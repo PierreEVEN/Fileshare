@@ -1,10 +1,11 @@
 
 # TODO
-- Ajouter une corbeille
 - Contrôler le compte utilisateur
+- pouvoir ajouter des utilisateurs à un dépot (/ sous-dossier)
 - Ameliorer controles carousel et les infos affichees
 - Ameliorer le design de la description
 - Conversion automatique HEVC => AV1
+- Menu pour compresser des videos / images et les convertir
 - Nouveaux types d'affichages (par type / par taille / par nom)
 - Barre de recherche (par nom)
 - Ajouter le shift selection

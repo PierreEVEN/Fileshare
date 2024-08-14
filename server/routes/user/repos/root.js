@@ -56,11 +56,21 @@ router.get("/tree/*", async (req, res) => {
 
 router.get("/content/", async (req, res) => {
     const time_a = performance.now()
-    let data = await req.display_repos.get_content();
+    let data = await Item.from_repos(req.display_repos.id);
     const time_b = performance.now()
     json_compress.trimUndefinedRecursively(data)
     const time_c = performance.now()
     logger.info(`${req.log_name} fetch content of ${req.display_user.name}/${req.display_repos.name} : Fetch : ${time_b - time_a}ms, Trim : ${time_c - time_b}ms`)
+    return res.send(data);
+})
+
+router.get("/trash/", async (req, res) => {
+    const time_a = performance.now()
+    let data = await Item.from_repos_trash(req.display_repos.id);
+    const time_b = performance.now()
+    json_compress.trimUndefinedRecursively(data)
+    const time_c = performance.now()
+    logger.info(`${req.log_name} fetch trash of ${req.display_user.name}/${req.display_repos.name} : Fetch : ${time_b - time_a}ms, Trim : ${time_c - time_b}ms`)
     return res.send(data);
 })
 
@@ -202,6 +212,34 @@ router.post('/remove/:id', async (req, res) => {
     await item.delete();
 
     logger.warn(`${req.log_name} deleted file ${item.name}:${item.id}`);
+    return res.sendStatus(HttpResponse.OK);
+});
+
+router.post('/move-to-trash/:id', async (req, res) => {
+    // Search the requested file or dir
+    if (Number.isNaN(Number(req.params['id'])))
+        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
+    const item = await Item.from_id(req.params['id']);
+    if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
+        return new HttpResponse(HttpResponse.NOT_FOUND, "You don't have the required authorizations to delete this file").redirect_error(req, res);
+
+    await item.move_to_trash();
+
+    logger.warn(`${req.log_name} moved file ${item.name}:${item.id} to trash`);
+    return res.sendStatus(HttpResponse.OK);
+});
+
+router.post('/restore-from-trash/:id', async (req, res) => {
+    // Search the requested file or dir
+    if (Number.isNaN(Number(req.params['id'])))
+        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
+    const item = await Item.from_id(req.params['id']);
+    if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
+        return new HttpResponse(HttpResponse.NOT_FOUND, "You don't have the required authorizations to delete this file").redirect_error(req, res);
+
+    await item.restore_from_trash();
+
+    logger.warn(`${req.log_name} restored file ${item.name}:${item.id} from trash`);
     return res.sendStatus(HttpResponse.OK);
 });
 

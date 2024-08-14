@@ -106,41 +106,97 @@ async function spawn_item_context_action(item) {
             },
             image: '/images/icons/icons8-cut-48.png'
         });
-        actions.push({
-            title: "Supprimer",
-            action: () => {
-                const div = document.createElement('div')
-                const p = document.createElement('p')
-                p.innerText = `Êtes vous sur de vouloir supprimer ${item.name}`;
-                div.append(p)
-                const no_button = document.createElement('button')
-                no_button.classList.add('cancel-button')
-                no_button.innerText = 'Non';
-                no_button.onclick = () => {
-                    close_modal();
-                }
-                div.append(no_button)
-                const confirm_button = document.createElement('button')
-                confirm_button.innerText = 'Oui';
-                confirm_button.onclick = async () => {
-                    const result = await fetch(`${PAGE_CONTEXT.repos_path()}/remove/${item.id}`, {method: 'POST'});
+        if (REPOS_BUILDER.is_looking_trash) {
+            actions.push({
+                title: "Restaurer",
+                action: async () => {
+                    const result = await fetch(`${PAGE_CONTEXT.repos_path()}/restore-from-trash/${item.id}`, {method: 'POST'});
                     if (result.status === 200) {
-                        item.filesystem.remove_object(item.id);
-                        print_message('info', `File removed`, `Successfully removed ${item.name}`);
+                        REPOS_BUILDER.filesystem.remove_object(item.id);
+                        print_message('info', `File restored`, `Successfully restored ${item.name}`);
                         close_modal();
                     } else if (result.status === 403) {
                         window.location = `/auth/signin/`;
                     } else {
-                        print_message('error', `Failed to remove ${item.name}`, result.status);
-                        update_repos_content();
+                        print_message('error', `Failed to restore ${item.name}`, result.status);
                         close_modal();
                     }
-                }
-                div.append(confirm_button)
-                open_modal(div, '500px', '100px');
-            },
-            image: '/images/icons/icons8-trash-52.png'
-        })
+                },
+                image: '/images/icons/icons8-restore-96.png'
+            });
+            actions.push({
+                title: "Supprimer définitivement",
+                action: () => {
+
+                    const div = document.createElement('div')
+                    const p = document.createElement('p')
+                    p.innerText = `Êtes vous sur de supprimer définitivement ${item.name} ?`;
+                    div.append(p)
+                    const no_button = document.createElement('button')
+                    no_button.classList.add('cancel-button')
+                    no_button.innerText = 'Non';
+                    no_button.onclick = () => {
+                        close_modal();
+                    }
+                    div.append(no_button)
+                    const confirm_button = document.createElement('button')
+                    confirm_button.innerText = 'Oui';
+                    confirm_button.onclick = async () => {
+                        const result = await fetch(`${PAGE_CONTEXT.repos_path()}/remove/${item.id}`, {method: 'POST'});
+                        if (result.status === 200) {
+                            REPOS_BUILDER.filesystem.remove_object(item.id);
+                            print_message('info', `File removed`, `Successfully removed ${item.name}`);
+                            close_modal();
+                        } else if (result.status === 403) {
+                            window.location = `/auth/signin/`;
+                        } else {
+                            print_message('error', `Failed to remove ${item.name}`, result.status);
+                            close_modal();
+                        }
+                    }
+                    div.append(confirm_button)
+                    open_modal(div, '500px', '100px');
+                },
+                image: '/images/icons/icons8-trash-52.png'
+            });
+        }
+        else {
+            actions.push({
+                title: "Déplacer dans la corbeille",
+                action: () => {
+                    const div = document.createElement('div')
+                    const p = document.createElement('p')
+                    p.innerText = `Êtes vous sur de vouloir déplacer ${item.name} dans la corbeille ?`;
+                    div.append(p)
+                    const no_button = document.createElement('button')
+                    no_button.classList.add('cancel-button')
+                    no_button.innerText = 'Non';
+                    no_button.onclick = () => {
+                        close_modal();
+                    }
+                    div.append(no_button)
+                    const confirm_button = document.createElement('button')
+                    confirm_button.innerText = 'Oui';
+                    confirm_button.onclick = async () => {
+                        const result = await fetch(`${PAGE_CONTEXT.repos_path()}/move-to-trash/${item.id}`, {method: 'POST'});
+                        if (result.status === 200) {
+                            REPOS_BUILDER.filesystem.remove_object(item.id);
+                            print_message('info', `File removed`, `Successfully removed ${item.name}`);
+                            close_modal();
+                        } else if (result.status === 403) {
+                            window.location = `/auth/signin/`;
+                        } else {
+                            print_message('error', `Failed to remove ${item.name}`, result.status);
+                            update_repos_content();
+                            close_modal();
+                        }
+                    }
+                    div.append(confirm_button)
+                    open_modal(div, '500px', '100px');
+                },
+                image: '/images/icons/icons8-trash-52.png'
+            })
+        }
     }
 
     spawn_context_action(actions);

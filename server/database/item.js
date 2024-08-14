@@ -63,6 +63,10 @@ class Item {
          * @type {boolean}
          */
         this.open_upload = data.open_upload;
+        /**
+         * @type {boolean}
+         */
+        this.in_trash = data.in_trash ? data.in_trash : false;
     }
 
     /**
@@ -119,6 +123,7 @@ class Item {
      */
     async push() {
         this.description = this.description ? this.description : '';
+        this.in_trash = this.in_trash ? this.in_trash : false;
         assert(this.name);
         assert(this.repos);
         assert(!isNaN(Number(this.owner)));
@@ -128,13 +133,13 @@ class Item {
             (id, repos, owner, name, is_regular_file, description, parent_item) VALUES
             ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (id) DO  
-            UPDATE SET id = $1, repos = $2, owner = $3, name = $4, is_regular_file = $5, description = $6, parent_item = $7;`,
-                [as_id(this.id), as_id(this.repos), as_id(this.owner), this.name.encoded(), as_boolean(this.is_regular_file), this.description.encoded(), this.parent_item ? as_id(this.parent_item) : null]);
+            UPDATE SET id = $1, repos = $2, owner = $3, name = $4, is_regular_file = $5, description = $6, parent_item = $7, in_trash = $8;`,
+                [as_id(this.id), as_id(this.repos), as_id(this.owner), this.name.encoded(), as_boolean(this.is_regular_file), this.description.encoded(), this.parent_item ? as_id(this.parent_item) : null, as_boolean(this.in_trash)]);
         } else {
             const new_item = await db.single().query(`INSERT INTO fileshare.items
-            (repos, owner, name, is_regular_file, description, parent_item) VALUES
-            ($1, $2, $3, $4, $5, $6) RETURNING id`,
-                [as_id(this.repos), as_id(this.owner), this.name.encoded(), as_boolean(this.is_regular_file), this.description.encoded(), this.parent_item ? as_id(this.parent_item) : null]);
+            (repos, owner, name, is_regular_file, description, parent_item, in_trash) VALUES
+            ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+                [as_id(this.repos), as_id(this.owner), this.name.encoded(), as_boolean(this.is_regular_file), this.description.encoded(), this.parent_item ? as_id(this.parent_item) : null, as_boolean(this.in_trash)]);
             this.id = new_item.rows[0].id;
         }
         if (this.is_regular_file) {
@@ -180,6 +185,20 @@ class Item {
         await db.single().query("DELETE FROM fileshare.items WHERE id = $1", [as_id(this.id)]);
     }
 
+    /**
+     * @return {Promise<void>}
+     */
+    async move_to_trash() {
+        await db.single().query("UPDATE fileshare.items SET in_trash = TRUE WHERE id = $1", [as_id(this.id)]);
+    }
+
+    /**
+     * @return {Promise<void>}
+     */
+    async restore_from_trash() {
+        await db.single().query("UPDATE fileshare.items SET in_trash = FALSE WHERE id = $1", [as_id(this.id)]);
+    }
+
     storage_path() {
         assert(this.is_regular_file)
         return path.join(path.resolve(process.env.FILE_STORAGE_PATH), this.id.toString());
@@ -223,7 +242,16 @@ class Item {
      * @return {Promise<Item[]>}
      */
     static async from_repos(id) {
-        return await db.single().fetch_objects(Item, 'SELECT item.*, file.size, file.mimetype, file.hash, file.timestamp, directory.open_upload FROM fileshare.items item LEFT JOIN fileshare.file_data file ON item.id = file.id LEFT JOIN fileshare.directory_data directory ON item.id = directory.id WHERE repos = $1', [as_id(id)]);
+        return await db.single().fetch_objects(Item, 'SELECT item.*, file.size, file.mimetype, file.hash, file.timestamp, directory.open_upload FROM fileshare.items item LEFT JOIN fileshare.file_data file ON item.id = file.id LEFT JOIN fileshare.directory_data directory ON item.id = directory.id WHERE repos = $1 AND in_trash = false', [as_id(id)]);
+    }
+
+    /**
+     * Get a list of files inside a repository's trash
+     * @param id {number} repos_id
+     * @return {Promise<Item[]>}
+     */
+    static async from_repos_trash(id) {
+        return await db.single().fetch_objects(Item, 'SELECT item.*, file.size, file.mimetype, file.hash, file.timestamp, directory.open_upload FROM fileshare.items item LEFT JOIN fileshare.file_data file ON item.id = file.id LEFT JOIN fileshare.directory_data directory ON item.id = directory.id WHERE repos = $1 AND in_trash = true', [as_id(id)]);
     }
 
     /**
@@ -275,6 +303,10 @@ class Item {
 
             const path = path_split.length === 0 ? '/' : `/${path_split.join('/')}/`;
             const existing_dir = await Item.from_path(repos, path);
+            if (existing_dir.in_trash) {
+                existing_dir.in_trash = false;
+                await existing_dir.push();
+            }
             if (existing_dir) {
                 if (existing_dir.is_regular_file)
                     throw Error(`Object ${JSON.stringify(existing_dir)} is not a directory`);

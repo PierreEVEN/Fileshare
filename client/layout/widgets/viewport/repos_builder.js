@@ -58,7 +58,7 @@ class ReposBuilder {
             }
         })
 
-        this.fetch_repos_content().then(() => {
+        this.fetch_repos_content(false).then(() => {
             this.navigator.set_current_dir(this.filesystem.get_object_from_path(PAGE_CONTEXT.request_path.plain()));
         })
 
@@ -127,10 +127,10 @@ class ReposBuilder {
         LOCAL_USER.push_last_repos(this.repo.id);
     }
 
-    async fetch_repos_content() {
+    async fetch_repos_content(is_trash = false) {
         const time_a = performance.now()
         this.filesystem.clear();
-        await fetch(`${PAGE_CONTEXT.repos_path()}/content/`, {
+        await fetch(`${PAGE_CONTEXT.repos_path()}/${is_trash ? "trash" : "content"}/`, {
             headers: {
                 'content-authtoken': LOCAL_USER.get_token(),
                 'accept': 'application/json',
@@ -154,6 +154,18 @@ class ReposBuilder {
 
     select_next_element(event) {
         this.navigator.select_item(this.directory_content.get_item_after(this.navigator.last_selected_item, !!this.directory_content.item_carousel), event.shiftKey, event.ctrlKey);
+    }
+
+    async go_to_trash() {
+        this.is_looking_trash = true;
+        await this.fetch_repos_content(true);
+        this.directory_content.regen_content();
+    }
+
+    async exit_trash() {
+        this.is_looking_trash = false;
+        await this.fetch_repos_content(false);
+        this.directory_content.regen_content();
     }
 }
 
