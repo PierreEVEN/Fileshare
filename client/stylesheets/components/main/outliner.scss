@@ -82,6 +82,7 @@
   .outliner {
     position: absolute;
     width: 0;
+    min-width: 0;
     transition-duration: 0.25s;
     overflow: hidden;
   }
