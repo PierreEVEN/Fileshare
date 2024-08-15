@@ -1,4 +1,5 @@
-import {PAGE_CONTEXT} from "../../../common/tools/utils";
+import {human_readable_timestamp, PAGE_CONTEXT} from "../../../common/tools/utils";
+import {parse_fetch_result} from "../components/message_box";
 
 require('./user_settings.scss')
 
@@ -20,13 +21,27 @@ class UserSettings {
         document.getElementById('user-settings-container').innerHTML = ''
     }
 
-    go_to_user(button) {
+    async go_to_user(button) {
         this.clear_page();
         button.classList.add('selected');
-        document.getElementById('user-settings-container').append(user_infos_hbs(this.user, {}))
+
+        const tokens = await parse_fetch_result(await fetch(`${PAGE_CONTEXT.user_path()}/user-token-list/`));
+        for (const token of tokens) {
+            token.device = decodeURIComponent(token.device);
+            token.expdate = human_readable_timestamp(token.expdate)
+        }
+        document.getElementById('user-settings-container').append(user_infos_hbs({user: this.user, tokens: tokens}, {}))
     }
 
-    go_to_repos(button) {
+    async delete_auth_token(button) {
+        const res = await parse_fetch_result(await fetch(`/api/delete-authtoken/${button.getAttribute('token')}`, {
+            method: 'POST'
+        }));
+        if (!res.message)
+            button.parentElement.remove();
+    }
+
+    async go_to_repos(button) {
         this.clear_page();
         button.classList.add('selected');
     }

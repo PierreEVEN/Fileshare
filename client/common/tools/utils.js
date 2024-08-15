@@ -52,6 +52,12 @@ function seconds_to_str(in_seconds) {
     return '0s';
 }
 
+function human_readable_timestamp(timestamp) {
+    const newDate = new Date();
+    newDate.setTime(timestamp);
+    return newDate.toUTCString();
+}
+
 class PageContext {
     /**
      * @param data {{
@@ -80,6 +86,12 @@ class PageContext {
             this.display_repos.display_name = new ClientString(data.display_repos.display_name)
         }
         this.request_path = ClientString.FromClient(decodeURI(data.request_path));
+    }
+
+    user_path() {
+        if (this.display_user)
+            return `/${this.display_user.name.for_url()}`
+        return null;
     }
 
     repos_path() {
@@ -136,4 +148,4 @@ function is_touch_device() {
 const permissions = new Permissions();
 
 window.utils = {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions}
-export {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions, is_touch_device}
+export {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions, is_touch_device, human_readable_timestamp}

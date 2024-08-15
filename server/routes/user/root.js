@@ -7,6 +7,8 @@ const {Repos} = require("../../database/repos");
 const {HttpResponse} = require("../utils/errors");
 const {ServerString} = require("../../server_string");
 const {ServerPermissions} = require("../../permissions");
+const db = require("../../database/tools/database");
+const {as_id, as_number} = require("../../database/tools/db_utils");
 const router = require("express").Router();
 
 /********************** [GLOBAL] **********************/
@@ -25,10 +27,19 @@ router.get("/", async (req, res) => {
 })
 
 router.get("/settings/", async (req, res) => {
+    if (!req.connected_user)
+        return new HttpResponse(HttpResponse.UNAUTHORIZED, "Not connected").redirect_error(req, res);
     res.render('user_settings', {
         title: 'Paramètres utilisateur',
         common: await get_common_data(req)
     });
+})
+
+router.get('/user-token-list/', async (req, res) => {
+    if (!req.connected_user)
+        return new HttpResponse(HttpResponse.UNAUTHORIZED, "Not connected").redirect_error(req, res);
+    const tokens = await db.single().rows(`SELECT expdate, device, token FROM fileshare.authtoken WHERE owner = $1`, [req.connected_user.id]);
+    return res.send(tokens);
 })
 
 const repos_router = require("express").Router();

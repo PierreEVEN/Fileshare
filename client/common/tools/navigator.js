@@ -1,7 +1,5 @@
 import {PAGE_CONTEXT} from "./utils";
-import {LOCAL_USER} from "./user";
 import {parse_fetch_result} from "../../layout/widgets/components/message_box";
-import {ClientString} from "./client_string";
 
 class Navigator {
     /**

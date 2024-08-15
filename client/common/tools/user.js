@@ -1,5 +1,8 @@
 import {parse_fetch_result} from "../../layout/widgets/components/message_box";
 import {ClientString} from "./client_string";
+const dayjs = require('dayjs')
+const utc = require("dayjs/plugin/utc");
+dayjs.extend(utc);
 
 class CookieString {
     constructor(data) {
@@ -31,11 +34,11 @@ class CookieString {
 
     save() {
         for (const cookie of document.cookie.split(";")) {
-            document.cookie = `${cookie}; SameSite=Strict; expires=${new Date(0).toUTCString()}; path=/`
+            document.cookie = `${cookie}; SameSite=Strict; expires=${dayjs.utc(0).local().format()}; path=/`
         }
         for (const [key, value] of this._cookies.entries()) {
             if (value.exp)
-                document.cookie = `${key}=${value.value}; SameSite=Strict; expire=${new Date(value.exp).toUTCString()}; path=/`
+                document.cookie = `${key}=${value.value}; SameSite=Strict; expire=${dayjs.utc().local().format()}; path=/`
             else
                 document.cookie = `${key}=${value.value}; SameSite=Strict; path=/`
         }
@@ -123,7 +126,8 @@ class User {
                 },
                 body: JSON.stringify({
                     username: new ClientString(username),
-                    password: String(password)
+                    password: String(password),
+                    device: ClientString.FromClient(navigator.userAgent)
                 })
             }));
         if (authtoken.token) {
@@ -151,7 +155,8 @@ class User {
                 body: JSON.stringify({
                     username: new ClientString(username),
                     email: new ClientString(email),
-                    password: String(password)
+                    password: String(password),
+                    device: ClientString.FromClient(navigator.userAgent)
                 })
             }));
         if (authtoken.token) {
@@ -166,10 +171,7 @@ class User {
         if (this._authtoken)
             await parse_fetch_result(await fetch(`/api/delete-authtoken/${this._authtoken}`,
                 {
-                    method: 'POST',
-                    headers: {
-                        'content-authtoken': this._authtoken
-                    }
+                    method: 'POST'
                 }));
         delete this._authtoken;
         delete this._authtoken_exp;
@@ -184,7 +186,7 @@ class User {
             if (this._authtoken_exp)
                 cookies.set("authtoken", this._authtoken, this._authtoken_exp)
             else
-                cookies.set("authtoken", this._authtoken, new Date().getTime() + 36000000)
+                cookies.set("authtoken", this._authtoken, dayjs().unix() + 36000000)
         if (this._authtoken_exp)
             cookies.set("authtoken-exp", this._authtoken_exp)
         cookies.set("last-repos", this._last_repos)

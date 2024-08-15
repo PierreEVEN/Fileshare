@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const assert = require("assert");
 const {as_id, as_boolean, as_enum, as_hash_key, as_number, as_token} = require("./tools/db_utils");
 const {ServerString} = require("../server_string");
+const dayjs = require("dayjs");
 
 const id_base = new Set();
 
@@ -72,20 +73,20 @@ class User {
 
     /**
      * Create a new auth token
+     * @param device {ServerString}
      * @return {Promise<(string|number)[]>}
      */
-    async gen_auth_token() {
+    async gen_auth_token(device) {
         const connection = await db.persist();
         const token = await gen_uhash(async (id) => await connection.found('SELECT * FROM fileshare.authtoken WHERE token = $1', [as_data_string(id)]), id_base);
         await connection.end();
 
         // Valid for 30 days
-        const exp_date = new Date().getTime() + 86400000 * 30;
-
+        const exp_date = dayjs().unix() + 86400000 * 30;
         await db.single().query(`INSERT INTO fileshare.authtoken
-            (owner, token, expdate) VALUES
-            ($1, $2, $3);`,
-            [as_id(this.id), token.toString(), as_number(exp_date)]);
+            (owner, token, expdate, device) VALUES
+            ($1, $2, $3, $4);`,
+            [as_id(this.id), token.toString(), as_number(exp_date), device.encoded().substring(0, 255)]);
         return [token, exp_date];
     }
 

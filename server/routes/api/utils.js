@@ -10,9 +10,10 @@ const {HttpResponse} = require("../utils/errors");
 const {ServerPermissions} = require("../../permissions");
 const {User} = require("../../database/user");
 const router = require("express").Router();
+const dayjs = require('dayjs')
 
 router.get('/server-time/', (req, res) => {
-    res.send({"server-time": new Date().getTime()})
+    res.send({"server-time": dayjs().unix()})
 });
 
 router.post('/create-repos', async (req, res) => {

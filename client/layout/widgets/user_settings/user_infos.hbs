@@ -25,6 +25,14 @@
     <div>
         <h2>Appareils connectés</h2>
         <div id="connected-devices-list">
+            {{#each tokens}}
+                <div class="hseparator"></div>
+                <div class="device">
+                    <p class="device-name">{{this.device}}</p>
+                    <p>{{this.expdate}}</p>
+                    <button class="cancel-button" token={{this.token}} onclick="window.user_settings.get().delete_auth_token(this)"><img src='/images/icons/icons8-trash-52.png'></button>
+                </div>
+            {{/each}}
 
         </div>
     </div>

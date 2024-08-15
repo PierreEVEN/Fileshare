@@ -11,6 +11,7 @@ const router = require("express").Router();
 router.post("/create-user/", async (req, res) => {
     let name = new ServerString(req.body.username);
     let email = new ServerString(req.body.email);
+    let device = new ServerString(req.body.device);
     let password = req.body.password;
 
     if (name && password && email) {
@@ -26,7 +27,7 @@ router.post("/create-user/", async (req, res) => {
         const found_user = await User.from_credentials(name, password);
         logger.info(`User '${name.plain()}' is trying to generate a new auth token`);
         if (found_user) {
-            const [token, exp_date] = await found_user.gen_auth_token();
+            const [token, exp_date] = await found_user.gen_auth_token(device);
             res.send({
                 token: token,
                 expiration_date: exp_date
@@ -45,7 +46,7 @@ router.post("/create-authtoken/", async (req, res) => {
     const found_user = await User.from_credentials(new ServerString(req.body.username), req.body.password);
     logger.info(`User '${new ServerString(req.body.username).plain()}' is trying to generate a new auth token`);
     if (found_user) {
-        const [token, exp_date] = await found_user.gen_auth_token();
+        const [token, exp_date] = await found_user.gen_auth_token(new ServerString(req.body.device));
 
         res.send({
             token: token,
@@ -66,7 +67,7 @@ router.post("/delete-authtoken/:authtoken", async (req, res) => {
         res.sendStatus(HttpResponse.OK);
     }
     else {
-        console.assert(false, "NOT IMPLEMENTED YET : handle proper error log");
+        return new HttpResponse(HttpResponse.NOT_FOUND, "User not found").redirect_error(req, res);
     }
 })
 

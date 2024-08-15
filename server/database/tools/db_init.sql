@@ -240,3 +240,5 @@ CREATE OR REPLACE FUNCTION fileshare.move_items_to_trashs() RETURNS TRIGGER AS $
 CREATE OR REPLACE TRIGGER trig_move_trash_recursive
 	AFTER UPDATE ON fileshare.items
 	FOR EACH ROW EXECUTE FUNCTION fileshare.move_items_to_trashs();
+
+ALTER TABLE fileshare.authtoken ADD COLUMN IF NOT EXISTS device VARCHAR(255) NOT NULL DEFAULT 'undefined';

@@ -15,6 +15,7 @@
       font-weight: bold;
       margin-left: 10px;
     }
+
     button {
       background-color: #00000000;
       border-right: 0 #0070f0 solid;
@@ -51,10 +52,37 @@
         flex-grow: 0.25;
         border-right: dotted 2px #6a6a6a;
       }
+
       .values {
         display: flex;
         flex-direction: column;
         flex-grow: 0.75;
+      }
+    }
+
+    #connected-devices-list {
+      display: flex;
+      flex-direction: column;
+
+      .device {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        .device-name {
+          margin-left: 20px;
+          flex-grow: 1;
+        }
+
+        button {
+          min-width: unset;
+          width: 50px;
+          margin: 0 30px;
+
+          img {
+            width: 30px;
+          }
+        }
       }
     }
   }
