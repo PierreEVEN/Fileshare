@@ -44,7 +44,7 @@ html
                     button(onclick = 'window.auth.open_modal_signin()') Connexion
                 else
                     p.Username Bienvenue
-                    button(onclick="location.href = 'http://localhost:3000/" + locals.common.PAGE_CONTEXT.connected_user.name + "/settings'").user-account-button
+                    button(onclick="location.href = '/" + locals.common.PAGE_CONTEXT.connected_user.name + "/settings'").user-account-button
                         p #{common.PAGE_CONTEXT.connected_user.name.plain()}
 
                     button(onclick='window.auth.logout()') Déconnexion
