@@ -22,4 +22,27 @@
     font-size: 30px;
     margin-left: 40px;
   }
+
+  .user-account-button {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 60px;
+    margin: 0 20px;
+    align-items: center;
+
+    img {
+      width: 30px;
+      border-radius: 20px;
+      border: solid 2px #d8d8d8;
+      margin-top: 2px;
+    }
+
+    p {
+      padding-right: 0;
+      font-weight: bolder;
+      font-size: 12px;
+      margin: 5px;
+    }
+  }
 }

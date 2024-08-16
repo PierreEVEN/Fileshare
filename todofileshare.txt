@@ -1,6 +1,5 @@
 
 # TODO
-- fix timestamp expiration connexion
 - Contrôler le compte utilisateur
 - améliorer le design de la corbeille
 - pouvoir ajouter des utilisateurs à un dépot (/ sous-dossier)

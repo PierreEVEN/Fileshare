@@ -1,4 +1,7 @@
 import {ClientString} from "./client_string";
+const dayjs = require("dayjs")
+const utc = require("dayjs/plugin/utc");
+dayjs.extend(utc);
 
 function humanFileSize(bytes) {
     const thresh = 1024;
@@ -53,9 +56,7 @@ function seconds_to_str(in_seconds) {
 }
 
 function human_readable_timestamp(timestamp) {
-    const newDate = new Date();
-    newDate.setTime(timestamp);
-    return newDate.toUTCString();
+    return dayjs.unix(timestamp).locale('fr').format('DD/MM/YYYY - HH:MM:ss');
 }
 
 class PageContext {
@@ -147,5 +148,19 @@ function is_touch_device() {
 
 const permissions = new Permissions();
 
+/**
+ * @param object {object}
+ * @return {object}
+ */
+function object_to_decoded_string(object) {
+    for (const [field, value] of Object.entries(object)) {
+        if (value._encoded_string_data) {
+            object[field] = new ClientString(value).plain();
+        }
+    }
+    console.log(object)
+    return object;
+}
+
 window.utils = {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions}
-export {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions, is_touch_device, human_readable_timestamp}
+export {humanFileSize, seconds_to_str, PAGE_CONTEXT, permissions, is_touch_device, human_readable_timestamp, object_to_decoded_string}

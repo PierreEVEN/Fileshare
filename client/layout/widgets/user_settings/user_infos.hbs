@@ -6,18 +6,18 @@
         <div class="fields">
             <p>Nom</p>
             <p>Email</p>
+            <p>Rôle</p>
             <p>Mot de passe</p>
             <p>Email publique</p>
-            <p>Rôle</p>
         </div>
         <div class="values">
-            <p>Jean-michel</p>
-            <p>jeanmichel@perso.fr</p>
-            <button>Changer le mot de passe</button>
+            <p>{{user.name}}</p>
+            <p>{{user.email}}</p>
+            <p>{{user.role}}</p>
+            <button onclick="{{ctx 'reset_password()'}}">Changer le mot de passe</button>
             <label>
-                <input type="checkbox">
+                <input type="checkbox" {{#if user.allow_contact}}checked{{/if}}>
             </label>
-            <p>Invité</p>
         </div>
     </div>
 

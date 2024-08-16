@@ -5,6 +5,7 @@ const fs = require("fs");
 const {join} = require("path");
 const cookieParser = require("cookie-parser");
 const {HttpResponse} = require("./routes/utils/errors");
+const {send_mail} = require("./routes/utils/mailer");
 
 function setup_app() {
     if (!process.env.FILE_STORAGE_PATH)
@@ -37,6 +38,7 @@ function setup_app() {
     app.use(cookieParser());
 
     app.use(express.static('./public'));
+
     return app;
 }
 

@@ -1,5 +1,6 @@
-import {human_readable_timestamp, PAGE_CONTEXT} from "../../../common/tools/utils";
-import {parse_fetch_result} from "../components/message_box";
+import {human_readable_timestamp, object_to_decoded_string, PAGE_CONTEXT} from "../../../common/tools/utils";
+import {parse_fetch_result, print_message} from "../components/message_box";
+import {ClientString} from "../../../common/tools/client_string";
 
 require('./user_settings.scss')
 
@@ -30,7 +31,23 @@ class UserSettings {
             token.device = decodeURIComponent(token.device);
             token.expdate = human_readable_timestamp(token.expdate)
         }
-        document.getElementById('user-settings-container').append(user_infos_hbs({user: this.user, tokens: tokens}, {}))
+        document.getElementById('user-settings-container').append(user_infos_hbs({
+            user: object_to_decoded_string(this.user),
+            tokens: tokens
+        }, {
+            reset_password: async () => {
+                const res = await parse_fetch_result(await fetch(`${PAGE_CONTEXT.user_path()}/reset-password/`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({email: ClientString.FromClient(this.user.email)})
+                }));
+                if (!res.message)
+                    print_message('info', 'Mail de réinitialisation envoyé');
+            }
+        }))
     }
 
     async delete_auth_token(button) {

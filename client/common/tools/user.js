@@ -186,7 +186,7 @@ class User {
             if (this._authtoken_exp)
                 cookies.set("authtoken", this._authtoken, this._authtoken_exp)
             else
-                cookies.set("authtoken", this._authtoken, dayjs().unix() + 36000000)
+                cookies.set("authtoken", this._authtoken, dayjs().unix() + 36000)
         if (this._authtoken_exp)
             cookies.set("authtoken-exp", this._authtoken_exp)
         cookies.set("last-repos", this._last_repos)
