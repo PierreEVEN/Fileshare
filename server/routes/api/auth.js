@@ -6,6 +6,9 @@ const {User} = require("../../database/user");
 const {logger} = require("../../logger");
 const {ServerString} = require("../../server_string");
 const {HttpResponse} = require("../utils/errors");
+const {gen_uhash} = require("../../database/tools/uid_generator");
+const {send_mail} = require("../utils/mailer");
+const {get_common_data} = require("../../session_utils");
 const router = require("express").Router();
 
 router.post("/create-user/", async (req, res) => {
@@ -69,6 +72,79 @@ router.post("/delete-authtoken/:authtoken", async (req, res) => {
     else {
         return new HttpResponse(HttpResponse.NOT_FOUND, "User not found").redirect_error(req, res);
     }
+})
+
+const EMAILS_IN_RESET_STATE = {
+    email_map: new Map(),
+    tokens: new Map()
+};
+
+router.post('/reset-password/', async (req, res) => {
+    if (!req.body.email)
+        return new HttpResponse(HttpResponse.BAD_REQUEST).redirect_error(req, res);
+console.log(req.body)
+    const email = new ServerString(req.body.email).encoded();
+    let user = await User.from_email(email);
+    if (!user)
+        user = await User.from_name(email);
+    if (!user)
+        return new HttpResponse(HttpResponse.NOT_FOUND, `L'utilisateur ${new ServerString(req.body.email).plain()} n'existe pas`).redirect_error(req, res);
+
+
+    const reset_token = await gen_uhash((id) => EMAILS_IN_RESET_STATE.tokens.has(id));
+    EMAILS_IN_RESET_STATE.tokens.set(reset_token, user.email.encoded());
+    EMAILS_IN_RESET_STATE.email_map.set(user.email.encoded(), reset_token);
+
+    await send_mail(
+        user.email.plain(),
+        'Réinitialisation du mot de passe fileshare',
+        `
+<p>Bonjour,
+<br>
+Vous avez demandé la réinitialisation de votre mot de passe fileshare.
+Si c'est le cas, veuillez cliquer <a href="${req.protocol}://${req.get('host')}/api/reset-password/${reset_token}/">ici</a> pour procéder à la réinitialisation.</p>
+
+<p>Cordialement.</p>  
+    `);
+    return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+})
+
+router.get('/reset-password/:token/', async (req, res) => {
+    console.log(EMAILS_IN_RESET_STATE)
+    if (!EMAILS_IN_RESET_STATE.tokens.has(req.params.token)) {
+        return res.render('error', {
+            title: 'Not Found',
+            common: await get_common_data(req)
+        });
+    }
+
+    return res.render('fileshare', {
+        title: 'Réinitialisation du mot de passe',
+        common: await get_common_data(req),
+        password_reset_token: req.params.token,
+    });
+})
+
+router.post('/reset-password/:token/', async (req, res) => {
+    if (!EMAILS_IN_RESET_STATE.tokens.has(req.params.token)) {
+        return res.render('error', {
+            title: 'Not Found',
+            common: await get_common_data(req)
+        });
+    }
+
+    const email = EMAILS_IN_RESET_STATE.tokens.get(req.params.token);
+    const user = await User.from_email(email);
+
+    if (!user)
+        return new HttpResponse(HttpResponse.NOT_FOUND, "User not found").redirect_error(req, res);
+
+    await user.set_password(req.body.password)
+
+    EMAILS_IN_RESET_STATE.tokens.delete(req.params.token);
+    EMAILS_IN_RESET_STATE.email_map.delete(email);
+
+    return new HttpResponse(HttpResponse.OK, "Mot de passe réinitialisé avec succès !").redirect_error(req, res);
 })
 
 module.exports = router;

@@ -91,6 +91,7 @@ class User {
         return [token, exp_date];
     }
 
+
     /**
      * @param token {string}
      * @return {Promise<void>}
@@ -116,12 +117,13 @@ class User {
      * @return {Promise<User>}
      */
     static async create(data) {
+        let password = bcrypt.hashSync(data.password, 10);
 
         const user = new User({
             name: ServerString.FromDB(data.name).encoded(),
             email: ServerString.FromDB(data.email).encoded()
         });
-        assert(data.password);
+        assert(password);
         assert(user.email);
         assert(user.name);
         assert(user.allow_contact);
@@ -129,9 +131,20 @@ class User {
         await db.single().query(`INSERT INTO fileshare.users
             (id, email, password_hash, name, allow_contact, role) VALUES
             ($1, $2, $3, $4, $5, $6)`,
-            [as_id(user.id || await User.gen_id()), user.email.encoded(), as_hash_key(data.password), user.name.encoded(), as_boolean(user.allow_contact), as_enum(user.role)]);
+            [as_id(user.id || await User.gen_id()), user.email.encoded(), as_hash_key(password), user.name.encoded(), as_boolean(user.allow_contact), as_enum(user.role)]);
         return await User.from_credentials(data.email, data.password);
     }
+
+    /**
+     * @param password {string}
+     * @return {Promise<void>}
+     */
+    async set_password(password) {
+        let hashed_password = bcrypt.hashSync(password, 10);
+        await db.single().query("UPDATE fileshare.users SET password_hash = $1 WHERE id = $2", [as_hash_key(hashed_password), as_id(this.id)]);
+        await db.single().query("DELETE FROM fileshare.authtoken WHERE owner = $1", [as_id(this.id)]);
+    }
+
     static async gen_id() {
         const connection = await db.persist();
         const id = await gen_uid(async (id) => await connection.found('SELECT * FROM fileshare.users WHERE id = $1', [as_id(id)]), id_base);
@@ -160,17 +173,30 @@ class User {
      * @return {Promise<User|null>}
      */
     static async from_name(name) {
+        if (name.length === 0)
+            return null;
         return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE LOWER(name) = LOWER($1)', [name.toString()]);
+    }
+
+    /**
+     * @param email {string} Directory id
+     * @return {Promise<User|null>}
+     */
+    static async from_email(email) {
+        if (email.length === 0)
+            return null;
+        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE LOWER(email) = LOWER($1)', [email.toString()]);
     }
 
     /**
      * Use credentials to retrieve a given user
      * @param login {ServerString}
-     * @param password {string}
+     * @param password {string} raw password
      * @return {Promise<User | null>}
      */
     static async from_credentials(login, password) {
         let found_user = null;
+
         for (let user of (await db.single().query('SELECT * FROM fileshare.users WHERE name = $1 OR email = $2', [new ServerString(login).encoded(), new ServerString(login).encoded()])).rows) {
             if (bcrypt.compareSync(password, user['password_hash'].toString())) {
                 found_user = user;

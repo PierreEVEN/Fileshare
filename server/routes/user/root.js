@@ -9,6 +9,7 @@ const {ServerString} = require("../../server_string");
 const {ServerPermissions} = require("../../permissions");
 const db = require("../../database/tools/database");
 const {send_mail} = require("../utils/mailer");
+const {gen_uhash} = require("../../database/tools/uid_generator");
 const router = require("express").Router();
 
 /********************** [GLOBAL] **********************/
@@ -34,27 +35,6 @@ router.get("/settings/", async (req, res) => {
         common: await get_common_data(req)
     });
 })
-
-const EmailsInResetState = {
-
-}
-router.post('/reset-password/', async (req, res) => {
-    if (!req.body.email)
-        return new HttpResponse(HttpResponse.BAD_REQUEST).redirect_error(req, res);
-    await send_mail(
-        new ServerString(req.body.email).plain(),
-        'Réinitialisation du mot de passe fileshare',
-        `
-<p>Bonjour,
-<br>
-Vous avez demandé la réinitialisation de votre mot de passe fileshare.
-Si c'est le cas, veuillez cliquer <a href="${req.protocol}://${req.get('host')}/reset-password/${'blblbl'}/">ici</a> pour procéder à la réinitialisation.</p>
-
-<p>Cordialement.</p>  
-    `);
-    return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
-})
-
 
 router.get('/user-token-list/', async (req, res) => {
     if (!req.connected_user)

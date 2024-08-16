@@ -36,7 +36,7 @@ class UserSettings {
             tokens: tokens
         }, {
             reset_password: async () => {
-                const res = await parse_fetch_result(await fetch(`${PAGE_CONTEXT.user_path()}/reset-password/`, {
+                const res = await parse_fetch_result(await fetch(`/api/reset-password/`, {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
@@ -45,7 +45,7 @@ class UserSettings {
                     body: JSON.stringify({email: ClientString.FromClient(this.user.email)})
                 }));
                 if (!res.message)
-                    print_message('info', 'Mail de réinitialisation envoyé');
+                    print_message('info', 'Mail de réinitialisation envoyé', 'Vérifiez votre boite mail pour poursuivre la procédure de réinitialisation');
             }
         }))
     }
