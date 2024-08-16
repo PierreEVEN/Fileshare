@@ -166,6 +166,8 @@ class DirectoryContent {
 
     regen_content() {
         this.objects = [];
+        if (!this.viewport_container)
+            return;
         this.viewport_container.innerHTML = '';
         for (const object of this.navigator.filesystem.get_objects_in_directory(this.navigator.get_current_directory()))
             this.objects.push({id: object, data: this.navigator.filesystem.get_object_data(object)});
