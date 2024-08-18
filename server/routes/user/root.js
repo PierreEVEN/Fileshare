@@ -8,8 +8,6 @@ const {HttpResponse} = require("../utils/errors");
 const {ServerString} = require("../../server_string");
 const {ServerPermissions} = require("../../permissions");
 const db = require("../../database/tools/database");
-const {send_mail} = require("../utils/mailer");
-const {gen_uhash} = require("../../database/tools/uid_generator");
 const router = require("express").Router();
 
 /********************** [GLOBAL] **********************/

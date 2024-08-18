@@ -82,7 +82,7 @@ const EMAILS_IN_RESET_STATE = {
 router.post('/reset-password/', async (req, res) => {
     if (!req.body.email)
         return new HttpResponse(HttpResponse.BAD_REQUEST).redirect_error(req, res);
-console.log(req.body)
+
     const email = new ServerString(req.body.email).encoded();
     let user = await User.from_email(email);
     if (!user)

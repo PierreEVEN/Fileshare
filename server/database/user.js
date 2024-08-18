@@ -157,7 +157,17 @@ class User {
      * @return {Promise<User|null>}
      */
     static async from_auth_token(token) {
-        return await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE id IN (SELECT owner FROM fileshare.authtoken WHERE token = $1)', [as_token(token)]);
+
+        const token_data = await db.single().fetch_row("SELECT * FROM fileshare.authtoken WHERE token = $1", [as_token(token)]);
+        if (!token_data)
+            return null;
+        const user = await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE id  = $1', [token_data.owner]);
+        if (token_data.expdate < dayjs().unix()) {
+            console.error('Connection token expired');
+            user.delete_auth_token(token_data.token);
+            return null;
+        } else
+            return user;
     }
 
     /**
