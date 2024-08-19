@@ -82,7 +82,7 @@ class User {
         await connection.end();
 
         // Valid for 30 days
-        const exp_date = dayjs().unix() + 86400 * 30;
+        const exp_date = User.get_auth_token_exp_from_today();
         await db.single().query(`INSERT INTO fileshare.authtoken
             (owner, token, expdate, device) VALUES
             ($1, $2, $3, $4);`,
@@ -151,6 +151,10 @@ class User {
         return id;
     }
 
+    static get_auth_token_exp_from_today() {
+        return as_number(dayjs().unix() + 86400 * 30);
+    }
+
     /**
      * @param token {string} Directory id
      * @return {Promise<User|null>}
@@ -160,6 +164,12 @@ class User {
         const token_data = await db.single().fetch_row("SELECT * FROM fileshare.authtoken WHERE token = $1", [as_token(token)]);
         if (!token_data)
             return null;
+
+        // Refresh expdate after one hour of usage
+        if (User.get_auth_token_exp_from_today() - token_data.expdate > 3600) {
+            await db.single().query("UPDATE fileshare.authtoken SET expdate = $1 WHERE token = $2", [as_number(User.get_auth_token_exp_from_today()), as_token(token)]);
+        }
+
         const user = await db.single().fetch_object(User, 'SELECT * FROM fileshare.users WHERE id  = $1', [token_data.owner]);
         if (token_data.expdate < dayjs().unix()) {
             console.error('Connection token expired');

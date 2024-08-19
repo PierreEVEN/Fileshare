@@ -1,6 +1,5 @@
 
 # TODO
-- regen exp date de l'auth token a chaque connection
 - Contrôler le compte utilisateur
 - améliorer le design de la corbeille
 - pouvoir ajouter des utilisateurs à un dépot (/ sous-dossier)
