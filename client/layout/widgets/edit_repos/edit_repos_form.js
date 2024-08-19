@@ -23,7 +23,6 @@ function edit_repos(e) {
                 status: document.getElementById('status').value,
                 allow_visitor_upload: document.getElementById('allow_visitor_upload').checked,
             }
-            console.log(e)
             await parse_fetch_result(await fetch(`/${new ClientString(e.username).encoded()}/${ClientString.FromClient(e.name).encoded()}/update`,
                 {
                     method: 'POST',

@@ -109,7 +109,7 @@ class FileUpload {
         this._search_existing_file = undefined;
 
         /**
-         * @type {undefined|File}
+         * @type {undefined|Item}
          * @private
          */
         this._found_file_from_data = undefined;
@@ -245,11 +245,22 @@ class FileUpload {
         if (this.received_size === this.metadata.file_size) {
             logger.info(`${user.name} store '${JSON.stringify(this.metadata)}' to repos '${repo.name}'`)
             if (this._found_file_from_data) {
-                logger.warn("A file with the same data already exists")
-                this.clear();
-                return {
-                    error: new HttpResponse(HttpResponse.OK, "A file with the same data already exists"),
-                    file: this._found_file_from_data,
+                if (this._found_file_from_data.in_trash) {
+                    this._found_file_from_data.in_trash = false;
+                    await this._found_file_from_data.push();
+                    logger.warn(`Restored ${this._found_file_from_data.name.plain()} from trash`);
+                    this.clear();
+                    return {
+                        error: null,
+                        file: this._found_file_from_data,
+                    }
+                }
+                else {
+                    this.clear();
+                    return {
+                        error: new HttpResponse(HttpResponse.OK, "A file with the same data already exists"),
+                        file: this._found_file_from_data,
+                    }
                 }
             } else {
                 const result = await finalize_file_upload(this, repo, user)

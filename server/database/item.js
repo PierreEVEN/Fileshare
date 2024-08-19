@@ -177,8 +177,13 @@ class Item {
             await file.delete();
         }
 
-        if (this.is_regular_file)
+        if (this.is_regular_file) {
+            if (fs.existsSync(this.storage_path()))
+                fs.rmSync(this.storage_path());
+            if (fs.existsSync(this.thumbnail_path()))
+                fs.rmSync(this.thumbnail_path());
             await db.single().query("DELETE FROM fileshare.file_data WHERE id = $1", [as_id(this.id)])
+        }
         else
             await db.single().query("DELETE FROM fileshare.directory_data WHERE id = $1", [as_id(this.id)])
 
@@ -300,14 +305,13 @@ class Item {
         const _internal = async (repos, path_split) => {
             if (path_split.length === 0)
                 return null;
-
             const path = path_split.length === 0 ? '/' : `/${path_split.join('/')}/`;
             const existing_dir = await Item.from_path(repos, path);
-            if (existing_dir.in_trash) {
-                existing_dir.in_trash = false;
-                await existing_dir.push();
-            }
             if (existing_dir) {
+                if (existing_dir.in_trash) {
+                    existing_dir.in_trash = false;
+                    await existing_dir.push();
+                }
                 if (existing_dir.is_regular_file)
                     throw Error(`Object ${JSON.stringify(existing_dir)} is not a directory`);
                 return existing_dir;

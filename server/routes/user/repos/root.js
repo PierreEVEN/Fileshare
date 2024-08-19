@@ -472,19 +472,20 @@ router.post('/move-item/:id', async (req, res) => {
             return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
         moved_items.push(item);
     }
+    logger.info(`${req.log_name} moved ${moved_items.length} items to directory ${new_parent.name.plain()}`);
+
 
     for (const item of moved_items)
     {
-        item.parent_item = new_parent.id;
         if (item.is_regular_file)
             await item.as_file()
         else
             await item.as_directory();
+        item.parent_item = new_parent.id;
         try {
             await item.push();
         }
         catch (e) {
-            console.log(e);
             return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, e.toString()).redirect_error(req, res);
         }
     }
@@ -513,13 +514,15 @@ router.post('/move-item/', async (req, res) => {
         moved_items.push(item);
     }
 
+    logger.info(`${req.log_name} moved ${moved_items.length} items to depot root`);
+
     for (const item of moved_items)
     {
-        item.parent_item = undefined;
         if (item.is_regular_file)
             await item.as_file()
         else
             await item.as_directory()
+        item.parent_item = undefined;
         await item.push();
     }
 

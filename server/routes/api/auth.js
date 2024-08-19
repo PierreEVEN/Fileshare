@@ -110,7 +110,6 @@ Si c'est le cas, veuillez cliquer <a href="${req.protocol}://${req.get('host')}/
 })
 
 router.get('/reset-password/:token/', async (req, res) => {
-    console.log(EMAILS_IN_RESET_STATE)
     if (!EMAILS_IN_RESET_STATE.tokens.has(req.params.token)) {
         return res.render('error', {
             title: 'Not Found',

@@ -172,7 +172,9 @@ CREATE OR REPLACE PROCEDURE fileshare.regenerate_item_path_with_children(item_id
 CREATE OR REPLACE FUNCTION fileshare.make_item_path_up_to_date() RETURNS TRIGGER AS $$
 	DECLARE
 	BEGIN
-		IF OLD IS NULL OR NEW.parent_item != OLD.parent_item OR NEW.name != OLD.name THEN
+		IF OLD IS NULL OR NEW.parent_item != OLD.parent_item OR NEW.name != OLD.name OR
+		(NEW.parent_item    IS NULL AND NOT OLD.parent_item IS NULL) OR
+		(OLD.parent_item IS NULL AND NOT NEW.parent_item IS NULL) THEN
 			CALL fileshare.regenerate_item_path_with_children(NEW.id);
 		END IF;
 		RETURN NEW;
@@ -227,11 +229,29 @@ CREATE OR REPLACE PROCEDURE fileshare.move_children_to_trash(parent BIGINT, set_
 	END;
 	$$ LANGUAGE plpgsql;
 
+
+CREATE OR REPLACE PROCEDURE fileshare.init_move_children_to_trash(item BIGINT, set_in_trash BOOLEAN) AS $$
+	DECLARE
+		parent_id BIGINT;
+		parent RECORD;
+	BEGIN
+	    -- Also restore parent if they are in trash
+	    IF NOT set_in_trash AND THEN
+	        SELECT * INTO parent FROM fileshare.items WHERE id = (SELECT parent_item FROM fileshare.items WHERE id = item);
+	        IF parent.in_trash THEN
+			    CALL fileshare.move_children_to_trash(parent.id, set_in_trash);
+			    return;
+	        END IF;
+	    END IF;
+		CALL fileshare.move_children_to_trash(item, set_in_trash);
+	END;
+	$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION fileshare.move_items_to_trashs() RETURNS TRIGGER AS $$
 	DECLARE
 	BEGIN
 		IF NOT OLD.in_trash = NEW.in_trash THEN
-			CALL fileshare.move_children_to_trash(NEW.id, NEW.in_trash);
+			CALL fileshare.init_move_children_to_trash(NEW.id, NEW.in_trash);
 		END IF;
 		RETURN NEW;
 	END;

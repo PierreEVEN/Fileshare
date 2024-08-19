@@ -158,7 +158,6 @@ function object_to_decoded_string(object) {
             object[field] = new ClientString(value).plain();
         }
     }
-    console.log(object)
     return object;
 }
 

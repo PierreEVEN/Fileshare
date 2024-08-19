@@ -83,7 +83,6 @@ class User {
 
         // Valid for 30 days
         const exp_date = dayjs().unix() + 86400 * 30;
-        console.log(dayjs.unix(exp_date))
         await db.single().query(`INSERT INTO fileshare.authtoken
             (owner, token, expdate, device) VALUES
             ($1, $2, $3, $4);`,
