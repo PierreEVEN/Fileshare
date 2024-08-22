@@ -65,9 +65,7 @@ class ReposBuilder {
 
         const this_ref = this;
         window.addEventListener('popstate', function (event) {
-            if (!event.state)
-                return;
-            this_ref.navigator.set_current_dir(event.state.id, true);
+            this_ref.navigator.set_current_dir(event.state, true);
         }, false);
 
         document.addEventListener('keydown', (event) => {

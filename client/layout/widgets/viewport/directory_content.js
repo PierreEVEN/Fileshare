@@ -48,28 +48,30 @@ class DirectoryContent {
          * @type {ObjectListener}
          */
         this.current_directory_listener = navigator.filesystem.create_listener(navigator.get_current_directory());
-        this.current_directory_listener.on_add_object = (object_id) => {
-            const object = navigator.filesystem.get_object_data(object_id);
-            if (object.is_regular_file)
-                this._on_file_added(object);
-            else
-                this._on_directory_added(object);
-        };
-
-        this.current_directory_listener.on_remove_object = (object_id) => {
-            this._on_item_removed(object_id)
-        };
-
-        this.current_directory_listener.on_update_object = (object_id) => {
-            this._on_item_removed(object_id);
-            const new_data = navigator.filesystem.get_object_data(object_id);
-            if (new_data) {
-                if (new_data.is_regular_file)
-                    this._on_file_added(new_data);
+        if (this.current_directory_listener) {
+            this.current_directory_listener.on_add_object = (object_id) => {
+                const object = navigator.filesystem.get_object_data(object_id);
+                if (object.is_regular_file)
+                    this._on_file_added(object);
                 else
-                    this._on_directory_added(new_data);
-            }
-        };
+                    this._on_directory_added(object);
+            };
+
+            this.current_directory_listener.on_remove_object = (object_id) => {
+                this._on_item_removed(object_id)
+            };
+
+            this.current_directory_listener.on_update_object = (object_id) => {
+                this._on_item_removed(object_id);
+                const new_data = navigator.filesystem.get_object_data(object_id);
+                if (new_data) {
+                    if (new_data.is_regular_file)
+                        this._on_file_added(new_data);
+                    else
+                        this._on_directory_added(new_data);
+                }
+            };
+        }
 
         this.navigator.bind_on_select_item((item, should_select) => {
             const widget = this.entry_widgets.get(item)

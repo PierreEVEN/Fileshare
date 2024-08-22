@@ -143,9 +143,15 @@ class Navigator {
         this.clear_selection();
         if (item !== this.current_directory) {
             this.current_directory = item;
-            for (const callback of this.changed_dir_callbacks) callback(item)
+            for (const callback of this.changed_dir_callbacks)
+                callback(item)
             if (!skip_push_state) {
-                history.pushState(item, "", window.location.href);
+                let full_path_string = "/";
+                for (const dir of this.filesystem.make_path_to_object(item)) {
+                    const dir_data = this.filesystem.get_object_data(dir);
+                    full_path_string += dir_data.name.plain() + "/";
+                }
+                history.pushState(item, "", `${PAGE_CONTEXT.repos_path()}/tree${full_path_string}`);
             }
         }
     }

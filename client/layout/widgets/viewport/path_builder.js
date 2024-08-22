@@ -55,17 +55,14 @@ class PathBuilder {
         separator.innerText = ':'
         current_path.append(separator);
 
-        let full_path_string = "/";
         for (const dir of this.navigator.filesystem.make_path_to_object(dir_id)) {
             const dir_data = this.navigator.filesystem.get_object_data(dir);
-
             if (dir_data.parent_item) {
                 // Add separator between directories
                 const separator = document.createElement('p')
                 separator.innerText = '>'
                 current_path.append(separator);
             }
-
             // Add button for each directory of the current path
             const button = document.createElement('button')
             button.innerText = dir_data.name.toString();
@@ -73,10 +70,7 @@ class PathBuilder {
                 this.navigator.set_current_dir(dir);
             }
             current_path.append(button);
-            full_path_string += dir_data.name.plain() + "/";
         }
-
-        window.history.pushState(full_path_string, null, `${PAGE_CONTEXT.repos_path()}/tree${full_path_string}`);
     }
 }
 

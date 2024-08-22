@@ -422,7 +422,7 @@ class Filesystem {
 
     /**
      * @param object {number}
-     * @return {string[]}
+     * @return {number[]}
      */
     make_path_to_object(object) {
         const result = [];
@@ -437,7 +437,7 @@ class Filesystem {
 
     /**
      * @param object {number}
-     * @return {string}
+     * @return {number}
      */
     make_string_path_to_object(object) {
         let result = "/";
