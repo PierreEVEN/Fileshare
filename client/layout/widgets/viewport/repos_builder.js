@@ -64,7 +64,18 @@ class ReposBuilder {
         })
 
         const this_ref = this;
-        window.addEventListener('popstate', function (event) {
+        window.addEventListener('popstate', (event) => {
+            if (is_modal_open()) {
+                close_modal();
+                history.pushState(this_ref.navigator.current_directory, "", `${PAGE_CONTEXT.repos_path()}/tree${this_ref.navigator.get_string_path_to_directory(this_ref.navigator.current_directory)}`);
+                return;
+            }
+            if (this.directory_content.item_carousel) {
+                this.directory_content.close_carousel();
+                console.log( window.location)
+                history.pushState(this_ref.navigator.current_directory, "", `${PAGE_CONTEXT.repos_path()}/tree${this_ref.navigator.get_string_path_to_directory(this_ref.navigator.current_directory)}`);
+                return;
+            }
             this_ref.navigator.set_current_dir(event.state, true);
         }, false);
 

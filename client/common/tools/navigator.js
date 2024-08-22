@@ -146,14 +146,18 @@ class Navigator {
             for (const callback of this.changed_dir_callbacks)
                 callback(item)
             if (!skip_push_state) {
-                let full_path_string = "/";
-                for (const dir of this.filesystem.make_path_to_object(item)) {
-                    const dir_data = this.filesystem.get_object_data(dir);
-                    full_path_string += dir_data.name.plain() + "/";
-                }
-                history.pushState(item, "", `${PAGE_CONTEXT.repos_path()}/tree${full_path_string}`);
+                history.pushState(item, "", `${PAGE_CONTEXT.repos_path()}/tree${this.get_string_path_to_directory(item)}`);
             }
         }
+    }
+
+    get_string_path_to_directory(item) {
+        let full_path_string = "/";
+        for (const dir of this.filesystem.make_path_to_object(item)) {
+            const dir_data = this.filesystem.get_object_data(dir);
+            full_path_string += dir_data.name.plain() + "/";
+        }
+        return full_path_string;
     }
 
     get_current_directory() {
