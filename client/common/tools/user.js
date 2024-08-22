@@ -1,5 +1,6 @@
 import {parse_fetch_result} from "../../layout/widgets/components/message_box";
 import {ClientString} from "./client_string";
+
 const dayjs = require('dayjs')
 const utc = require("dayjs/plugin/utc");
 dayjs.extend(utc);
@@ -33,12 +34,13 @@ class CookieString {
     }
 
     save() {
-        for (const cookie of document.cookie.split(";")) {
-            document.cookie = `${cookie}; SameSite=Strict; expires=${dayjs.utc(0).local().format()}; path=/`
-        }
+        if (document.cookie.length !== 0)
+            for (const cookie of document.cookie.split(";"))
+                document.cookie = `${cookie}; SameSite=Strict; expires=${new Date(0).toUTCString()}; path=/`;
+
         for (const [key, value] of this._cookies.entries()) {
             if (value.exp)
-                document.cookie = `${key}=${value.value}; SameSite=Strict; expire=${dayjs.utc().local().format()}; path=/`
+                document.cookie = `${key}=${value.value}; SameSite=Strict; expire=${dayjs.unix(value.exp).toDate().toUTCString()}; Max-Age=${value.exp - dayjs().unix()}; path=/`
             else
                 document.cookie = `${key}=${value.value}; SameSite=Strict; path=/`
         }
