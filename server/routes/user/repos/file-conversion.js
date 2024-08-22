@@ -19,6 +19,7 @@ class FileConversionHandle {
     }
 }
 
+
 class FileConversionQueue {
     constructor() {
         /**
@@ -44,9 +45,9 @@ class FileConversionQueue {
         this.video_conversion_queue.pop();
         const this_ref = this;
 
-        new ffmpeg({ source: next_proc.path})
+        new ffmpeg({source: next_proc.path})
             .toFormat(next_proc.new_format)
-            .on('end', function() {
+            .on('end', function () {
                 logger.info(`Finished video conversion from '${next_proc.path}' to ${next_proc.new_format}`);
                 next_proc.on_success(next_proc.path + '_converted');
                 this_ref.proc_next_video();
@@ -54,11 +55,21 @@ class FileConversionQueue {
             .on('progress', logProgress => {
                 next_proc.owner.processing_status = logProgress.percent / 100;
             })
-            .on('error', function(err) {
+            .on('error', function (err) {
                 logger.error(`Failed to convert video '${next_proc.path}' to ${next_proc.new_format} : ${JSON.stringify(err)}`);
                 this_ref.proc_next_video();
             })
             .saveToFile(next_proc.path + '_converted');
+    }
+
+    static async get_video_meta_data(file_path) {
+        return new Promise((resolve, reject) => {
+            ffmpeg.ffprobe(file_path, (err, meta) => {
+                if (err)
+                    reject(err);
+                resolve(meta)
+            })
+        })
     }
 }
 

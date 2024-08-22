@@ -192,6 +192,27 @@ class FileUpload {
                     this_ref.file_processing_handle = null;
                 });
                 break;
+                /*
+            case 'video/mp4':
+                this_ref.file_processing_handle = 10;
+                    FileConversionQueue.get_video_meta_data(this_ref.tmp_file_path).then((data) => {
+
+                        for (const stream of data) {
+                            if (stream.codec_type === 'video' && codec_name === 'hevc') {
+
+                            }
+                        }
+
+                        console.log("RETRIEVED VIDEO DATA : ", data);
+                    }
+                );
+                break;
+
+                ffmpeg -i input.mp4 -vcodec "codec" [-crf "crf"] -c:a copy output.mp4
+                codecs : libx264 / libx265
+                crf : 30 pour vid moyen
+
+                 */
         }
         return !!this.file_processing_handle;
     }
