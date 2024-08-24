@@ -193,6 +193,12 @@ class FileUpload {
                 });
                 break;
                 /*
+
+                TODO : auto convert video (put an option in upload form to convert all videos to H264 format)
+
+                TODO : auto convert mp4v to h264
+                TODO : auto convert mov to h264
+
             case 'video/mp4':
                 this_ref.file_processing_handle = 10;
                     FileConversionQueue.get_video_meta_data(this_ref.tmp_file_path).then((data) => {
