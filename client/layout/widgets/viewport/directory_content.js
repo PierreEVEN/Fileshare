@@ -202,7 +202,9 @@ class DirectoryContent {
             return;
         this.viewport_container.innerHTML = '';
 
-        for (const object of last_filter.get_directory_content(this.navigator.get_current_directory()))
+        const filtered_elements = last_filter.get_directory_content(this.navigator.get_current_directory());
+        //@TODO : display more than 1000 items
+        for (const object of filtered_elements.slice(0, 1000))
             this.objects.push({id: object.id, data: object});
         if (this.viewport_container)
             this.viewport_container.innerHTML = null;
