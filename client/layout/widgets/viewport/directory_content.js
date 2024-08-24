@@ -418,7 +418,7 @@ class DirectoryContent {
 
         const container = Carousel.get_fullscreen_container();
         container.root.style.display = 'flex';
-        const item_list = new CarouselList(this.navigator);
+        const item_list = new CarouselList(this);
         item_list.build_visual(container.list_container)
         this.item_carousel = new Carousel(item_list, container.background_container, this.navigator.filesystem.get_object_data(this.navigator.last_selected_item));
         this.item_carousel.on_close = () => {

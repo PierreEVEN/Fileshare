@@ -3,15 +3,17 @@ const carousel_list_item_hbs = require('./carousel_list_item.hbs');
 
 class CarouselList {
     /**
-     * @param navigator {Navigator}
+     * @param directory_content {DirectoryContent}
      * @param on_select_item
      */
-    constructor(navigator, on_select_item) {
-        this.navigator = navigator;
+    constructor(directory_content, on_select_item) {
+        this.directory_content = directory_content;
         /**
          * @type {number[]}
          */
-        this.objects = navigator.filesystem.get_objects_in_directory(navigator.get_current_directory());
+        this.objects = [];
+        for (const entry of directory_content.objects)
+            this.objects.push(entry.id);
 
         this.on_select_item = on_select_item;
 
@@ -68,7 +70,7 @@ class CarouselList {
         carousel_list_div.innerHTML = '';
 
         for (const object of this.objects) {
-            const meta_data = this.navigator.filesystem.get_object_data(object);
+            const meta_data = this.directory_content.navigator.filesystem.get_object_data(object);
             if (meta_data.is_regular_file) {
                 const callbacks = {};
                 const item = carousel_list_item_hbs({item: meta_data}, callbacks);
