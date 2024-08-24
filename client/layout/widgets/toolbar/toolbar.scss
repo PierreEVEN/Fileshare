@@ -1,4 +1,4 @@
-@import "../../common/colors";
+@import "../../../stylesheets/common/colors";
 
 .repos-toolbar {
   position: relative;
@@ -20,46 +20,51 @@
     }
   }
 
-  #current-path {
-    left: 0;
-    right: 0;
+  #toolbar-path-container {
     display: flex;
-    align-items: center;
-    margin: 0;
-    flex-grow: 1;
-    height: 100%;
-
-    p {
+    flex-direction: row;
+    overflow: scroll;
+    #current-path {
+      left: 0;
+      right: 0;
       display: flex;
-      flex-grow: 0;
-    }
-
-    button {
-      margin: 0;
-      padding: 0 10px;
-      display: flex;
-      height: 100%;
-      min-width: 0;
-      border-radius: 0;
-      background-color: rgba(0, 0, 0, 0);
       align-items: center;
-      justify-content: center;
-      flex-direction: row;
+      flex-grow: 1;
+      height: 100%;
+      margin: 0;
+      width: fit-content;
 
-      &:hover {
-        background-color: lighten($toolbar, 10%);
+      p {
+        display: flex;
+        flex-grow: 0;
       }
 
-      &:active {
-        background-color: lighten($toolbar, 20%);
+      button {
+        margin: 0;
+        padding: 0 10px;
+        display: flex;
+        min-width: 0;
+        border-radius: 0;
+        background-color: rgba(0, 0, 0, 0);
+        align-items: center;
+        justify-content: center;
+        flex-direction: row;
+
+        &:hover {
+          background-color: lighten($toolbar, 10%);
+        }
+
+        &:active {
+          background-color: lighten($toolbar, 20%);
+        }
       }
     }
   }
 
-  .tool-buttons {
+  #viewport_toolbar {
     display: flex;
     flex-direction: row;
-    right: 0;
+    margin-left: auto;
 
     #toolbar-menu {
 
@@ -112,6 +117,13 @@
 
 @media (orientation: portrait) {
   .repos-toolbar {
-    padding-left: 50px;
+    flex-direction: column-reverse;
+    height: 96px;
+    max-height: unset;
+    align-items: unset;
+
+    input {
+      flex-grow: 1;
+    }
   }
 }

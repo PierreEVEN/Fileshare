@@ -7,6 +7,7 @@
   flex-grow: 1;
   height: 100%;
   flex-direction: column;
+  width: 100%;
 
   .repos_content {
     display: flex;
@@ -86,6 +87,7 @@
         margin-left: auto;
         bottom: 2%;
         right: 2%;
+        height: 50px;
       }
     }
 

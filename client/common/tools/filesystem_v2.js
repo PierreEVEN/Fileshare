@@ -20,6 +20,7 @@ class FilesystemObject {
         Object.description = server_data.description ? new ClientString(server_data.description) : ClientString.FromClient('');
         Object.parent_item = server_data.parent_item;
         Object.is_trash = server_data.is_trash;
+        Object.absolute_path = new ClientString(server_data.absolute_path)
         if (Object.is_regular_file) {
             Object.size = Number(server_data.size);
             Object.mimetype = new ClientString(server_data.mimetype);
@@ -112,6 +113,11 @@ class FilesystemObject {
          * @type {Filesystem}
          */
         this.filesystem = null;
+
+        /**
+         * @type {ClientString<string>}
+         */
+        this.absolute_path = new ClientString();
     }
 }
 
@@ -345,12 +351,9 @@ class Filesystem {
 
     /**
      * @param parent_id {number|null}
-     * @param sorter {callback_sorter|null}
      * @return {number[]}
      */
-    get_objects_in_directory(parent_id, sorter = (a, b) => {
-        return a.name > b.name;
-    }) {
+    get_objects_in_directory(parent_id) {
         let objects = new Set();
         if (!parent_id) {
             objects = this.get_roots();
@@ -359,8 +362,27 @@ class Filesystem {
             if (metadata)
                 objects = metadata.children;
         }
-        if (sorter)
-            return Array.from(objects).sort(sorter);
+        return Array.from(objects)
+    }
+
+    /**
+     * @param parent_id {number|null}
+     * @return {number[]}
+     */
+    get_objects_in_directory_recursive(parent_id) {
+        let objects = new Set();
+        if (!parent_id) {
+            objects = this._content.keys();
+        } else {
+            const metadata = this.get_object_data(parent_id);
+
+            if (!metadata || metadata.is_regular_file)
+                return [];
+            for (const [id, data] of this._content) {
+                if (data.absolute_path.plain().startsWith(metadata.absolute_path.plain()))
+                    objects.add(id);
+            }
+        }
         return Array.from(objects)
     }
 

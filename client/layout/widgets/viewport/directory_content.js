@@ -1,5 +1,6 @@
 import {is_touch_device} from "../../../common/tools/utils";
 import {REPOS_BUILDER} from "./repos_builder";
+import {LexicographicFilter} from "./filter/filter_lex";
 
 const make_directory_hbs = require("./menus/make_directory.hbs");
 const {print_message, parse_fetch_result} = require("../components/message_box");
@@ -13,6 +14,11 @@ const {spawn_item_context_action} = require("./item_context_action");
 const file_hbs = require("./file.hbs");
 const {Carousel} = require("../components/carousel/carousel");
 const {CarouselList} = require("../components/carousel/list/carousel_list");
+
+/**
+ * @type {ReposFilter}
+ */
+let last_filter = null;
 
 class DirectoryContent {
     /**
@@ -43,6 +49,9 @@ class DirectoryContent {
          * @type {Carousel}
          */
         this.item_carousel = null;
+
+        if (!last_filter)
+            last_filter = new LexicographicFilter(this.navigator.filesystem);
 
         /**
          * @type {ObjectListener}
@@ -146,6 +155,27 @@ class DirectoryContent {
             }
     }
 
+    /**
+     * @param new_filter {ReposFilter}
+     */
+    set_filter(new_filter) {
+        last_filter = new_filter;
+        this.regen_content();
+    }
+
+    /**
+     * @param text {string}
+     */
+    filter_text(text) {
+        last_filter.set_name_filter(text)
+        this.regen_content();
+    }
+
+    only_files_recursive(enabled) {
+        last_filter.only_files_recursive(enabled);
+        this.regen_content();
+    }
+
     destroy() {
         this.current_directory_listener.destroy();
     }
@@ -171,8 +201,9 @@ class DirectoryContent {
         if (!this.viewport_container)
             return;
         this.viewport_container.innerHTML = '';
-        for (const object of this.navigator.filesystem.get_objects_in_directory(this.navigator.get_current_directory()))
-            this.objects.push({id: object, data: this.navigator.filesystem.get_object_data(object)});
+
+        for (const object of last_filter.get_directory_content(this.navigator.get_current_directory()))
+            this.objects.push({id: object.id, data: object});
         if (this.viewport_container)
             this.viewport_container.innerHTML = null;
         for (const object of this.directories_data())

@@ -8,6 +8,11 @@ const {FilesystemObject} = require("../../../common/tools/filesystem_v2");
 
 const edit_dir_hbs = require('../viewport/menus/edit_directory.hbs')
 
+require('./toolbar.scss')
+const {LexicographicFilter} = require("../viewport/filter/filter_lex");
+const {TypeFilter} = require("../viewport/filter/filter_type");
+const {SizeFilter} = require("../viewport/filter/filter_size");
+
 class Toolbar {
 
     constructor(directory_content) {
@@ -26,7 +31,6 @@ class Toolbar {
                 this.switch_search_mode(true);
             },
             more: async () => {
-
                 const actions = [];
                 if (this.directory_content.navigator.clipboard_items && this.directory_content.navigator.clipboard_items.length !== 0)
                     actions.push({
@@ -38,10 +42,17 @@ class Toolbar {
                     });
                 actions.push({
                     title: "Trier par ...",
-                    action: async () => {
-                        print_message("Erreur", 'Fonction indisponible', "La fonction de tri n'est pas encore disponible");
+                    action: () => {
+                        this.open_sort_by_menu();
                     },
                     image: '/images/icons/icons8-sort-100.png'
+                });
+                actions.push({
+                    title: "Tous les fichiers",
+                    action: async () => {
+                        await this.directory_content.only_files_recursive(true)
+                    },
+                    image: '/images/icons/icons8-file-sort-96.png'
                 });
                 if (this.directory_content.navigator.current_directory && await permissions.can_user_edit_item(PAGE_CONTEXT.repos_path(), this.directory_content.navigator.current_directory)) {
                     actions.push({
@@ -86,7 +97,7 @@ class Toolbar {
             },
             update_search: (e) => {
                 this.switch_search_mode(true);
-                print_message('Erreur', 'Fonction indisponible', 'La fonction "recherche" n\'est pas encore disponible');
+                this.directory_content.filter_text(e.target.value)
             }
         })
         tool_buttons.append(menu);
@@ -103,15 +114,21 @@ class Toolbar {
         current_path.innerHTML = '';
 
         const button = document.createElement('button')
-        button.innerText = this.directory_content.navigator.filesystem.name.plain();
+        const home_img = document.createElement('img');
+        home_img.src = '/images/icons/icons8-home-96.png'
+        button.append(home_img);
         button.onclick = () => {
             this.directory_content.navigator.set_current_dir(null);
         }
         current_path.append(button);
 
-        const separator = document.createElement('p')
-        separator.innerText = ':'
-        current_path.append(separator);
+        const path_to_obj = this.directory_content.navigator.filesystem.make_path_to_object(new_dir);
+
+        if (path_to_obj.length !== 0) {
+            const separator = document.createElement('p')
+            separator.innerText = '>'
+            current_path.append(separator);
+        }
 
         for (const dir of this.directory_content.navigator.filesystem.make_path_to_object(new_dir)) {
             const dir_data = this.directory_content.navigator.filesystem.get_object_data(dir);
@@ -147,10 +164,48 @@ class Toolbar {
                 this.switch_search_mode(false);
             }, 5000);
         } else {
-            content_text.style.width = 'auto';
+            console.log(search_text.value.length)
+            if (search_text.value.length !== 0) {
+                content_text.innerText = search_text.value;
+                content_text.style.display = 'flex';
+            }
+            content_text.style.width = 'unset';
             search_text.style.display = 'none';
             search_button.style.pointerEvents = 'unset';
         }
+    }
+
+    open_sort_by_menu() {
+        const actions = [];
+        actions.push({
+            title: "Tri alphabétique A-Z",
+            action: async () => {
+                await this.directory_content.set_filter(new LexicographicFilter(this.directory_content.navigator.filesystem))
+            },
+            image: '/images/icons/icons8-sort-96.png'
+        });
+        actions.push({
+            title: "Tri alphabétique Z-A",
+            action: async () => {
+                await this.directory_content.set_filter(new LexicographicFilter(this.directory_content.navigator.filesystem).reverse_filter())
+            },
+            image: '/images/icons/icons8-sort-96.png'
+        });
+        actions.push({
+            title: "Type",
+            action: async () => {
+                await this.directory_content.set_filter(new TypeFilter(this.directory_content.navigator.filesystem))
+            },
+            image: '/images/icons/icons8-file-sort-96.png'
+        });
+        actions.push({
+            title: "Taille",
+            action: async () => {
+                await this.directory_content.set_filter(new SizeFilter(this.directory_content.navigator.filesystem))
+            },
+            image: '/images/icons/icons8-weight-96.png'
+        });
+        spawn_context_action(actions)
     }
 }
 
