@@ -1,0 +1,15 @@
+<div id="toolbar-menu">
+    <p id="toolbar-stats">vide / 0 fichiers</p>
+    <div class="search-div">
+        <label>
+            <input type="text" placeholder="Chercher un élément" id="toolbar-search-text" onchange
+                   onpropertychange
+                   onkeyuponpaste oninput="{{ctx 'update_search(event)'}}">
+        </label>
+        <button onclick="{{ctx 'search()'}}" id="toolbar-search"><img alt="search"
+                                                                      src="/images/icons/icons8-search-100.png">
+        </button>
+    </div>
+    <button onclick="{{ctx 'download()'}}"><img src="/images/icons/icons8-download-96.png" alt="download"></button>
+    <button onclick="{{ctx 'more()'}}"><img alt="more" src="/images/icons/icons8-ellipsis-90.png"></button>
+</div>

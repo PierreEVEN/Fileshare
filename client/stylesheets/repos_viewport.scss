@@ -78,6 +78,15 @@
           align-content: baseline;
         }
       }
+
+      #upload-button {
+        display: flex;
+        position: relative;
+        margin-top: auto;
+        margin-left: auto;
+        bottom: 2%;
+        right: 2%;
+      }
     }
 
     #directory-description {

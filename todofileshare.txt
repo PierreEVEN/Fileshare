@@ -10,4 +10,5 @@
 - Nouveaux types d'affichages (par type / par taille / par nom)
 - Barre de recherche (par nom)
 - Ajouter le shift selection
-- Bouton retour sur mobile revient au debut et pas a la page d'avant
+- Bouton retour sur mobile revient au debut
+  et pas a la page d'avant

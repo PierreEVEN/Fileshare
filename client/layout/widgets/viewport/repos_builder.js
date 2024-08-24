@@ -1,11 +1,11 @@
 import {parse_fetch_result} from "../components/message_box.js";
 import {Filesystem, FilesystemObject} from "../../../common/tools/filesystem_v2.js";
 import {Navigator} from "../../../common/tools/navigator.js";
-import {PAGE_CONTEXT} from "../../../common/tools/utils";
+import {PAGE_CONTEXT, permissions} from "../../../common/tools/utils";
 import {LOCAL_USER} from "../../../common/tools/user";
-import {PathBuilder} from "./path_builder";
 import {close_modal, is_modal_open} from "../components/modal";
 import {DirectoryContent} from "./directory_content";
+import {Toolbar} from "../toolbar/toolbar";
 
 require('./item.scss')
 
@@ -25,16 +25,16 @@ class ReposBuilder {
         this.navigator = new Navigator(this.filesystem);
 
         /**
-         * @type {PathBuilder}
-         */
-        this.path_builder = new PathBuilder(this.navigator);
-
-        /**
          * @type {DirectoryContent}
          */
         this.directory_content = new DirectoryContent(this.navigator);
 
-        this.navigator.on_changed_dir((new_dir) => {
+        /**
+         * @type {Toolbar}
+         */
+        this.path_builder = new Toolbar(this.directory_content);
+
+        this.navigator.on_changed_dir(async (new_dir) => {
             this.directory_content.destroy();
 
             this.directory_content = new DirectoryContent(this.navigator);
@@ -57,9 +57,21 @@ class ReposBuilder {
                     directory_description.style.padding = '0';
                 }
             }
+            const upload_button = document.getElementById('upload-button');
+            if (upload_button)
+                upload_button.remove();
+
+            if ((await permissions.can_user_upload_to_directory(PAGE_CONTEXT.repos_path(), new_dir)) || await permissions.can_user_upload_to_repos(PAGE_CONTEXT.repos_path())) {
+                const upload_button = document.createElement('button');
+                upload_button.onclick = () => upload.open_or_update_modal();
+                upload_button.innerText = '+';
+                upload_button.classList.add('plus-button');
+                upload_button.id = 'upload-button';
+                document.getElementById('file-list-box').append(upload_button);
+            }
         })
 
-        this.fetch_repos_content(false).then(() => {
+        this.fetch_repos_content(false).then(async () => {
             this.navigator.set_current_dir(this.filesystem.get_object_from_path(PAGE_CONTEXT.request_path.plain()));
         })
 
@@ -72,7 +84,7 @@ class ReposBuilder {
             }
             if (this.directory_content.item_carousel) {
                 this.directory_content.close_carousel();
-                console.log( window.location)
+                console.log(window.location)
                 history.pushState(this_ref.navigator.current_directory, "", `${PAGE_CONTEXT.repos_path()}/tree${this_ref.navigator.get_string_path_to_directory(this_ref.navigator.current_directory)}`);
                 return;
             }
@@ -132,7 +144,6 @@ class ReposBuilder {
                 }
             }
         }, false);
-
 
         LOCAL_USER.push_last_repos(this.repo.id);
     }

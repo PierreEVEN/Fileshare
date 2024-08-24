@@ -19,7 +19,6 @@ import './widgets/user_settings/user_settings.js';
 import './widgets/viewport/file_list_customization.js'
 
 /* VIEWPORT */
-import './widgets/viewport/path_builder';
 import './widgets/upload/upload_form.js';
 
 import './administration/administration_panel';

@@ -132,7 +132,7 @@ class Permissions {
 
     /**
      * @param repos_url {string}
-     * @param object {string}
+     * @param object {number}
      * @return {Promise<boolean>}
      */
     async can_user_upload_to_directory(repos_url, object) {

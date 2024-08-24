@@ -59,16 +59,52 @@
   .tool-buttons {
     display: flex;
     flex-direction: row;
-    align-items: center;
     right: 0;
 
-    p {
-      margin-right: 15px;
-    }
+    #toolbar-menu {
 
-    @media (orientation: portrait) {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      .search-div {
+        display: flex;
+        align-items: center;
+
+        label {
+          input {
+            display: none;
+            margin-right: -40px;
+            height: 40px;
+          }
+        }
+      }
+
+      button {
+        margin-right: 10px;
+        background-color: transparent;
+        width: 40px;
+
+        &:hover {
+          background-color: $button_1;
+
+        }
+
+        img {
+          width: 20px;
+        }
+      }
+
       p {
-        display: none;
+        margin-right: 15px;
+        overflow: hidden;
+        text-wrap: nowrap;
+      }
+
+      @media (orientation: portrait) {
+        p {
+          display: none;
+        }
       }
     }
   }
