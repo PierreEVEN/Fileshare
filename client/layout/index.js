@@ -2,7 +2,7 @@ require('../stylesheets/layout.scss');
 
 import './handlebars_helpers';
 
-//@TODO : don't importing this cause a weird issue when rendering pdf...
+//@FIX : don't importing this cause a weird issue when rendering pdf...
 require('../embed_viewers/custom_elements/pdf_viewer/pdf-viewer.hbs')
 require('../embed_viewers/custom_elements/document/code')
 require('../embed_viewers/custom_elements/document/markdown')
