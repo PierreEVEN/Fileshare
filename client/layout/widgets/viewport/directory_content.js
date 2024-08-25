@@ -1,6 +1,7 @@
-import {is_touch_device} from "../../../common/tools/utils";
+import {humanFileSize, is_touch_device} from "../../../common/tools/utils";
 import {REPOS_BUILDER} from "./repos_builder";
 import {LexicographicFilter} from "./filter/filter_lex";
+import {SizeFilter} from "./filter/filter_size";
 
 const make_directory_hbs = require("./menus/make_directory.hbs");
 const {print_message, parse_fetch_result} = require("../components/message_box");
@@ -184,9 +185,13 @@ class DirectoryContent {
         this.regen_content();
     }
 
-    only_files_recursive(enabled) {
-        last_filter.only_files_recursive(enabled);
-        show_all_files = enabled;
+    get_filter() {
+        return last_filter;
+    }
+
+    only_files_recursive() {
+        last_filter.only_files_recursive(!last_filter._files_recursive);
+        show_all_files = last_filter._files_recursive;
         this.regen_content();
     }
 
@@ -305,7 +310,10 @@ class DirectoryContent {
      * @private
      */
     _on_file_added(file) {
-        const file_div = file_hbs({item: file}, {
+        let display_size = null;
+        if (last_filter instanceof SizeFilter)
+            display_size = humanFileSize(file.size);
+        const file_div = file_hbs({item: file, display_size: display_size}, {
             dblclicked: event => {
                 if (is_touch_device())
                     return;

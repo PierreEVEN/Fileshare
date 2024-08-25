@@ -2,6 +2,9 @@ import {ReposFilter} from "./base_filter";
 
 class LexicographicFilter extends ReposFilter {
 
+    static ID = 'LexicographicFilter';
+    ID = 'LexicographicFilter';
+
     reverse_filter() {
         this.reverse = true;
         return this;

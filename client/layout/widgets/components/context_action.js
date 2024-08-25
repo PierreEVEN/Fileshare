@@ -27,6 +27,7 @@ function click_object(id) {
 }
 
 function spawn_context_action(actions) {
+    console.log(actions)
     setTimeout(() => {
         if (last_context_action)
             last_context_action.remove();

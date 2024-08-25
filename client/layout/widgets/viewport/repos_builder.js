@@ -66,8 +66,18 @@ class ReposBuilder {
                 upload_button.onclick = () => upload.open_or_update_modal();
                 upload_button.innerText = '+';
                 upload_button.classList.add('plus-button');
-                upload_button.id = 'upload-button';
-                document.getElementById('file-list-box').append(upload_button);
+                const upload_button_container = document.createElement('div');
+                upload_button_container.id = 'upload-button';
+                upload_button_container.append(upload_button);
+                document.getElementById('file-list-box').append(upload_button_container);
+
+                window.addEventListener('resize', (e) => {
+                    console.log(upload_button.parentElement.offsetWidth);
+                    upload_button_container.style.width = upload_button_container.parentElement.offsetWidth + 'px';
+                    upload_button_container.style.height = upload_button_container.parentElement.offsetHeight + 'px';
+                })
+                upload_button_container.style.width = upload_button_container.parentElement.offsetWidth + 'px';
+                upload_button_container.style.height = upload_button_container.parentElement.offsetHeight + 'px';
             }
         })
 

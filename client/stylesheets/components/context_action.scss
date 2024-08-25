@@ -32,5 +32,10 @@
       background-color: rgba(143, 139, 139, 0.35);
       border-bottom: 1px #5cc1f8 solid;
     }
+
+    &.context-checked {
+      background-color: $button_1;
+
+    }
   }
 }

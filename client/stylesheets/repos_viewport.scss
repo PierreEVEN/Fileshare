@@ -82,12 +82,18 @@
 
       #upload-button {
         display: flex;
-        position: relative;
-        margin-top: auto;
-        margin-left: auto;
-        bottom: 2%;
-        right: 2%;
-        height: 50px;
+        position: absolute;
+        pointer-events: none;
+        button {
+          display: flex;
+          position: relative;
+          margin-top: auto;
+          margin-left: auto;
+          bottom: 2%;
+          right: 2%;
+          pointer-events: auto;
+          background-color: $toolbar;
+        }
       }
     }
 

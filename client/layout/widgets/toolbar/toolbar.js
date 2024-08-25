@@ -49,8 +49,9 @@ class Toolbar {
                 });
                 actions.push({
                     title: "Tous les fichiers",
+                    checked: this.directory_content.get_filter()._files_recursive,
                     action: async () => {
-                        await this.directory_content.only_files_recursive(true)
+                        await this.directory_content.only_files_recursive()
                     },
                     image: '/images/icons/icons8-file-sort-96.png'
                 });
@@ -182,6 +183,7 @@ class Toolbar {
         const actions = [];
         actions.push({
             title: "Tri alphabétique A-Z",
+            checked: this.directory_content.get_filter() instanceof LexicographicFilter && !this.directory_content.get_filter().reverse,
             action: async () => {
                 await this.directory_content.set_filter(new LexicographicFilter(this.directory_content.navigator.filesystem))
             },
@@ -189,6 +191,7 @@ class Toolbar {
         });
         actions.push({
             title: "Tri alphabétique Z-A",
+            checked: this.directory_content.get_filter() instanceof LexicographicFilter && this.directory_content.get_filter().reverse,
             action: async () => {
                 await this.directory_content.set_filter(new LexicographicFilter(this.directory_content.navigator.filesystem).reverse_filter())
             },
@@ -196,6 +199,7 @@ class Toolbar {
         });
         actions.push({
             title: "Type",
+            checked: this.directory_content.get_filter() instanceof TypeFilter,
             action: async () => {
                 await this.directory_content.set_filter(new TypeFilter(this.directory_content.navigator.filesystem))
             },
@@ -203,6 +207,7 @@ class Toolbar {
         });
         actions.push({
             title: "Taille",
+            checked: this.directory_content.get_filter() instanceof SizeFilter,
             action: async () => {
                 await this.directory_content.set_filter(new SizeFilter(this.directory_content.navigator.filesystem))
             },
