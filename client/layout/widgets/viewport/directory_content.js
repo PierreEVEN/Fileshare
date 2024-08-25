@@ -1,7 +1,8 @@
-import {humanFileSize, is_touch_device} from "../../../common/tools/utils";
+import {human_readable_timestamp, humanFileSize, is_touch_device} from "../../../common/tools/utils";
 import {REPOS_BUILDER} from "./repos_builder";
 import {LexicographicFilter} from "./filter/filter_lex";
 import {SizeFilter} from "./filter/filter_size";
+import {DateFilter} from "./filter/filter_date";
 
 const make_directory_hbs = require("./menus/make_directory.hbs");
 const {print_message, parse_fetch_result} = require("../components/message_box");
@@ -313,7 +314,10 @@ class DirectoryContent {
         let display_size = null;
         if (last_filter instanceof SizeFilter)
             display_size = humanFileSize(file.size);
-        const file_div = file_hbs({item: file, display_size: display_size}, {
+        let display_date = null;
+        if (last_filter instanceof DateFilter)
+            display_date = human_readable_timestamp(file.timestamp / 1000);
+        const file_div = file_hbs({item: file, display_size: display_size, display_date: display_date}, {
             dblclicked: event => {
                 if (is_touch_device())
                     return;

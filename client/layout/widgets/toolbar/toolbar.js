@@ -12,6 +12,7 @@ require('./toolbar.scss')
 const {LexicographicFilter} = require("../viewport/filter/filter_lex");
 const {TypeFilter} = require("../viewport/filter/filter_type");
 const {SizeFilter} = require("../viewport/filter/filter_size");
+const {DateFilter} = require("../viewport/filter/filter_date");
 
 class Toolbar {
 
@@ -212,6 +213,22 @@ class Toolbar {
                 await this.directory_content.set_filter(new SizeFilter(this.directory_content.navigator.filesystem))
             },
             image: '/images/icons/icons8-weight-96.png'
+        });
+        actions.push({
+            title: "Date croissant",
+            checked: this.directory_content.get_filter() instanceof DateFilter && !this.directory_content.get_filter().reverse,
+            action: async () => {
+                await this.directory_content.set_filter(new DateFilter(this.directory_content.navigator.filesystem))
+            },
+            image: '/images/icons/icons8-date-96.png'
+        });
+        actions.push({
+            title: "Date décroissant",
+            checked: this.directory_content.get_filter() instanceof DateFilter && this.directory_content.get_filter().reverse,
+            action: async () => {
+                await this.directory_content.set_filter(new DateFilter(this.directory_content.navigator.filesystem).reverse_filter())
+            },
+            image: '/images/icons/icons8-date-96.png'
         });
         spawn_context_action(actions)
     }

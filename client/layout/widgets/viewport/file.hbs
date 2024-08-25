@@ -2,5 +2,5 @@
      onmouseenter="{{ctx 'enter()'}}" onmouseleave="{{ctx 'leave()'}}" oncontextmenu="{{ctx 'context_menu(event)'}}">
 
     {{item_thumbnail item}}
-    <p class="item-name">{{item.name}}{{#if display_size}} ({{display_size}}){{/if}}</p>
+    <p class="item-name">{{item.name}}{{#if display_size}} ({{display_size}}){{/if}}{{#if display_date}} ({{display_date}}){{/if}}</p>
 </div>
