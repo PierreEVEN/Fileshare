@@ -1,0 +1,16 @@
+extends layout
+
+block content
+    div.repos-settings
+        h1 #{locals.common.PAGE_CONTEXT.display_repos.display_name.plain()} (#{locals.common.PAGE_CONTEXT.display_repos.name.plain()})
+        button(onclick='window.repos_settings.get().edit_settings()') Modifier les paramètres
+        div.hseparator
+        h2 Informations
+        div
+
+        div.hseparator
+        h2 Autorisations
+        div.permission_list
+
+    script(type='module').
+        window.repos_settings.load();

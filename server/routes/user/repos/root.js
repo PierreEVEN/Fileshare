@@ -54,6 +54,14 @@ router.get("/tree/*", async (req, res) => {
     });
 })
 
+router.get("/settings/*", async (req, res) => {
+    req.request_path = req.url.substring(5);
+    res.render('repos_settings', {
+        title: `FileShare - ${req.display_repos.name}`,
+        common: await get_common_data(req)
+    });
+})
+
 router.get("/content/", async (req, res) => {
     const time_a = performance.now()
     let data = await Item.from_repos(req.display_repos.id);

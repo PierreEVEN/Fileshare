@@ -44,7 +44,6 @@ async function get_common_data(req) {
         display_repos: req.display_repos,
         request_path: req.request_path
     }
-
     if (req.connected_user) {
         for (const repos of await Repos.from_owner(req.connected_user.id)) {
             data.user_repos.push(await repos.client_ready());

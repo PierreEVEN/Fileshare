@@ -24,6 +24,8 @@ class Toolbar {
         })
 
         const tool_buttons = document.getElementById('viewport_toolbar');
+        if (!tool_buttons)
+            return;
         const menu = toolbar_menu_hbs({}, {
             download: () => {
                 window.open(`${PAGE_CONTEXT.repos_path()}/file${directory_content.navigator.current_directory ? "/" + directory_content.navigator.current_directory : ''}`, '_blank').focus();

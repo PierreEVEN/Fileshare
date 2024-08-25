@@ -211,6 +211,6 @@ class ReposBuilder {
     }
 }
 
-const REPOS_BUILDER = PAGE_CONTEXT.display_repos ? new ReposBuilder(PAGE_CONTEXT.display_repos) : null;
+const REPOS_BUILDER = PAGE_CONTEXT.display_repos && document.getElementById('file-list') ? new ReposBuilder(PAGE_CONTEXT.display_repos) : null;
 
 export {REPOS_BUILDER}
