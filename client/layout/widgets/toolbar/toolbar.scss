@@ -50,6 +50,10 @@
         justify-content: center;
         flex-direction: row;
 
+        img {
+          width: 20px;
+        }
+
         &:hover {
           background-color: lighten($toolbar, 10%);
         }

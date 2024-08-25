@@ -164,10 +164,13 @@ class Toolbar {
                 this.switch_search_mode(false);
             }, 5000);
         } else {
-            console.log(search_text.value.length)
             if (search_text.value.length !== 0) {
                 content_text.innerText = search_text.value;
                 content_text.style.display = 'flex';
+            }
+            else {
+                const stats = this.directory_content.navigator.filesystem.get_object_content_stats(this.directory_content.navigator.current_directory);
+                content_text.innerText = `${humanFileSize(stats.size)} / ${stats.count} fichiers`
             }
             content_text.style.width = 'unset';
             search_text.style.display = 'none';

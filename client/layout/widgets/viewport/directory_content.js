@@ -20,6 +20,16 @@ const {CarouselList} = require("../components/carousel/list/carousel_list");
  */
 let last_filter = null;
 
+/**
+ * @type {boolean}
+ */
+let show_all_files = false;
+
+/**
+ * @type {string}
+ */
+let string_filter = '';
+
 class DirectoryContent {
     /**
      * @param navigator{Navigator}
@@ -160,6 +170,8 @@ class DirectoryContent {
      */
     set_filter(new_filter) {
         last_filter = new_filter;
+        last_filter.set_name_filter(string_filter);
+        last_filter.only_files_recursive(show_all_files);
         this.regen_content();
     }
 
@@ -168,11 +180,13 @@ class DirectoryContent {
      */
     filter_text(text) {
         last_filter.set_name_filter(text)
+        string_filter = text;
         this.regen_content();
     }
 
     only_files_recursive(enabled) {
         last_filter.only_files_recursive(enabled);
+        show_all_files = enabled;
         this.regen_content();
     }
 
