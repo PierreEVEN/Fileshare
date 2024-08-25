@@ -21,6 +21,26 @@
   }
 }
 
+
+
+@media (orientation: portrait) {
+  .carousel-viewport {
+    flex-direction: column-reverse;
+
+    .carousel-item-image {
+      flex-grow: 1;
+      height: 0;
+    }
+
+    .carousel-description {
+      max-width: unset;
+      border-left: unset;
+      border-bottom: dotted 2px #5b6574;
+      margin-bottom: 10px;
+    }
+  }
+}
+
 .carousel-list-root {
   display: flex;
   width: 100%;
