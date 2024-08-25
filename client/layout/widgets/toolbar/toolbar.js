@@ -170,7 +170,6 @@ class Toolbar {
                 content_text.style.display = 'flex';
             }
             else {
-                console.log("bah")
                 const stats = this.directory_content.navigator.filesystem.get_object_content_stats(this.directory_content.navigator.current_directory);
                 content_text.innerText = `${humanFileSize(stats.size)} / ${stats.count} fichiers`
             }

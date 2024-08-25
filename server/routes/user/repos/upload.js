@@ -208,8 +208,6 @@ class FileUpload {
 
                             }
                         }
-
-                        console.log("RETRIEVED VIDEO DATA : ", data);
                     }
                 );
                 break;
