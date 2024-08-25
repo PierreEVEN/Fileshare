@@ -32,14 +32,9 @@ class CarouselList {
 
         if (this.on_select_item)
             this.on_select_item(meta_data);
-        const bounds = this._last_selected.getBoundingClientRect();
-        if (bounds.x + bounds.width / 2 - window.innerWidth / 2 > 0) {
-            if (this._last_selected.nextSibling)
-                this._last_selected.nextSibling.scrollIntoView({ behavior: "smooth"});
-        }
-        else
-            if (this._last_selected.previousSibling)
-                this._last_selected.previousSibling.scrollIntoView({ behavior: "smooth"});
+        this._last_selected.scrollIntoView({ behavior: "smooth", inline: 'center'});
+
+        this.update_left_right_buttons();
     }
 
     /**
@@ -49,17 +44,21 @@ class CarouselList {
         container.innerHTML = '';
         const carousel_list = carousel_list_hbs({}, {
             move_left: () => {
-                console.log("left")
-
-
-                //document.addEventListener('keydown', (event) => {
+                const meta_data = this.directory_content.navigator.filesystem.get_object_data(this._last_selected.previousSibling.item_id);
+                if (meta_data.is_regular_file) {
+                    this.select_item(meta_data);
+                }
             },
-
             move_right: () => {
-
+                const meta_data = this.directory_content.navigator.filesystem.get_object_data(this._last_selected.nextSibling.item_id);
+                if (meta_data.is_regular_file) {
+                    this.select_item(meta_data);
+                }
             }
-
         });
+        this.move_left_button = carousel_list.getElementsByClassName('carousel-move-left')[0];
+        this.move_right_button = carousel_list.getElementsByClassName('carousel-move-right')[0];
+
         const carousel_list_div = carousel_list.getElementsByClassName('carousel-list')[0];
 
         this.container = carousel_list_div;
@@ -68,6 +67,10 @@ class CarouselList {
         })
 
         carousel_list_div.innerHTML = '';
+
+        const left_spacer = document.createElement('div');
+        left_spacer.style.width = '100px';
+        carousel_list_div.append(left_spacer);
 
         for (const object of this.objects) {
             const meta_data = this.directory_content.navigator.filesystem.get_object_data(object);
@@ -78,10 +81,31 @@ class CarouselList {
                 callbacks.on_click = () => {
                     this.select_item(meta_data)
                 }
+                item.item_id = meta_data.id;
                 carousel_list_div.append(item);
             }
         }
+
+        const right_spacer = document.createElement('div');
+        right_spacer.style.width = '100px';
+        carousel_list_div.append(right_spacer);
         container.append(carousel_list);
+        this.update_left_right_buttons();
+    }
+
+    update_left_right_buttons() {
+        if (this.move_left_button) {
+            if (!this._last_selected || !this._last_selected.previousSibling.classList.contains('carousel-item'))
+                this.move_left_button.style.display = 'none';
+            else
+                this.move_left_button.style.display = 'unset';
+        }
+        if (this.move_right_button) {
+            if (!this._last_selected || !this._last_selected.nextSibling.classList.contains('carousel-item'))
+                this.move_right_button.style.display = 'none';
+            else
+                this.move_right_button.style.display = 'unset';
+        }
     }
 }
 

@@ -19,7 +19,7 @@ class CarouselOverlay {
             }
 
         });
-        container.append(this.carousel_overlay)
+        container.firstChild.before(this.carousel_overlay)
     }
 
 }
