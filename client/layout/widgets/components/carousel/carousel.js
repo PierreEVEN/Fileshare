@@ -23,9 +23,7 @@ class Carousel {
                 new CarouselOverlay(this, container, item)
             });
         }
-
-        list.select_item(base_item);
-
+        list.select_item(base_item, true);
         this.container = container;
     }
 

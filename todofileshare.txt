@@ -3,12 +3,7 @@
 - Contrôler le compte utilisateur
 - améliorer le design de la corbeille
 - pouvoir ajouter des utilisateurs à un dépot (/ sous-dossier)
-- Ameliorer controles carousel et les infos affichees
-- Ameliorer le design de la description
 - Conversion automatique HEVC => AV1
 - Menu pour compresser des videos / images et les convertir
-- Nouveaux types d'affichages (par type / par taille / par nom)
-- Barre de recherche (par nom)
 - Ajouter le shift selection
-- Bouton retour sur mobile revient au debut
-  et pas a la page d'avant
+- gérer le zoom dans le carousel sur les images / vidéos

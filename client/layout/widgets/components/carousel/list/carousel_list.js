@@ -22,17 +22,19 @@ class CarouselList {
         this.element_map = new Map();
     }
 
-    select_item(meta_data) {
+    select_item(meta_data, scroll_center = false) {
         if (this._last_selected) {
             this._last_selected.classList.remove('selected');
         }
         this._last_selected = this.element_map.get(meta_data.id);
 
+        if (!this._last_selected)
+            return;
         this._last_selected.classList.add('selected');
 
         if (this.on_select_item)
             this.on_select_item(meta_data);
-        this._last_selected.scrollIntoView({ behavior: "smooth", inline: 'center'});
+        this._last_selected.scrollIntoView({ behavior: "smooth", inline: scroll_center ? 'center' : 'nearest'});
 
         this.update_left_right_buttons();
     }
@@ -46,13 +48,13 @@ class CarouselList {
             move_left: () => {
                 const meta_data = this.directory_content.navigator.filesystem.get_object_data(this._last_selected.previousSibling.item_id);
                 if (meta_data.is_regular_file) {
-                    this.select_item(meta_data);
+                    this.select_item(meta_data, true);
                 }
             },
             move_right: () => {
                 const meta_data = this.directory_content.navigator.filesystem.get_object_data(this._last_selected.nextSibling.item_id);
                 if (meta_data.is_regular_file) {
-                    this.select_item(meta_data);
+                    this.select_item(meta_data, true);
                 }
             }
         });

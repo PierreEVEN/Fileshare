@@ -11,6 +11,17 @@ class CarouselViewport {
          * @type {HTMLElement}
          */
         const visual = carousel_item_hbs({item: item});
+        if (item.description && item.description.plain() !== '') {
+            import('../../../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
+                const directory_description = visual.getElementsByClassName('carousel-description')[0];
+                if (directory_description) {
+                    directory_description.innerHTML = showdown.convert_text(item.description.plain())
+                    directory_description.style.padding = '20px';
+                    directory_description.style.display = 'unset';
+                }
+            });
+        }
+
         container.append(visual);
 
         this.scale = 1;

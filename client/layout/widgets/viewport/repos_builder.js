@@ -38,6 +38,7 @@ class ReposBuilder {
             this.directory_content.destroy();
 
             this.directory_content = new DirectoryContent(this.navigator);
+            this.path_builder.directory_content = this.directory_content;
 
             // Show directory or repo description
             const dir_data = this.filesystem.get_object_data(new_dir)
