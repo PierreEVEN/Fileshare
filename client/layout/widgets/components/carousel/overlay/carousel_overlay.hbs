@@ -1,16 +1,16 @@
 <div class="carousel-overlay">
-    <div id="file-action-buttons">
-    </div>
     <button class="floating-top-right cancel-button" onclick="{{ctx 'close_carousel(event)'}}">X</button>
     <div class="details-panel">
         <div class="head">
             <div class="stats">
                 {{typeicon item.mimetype}}
-                <p id="item-mime-type">{{item.mimetype}}</p>
+                <div class="substats">
+                    <p id="item-mime-type">{{item.mimetype}}</p>
+                    <p id="item-size">Poids : {{file_size}}</p>
+                </div>
             </div>
             <h1 id="item-title">{{item.name}}</h1>
             <div class="stats">
-                <p id="item-size">{{file_size}}</p>
             </div>
         </div>
     </div>

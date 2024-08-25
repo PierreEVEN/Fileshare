@@ -204,6 +204,10 @@
       text-wrap: nowrap;
       align-items: center;
 
+      .substats {
+        height: 80%;
+      }
+
       .typeicon {
         width: 40px;
         object-fit: contain;
@@ -215,9 +219,9 @@
       }
 
       p {
-        margin: 20px 0 20px 0;
+        margin: 10px 0;
         width: auto;
-        font-size: 0.5em;
+        font-size: 0.8em;
       }
     }
 
