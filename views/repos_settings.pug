@@ -10,7 +10,8 @@ block content
 
         div.hseparator
         h2 Autorisations
-        div.permission_list
+        button(onclick='window.repos_settings.get().add_authorization()') Add authorization
+        div#repos-settings-authorizations
 
     script(type='module').
         window.repos_settings.load();

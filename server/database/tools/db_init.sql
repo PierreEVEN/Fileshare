@@ -59,13 +59,14 @@ CREATE TABLE IF NOT EXISTS fileshare.repos (
 CREATE TABLE IF NOT EXISTS fileshare.userrepos (
         owner BIGSERIAL,
         repos BIGSERIAL,
+        root_item BIGSERIAL,
         access_type fileshare.user_access NOT NULL DEFAULT 'read-only',
-        PRIMARY KEY(OWNER, repos),
+        PRIMARY KEY(OWNER, repos, root_item),
         FOREIGN KEY(owner) REFERENCES fileshare.users(id),
         FOREIGN KEY(repos) REFERENCES fileshare.repos(id)
     );
 
-CREATE TABLE IF NOT EXISTS fileshare.authtoken (
+CREATE TABLE IF NOT EXISTS fileshare.authtoken(
         owner BIGSERIAL,
         token VARCHAR(200) NOT NULL UNIQUE,
         expdate BIGINT NOT NULL

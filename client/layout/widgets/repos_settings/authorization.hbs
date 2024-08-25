@@ -1,0 +1,10 @@
+<div class="repos-setting-authorization">
+    <p class="field">{{username}}</p>
+    <p class="field">{{#if root_item}}root_item{{/if}}</p>
+    <select class="field" name="{{access_type}}" onchange="{{ctx 'set_access_type(event)'}}">
+        <option value="read-only" {{#if is_read_only}}selected{{/if}}>Lecture seule</option>
+        <option value="contributor" {{#if is_contributor}}selected{{/if}}>Contributeur</option>
+        <option value="moderator" {{#if is_moderator}}selected{{/if}}>Modérateur</option>
+    </select>
+    <button class="cancel-button field" onclick="{{ctx 'remove(event)'}}">X</button>
+</div>

@@ -1,0 +1,31 @@
+.repos-settings {
+  width: 100%;
+
+  #repos-settings-authorizations {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    .repos-setting-authorization {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      align-items: center;
+
+      .field {
+        margin: auto;
+      }
+
+      select {
+        flex-grow: unset;
+        min-width: 25%;
+      }
+
+      button {
+        flex-grow: unset;
+        width: 40px;
+        min-width: unset;
+      }
+    }
+  }
+}

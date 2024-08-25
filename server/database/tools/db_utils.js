@@ -75,6 +75,7 @@ function as_boolean(source) {
  * @return {string}
  */
 function as_enum(source) {
+    assert(source)
     const data = source.toLowerCase().trim();
     assert(/^[A-Za-z0-9-_]*$/.test(source))
     return data;

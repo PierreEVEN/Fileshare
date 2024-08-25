@@ -22,6 +22,9 @@ const {ServerPermissions} = require("../../../permissions");
 const router = require("express").Router();
 const archiver = require('archiver');
 const json_compress = require('compress-json')
+const {UserRepos} = require("../../../database/user_repos");
+const {User} = require("../../../database/user");
+const {Repos} = require("../../../database/repos");
 
 /********************** [GLOBAL] **********************/
 router.use('/', async (req, res, next) => {
@@ -55,6 +58,10 @@ router.get("/tree/*", async (req, res) => {
 })
 
 router.get("/settings/*", async (req, res) => {
+    if (!await ServerPermissions.can_user_configure_repos(req.display_repos, req.connected_user ? req.connected_user.id : null)) {
+        // This user is not allowed to configure this repos
+        return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
+    }
     req.request_path = req.url.substring(5);
     res.render('repos_settings', {
         title: `FileShare - ${req.display_repos.name}`,
@@ -465,7 +472,7 @@ router.post('/move-item/:id', async (req, res) => {
     if (!req.connected_user)
         return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
 
-    if (!await ServerPermissions.can_user_upload_to_directory(new_parent,  req.connected_user.id))
+    if (!await ServerPermissions.can_user_upload_to_directory(new_parent, req.connected_user.id))
         return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
 
     /**
@@ -476,15 +483,14 @@ router.post('/move-item/:id', async (req, res) => {
         const item = await Item.from_id(item_id);
         if (!item)
             return new HttpResponse(HttpResponse.NOT_FOUND, 'Item not found').redirect_error(req, res);
-        if (!await ServerPermissions.can_user_edit_item(item,  req.connected_user.id))
+        if (!await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
             return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
         moved_items.push(item);
     }
     logger.info(`${req.log_name} moved ${moved_items.length} items to directory ${new_parent.name.plain()}`);
 
 
-    for (const item of moved_items)
-    {
+    for (const item of moved_items) {
         if (item.is_regular_file)
             await item.as_file()
         else
@@ -492,8 +498,7 @@ router.post('/move-item/:id', async (req, res) => {
         item.parent_item = new_parent.id;
         try {
             await item.push();
-        }
-        catch (e) {
+        } catch (e) {
             return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, e.toString()).redirect_error(req, res);
         }
     }
@@ -506,7 +511,7 @@ router.post('/move-item/', async (req, res) => {
     if (!req.connected_user)
         return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
 
-    if (!await ServerPermissions.can_user_upload_to_repos(req.display_repos,  req.connected_user.id))
+    if (!await ServerPermissions.can_user_upload_to_repos(req.display_repos, req.connected_user.id))
         return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
 
     /**
@@ -517,21 +522,76 @@ router.post('/move-item/', async (req, res) => {
         const item = await Item.from_id(item_id);
         if (!item)
             return new HttpResponse(HttpResponse.NOT_FOUND, 'Item not found').redirect_error(req, res);
-        if (!await ServerPermissions.can_user_edit_item(item,  req.connected_user.id))
+        if (!await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
             return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
         moved_items.push(item);
     }
 
     logger.info(`${req.log_name} moved ${moved_items.length} items to depot root`);
 
-    for (const item of moved_items)
-    {
+    for (const item of moved_items) {
         if (item.is_regular_file)
             await item.as_file()
         else
             await item.as_directory()
         item.parent_item = undefined;
         await item.push();
+    }
+
+    return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+});
+
+router.get('/authorizations/', async (req, res) => {
+    if (!req.connected_user)
+        return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
+
+    if (!await ServerPermissions.can_user_configure_repos(req.display_repos, req.connected_user.id))
+        return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
+
+    const authorizations = await UserRepos.from_repos(req.display_repos.id)
+    for (const auth of authorizations) {
+        auth.owner = await User.from_id(auth.owner);
+        auth.root_item = auth.root_item ? await Item.from_id(auth.root_item) : null;
+    }
+    res.send(authorizations);
+});
+
+router.post('/add-authorization/', async (req, res) => {
+    if (!req.connected_user)
+        return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
+
+    if (!await ServerPermissions.can_user_configure_repos(req.display_repos, req.connected_user.id))
+        return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
+
+    const user = await User.from_name(new ServerString(req.body.owner).encoded());
+    if (!user)
+        return new HttpResponse(HttpResponse.NOT_FOUND, 'Utilisateur inconnu').redirect_error(req, res);
+
+    await new UserRepos({
+        owner: user.id,
+        repos: req.display_repos.id,
+        root_item: req.body.root_item,
+        access_type: req.body.access_type
+    }).push();
+
+    return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
+})
+
+router.post('/update-authorization/', async (req, res) => {
+    if (!req.connected_user)
+        return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
+
+    if (!await ServerPermissions.can_user_configure_repos(req.display_repos, req.connected_user.id))
+        return new HttpResponse(HttpResponse.FORBIDDEN, 'Missing permissions').redirect_error(req, res);
+
+    const authorizations = await UserRepos.from_keys(req.body.owner, req.body.repos, req.body.root_item);
+    if (!authorizations)
+        return new HttpResponse(HttpResponse.NOT_FOUND).redirect_error(req, res);
+    if (req.body.access_type) {
+        authorizations.access_type = req.body.access_type;
+        await authorizations.push();
+    } else if (req.body.remove) {
+        await authorizations.delete();
     }
 
     return new HttpResponse(HttpResponse.OK).redirect_error(req, res);
