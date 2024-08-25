@@ -39,6 +39,20 @@ class CarouselList {
         this.update_left_right_buttons();
     }
 
+    select_next() {
+        const meta_data = this.directory_content.navigator.filesystem.get_object_data(this._last_selected.nextSibling.item_id);
+        if (meta_data.is_regular_file) {
+            this.select_item(meta_data, true);
+        }
+    }
+
+    select_previous() {
+        const meta_data = this.directory_content.navigator.filesystem.get_object_data(this._last_selected.previousSibling.item_id);
+        if (meta_data.is_regular_file) {
+            this.select_item(meta_data, true);
+        }
+    }
+
     /**
      @param container {HTMLElement}
      */
@@ -46,16 +60,10 @@ class CarouselList {
         container.innerHTML = '';
         const carousel_list = carousel_list_hbs({}, {
             move_left: () => {
-                const meta_data = this.directory_content.navigator.filesystem.get_object_data(this._last_selected.previousSibling.item_id);
-                if (meta_data.is_regular_file) {
-                    this.select_item(meta_data, true);
-                }
+                this.select_previous();
             },
             move_right: () => {
-                const meta_data = this.directory_content.navigator.filesystem.get_object_data(this._last_selected.nextSibling.item_id);
-                if (meta_data.is_regular_file) {
-                    this.select_item(meta_data, true);
-                }
+                this.select_next();
             }
         });
         this.move_left_button = carousel_list.getElementsByClassName('carousel-move-left')[0];

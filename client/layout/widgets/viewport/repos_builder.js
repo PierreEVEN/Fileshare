@@ -122,12 +122,20 @@ class ReposBuilder {
                 }
             }
             if (event.key === 'ArrowRight') {
-                if (is_modal_open() || (this.directory_content && this.directory_content.item_carousel))
+                if (this.directory_content && this.directory_content.item_carousel) {
+                    this.directory_content.item_carousel.list.select_next();
+                    return;
+                }
+                else if (is_modal_open())
                     return;
                 this.select_next_element(event);
             }
             if (event.key === 'ArrowLeft') {
-                if (is_modal_open() || (this.directory_content && this.directory_content.item_carousel))
+                if (this.directory_content && this.directory_content.item_carousel) {
+                    this.directory_content.item_carousel.list.select_previous();
+                    return;
+                }
+                else if (is_modal_open())
                     return;
                 this.select_previous_element(event);
             }
