@@ -71,10 +71,11 @@ class ReposBuilder {
                 upload_button_container.append(upload_button);
                 document.getElementById('file-list-box').append(upload_button_container);
 
-                window.addEventListener('resize', (e) => {
-                    console.log(upload_button.parentElement.offsetWidth);
-                    upload_button_container.style.width = upload_button_container.parentElement.offsetWidth + 'px';
-                    upload_button_container.style.height = upload_button_container.parentElement.offsetHeight + 'px';
+                window.addEventListener('resize', () => {
+                    if (upload_button_container && upload_button_container.parentElement) {
+                        upload_button_container.style.width = upload_button_container.parentElement.offsetWidth + 'px';
+                        upload_button_container.style.height = upload_button_container.parentElement.offsetHeight + 'px';
+                    }
                 })
                 upload_button_container.style.width = upload_button_container.parentElement.offsetWidth + 'px';
                 upload_button_container.style.height = upload_button_container.parentElement.offsetHeight + 'px';
@@ -102,6 +103,8 @@ class ReposBuilder {
         }, false);
 
         document.addEventListener('keydown', (event) => {
+            if (event.target.type === 'text')
+                return;
             if ((event.key === 'Backspace' || event.key === 'Escape')) {
                 if (is_modal_open()) {
                     if (event.key === 'Escape')
