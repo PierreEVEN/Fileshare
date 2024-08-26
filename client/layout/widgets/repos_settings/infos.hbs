@@ -1,0 +1,16 @@
+<div>
+    <p>Dépot :</p><p class="smaller">{{total_count}} éléments, {{total_dirs}} dossiers ({{total_size}})</p>
+    <p>Dont dans la corbeille :</p><p class="smaller">{{trash_count}} éléments, {{trash_dirs}} dossiers ({{trash_size}})</p>
+    <p>{{num_extensions}} extensions :</p>
+    <div class="item_list">
+        {{#each extensions}}
+            <p>- {{this.count}} {{this.mimetype}}</p>
+        {{/each}}
+    </div>
+    <p>{{num_contributors}} contributeurs :</p>
+    <div class="item_list">
+        {{#each contributors}}
+            <p>- {{this.name}} ({{this.items}} éléments)</p>
+        {{/each}}
+    </div>
+</div>

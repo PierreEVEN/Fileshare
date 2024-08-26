@@ -41,23 +41,22 @@ for (const button of document.getElementsByClassName('repos-list-item')) {
 async function open_repos_context_menu(repos_id) {
     const actions = [];
 
-    if (await permissions.can_user_edit_repos(PAGE_CONTEXT.repos_path())) {
+    const repos_data = await parse_fetch_result(await fetch('/api/repos-data',
+        {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify([repos_id])
+        }));
+    if (repos_data.length > 0 && await permissions.can_user_edit_repos(`${window.origin}/${new ClientString(repos_data[0].username).for_url()}/${new ClientString(repos_data[0].name).for_url()}`)) {
         actions.push({
             title: "Informations & réglages",
             action: async () => {
-                const repos_data = await parse_fetch_result(await fetch('/api/repos-data',
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify([repos_id])
-                    }));
                 if (repos_data.length === 1) {
                     window.location.href = `${window.origin}/${new ClientString(repos_data[0].username).encoded()}/${new ClientString(repos_data[0].name).encoded()}/settings/`;
                 }
-
             },
             image: '/images/icons/icons8-edit-96.png'
         });

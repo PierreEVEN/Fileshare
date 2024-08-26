@@ -1,8 +1,5 @@
 
 # TODO
-- Menu d'infos sur le dépot
-    - Voir le stockage
-    - Contrôler les compte utilisateur
 - améliorer le design de la corbeille
 - ajouter des filtres avancés (par auteur, par date précise etc...)
 - supporter plus de 1000 items par dossiers
