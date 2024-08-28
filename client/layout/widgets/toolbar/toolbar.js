@@ -123,12 +123,19 @@ class Toolbar {
 
             const trash_img = document.createElement('img');
             trash_img.src = '/images/icons/icons8-trash-52.png'
-            const trash_text = document.createElement('p');
-            trash_text.innerText = 'Corbeille';
-            current_path.append(trash_img);
-            current_path.append(trash_text);
-        } else {
 
+            const exit_button = document.createElement('button')
+            const exit_text = document.createElement('p');
+            exit_text.innerText = 'Quitter la corbeille';
+            exit_button.append(trash_img);
+            exit_button.append(exit_text);
+            exit_button.onclick = () => {
+                this.directory_content.navigator.set_current_dir(null);
+                this.directory_content.owner.exit_trash();
+                this.update_path();
+            }
+            current_path.append(exit_button);
+        } else {
             const button = document.createElement('button')
             const home_img = document.createElement('img');
             home_img.src = '/images/icons/icons8-home-96.png'

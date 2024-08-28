@@ -41,6 +41,9 @@ for (const button of document.getElementsByClassName('repos-list-item')) {
 async function open_repos_context_menu(repos_id) {
     const actions = [];
 
+    if (!REPOS_BUILDER)
+        return;
+
     const repos_data = await parse_fetch_result(await fetch('/api/repos-data',
         {
             method: 'POST',
@@ -61,13 +64,16 @@ async function open_repos_context_menu(repos_id) {
             image: '/images/icons/icons8-edit-96.png'
         });
     }
-    actions.push({
-        title: "Corbeille",
-        action: async () => {
-            await REPOS_BUILDER.go_to_trash(true);
-        },
-        image: '/images/icons/icons8-trash-96.png'
-    });
+    if (Number(repos_id) === Number(PAGE_CONTEXT.display_repos.id)) {
+        actions.push({
+            title: "Corbeille",
+            action: async () => {
+                await REPOS_BUILDER.go_to_trash(true);
+                await REPOS_BUILDER.path_builder.update_path();
+            },
+            image: '/images/icons/icons8-trash-96.png'
+        });
+    }
     spawn_context_action(actions);
 }
 
