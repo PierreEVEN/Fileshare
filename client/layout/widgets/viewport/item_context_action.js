@@ -106,7 +106,7 @@ async function spawn_item_context_action(item) {
             },
             image: '/images/icons/icons8-cut-48.png'
         });
-        if (REPOS_BUILDER.is_looking_trash) {
+        if (this.is_looking_trash) {
             actions.push({
                 title: "Restaurer",
                 action: async () => {

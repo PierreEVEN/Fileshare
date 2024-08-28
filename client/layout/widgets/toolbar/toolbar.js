@@ -93,7 +93,9 @@ class Toolbar {
                 actions.push({
                     title: "Corbeille",
                     action: async () => {
-                        print_message("Erreur", 'Fonction indisponible', "La corbeille n'est pas accessible pour le moment");
+                        await this.directory_content.owner.go_to_trash();
+                        this.directory_content = this.directory_content.owner.directory_content;
+                        await this.update_path();
                     },
                     image: '/images/icons/icons8-trash-96.png'
                 });
@@ -117,38 +119,49 @@ class Toolbar {
 
         current_path.innerHTML = '';
 
-        const button = document.createElement('button')
-        const home_img = document.createElement('img');
-        home_img.src = '/images/icons/icons8-home-96.png'
-        button.append(home_img);
-        button.onclick = () => {
-            this.directory_content.navigator.set_current_dir(null);
-        }
-        current_path.append(button);
+        if (this.directory_content.owner.is_looking_trash) {
 
-        const path_to_obj = this.directory_content.navigator.filesystem.make_path_to_object(new_dir);
+            const trash_img = document.createElement('img');
+            trash_img.src = '/images/icons/icons8-trash-52.png'
+            const trash_text = document.createElement('p');
+            trash_text.innerText = 'Corbeille';
+            current_path.append(trash_img);
+            current_path.append(trash_text);
+        } else {
 
-        if (path_to_obj.length !== 0) {
-            const separator = document.createElement('p')
-            separator.innerText = '>'
-            current_path.append(separator);
-        }
+            const button = document.createElement('button')
+            const home_img = document.createElement('img');
+            home_img.src = '/images/icons/icons8-home-96.png'
+            button.append(home_img);
+            button.onclick = () => {
+                this.directory_content.navigator.set_current_dir(null);
+            }
+            current_path.append(button);
 
-        for (const dir of this.directory_content.navigator.filesystem.make_path_to_object(new_dir)) {
-            const dir_data = this.directory_content.navigator.filesystem.get_object_data(dir);
-            if (dir_data.parent_item) {
-                // Add separator between directories
+            const path_to_obj = this.directory_content.navigator.filesystem.make_path_to_object(new_dir);
+
+            if (path_to_obj.length !== 0) {
                 const separator = document.createElement('p')
                 separator.innerText = '>'
                 current_path.append(separator);
             }
-            // Add button for each directory of the current path
-            const button = document.createElement('button')
-            button.innerText = dir_data.name.toString();
-            button.onclick = () => {
-                this.directory_content.navigator.set_current_dir(dir);
+
+            for (const dir of this.directory_content.navigator.filesystem.make_path_to_object(new_dir)) {
+                const dir_data = this.directory_content.navigator.filesystem.get_object_data(dir);
+                if (dir_data.parent_item) {
+                    // Add separator between directories
+                    const separator = document.createElement('p')
+                    separator.innerText = '>'
+                    current_path.append(separator);
+                }
+                // Add button for each directory of the current path
+                const button = document.createElement('button')
+                button.innerText = dir_data.name.toString();
+                button.onclick = () => {
+                    this.directory_content.navigator.set_current_dir(dir);
+                }
+                current_path.append(button);
             }
-            current_path.append(button);
         }
     }
 
