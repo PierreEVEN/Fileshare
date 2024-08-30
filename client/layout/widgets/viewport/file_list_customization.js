@@ -17,9 +17,21 @@ async function update_last_repos() {
         button.onclick = () => {
             window.location.href = `${window.origin}/${new ClientString(repos.username).encoded()}/${new ClientString(repos.name).encoded()}`;
         }
+        button.classList.add('repos-list-item')
         if (PAGE_CONTEXT && PAGE_CONTEXT.display_repos && PAGE_CONTEXT.display_repos.id === repos.id)
             button.classList.add('selected-repos');
-        button.innerText = new ClientString(repos.name).plain();
+
+        const button_img = document.createElement('img');
+        if (repos.status === 'public')
+            button_img.src = '/images/icons/icons8-public-96.png';
+        if (repos.status === 'hidden')
+            button_img.src = '/images/icons/icons8-invisible-96.png';
+        if (repos.status === 'private')
+            button_img.src = '/images/icons/icons8-locked-96.png';
+        const button_text = document.createElement('p');
+        button_text.innerText = new ClientString(repos.name).plain();
+        button.append(button_text);
+        button.append(button_img);
         button.oncontextmenu = (event) => {
             open_repos_context_menu(repos.id);
             event.preventDefault();

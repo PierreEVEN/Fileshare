@@ -1,5 +1,6 @@
 const {Repos} = require("./database/repos");
 const {logger} = require("./logger");
+const {UserRepos} = require("./database/user_repos");
 
 function require_connection(req, res) {
     if (!req.connected_user) {
@@ -36,6 +37,7 @@ async function get_common_data(req) {
     data.tracked_repos = [];
     data.repos_list = [];
     data.user_repos = [];
+    data.other_repos = [];
     data.selected_repos = req.display_repos;
 
     data.PAGE_CONTEXT = {
@@ -48,6 +50,13 @@ async function get_common_data(req) {
     if (req.connected_user) {
         for (const repos of await Repos.from_owner(req.connected_user.id)) {
             data.user_repos.push(await repos.client_ready());
+        }
+    }
+
+    if (req.connected_user) {
+        for (const user_repos of await UserRepos.from_user(req.connected_user.id)) {
+            const repos = await Repos.from_id(user_repos.id);
+            data.other_repos.push(await repos.client_ready());
         }
     }
 

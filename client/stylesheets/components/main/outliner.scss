@@ -35,22 +35,35 @@
   .repos-list {
     overflow-x: auto;
 
-    button {
+    .repos-list-item {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
       background-color: #00000000;
       border-right: 0 #0070f0 solid;
       border-left: 0 #0070f0 solid;
       width: 100%;
+
+      p {
+        margin: auto;
+      }
+
+      img {
+        width: 20px;
+      }
 
       &:hover {
         background-color: rgba(0, 100, 211, 0.37);
         border-right: 4px #0070f0 solid;
         border-left: 4px #0070f0 solid;
       }
-    }
 
-    .selected-repos {
-      background-color: rgba(0, 111, 238, 0.37);
-      border: 1px #0070f0 dashed;
+      &.selected-repos {
+        background-color: rgba(0, 111, 238, 0.37);
+        border: 1px #0070f0 dashed;
+      }
+
     }
   }
 }
@@ -69,6 +82,7 @@
     display: flex;
     position: absolute;
     z-index: 1;
+
     button {
       background-image: url("~/public/images/icons/icons8-menu-96.png");
       background-size: contain;
