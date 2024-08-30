@@ -159,11 +159,11 @@ class DirectoryContent {
                     image: '/images/icons/icons8-add-folder-48.png'
                 });
 
-                if (navigator.clipboard_items && navigator.clipboard_items.length !== 0)
+                if (this.navigator.clipboard_items && this.navigator.clipboard_items.length !== 0)
                     actions.push({
                         title: "Coller ici",
                         action: async () => {
-                            await navigator.move_clipboard_to_parent(navigator.get_current_directory())
+                            await this.navigator.move_clipboard_to_parent(this.navigator.get_current_directory())
                         },
                         image: '/images/icons/icons8-paste-96.png'
                     })
