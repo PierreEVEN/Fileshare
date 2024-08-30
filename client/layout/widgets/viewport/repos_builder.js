@@ -27,7 +27,7 @@ class ReposBuilder {
         /**
          * @type {DirectoryContent}
          */
-        this.directory_content = new DirectoryContent(this.navigator);
+        this.directory_content = new DirectoryContent(this);
 
         /**
          * @type {Toolbar}
@@ -37,7 +37,7 @@ class ReposBuilder {
         this.navigator.on_changed_dir(async (new_dir) => {
             this.directory_content.destroy();
 
-            this.directory_content = new DirectoryContent(this.navigator);
+            this.directory_content = new DirectoryContent(this);
             this.path_builder.directory_content = this.directory_content;
 
             // Show directory or repo description
@@ -211,6 +211,6 @@ class ReposBuilder {
     }
 }
 
-const REPOS_BUILDER = PAGE_CONTEXT.display_repos ? new ReposBuilder(PAGE_CONTEXT.display_repos) : null;
+const REPOS_BUILDER = PAGE_CONTEXT.display_repos && document.getElementById('file-list') ? new ReposBuilder(PAGE_CONTEXT.display_repos) : null;
 
 export {REPOS_BUILDER}

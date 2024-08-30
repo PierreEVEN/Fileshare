@@ -53,36 +53,39 @@ for (const button of document.getElementsByClassName('repos-list-item')) {
 async function open_repos_context_menu(repos_id) {
     const actions = [];
 
-    if (await permissions.can_user_edit_repos(PAGE_CONTEXT.repos_path())) {
+    if (!REPOS_BUILDER)
+        return;
+
+    const repos_data = await parse_fetch_result(await fetch('/api/repos-data',
+        {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify([repos_id])
+        }));
+    if (repos_data.length > 0 && await permissions.can_user_edit_repos(`${window.origin}/${new ClientString(repos_data[0].username).for_url()}/${new ClientString(repos_data[0].name).for_url()}`)) {
         actions.push({
-            title: "Modifier",
+            title: "Informations & réglages",
             action: async () => {
-                const repos_data = await parse_fetch_result(await fetch('/api/repos-data',
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify([repos_id])
-                    }));
                 if (repos_data.length === 1) {
-                    repos_data[0].name = new ClientString(repos_data[0].name).plain();
-                    repos_data[0].description = new ClientString(repos_data[0].description).plain();
-                    repos_data[0].display_name = new ClientString(repos_data[0].display_name).plain();
-                    edit_repos(repos_data[0]);
+                    window.location.href = `${window.origin}/${new ClientString(repos_data[0].username).encoded()}/${new ClientString(repos_data[0].name).encoded()}/settings/`;
                 }
             },
             image: '/images/icons/icons8-edit-96.png'
         });
     }
-    actions.push({
-        title: "Corbeille",
-        action: async () => {
-            await REPOS_BUILDER.go_to_trash(true);
-        },
-        image: '/images/icons/icons8-trash-96.png'
-    });
+    if (Number(repos_id) === Number(PAGE_CONTEXT.display_repos.id)) {
+        actions.push({
+            title: "Corbeille",
+            action: async () => {
+                await REPOS_BUILDER.go_to_trash(true);
+                await REPOS_BUILDER.path_builder.update_path();
+            },
+            image: '/images/icons/icons8-trash-96.png'
+        });
+    }
     spawn_context_action(actions);
 }
 

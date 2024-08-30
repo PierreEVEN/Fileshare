@@ -1,9 +1,10 @@
 
 # TODO
-- Contrôler le compte utilisateur
-- améliorer le design de la corbeille
+- ajouter des filtres avancés (par auteur, par date précise etc...)
+- supporter plus de 1000 items par dossiers
 - pouvoir ajouter des utilisateurs à un dépot (/ sous-dossier)
-- Conversion automatique HEVC => AV1
-- Menu pour compresser des videos / images et les convertir
 - Ajouter le shift selection
 - gérer le zoom dans le carousel sur les images / vidéos
+- menu d'action groupée sur plusieurs éléments
+    - Conversion automatique HEVC => AV1
+    - Menu pour compresser des videos / images et les convertir

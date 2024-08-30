@@ -23,7 +23,7 @@ function edit_repos(e) {
                 status: document.getElementById('status').value,
                 allow_visitor_upload: document.getElementById('allow_visitor_upload').checked,
             }
-            await parse_fetch_result(await fetch(`/${new ClientString(e.username).encoded()}/${ClientString.FromClient(e.name).encoded()}/update`,
+            await parse_fetch_result(await fetch(`${window.origin}/${new ClientString(e.username).encoded()}/${ClientString.FromClient(e.name).encoded()}/update`,
                 {
                     method: 'POST',
                     headers: {
@@ -33,6 +33,7 @@ function edit_repos(e) {
                     body: JSON.stringify(data)
                 }));
 
+            window.location.reload()
             close_modal();
         },
         on_delete_repos: () => delete_repos(e)

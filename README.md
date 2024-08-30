@@ -77,7 +77,6 @@ Generate an auth token.
 ```json
 {
   "login":"username",
-  // TODO : normalize the hash format of the password
   "password": "passwdhash"
 }
 ```

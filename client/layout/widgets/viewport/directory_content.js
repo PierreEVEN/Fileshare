@@ -1,7 +1,8 @@
-import {humanFileSize, is_touch_device} from "../../../common/tools/utils";
+import {human_readable_timestamp, humanFileSize, is_touch_device} from "../../../common/tools/utils";
 import {REPOS_BUILDER} from "./repos_builder";
 import {LexicographicFilter} from "./filter/filter_lex";
 import {SizeFilter} from "./filter/filter_size";
+import {DateFilter} from "./filter/filter_date";
 
 const make_directory_hbs = require("./menus/make_directory.hbs");
 const {print_message, parse_fetch_result} = require("../components/message_box");
@@ -33,13 +34,18 @@ let string_filter = '';
 
 class DirectoryContent {
     /**
-     * @param navigator{Navigator}
+     * @param owner{ReposBuilder}
      */
-    constructor(navigator) {
+    constructor(owner) {
         /**
          * @type {Navigator}
          */
-        this.navigator = navigator;
+        this.navigator = owner.navigator;
+
+        /**
+         * @type {ReposBuilder}
+         */
+        this.owner = owner;
 
         /**
          * @type {{id:number, data:FilesystemObject}[]}
@@ -62,15 +68,15 @@ class DirectoryContent {
         this.item_carousel = null;
 
         if (!last_filter)
-            last_filter = new LexicographicFilter(this.navigator.filesystem);
+            last_filter = new LexicographicFilter(this.owner.filesystem);
 
         /**
          * @type {ObjectListener}
          */
-        this.current_directory_listener = navigator.filesystem.create_listener(navigator.get_current_directory());
+        this.current_directory_listener = owner.filesystem.create_listener(this.navigator.get_current_directory());
         if (this.current_directory_listener) {
             this.current_directory_listener.on_add_object = (object_id) => {
-                const object = navigator.filesystem.get_object_data(object_id);
+                const object = owner.filesystem.get_object_data(object_id);
                 if (object.is_regular_file)
                     this._on_file_added(object);
                 else
@@ -83,7 +89,7 @@ class DirectoryContent {
 
             this.current_directory_listener.on_update_object = (object_id) => {
                 this._on_item_removed(object_id);
-                const new_data = navigator.filesystem.get_object_data(object_id);
+                const new_data = owner.filesystem.get_object_data(object_id);
                 if (new_data) {
                     if (new_data.is_regular_file)
                         this._on_file_added(new_data);
@@ -313,7 +319,10 @@ class DirectoryContent {
         let display_size = null;
         if (last_filter instanceof SizeFilter)
             display_size = humanFileSize(file.size);
-        const file_div = file_hbs({item: file, display_size: display_size}, {
+        let display_date = null;
+        if (last_filter instanceof DateFilter)
+            display_date = human_readable_timestamp(file.timestamp / 1000);
+        const file_div = file_hbs({item: file, display_size: display_size, display_date: display_date}, {
             dblclicked: event => {
                 if (is_touch_device())
                     return;

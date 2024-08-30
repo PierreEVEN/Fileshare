@@ -12,6 +12,7 @@ require('./toolbar.scss')
 const {LexicographicFilter} = require("../viewport/filter/filter_lex");
 const {TypeFilter} = require("../viewport/filter/filter_type");
 const {SizeFilter} = require("../viewport/filter/filter_size");
+const {DateFilter} = require("../viewport/filter/filter_date");
 
 class Toolbar {
 
@@ -23,6 +24,8 @@ class Toolbar {
         })
 
         const tool_buttons = document.getElementById('viewport_toolbar');
+        if (!tool_buttons)
+            return;
         const menu = toolbar_menu_hbs({}, {
             download: () => {
                 window.open(`${PAGE_CONTEXT.repos_path()}/file${directory_content.navigator.current_directory ? "/" + directory_content.navigator.current_directory : ''}`, '_blank').focus();
@@ -90,7 +93,9 @@ class Toolbar {
                 actions.push({
                     title: "Corbeille",
                     action: async () => {
-                        print_message("Erreur", 'Fonction indisponible', "La corbeille n'est pas accessible pour le moment");
+                        await this.directory_content.owner.go_to_trash();
+                        this.directory_content = this.directory_content.owner.directory_content;
+                        await this.update_path();
                     },
                     image: '/images/icons/icons8-trash-96.png'
                 });
@@ -114,38 +119,56 @@ class Toolbar {
 
         current_path.innerHTML = '';
 
-        const button = document.createElement('button')
-        const home_img = document.createElement('img');
-        home_img.src = '/images/icons/icons8-home-96.png'
-        button.append(home_img);
-        button.onclick = () => {
-            this.directory_content.navigator.set_current_dir(null);
-        }
-        current_path.append(button);
+        if (this.directory_content.owner.is_looking_trash) {
 
-        const path_to_obj = this.directory_content.navigator.filesystem.make_path_to_object(new_dir);
+            const trash_img = document.createElement('img');
+            trash_img.src = '/images/icons/icons8-trash-52.png'
 
-        if (path_to_obj.length !== 0) {
-            const separator = document.createElement('p')
-            separator.innerText = '>'
-            current_path.append(separator);
-        }
+            const exit_button = document.createElement('button')
+            const exit_text = document.createElement('p');
+            exit_text.innerText = 'Quitter la corbeille';
+            exit_button.append(trash_img);
+            exit_button.append(exit_text);
+            exit_button.onclick = () => {
+                this.directory_content.navigator.set_current_dir(null);
+                this.directory_content.owner.exit_trash();
+                this.update_path();
+            }
+            current_path.append(exit_button);
+        } else {
+            const button = document.createElement('button')
+            const home_img = document.createElement('img');
+            home_img.src = '/images/icons/icons8-home-96.png'
+            button.append(home_img);
+            button.onclick = () => {
+                this.directory_content.navigator.set_current_dir(null);
+            }
+            current_path.append(button);
 
-        for (const dir of this.directory_content.navigator.filesystem.make_path_to_object(new_dir)) {
-            const dir_data = this.directory_content.navigator.filesystem.get_object_data(dir);
-            if (dir_data.parent_item) {
-                // Add separator between directories
+            const path_to_obj = this.directory_content.navigator.filesystem.make_path_to_object(new_dir);
+
+            if (path_to_obj.length !== 0) {
                 const separator = document.createElement('p')
                 separator.innerText = '>'
                 current_path.append(separator);
             }
-            // Add button for each directory of the current path
-            const button = document.createElement('button')
-            button.innerText = dir_data.name.toString();
-            button.onclick = () => {
-                this.directory_content.navigator.set_current_dir(dir);
+
+            for (const dir of this.directory_content.navigator.filesystem.make_path_to_object(new_dir)) {
+                const dir_data = this.directory_content.navigator.filesystem.get_object_data(dir);
+                if (dir_data.parent_item) {
+                    // Add separator between directories
+                    const separator = document.createElement('p')
+                    separator.innerText = '>'
+                    current_path.append(separator);
+                }
+                // Add button for each directory of the current path
+                const button = document.createElement('button')
+                button.innerText = dir_data.name.toString();
+                button.onclick = () => {
+                    this.directory_content.navigator.set_current_dir(dir);
+                }
+                current_path.append(button);
             }
-            current_path.append(button);
         }
     }
 
@@ -212,6 +235,22 @@ class Toolbar {
                 await this.directory_content.set_filter(new SizeFilter(this.directory_content.navigator.filesystem))
             },
             image: '/images/icons/icons8-weight-96.png'
+        });
+        actions.push({
+            title: "Date croissant",
+            checked: this.directory_content.get_filter() instanceof DateFilter && !this.directory_content.get_filter().reverse,
+            action: async () => {
+                await this.directory_content.set_filter(new DateFilter(this.directory_content.navigator.filesystem))
+            },
+            image: '/images/icons/icons8-date-96.png'
+        });
+        actions.push({
+            title: "Date décroissant",
+            checked: this.directory_content.get_filter() instanceof DateFilter && this.directory_content.get_filter().reverse,
+            action: async () => {
+                await this.directory_content.set_filter(new DateFilter(this.directory_content.navigator.filesystem).reverse_filter())
+            },
+            image: '/images/icons/icons8-date-96.png'
         });
         spawn_context_action(actions)
     }

@@ -1,0 +1,29 @@
+extends layout
+
+block content
+    div.repos-settings
+        div.section-title
+            h1 #{locals.common.PAGE_CONTEXT.display_repos.display_name.plain()} (#{locals.common.PAGE_CONTEXT.display_repos.name.plain()})
+            button.plus-button(onclick='window.repos_settings.get().edit_settings()') Modifier les paramètres
+        div.hseparator
+        div.section-title
+            h2 Informations
+        div#repos-settings-information
+        div.hseparator
+        div.section-title
+            h2 Autorisations
+            button.plus-button(onclick='window.repos_settings.get().add_authorization()') Ajouter un utilisateur
+        div#repos-settings-authorizations.item_list
+            div.repos-setting-authorization
+                div.column
+                    p.field Utilisateur
+                div.column
+                    p.field Racine
+                div.column
+                    p.field accès
+                div.column
+                    p.field Supprimer
+            div.hseparator
+
+    script(type='module').
+        window.repos_settings.load();
