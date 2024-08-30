@@ -28,6 +28,7 @@ div.outliner
                             img(src='/images/icons/icons8-locked-96.png')
 
         if common.other_repos && common.other_repos.length !== 0
+            div.hseparator
             div.category
                 p Dépôts abonnés
                 if (common.PAGE_CONTEXT.connected_user.can_create_repos())
