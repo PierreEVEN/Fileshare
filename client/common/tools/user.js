@@ -42,7 +42,7 @@ class CookieString {
             if (value.exp)
                 document.cookie = `${key}=${value.value}; SameSite=Strict; expire=${dayjs.unix(value.exp).toDate().toUTCString()}; Max-Age=${value.exp - dayjs().unix()}; path=/`
             else
-                document.cookie = `${key}=${value.value}; SameSite=Strict; path=/`
+                document.cookie = `${key}=${value.value}; SameSite=Strict; Max-Age=${86400 * 365 * 10}; path=/`
         }
     }
 }
