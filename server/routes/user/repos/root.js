@@ -60,9 +60,8 @@ router.get("/tree/*", async (req, res) => {
 router.get("/settings/*", async (req, res) => {
     if (!await ServerPermissions.can_user_configure_repos(req.display_repos, req.connected_user ? req.connected_user.id : null)) {
         // This user is not allowed to configure this repos
-        return new HttpResponse(HttpResponse.NOT_FOUND, "Unknown repository").redirect_error(req, res);
+        return res.redirect(`/${req.display_user.name.encoded()}/${req.display_repos.name.encoded()}/tree/`);
     }
-    req.request_path = req.url.substring(5);
     res.render('repos_settings', {
         title: `FileShare - ${req.display_repos.name}`,
         common: await get_common_data(req)
