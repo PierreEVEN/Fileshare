@@ -46,9 +46,10 @@ class ReposFilter {
 
         // Name filter
         if (this.name_filter.length !== 0) {
+            const filter_text = this.name_filter.toLowerCase();
             const filtered_content = [];
             for (const elem of content)
-                if (elem.name.plain().includes(this.name_filter))
+                if (elem.name.plain().toLowerCase().includes(filter_text))
                     filtered_content.push(elem);
             return filtered_content;
         }

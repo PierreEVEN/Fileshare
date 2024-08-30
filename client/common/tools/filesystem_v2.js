@@ -1,4 +1,4 @@
-const {PAGE_CONTEXT} = require("./utils");
+const {PAGE_CONTEXT, humanFileSize} = require("./utils");
 const {LOCAL_USER} = require("./user");
 const {parse_fetch_result} = require("../../layout/widgets/components/message_box");
 const {ClientString} = require("./client_string");
@@ -25,8 +25,7 @@ class FilesystemObject {
             Object.size = Number(server_data.size);
             Object.mimetype = new ClientString(server_data.mimetype);
             Object.timestamp = server_data.timestamp;
-        }
-        else {
+        } else {
             Object.open_upload = server_data.open_upload;
         }
 
@@ -246,48 +245,44 @@ class Filesystem {
             object_metadata = new ObjectInternalMetadata();
             this._object_internal_metadata.set(object.id, object_metadata);
         }
-
         if (object.is_regular_file) {
             object_metadata.content_count = 1;
             object_metadata.content_size = object.size;
         }
 
         if (object.parent_item) {
-            // Update parent sizes recursively
-            let parent_object = object;
-            do {
-                parent_object = object.parent_item ? this._content.get(parent_object.parent_item) : null;
-                if (parent_object) {
-                    const parent_object_metadata = this._object_internal_metadata.get(parent_object.id);
-                    if (parent_object_metadata) {
-                        parent_object_metadata.content_count += object_metadata.content_count;
-                        parent_object_metadata.content_size += object_metadata.content_size;
-                    }
-                } else {
-                    this._root_meta_data.content_count += object_metadata.content_count;
-                    this._root_meta_data.content_size += object_metadata.content_size;
-                }
-            } while (parent_object);
-
             let parent_metadata = this._object_internal_metadata.get(object.parent_item);
             if (!parent_metadata) {
                 parent_metadata = new ObjectInternalMetadata();
-                parent_metadata.content_size = object_metadata.content_size;
-                parent_metadata.content_count = object_metadata.content_count;
                 this._object_internal_metadata.set(object.parent_item, parent_metadata);
             }
             parent_metadata.children.add(object.id);
-            for (const [_, listener] of parent_metadata.listeners) {
+            for (const [_, listener] of parent_metadata.listeners)
                 listener.on_add_object(object.id);
-            }
         } else {
             this._root_meta_data.children.add(object.id);
-            this._root_meta_data.content_size += object_metadata.content_size;
-            this._root_meta_data.content_count += object_metadata.content_count;
-            for (const [_, listener] of this._root_meta_data.listeners) {
+            for (const [_, listener] of this._root_meta_data.listeners)
                 listener.on_add_object(object.id);
-            }
         }
+
+        // Update parent sizes recursively
+        let parent_object = object;
+        do {
+            const parent_id = parent_object.parent_item;
+            if (parent_id) {
+                const parent_object_metadata = this._object_internal_metadata.get(parent_id);
+                if (parent_object_metadata) {
+                    parent_object_metadata.content_count += object_metadata.content_count;
+                    parent_object_metadata.content_size += object_metadata.content_size;
+                }
+                parent_object = object.parent_item ? this._content.get(parent_object.parent_item) : null;
+            } else {
+                parent_object = null;
+                this._root_meta_data.content_count += object_metadata.content_count;
+                this._root_meta_data.content_size += object_metadata.content_size;
+            }
+        } while (parent_object);
+
         this._root_dirty = true;
     }
 
