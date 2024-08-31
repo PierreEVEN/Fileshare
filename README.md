@@ -6,9 +6,9 @@ You can try it online here : [https://fileshare.evenpierre.fr](https://fileshare
 
 > Note : this server application is available as-is. I have no plans to distribute it on a large scale at the moment.
 
-<img src="./doc/img/pres-1.png" alt="drawing" width="100%"/>
-<img src="./doc/img/pres-2.png" alt="drawing" width="49%"/>
-<img src="./doc/img/pres-3.png" alt="drawing" width="50%"/>
+<img src="/doc/img/pres-1.png" alt="drawing" width="100%"/>
+<img src="/doc/img/pres-2.png" alt="drawing" width="49%"/>
+<img src="/doc/img/pres-3.png" alt="drawing" width="50%"/>
 
 ## Features
 
