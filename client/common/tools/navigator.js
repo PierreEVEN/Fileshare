@@ -95,12 +95,6 @@ class Navigator {
      * @param force_select {boolean}
      */
     select_item(item, shift_key, ctrl_key, force_select = false) {
-
-        if (force_select) {
-            this.last_selected_item = item;
-            return this._select_item_internal(item, true);
-        }
-
         if (shift_key) {
             if (!this.last_selected_item)
                 this.last_selected_item = item;
@@ -122,7 +116,7 @@ class Navigator {
             for (let i = start_index; i <= end_index; ++i)
                 items_to_keep_selected.add(dir_content.objects[i].id)
 
-            if (!ctrl_key)
+            if (!ctrl_key && !force_select)
                 for (const selected of this.selected_items)
                     if (!items_to_keep_selected.has(selected))
                         this._select_item_internal(selected, false);
@@ -131,9 +125,9 @@ class Navigator {
                 this._select_item_internal(item, true);
         } else {
             this.last_selected_item = item;
-            if (ctrl_key || this.is_touch_selection_mode) {
+            if (ctrl_key || this.is_touch_selection_mode || (force_select && this.selected_items.has(item))) {
                 if (this.selected_items.has(item))
-                    this._select_item_internal(item, false);
+                    this._select_item_internal(item, force_select);
                 else
                     this._select_item_internal(item, true);
             } else {
@@ -141,7 +135,7 @@ class Navigator {
                     if (elem !== item)
                         this._select_item_internal(elem, false);
                 if (this.selected_items.has(item))
-                    this._select_item_internal(item, false);
+                    this._select_item_internal(item, force_select);
                 else
                     this._select_item_internal(item, true);
             }
@@ -188,6 +182,7 @@ class Navigator {
 
     set_current_dir(item, skip_push_state = false) {
         this.last_hover_item = null;
+        this.last_selected_item = null;
         this.clear_selection();
         if (item !== this.current_directory) {
             this.current_directory = item;

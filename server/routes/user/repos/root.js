@@ -214,47 +214,63 @@ router.post('/update/', async function (req, res, _) {
     return res.sendStatus(HttpResponse.OK);
 });
 
-router.post('/remove/:id', async (req, res) => {
+router.post('/remove/', async (req, res) => {
 
-    // Search the requested file or dir
-    if (Number.isNaN(Number(req.params['id'])))
-        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
-    const item = await Item.from_id(req.params['id']);
-    if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
-        return new HttpResponse(HttpResponse.NOT_FOUND, "You don't have the required authorizations to delete this file").redirect_error(req, res);
+    const items = new Set();
+    const removed_items = new Set();
+    for (const elem of req.body) {
+        const value = await Item.from_id(elem);
+        if (value)
+            items.add(value);
+    }
+    for (const item of items) {
+        if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
+            return new HttpResponse(HttpResponse.NOT_FOUND, "You don't have the required authorizations to delete this file").redirect_error(req, res);
 
-    await item.delete();
+        await item.delete();
+        removed_items.add(item.id)
 
-    logger.warn(`${req.log_name} deleted file ${item.name}:${item.id}`);
-    return res.sendStatus(HttpResponse.OK);
+        logger.warn(`${req.log_name} deleted file ${item.name}:${item.id}`);
+    }
+    return res.send(Array.from(removed_items));
 });
 
-router.post('/move-to-trash/:id', async (req, res) => {
-    // Search the requested file or dir
-    if (Number.isNaN(Number(req.params['id'])))
-        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
-    const item = await Item.from_id(req.params['id']);
-    if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
-        return new HttpResponse(HttpResponse.NOT_FOUND, "You don't have the required authorizations to delete this file").redirect_error(req, res);
+router.post('/move-to-trash/', async (req, res) => {
+    const items = new Set();
+    const moved_items = new Set();
+    for (const elem of req.body) {
+        const value = await Item.from_id(elem);
+        if (value)
+            items.add(value);
+    }
+    for (const item of items) {
+        if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
+            return new HttpResponse(HttpResponse.NOT_FOUND, "You don't have the required authorizations to delete this file").redirect_error(req, res);
 
-    await item.move_to_trash();
-
-    logger.warn(`${req.log_name} moved file ${item.name}:${item.id} to trash`);
-    return res.sendStatus(HttpResponse.OK);
+        await item.move_to_trash();
+        moved_items.add(item.id);
+        logger.warn(`${req.log_name} moved file ${item.name}:${item.id} to trash`);
+    }
+    return res.send(Array.from(moved_items));
 });
 
-router.post('/restore-from-trash/:id', async (req, res) => {
-    // Search the requested file or dir
-    if (Number.isNaN(Number(req.params['id'])))
-        return new HttpResponse(HttpResponse.BAD_REQUEST, "The provided object id is not valid").redirect_error(req, res);
-    const item = await Item.from_id(req.params['id']);
-    if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
-        return new HttpResponse(HttpResponse.NOT_FOUND, "You don't have the required authorizations to delete this file").redirect_error(req, res);
+router.post('/restore-from-trash/', async (req, res) => {
+    const items = new Set();
+    const restored_items = new Set();
+    for (const elem of req.body) {
+        const value = await Item.from_id(elem);
+        if (value)
+            items.add(value);
+    }
+    for (const item of items) {
+        if (!item || !await ServerPermissions.can_user_edit_item(item, req.connected_user.id))
+            return new HttpResponse(HttpResponse.NOT_FOUND, `You don't have the required permissions to restore ${item.name.plain()}`).redirect_error(req, res);
 
-    await item.restore_from_trash();
-
-    logger.warn(`${req.log_name} restored file ${item.name}:${item.id} from trash`);
-    return res.sendStatus(HttpResponse.OK);
+        await item.restore_from_trash();
+        restored_items.add(item.id);
+        logger.warn(`${req.log_name} restored file ${item.name}:${item.id} from trash`);
+    }
+    return res.send(Array.from(restored_items));
 });
 
 router.post('/delete/', async (req, res) => {

@@ -1,4 +1,4 @@
-import {parse_fetch_result} from "../components/message_box.js";
+import {parse_fetch_result, print_message} from "../components/message_box.js";
 import {Filesystem, FilesystemObject} from "../../../common/tools/filesystem_v2.js";
 import {Navigator} from "../../../common/tools/navigator.js";
 import {PAGE_CONTEXT, permissions} from "../../../common/tools/utils";
@@ -114,10 +114,14 @@ class ReposBuilder {
                 if (this.directory_content.item_carousel) {
                     this.directory_content.close_carousel();
                 } else {
-                    const current_data = this.filesystem.get_object_data(this.navigator.get_current_directory());
-                    if (current_data) {
-                        this.navigator.set_current_dir(current_data.parent_item)
-                        this.navigator.select_item(current_data.id, false, false);
+                    if (event.key === 'Escape' && this.navigator.selected_items.size !== 0)
+                        this.navigator.clear_selection();
+                    else {
+                        const current_data = this.filesystem.get_object_data(this.navigator.get_current_directory());
+                        if (current_data) {
+                            this.navigator.set_current_dir(current_data.parent_item)
+                            this.navigator.select_item(current_data.id, false, false);
+                        }
                     }
                 }
             }
@@ -125,8 +129,7 @@ class ReposBuilder {
                 if (this.directory_content && this.directory_content.item_carousel) {
                     this.directory_content.item_carousel.list.select_next();
                     return;
-                }
-                else if (is_modal_open())
+                } else if (is_modal_open())
                     return;
                 this.select_next_element(event);
             }
@@ -134,8 +137,7 @@ class ReposBuilder {
                 if (this.directory_content && this.directory_content.item_carousel) {
                     this.directory_content.item_carousel.list.select_previous();
                     return;
-                }
-                else if (is_modal_open())
+                } else if (is_modal_open())
                     return;
                 this.select_previous_element(event);
             }
@@ -164,9 +166,53 @@ class ReposBuilder {
                         this.navigator.set_current_dir(current_data.id);
                 }
             }
+            if (!is_modal_open() && !this.directory_content.item_carousel) {
+                if ((event.key === 'a' || event.key === 'A') && event.ctrlKey) {
+                    for (const elem of this.directory_content.objects)
+                        this.navigator.select_item(elem.id, false, true, true);
+                    event.preventDefault();
+                }
+                if ((event.key === 'x' || event.key === 'X') && event.ctrlKey) {
+                    this.cut_selection();
+                }
+                if ((event.key === 'v' || event.key === 'V') && event.ctrlKey) {
+                    this.navigator.move_clipboard_to_parent(this.navigator.get_current_directory())
+                }
+                if (event.key === 'Delete') {
+                    this.move_selection_to_trash()
+                }
+            }
         }, false);
-
         LOCAL_USER.push_last_repos(this.repo.id);
+    }
+
+    cut_selection() {
+        for (const elem of REPOS_BUILDER.navigator.selected_items)
+            REPOS_BUILDER.directory_content._on_item_removed(elem);
+        REPOS_BUILDER.navigator.cut_selection();
+    }
+
+    async move_selection_to_trash() {
+        const result = await fetch(`${PAGE_CONTEXT.repos_path()}/move-to-trash/`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(Array.from(REPOS_BUILDER.navigator.selected_items))
+        });
+        if (result.status === 200) {
+            const removed_elems = await result.json();
+            for (const elem of removed_elems)
+                REPOS_BUILDER.filesystem.remove_object(elem);
+            print_message('info', `File removed`, `Successfully removed ${removed_elems.length} elements`);
+            close_modal();
+        } else if (result.status === 403) {
+            window.location = `/auth/signin/`;
+        } else {
+            print_message('error', `Failed to remove ${item.name}`, result.status);
+            close_modal();
+        }
     }
 
     async fetch_repos_content(is_trash = false) {
@@ -191,11 +237,11 @@ class ReposBuilder {
     }
 
     select_previous_element(event) {
-        this.navigator.select_item(this.directory_content.get_item_before(this.navigator.last_selected_item, !!this.directory_content.item_carousel), event.shiftKey, event.ctrlKey);
+        this.navigator.select_item(this.directory_content.get_item_before(this.navigator.last_selected_item, !!this.directory_content.item_carousel), false, event.ctrlKey || event.shiftKey);
     }
 
     select_next_element(event) {
-        this.navigator.select_item(this.directory_content.get_item_after(this.navigator.last_selected_item, !!this.directory_content.item_carousel), event.shiftKey, event.ctrlKey);
+        this.navigator.select_item(this.directory_content.get_item_after(this.navigator.last_selected_item, !!this.directory_content.item_carousel), false, event.ctrlKey || event.shiftKey);
     }
 
     async go_to_trash() {

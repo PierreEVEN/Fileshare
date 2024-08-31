@@ -54,7 +54,7 @@ async function spawn_item_context_action(item) {
                                 const final_name = document.getElementById('name').value;
                                 const final_extension = document.getElementById('extension').value;
                                 const data = {
-                                    name: ClientString.FromClient(final_name + (final_extension.length !== 0 ? `.${final_extension}`: '')),
+                                    name: ClientString.FromClient(final_name + (final_extension.length !== 0 ? `.${final_extension}` : '')),
                                     description: ClientString.FromClient(document.getElementById('description').value)
                                 }
                                 const updated_item = await parse_fetch_result(await fetch(`${PAGE_CONTEXT.repos_path()}/update/${item.id}`,
@@ -102,7 +102,7 @@ async function spawn_item_context_action(item) {
         actions.push({
             title: "Couper",
             action: () => {
-                REPOS_BUILDER.navigator.cut_selection();
+                REPOS_BUILDER.cut_selection();
             },
             image: '/images/icons/icons8-cut-48.png'
         });
@@ -110,9 +110,18 @@ async function spawn_item_context_action(item) {
             actions.push({
                 title: "Restaurer",
                 action: async () => {
-                    const result = await fetch(`${PAGE_CONTEXT.repos_path()}/restore-from-trash/${item.id}`, {method: 'POST'});
+                    const result = await fetch(`${PAGE_CONTEXT.repos_path()}/restore-from-trash/`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(Array.from(REPOS_BUILDER.navigator.selected_items))
+                    });
                     if (result.status === 200) {
-                        REPOS_BUILDER.filesystem.remove_object(item.id);
+                        for (const elem of await result.json())
+                            REPOS_BUILDER.filesystem.remove_object(elem);
+                        REPOS_BUILDER.directory_content.regen_content();
                         print_message('info', `File restored`, `Successfully restored ${item.name}`);
                         close_modal();
                     } else if (result.status === 403) {
@@ -127,7 +136,6 @@ async function spawn_item_context_action(item) {
             actions.push({
                 title: "Supprimer définitivement",
                 action: () => {
-
                     const div = document.createElement('div')
                     const p = document.createElement('p')
                     p.innerText = `Êtes vous sur de supprimer définitivement ${item.name} ?`;
@@ -142,9 +150,18 @@ async function spawn_item_context_action(item) {
                     const confirm_button = document.createElement('button')
                     confirm_button.innerText = 'Oui';
                     confirm_button.onclick = async () => {
-                        const result = await fetch(`${PAGE_CONTEXT.repos_path()}/remove/${item.id}`, {method: 'POST'});
+                        const result = await fetch(`${PAGE_CONTEXT.repos_path()}/remove/`, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(Array.from(REPOS_BUILDER.navigator.selected_items))
+                        });
                         if (result.status === 200) {
-                            REPOS_BUILDER.filesystem.remove_object(item.id);
+                            for (const elem of await result.json())
+                                REPOS_BUILDER.filesystem.remove_object(elem);
+                            REPOS_BUILDER.directory_content.regen_content();
                             print_message('info', `File removed`, `Successfully removed ${item.name}`);
                             close_modal();
                         } else if (result.status === 403) {
@@ -159,8 +176,7 @@ async function spawn_item_context_action(item) {
                 },
                 image: '/images/icons/icons8-trash-52.png'
             });
-        }
-        else {
+        } else {
             actions.push({
                 title: "Déplacer dans la corbeille",
                 action: () => {
@@ -178,18 +194,7 @@ async function spawn_item_context_action(item) {
                     const confirm_button = document.createElement('button')
                     confirm_button.innerText = 'Oui';
                     confirm_button.onclick = async () => {
-                        const result = await fetch(`${PAGE_CONTEXT.repos_path()}/move-to-trash/${item.id}`, {method: 'POST'});
-                        if (result.status === 200) {
-                            REPOS_BUILDER.filesystem.remove_object(item.id);
-                            print_message('info', `File removed`, `Successfully removed ${item.name}`);
-                            close_modal();
-                        } else if (result.status === 403) {
-                            window.location = `/auth/signin/`;
-                        } else {
-                            print_message('error', `Failed to remove ${item.name}`, result.status);
-                            update_repos_content();
-                            close_modal();
-                        }
+                        await REPOS_BUILDER.move_selection_to_trash();
                     }
                     div.append(confirm_button)
                     open_modal(div, '500px', '100px');

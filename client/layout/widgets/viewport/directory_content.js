@@ -70,34 +70,7 @@ class DirectoryContent {
         if (!last_filter)
             last_filter = new LexicographicFilter(this.owner.filesystem);
 
-        /**
-         * @type {ObjectListener}
-         */
-        this.current_directory_listener = owner.filesystem.create_listener(this.navigator.get_current_directory());
-        if (this.current_directory_listener) {
-            this.current_directory_listener.on_add_object = (object_id) => {
-                const object = owner.filesystem.get_object_data(object_id);
-                if (object.is_regular_file)
-                    this._on_file_added(object);
-                else
-                    this._on_directory_added(object);
-            };
-
-            this.current_directory_listener.on_remove_object = (object_id) => {
-                this._on_item_removed(object_id)
-            };
-
-            this.current_directory_listener.on_update_object = (object_id) => {
-                this._on_item_removed(object_id);
-                const new_data = owner.filesystem.get_object_data(object_id);
-                if (new_data) {
-                    if (new_data.is_regular_file)
-                        this._on_file_added(new_data);
-                    else
-                        this._on_directory_added(new_data);
-                }
-            };
-        }
+        this._update_directory_listener();
 
         this.navigator.bind_on_select_item((item, should_select) => {
             const widget = this.entry_widgets.get(item)
@@ -172,6 +145,41 @@ class DirectoryContent {
             }
     }
 
+    _update_directory_listener() {
+        if (this.current_directory_listener)
+            this.current_directory_listener.destroy();
+        delete this.current_directory_listener;
+
+        /**
+         * @type {ObjectListener}
+         */
+        this.current_directory_listener = this.owner.filesystem.create_listener(this.navigator.get_current_directory());
+        if (this.current_directory_listener) {
+            this.current_directory_listener.on_add_object = (object_id) => {
+                const object = this.owner.filesystem.get_object_data(object_id);
+                if (object.is_regular_file)
+                    this._on_file_added(object);
+                else
+                    this._on_directory_added(object);
+            };
+
+            this.current_directory_listener.on_remove_object = (object_id) => {
+                this._on_item_removed(object_id)
+            };
+
+            this.current_directory_listener.on_update_object = (object_id) => {
+                this._on_item_removed(object_id);
+                const new_data = this.owner.filesystem.get_object_data(object_id);
+                if (new_data) {
+                    if (new_data.is_regular_file)
+                        this._on_file_added(new_data);
+                    else
+                        this._on_directory_added(new_data);
+                }
+            };
+        }
+    }
+
     /**
      * @param new_filter {ReposFilter}
      */
@@ -237,6 +245,8 @@ class DirectoryContent {
             this._on_directory_added(object);
         for (const object of this.files_data())
             this._on_file_added(object);
+
+        this._update_directory_listener();
     }
 
     /**
