@@ -22,7 +22,6 @@
 }
 
 
-
 @media (orientation: portrait) {
   .carousel-viewport {
     flex-direction: column-reverse;
@@ -173,69 +172,112 @@
 
 .carousel-overlay {
   display: flex;
-  transition-duration: 0.25s;
+  flex-direction: column;
   z-index: 101;
-  pointer-events: none;
-  height: 60px;
 
-  button {
-    pointer-events: auto;
-  }
-
-  .details-panel {
-    width: 100%;
-    position: absolute;
-    overflow: auto;
+  .data-container {
     display: flex;
     flex-direction: row;
+    align-items: center;
 
-    .head {
-      display: flex;
-      flex-direction: row;
-      width: 100%;
-      padding-top: 5px;
-      align-items: center;
+    button {
+      img {
+        width: 20px;
+      }
+    }
+
+    .title {
+      margin: 0 auto;
+      overflow: scroll;
+      max-height: 30vh;
+
+      h1 {
+        text-align: center;
+      }
     }
 
     .stats {
       display: flex;
-      flex-direction: row;
-      padding: 0 10px;
-      text-wrap: nowrap;
-      align-items: center;
+      height: fit-content;
 
-      .substats {
-        height: 80%;
-      }
-
-      .typeicon {
-        width: 40px;
+      img {
+        width: 60px;
         object-fit: contain;
       }
 
-      :nth-child(2) {
-        flex-grow: 1;
-        text-align: initial;
+      .substats {
+        display: flex;
+        flex-direction: column;
+
+        p {
+          text-wrap: nowrap;
+          margin: auto 0;
+        }
+      }
+    }
+
+    .right-buttons {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      margin-left: 10px;
+
+      button {
+        min-width: unset;
+        margin-right: 15px;
       }
 
-      p {
+      .plus-button {
+        border-radius: 0;
+        background-color: rgba(0, 0, 0, 0);
+
+        img {
+          width: 15px;
+        }
+      }
+
+      .cancel-button {
+        width: 70px;
+        height: 70px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+      }
+    }
+  }
+
+  .mobile-title {
+    display: none;
+  }
+}
+
+
+@media (orientation: portrait) {
+  .carousel-overlay {
+
+    .data-container {
+      .right-buttons {
+        margin-left: auto;
+
+        .action-buttons {
+          flex-direction: row;
+          display: flex;
+        }
+      }
+    }
+
+    .desktop-title {
+      display: none;
+    }
+
+    .mobile-title {
+      display: flex;
+      justify-content: center;
+
+      h1 {
         margin: 10px 0;
-        width: auto;
-        font-size: 0.8em;
+        text-align: center;
+        font-size: 25px;
       }
-    }
-
-    .details {
-      padding: 0 10px;
-      background-color: $background_1;
-      flex-grow: 1;
-    }
-
-    p, h1 {
-      width: 100%;
-      font-size: 1.5em;
-      text-align: center;
-      word-break: break-word;
     }
   }
 }

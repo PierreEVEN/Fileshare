@@ -1,17 +1,27 @@
 <div class="carousel-overlay">
-    <button class="floating-top-right cancel-button" onclick="{{ctx 'close_carousel(event)'}}">X</button>
-    <div class="details-panel">
-        <div class="head">
-            <div class="stats">
-                {{typeicon item.mimetype}}
-                <div class="substats">
-                    <p id="item-mime-type">{{item.mimetype}}</p>
-                    <p id="item-size">Poids : {{file_size}}</p>
-                </div>
-            </div>
-            <h1 id="item-title">{{item.name}}</h1>
-            <div class="stats">
+    <div class="data-container">
+        <div class="stats">
+            {{typeicon item.mimetype}}
+            <div class="substats">
+                <p id="item-mime-type">{{item.mimetype}}</p>
+                <p id="item-size">Poids : {{file_size}}</p>
             </div>
         </div>
+        <div class="title desktop-title">
+            <h1 id="item-title">{{item.name}}</h1>
+        </div>
+        <div class="right-buttons">
+            <div class="action-buttons">
+                <button class="plus-button" onclick="{{ctx 'share(event)'}}"><img
+                        src="/images/icons/icons8-url-96.png" alt="Share"></button>
+                <button class="plus-button" onclick="{{ctx 'download(event)'}}"><img
+                        src="/images/icons/icons8-download-96.png" alt="Download"></button>
+            </div>
+            <button class="cancel-button" onclick="{{ctx 'close_carousel(event)'}}">X</button>
+        </div>
     </div>
+    <div class="title mobile-title">
+        <h1 id="item-title">{{item.name}}</h1>
+    </div>
+    <div class="hseparator"></div>
 </div>
