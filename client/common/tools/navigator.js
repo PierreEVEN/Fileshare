@@ -3,9 +3,9 @@ import {parse_fetch_result} from "../../layout/widgets/components/message_box";
 
 class Navigator {
     /**
-     * @param filesystem {Filesystem}
+     * @param repos_builder {ReposBuilder}
      */
-    constructor(filesystem) {
+    constructor(repos_builder) {
         this.last_hover_item = null;
         this.hover_item_callbacks = [];
 
@@ -32,7 +32,12 @@ class Navigator {
         /**
          * @type {Filesystem}
          */
-        this.filesystem = filesystem;
+        this.filesystem = repos_builder.filesystem;
+
+        /**
+         * @type {ReposBuilder}
+         */
+        this.repos_builder = repos_builder;
     }
 
     set_hover_item(item) {
@@ -90,21 +95,66 @@ class Navigator {
      * @param force_select {boolean}
      */
     select_item(item, shift_key, ctrl_key, force_select = false) {
-        if (this.selected_items.has(item) && !force_select) {
+
+        if (force_select) {
+            this.last_selected_item = item;
+            return this._select_item_internal(item, true);
+        }
+
+        if (shift_key) {
+            if (!this.last_selected_item)
+                this.last_selected_item = item;
+            const dir_content = this.repos_builder.directory_content;
+            let start_index = 0;
+            for (const i in dir_content.objects)
+                if (dir_content.objects[i].id === item)
+                    start_index = Number(i);
+            let end_index = 0;
+            for (const i in dir_content.objects)
+                if (dir_content.objects[i].id === this.last_selected_item)
+                    end_index = Number(i);
+
+            // Swap if needed
+            if (start_index > end_index)
+                [start_index, end_index] = [end_index, start_index];
+
+            const items_to_keep_selected = new Set();
+            for (let i = start_index; i <= end_index; ++i)
+                items_to_keep_selected.add(dir_content.objects[i].id)
+
+            if (!ctrl_key)
+                for (const selected of this.selected_items)
+                    if (!items_to_keep_selected.has(selected))
+                        this._select_item_internal(selected, false);
+
+            for (const item of items_to_keep_selected)
+                this._select_item_internal(item, true);
+        } else {
+            this.last_selected_item = item;
+            if (ctrl_key || this.is_touch_selection_mode) {
+                if (this.selected_items.has(item))
+                    this._select_item_internal(item, false);
+                else
+                    this._select_item_internal(item, true);
+            } else {
+                for (const elem of this.selected_items)
+                    if (elem !== item)
+                        this._select_item_internal(elem, false);
+                if (this.selected_items.has(item))
+                    this._select_item_internal(item, false);
+                else
+                    this._select_item_internal(item, true);
+            }
+        }
+    }
+
+    _select_item_internal(item, selected) {
+        if (selected && !this.selected_items.has(item)) {
+            this.selected_items.add(item);
+            for (const callback of this.selected_item_callbacks) callback(item, true)
+        } else if (!selected && this.selected_items.has(item)) {
             this.selected_items.delete(item);
             for (const callback of this.selected_item_callbacks) callback(item, false)
-        } else {
-            if (!this.selected_items.has(item)) {
-                if (!this.is_touch_selection_mode) {
-                    if (!shift_key && !ctrl_key)
-                        this.clear_selection();
-                    else {
-
-                    }
-                }
-                this.selected_items.add(item);
-                for (const callback of this.selected_item_callbacks) callback(item, true)
-            }
         }
 
         if (this.is_touch_selection_mode) {
@@ -113,7 +163,6 @@ class Navigator {
                 this.enter_touch_selection_mode(false)
             }
         }
-        this.last_selected_item = item;
     }
 
     view_item(item) {
@@ -121,7 +170,6 @@ class Navigator {
             this.selected_items.add(item);
             for (const callback of this.selected_item_callbacks) callback(item, true)
         }
-
     }
 
     clear_selection() {

@@ -22,7 +22,7 @@ class ReposBuilder {
         /**
          * @type {Navigator}
          */
-        this.navigator = new Navigator(this.filesystem);
+        this.navigator = new Navigator(this);
 
         /**
          * @type {DirectoryContent}
