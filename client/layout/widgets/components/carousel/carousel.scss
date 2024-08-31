@@ -18,6 +18,7 @@
     max-width: 30%;
     border-left: dashed 1px #5b6574;
     display: none;
+    overflow: scroll;
   }
 }
 
@@ -37,7 +38,6 @@
       border-bottom: dotted 2px #5b6574;
       margin-bottom: 10px;
       max-height: 40%;
-      overflow: scroll;
     }
   }
 }
