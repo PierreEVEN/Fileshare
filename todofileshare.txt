@@ -1,5 +1,6 @@
 
 # TODO
+- Download multiple items
 - ajouter des filtres avancés (par auteur, par date précise etc...)
 - supporter plus de 1000 items par dossiers
 - pouvoir ajouter des utilisateurs à un sous-dossier

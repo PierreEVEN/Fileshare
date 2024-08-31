@@ -1,5 +1,6 @@
 import {PAGE_CONTEXT} from "./utils";
 import {parse_fetch_result} from "../../layout/widgets/components/message_box";
+import {spawn_item_context_action} from "../../layout/widgets/viewport/item_context_action";
 
 class Navigator {
     /**
@@ -74,12 +75,15 @@ class Navigator {
             cut_button.classList.add('plus-button')
             action_div.append(cut_button);
 
-            const remove_button = document.createElement('button');
+            const more_button = document.createElement('button');
             const remove_image = document.createElement('img');
-            remove_image.src = '/images/icons/icons8-trash-52.png'
-            remove_button.append(remove_image)
-            remove_button.classList.add('cancel-button')
-            action_div.append(remove_button);
+            remove_image.src = '/images/icons/icons8-ellipsis-90.png'
+            more_button.append(remove_image)
+            more_button.classList.add('more-button')
+            more_button.onclick = () => {
+                spawn_item_context_action(this.last_selected_item);
+            }
+            action_div.append(more_button);
 
         } else {
             this.is_touch_selection_mode = false;
