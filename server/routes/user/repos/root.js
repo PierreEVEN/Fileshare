@@ -69,6 +69,9 @@ router.get("/settings/*", async (req, res) => {
 })
 
 router.get("/content/", async (req, res) => {
+    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null)) {
+        return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
+    }
     const time_a = performance.now()
     let data = await Item.from_repos(req.display_repos.id);
     const time_b = performance.now()
