@@ -461,8 +461,9 @@ router.post('/make-directory', async (req, res) => {
 
     const name = new ServerString(req.body.name);
     const new_dir = await Item.create_directory(req.display_repos.id, req.connected_user.id, null, name, req.body.open_upload);
-    if (new_dir && new_dir.id)
+    if (new_dir && new_dir.id) {
         return res.send(new_dir);
+    }
     return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
 })
 

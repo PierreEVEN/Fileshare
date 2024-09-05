@@ -29,7 +29,7 @@ class UploadedFileMetadata {
         /**
          * @type {ServerString}
          */
-        this.file_name = headers['content-name'] ? ServerString.FromDB(headers['content-name']) : 'ERROR 489784 : INVALID NAME';
+        this.file_name = (headers['content-name'] ? ServerString.FromDB(headers['content-name'].trim()) : 'ERROR 489784 : INVALID NAME');
         /**
          * @type {Number}
          */

@@ -233,7 +233,7 @@ class Item {
 
     /**
      * Find item from path inside a given repository
-     * @return {Item|null}
+     * @return {Promise<Item|null>}
      * @param repos {number}
      * @param path {string}
      */
@@ -352,6 +352,16 @@ class Item {
         data.open_upload = open_upload;
         data.is_regular_file = false;
         try {
+            let path = (parent ? parent.absolute_path : '') + "/" + name.encoded();
+            let existing_item = await Item.from_path(repos_id, path);
+            if (existing_item.in_trash) {
+                existing_item.in_trash = false;
+                await existing_item.push();
+            }
+            if (existing_item) {
+                return existing_item;
+            }
+
             return await new Item(data).push();
         }
         catch (e) {
