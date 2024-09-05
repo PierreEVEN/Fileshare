@@ -294,6 +294,7 @@ router.post('/send/*', async (req, res) => {
         if (!valid)
             return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to upload files here").redirect_error(req, res);
     }
+
     let uploading_file = FileUpload.from_headers(req.headers);
     if (!uploading_file) {
         console.warn("Cannot upload : the current stream doesn't exists on the server");
@@ -457,9 +458,16 @@ router.post('/make-directory', async (req, res) => {
         return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to create directory here").redirect_error(req, res);
 
     const name = new ServerString(req.body.name);
-    const new_dir = await Item.create_directory(req.display_repos.id, req.connected_user.id, null, name, req.body.open_upload);
-    if (new_dir && new_dir.id)
-        return res.send(new_dir);
+
+    logger.info(`${req.log_name} create directory ${name.plain()}: inside ${req.display_repos.name.plain()}`);
+
+    const new_dir = await Item.find_or_create_directory_from_path(req.display_repos.id, `${name.plain()}`, {
+        open_upload: true,
+        owner: req.connected_user.id
+    });
+    console.log(new_dir)
+    if (new_dir && new_dir.wanted_directory && new_dir.wanted_directory.id)
+        return res.send(new_dir.wanted_directory);
     return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
 })
 
@@ -473,11 +481,15 @@ router.post('/make-directory/:id', async (req, res) => {
         return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to create directory here").redirect_error(req, res);
 
     const name = new ServerString(req.body.name);
-    const new_dir = await Item.create_directory(req.display_repos.id, req.connected_user.id, parent, name, req.body.open_upload);
-    if (new_dir && new_dir.id)
-        return res.send(new_dir);
-    return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
+    logger.info(`${req.log_name} create directory ${name.plain()}: inside ${req.display_repos.name.plain()}`);
 
+    const new_dir = await Item.find_or_create_directory_from_path(req.display_repos.id, `${parent.absolute_path}/${name.plain()}`, {
+        open_upload: true,
+        owner: req.connected_user.id
+    });
+    if (new_dir && new_dir.wanted_directory && new_dir.wanted_directory.id)
+        return res.send(new_dir.wanted_directory);
+    return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
 })
 
 router.post('/move-item/:id', async (req, res) => {

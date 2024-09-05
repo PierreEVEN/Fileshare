@@ -180,7 +180,7 @@ class FileUpload {
         switch (this.metadata.mimetype.plain()) {
             case 'video/mpeg':
                 new Promise(resolve => {
-                    this_ref.file_processing_handle = new FileConversionHandle(this,async (new_path) => {
+                    this_ref.file_processing_handle = new FileConversionHandle(this, async (new_path) => {
                         this_ref.tmp_file_path = new_path;
                         const plain_name = this_ref.metadata.file_name.plain()
                         if (plain_name.toLowerCase().endsWith(".mpg") || plain_name.toLowerCase().endsWith(".mov"))
@@ -192,31 +192,31 @@ class FileUpload {
                     this_ref.file_processing_handle = null;
                 });
                 break;
-                /*
+            /*
 
-                TODO : auto convert video (put an option in upload form to convert all videos to H264 format)
+            TODO : auto convert video (put an option in upload form to convert all videos to H264 format)
 
-                TODO : auto convert mp4v to h264
-                TODO : auto convert mov to h264
+            TODO : auto convert mp4v to h264
+            TODO : auto convert mov to h264
 
-            case 'video/mp4':
-                this_ref.file_processing_handle = 10;
-                    FileConversionQueue.get_video_meta_data(this_ref.tmp_file_path).then((data) => {
+        case 'video/mp4':
+            this_ref.file_processing_handle = 10;
+                FileConversionQueue.get_video_meta_data(this_ref.tmp_file_path).then((data) => {
 
-                        for (const stream of data) {
-                            if (stream.codec_type === 'video' && codec_name === 'hevc') {
+                    for (const stream of data) {
+                        if (stream.codec_type === 'video' && codec_name === 'hevc') {
 
-                            }
                         }
                     }
-                );
-                break;
+                }
+            );
+            break;
 
-                ffmpeg -i input.mp4 -vcodec "codec" [-crf "crf"] -c:a copy output.mp4
-                codecs : libx264 / libx265
-                crf : 30 pour vid moyen
+            ffmpeg -i input.mp4 -vcodec "codec" [-crf "crf"] -c:a copy output.mp4
+            codecs : libx264 / libx265
+            crf : 30 pour vid moyen
 
-                 */
+             */
         }
         return !!this.file_processing_handle;
     }
@@ -279,8 +279,7 @@ class FileUpload {
                         error: null,
                         file: this._found_file_from_data,
                     }
-                }
-                else {
+                } else {
                     this.clear();
                     return {
                         error: new HttpResponse(HttpResponse.OK, "A file with the same data already exists"),
@@ -338,10 +337,10 @@ async function finalize_file_upload(uploading_file, repos, user) {
         logger.warn(`File ${JSON.stringify(meta)} with the same name already exists, but with different data inside. Replacing with new one`);
         if (uploading_file.metadata.file_size !== 0)
             fs.renameSync(path, existing_file.storage_path());
-        existing_file.size = meta.file_size;
+        existing_file.size = Number(meta.file_size);
         existing_file.hash = uploading_file.gen_hash();
         existing_file.mimetype = new ServerString(meta.mimetype);
-        existing_file.timestamp = meta.timestamp;
+        existing_file.timestamp = Number(meta.timestamp);
         // If the item already exists, move out of the trash
         if (existing_file.in_trash) {
             existing_file.parent_item = (await Item.find_or_create_directory_from_path(repos.id, meta.virtual_path.plain(), {owner: user.id}));
@@ -364,10 +363,10 @@ async function finalize_file_upload(uploading_file, repos, user) {
             name: meta.file_name.encoded(),
             description: meta.file_description.encoded(),
             mimetype: meta.mimetype.encoded(),
-            size: meta.file_size,
+            size: Number(meta.file_size),
             parent_item: parent_item.wanted_directory ? parent_item.wanted_directory.id : null,
             hash: uploading_file.gen_hash(),
-            timestamp: meta.timestamp,
+            timestamp: Number(meta.timestamp),
         }).push();
 
         if (uploading_file.metadata.file_size !== 0)

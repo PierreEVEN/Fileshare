@@ -140,7 +140,7 @@ class Item {
             (repos, owner, name, is_regular_file, description, parent_item, in_trash) VALUES
             ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
                 [as_id(this.repos), as_id(this.owner), this.name.encoded(), as_boolean(this.is_regular_file), this.description.encoded(), this.parent_item ? as_id(this.parent_item) : null, as_boolean(this.in_trash)]);
-            this.id = new_item.rows[0].id;
+            this.id = Number(new_item.rows[0].id);
         }
         if (this.is_regular_file) {
             assert(this.id !== undefined);
