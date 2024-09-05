@@ -465,7 +465,6 @@ router.post('/make-directory', async (req, res) => {
         open_upload: true,
         owner: req.connected_user.id
     });
-    console.log(new_dir)
     if (new_dir && new_dir.wanted_directory && new_dir.wanted_directory.id)
         return res.send(new_dir.wanted_directory);
     return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
