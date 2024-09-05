@@ -1,4 +1,5 @@
-import {humanFileSize} from "../../../../../common/tools/utils";
+import {humanFileSize, PAGE_CONTEXT} from "../../../../../common/tools/utils";
+import {print_message} from "../../message_box";
 
 class CarouselOverlay {
     /**
@@ -16,8 +17,15 @@ class CarouselOverlay {
         }, {
             close_carousel: () => {
                 carousel.close();
+            },
+            download: () => {
+                window.open(`${PAGE_CONTEXT.repos_path()}/file/${item.id}`, '_blank').focus();
+            },
+            share: async () => {
+                let url = `${location.origin}${PAGE_CONTEXT.repos_path()}/file/${item.id}`;
+                await navigator.clipboard.writeText(url);
+                print_message('info', 'Lien copié dans le presse - papier', url)
             }
-
         });
         container.firstChild.before(this.carousel_overlay)
     }
