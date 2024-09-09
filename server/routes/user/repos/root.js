@@ -69,6 +69,9 @@ router.get("/settings/*", async (req, res) => {
 })
 
 router.get("/content/", async (req, res) => {
+    if (!await ServerPermissions.can_user_view_repos(req.display_repos, req.connected_user ? req.connected_user.id : null)) {
+        return new HttpResponse(HttpResponse.UNAUTHORIZED).redirect_error(req, res);
+    }
     const time_a = performance.now()
     let data = await Item.from_repos(req.display_repos.id);
     const time_b = performance.now()
@@ -294,7 +297,6 @@ router.post('/send/*', async (req, res) => {
         if (!valid)
             return new HttpResponse(HttpResponse.FORBIDDEN, "You don't have the required authorizations to upload files here").redirect_error(req, res);
     }
-
     let uploading_file = FileUpload.from_headers(req.headers);
     if (!uploading_file) {
         console.warn("Cannot upload : the current stream doesn't exists on the server");
@@ -489,6 +491,7 @@ router.post('/make-directory/:id', async (req, res) => {
     if (new_dir && new_dir.wanted_directory && new_dir.wanted_directory.id)
         return res.send(new_dir.wanted_directory);
     return new HttpResponse(HttpResponse.INTERNAL_SERVER_ERROR, "Directory or file already exists").redirect_error(req, res);
+
 })
 
 router.post('/move-item/:id', async (req, res) => {
