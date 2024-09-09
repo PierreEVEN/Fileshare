@@ -3,11 +3,8 @@
 /***********************************************************************************************/
 
 const {get_common_data} = require("../../session_utils");
-const {Repos} = require("../../database/repos");
 const {HttpResponse} = require("../utils/errors");
 const {ServerString} = require("../../server_string");
-const {ServerPermissions} = require("../../permissions");
-const db = require("../../database/tools/database");
 const router = require("express").Router();
 
 /********************** [GLOBAL] **********************/

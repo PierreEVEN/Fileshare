@@ -7,7 +7,6 @@ const {
     require_connection,
 } = require("../../../session_utils");
 const {logger} = require("../../../logger");
-const {display_name_to_url} = require("../../../database/tools/db_utils");
 const path = require("path");
 const fs = require("fs");
 const {FileUpload} = require("./upload");
@@ -15,16 +14,11 @@ const sharp = require("sharp");
 const {platform} = require("os");
 const gm = require("gm");
 const ffmpeg = require("fluent-ffmpeg");
-const {Item} = require("../../../database/item");
 const {HttpResponse} = require("../../utils/errors");
 const {ServerString} = require("../../../server_string");
-const {ServerPermissions} = require("../../../permissions");
 const router = require("express").Router();
 const archiver = require('archiver');
 const json_compress = require('compress-json')
-const {UserRepos} = require("../../../database/user_repos");
-const {User} = require("../../../database/user");
-const {Repos} = require("../../../database/repos");
 
 /********************** [GLOBAL] **********************/
 router.use('/', async (req, res, next) => {

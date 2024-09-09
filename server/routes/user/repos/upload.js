@@ -1,6 +1,5 @@
 const {logger} = require("../../../logger");
 const fs = require("fs");
-const {Item} = require("../../../database/item");
 const {ServerString} = require("../../../server_string");
 const {FileConversionQueue, FileConversionHandle} = require("./file-conversion");
 const crypto = require("crypto");

@@ -1,6 +1,4 @@
-const {Repos} = require("./database/repos");
 const {logger} = require("./logger");
-const {UserRepos} = require("./database/user_repos");
 
 function require_connection(req, res) {
     if (!req.connected_user) {

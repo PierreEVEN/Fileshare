@@ -2,11 +2,9 @@
 /*                                          AUTH                                               */
 /***********************************************************************************************/
 
-const {User} = require("../../database/user");
 const {logger} = require("../../logger");
 const {ServerString} = require("../../server_string");
 const {HttpResponse} = require("../utils/errors");
-const {gen_uhash} = require("../../database/tools/uid_generator");
 const {send_mail} = require("../utils/mailer");
 const {get_common_data} = require("../../session_utils");
 const router = require("express").Router();

@@ -1,6 +1,4 @@
 const {HttpResponse} = require("../../../utils/errors");
-const {Item} = require("../../../../database/item");
-const {ServerPermissions} = require("../../../../permissions");
 
 const router = require("express").Router();
 

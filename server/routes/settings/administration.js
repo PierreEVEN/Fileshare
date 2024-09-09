@@ -5,11 +5,6 @@
 
 const {HttpResponse} = require("../utils/errors");
 const {get_common_data} = require("../../session_utils");
-const db = require("../../database/tools/database");
-const {as_id, as_data_path, as_enum} = require("../../database/tools/db_utils");
-const {User} = require("../../database/user");
-const {Repos} = require("../../database/repos");
-const {Item} = require("../../database/item");
 const fs = require("node:fs");
 const router = require("express").Router();
 
