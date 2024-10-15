@@ -6,3 +6,4 @@ web_client/public/dist/
 web_client/package-lock.json
 data/
 certs/
+data_storage/
