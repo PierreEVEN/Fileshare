@@ -1,0 +1,142 @@
+label {
+
+  min-height: 40px;
+  height: fit-content;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.2);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+
+  &:focus-within  {
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+
+  input {
+    background-color: transparent;
+    border: none;
+    width: 100%;
+    height: 100%;
+    padding: 0 20px;
+
+    &[type='number'] {
+      flex-grow: 1;
+      height: 50px;
+      border: 0;
+      border-bottom: 2px solid #282f3d;
+      background-color: rgba(18, 21, 28, 1);
+      padding: 0 15px;
+      color: white;
+
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
+
+    ::placeholder {
+      font-weight: bold;
+      opacity: 0.5;
+      color: red;
+      margin: 15px 15px;
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &:-webkit-autofill {
+      -webkit-box-shadow: inset 0 0 0 9999px #5a5b49;
+      border-radius: 0;
+    }
+  }
+
+  select {
+    flex-grow: 1;
+    height: 50px;
+    border: 0;
+    background-color: rgba(18, 21, 28, 1);
+    padding: 0 15px;
+    color: white;
+    transition-duration: 0.15s;
+
+    &:hover {
+      background-color: rgb(33, 38, 49);
+    }
+
+    &:active {
+      background-color: rgb(4, 4, 5);
+    }
+  }
+}
+
+
+
+/*
+
+input, button {
+  &[type='text'], &[type='password'], &[type='email'], &[type='number'] {
+    flex-grow: 1;
+    height: 50px;
+    border: 0;
+    border-bottom: 2px solid #282f3d;
+    background-color: rgba(18, 21, 28, 1);
+    padding: 0 15px;
+    color: white;
+  }
+
+  &[type='checkbox'] {
+    height: 25px;
+    flex-grow: 1;
+  }
+
+  &[type="submit"], &[type="button"] {
+    min-width: 140px;
+    background-color: #3274d6;
+    border: 0;
+    height: 40px;
+    cursor: pointer;
+    color: #ffffff;
+    transition: background-color 0.2s;
+    border-radius: 2px;
+    font-weight: normal;
+
+    &:hover {
+      background-color: #2868c7;
+      transition: background-color 0.2s;
+      border: 2px rgb(94, 175, 255) solid;
+    }
+
+    &:active {
+      background-color: #2259ab;
+      color: #00ff04;
+    }
+  }
+}
+
+select {
+  flex-grow: 1;
+  height: 50px;
+  border: 0;
+  background-color: rgba(18, 21, 28, 1);
+  padding: 0 15px;
+  color: white;
+  transition-duration: 0.15s;
+
+  &:hover {
+    background-color: rgb(33, 38, 49);
+  }
+
+  &:active {
+    background-color: rgb(4, 4, 5);
+  }
+}
+
+::placeholder {
+  color: #888d9c;
+}
+
+
+*/

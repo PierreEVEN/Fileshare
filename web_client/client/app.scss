@@ -1,0 +1,116 @@
+@import "stylesheets/common";
+@import "stylesheets/palette";
+
+@font-face {
+  font-family: "Bahnschrift";
+  src: url("../public/fonts/Bahnschrift/font.eot");
+  src: url("../public/fonts/Bahnschrift/font.eot") format("embedded-opentype"),
+  url("../public/fonts/Bahnschrift/font.woff2") format("woff2"),
+  url("../public/fonts/Bahnschrift/font.woff") format("woff"),
+  url("../public/fonts/Bahnschrift/font.ttf") format("truetype"),
+  url("../public/fonts/Bahnschrift/font.svg") format("svg");
+}
+
+body {
+  display: flex;
+  background-color: $background;
+  margin: 0;
+  padding: 0;
+  color: $text-color;
+  font-family: Bahnschrift, serif;
+  overflow: hidden;
+  touch-action: pinch-zoom;
+}
+
+#app-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+
+  #global-header {
+    background-color: $primary;
+    width: 100%;
+  }
+
+  #body-container {
+    display: flex;
+    flex: 1;
+    position: relative;
+
+    #main-body {
+      display: flex;
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      top: 0;
+
+      #mobile-background {
+        display: none;
+      }
+
+      @media (orientation: portrait) {
+        #mobile-background {
+          display: flex;
+          opacity: 0;
+          transition-duration: 0.2s;
+          pointer-events: none;
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          z-index: 5;
+
+          &.selected {
+            backdrop-filter: blur(10px);
+            background-color: rgba(29, 29, 29, 0.43);
+            pointer-events: auto;
+            opacity: 100%;
+          }
+        }
+      }
+
+      #side-bar {
+        display: flex;
+        flex-direction: column;
+        background-color: $secondary;
+        width: 15%;
+        min-width: 200px;
+        height: 100%;
+        overflow: scroll;
+        z-index: 10;
+        transition-duration: 0.2s;
+
+        &.show {
+          @media (orientation: portrait) {
+            width: 15%;
+            min-width: 200px;
+          }
+        }
+
+        .category {
+          display: flex;
+          flex-direction: column;
+
+          .content {
+            margin-left: 15px;
+          }
+        }
+
+        @media (orientation: portrait) {
+          & {
+            position: absolute;
+            width: 0;
+            min-width: 0;
+            backdrop-filter: blur(20px);
+          }
+        }
+      }
+
+      #viewport {
+        display: flex;
+        height: 100%;
+        width: 100%;
+      }
+    }
+  }
+}

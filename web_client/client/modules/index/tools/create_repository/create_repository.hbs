@@ -1,0 +1,18 @@
+<h1>Nouveau dépôt</h1>
+<form onsubmit="{{ctx 'create_repository(event)'}}">
+    <div class="field">
+        <label for='name'>
+            <input type="text" name="name" placeholder="Nom" id="repository-name" required>
+        </label>
+    </div>
+    <div class="field">
+        <label for='type'>
+            <select name="type" id="repository-type">
+                <option value="private">Privé</option>
+                <option value="hidden">Invisible</option>
+                <option value="public">Publique</option>
+            </select>
+        </label>
+    </div>
+    <input type="submit" value="Nouveau dépot">
+</form>

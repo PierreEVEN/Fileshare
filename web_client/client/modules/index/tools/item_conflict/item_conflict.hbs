@@ -1,0 +1,10 @@
+<h1>L'object '{{name}}' existe déjà</h1>
+<form>
+    <input type="button" value="Annuler" onclick="{{ctx "cancel()"}}">
+    {{#if restore}}
+        <input type="button" value="Restorer" onclick="{{ctx "restore()"}}">
+    {{/if}}
+    {{#if overwrite}}
+        <input type="button" value="Écraser" onclick="{{ctx "overwrite()"}}">
+    {{/if}}
+</form>

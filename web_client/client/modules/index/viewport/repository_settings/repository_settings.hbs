@@ -1,0 +1,53 @@
+<div class="repos-settings">
+    <div class="section-title">
+        <h1>{{display_name}}</h1>
+        <button class="plus-button" onclick="{{ctx "edit()"}}">Modifier les paramètres
+        </button>
+    </div>
+    <div class="hseparator"></div>
+    <div class="section-title">
+        <h2>Informations</h2>
+    </div>
+    <div id="repos-settings-information">
+        <p>Dépot :</p>
+        <p class="smaller">{{total_count}} éléments, {{total_dirs}} dossiers ({{total_size}})</p>
+        <p>Dont dans la corbeille :</p>
+        <p class="smaller">{{trash_count}} éléments, {{trash_dirs}} dossiers ({{trash_size}})</p>
+        <p>{{num_extensions}} extensions :</p>
+        <div class="item_list">
+            {{#each extensions}}
+                <p>- {{this.count}} {{this.name}}</p>
+            {{/each}}
+        </div>
+        <p>{{num_contributors}} contributeurs :</p>
+        <div class="item_list">
+            {{#each contributors}}
+                <p>- {{this.name}} ({{count}} elements)</p>
+            {{/each}}
+        </div>
+
+    </div>
+    <div class="hseparator"></div>
+    <div class="section-title">
+        <h2>Autorisations</h2>
+        <button class="plus-button" onclick="{{ctx "add_user()"}}">Ajouter un utilisateur
+        </button>
+    </div>
+    <div class="item_list repos-settings-authorizations" {{object "subscriptions"}}>
+        <div class="repos-setting-authorization">
+            <div class="column">
+                <p class="field">Utilisateur</p>
+            </div>
+            <div class="column">
+                <p class="field">Racine</p>
+            </div>
+            <div class="column">
+                <p class="field">accès</p>
+            </div>
+            <div class="column">
+                <p class="field">Supprimer</p>
+            </div>
+        </div>
+        <div class="hseparator"></div>
+    </div>
+</div>

@@ -1,0 +1,18 @@
+@import "../palette";
+
+a {
+  text-decoration: none;
+  color: $text-url;
+  transition-duration: 0.1s;
+
+  &:hover, &:focus {
+    color: lighten($text-url);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  &:visited {
+    color: item_active($text-url);
+    text-decoration: none;
+  }
+}

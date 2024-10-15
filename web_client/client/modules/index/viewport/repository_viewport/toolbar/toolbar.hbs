@@ -1,0 +1,11 @@
+<div class="viewport-toolbar">
+    <button class="root-button" onclick="{{ctx "select_root()"}}">
+        <img {{object "repos_icon"}} alt="icon" src="/public/images/icons/icons8-storage-96.png">
+        <p {{object "root"}}></p>
+    </button>
+    <div class="path" {{object "path"}}></div>
+    <div class="actions">
+        <button><img alt="Download" src="/public/images/icons/icons8-download-96.png" onclick="{{ctx "download()"}}"></button>
+        <button><img alt="More" src="/public/images/icons/icons8-ellipsis-90.png" onclick="{{ctx "context()"}}"></button>
+    </div>
+</div>

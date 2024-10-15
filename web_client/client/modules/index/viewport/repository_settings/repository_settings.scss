@@ -1,0 +1,112 @@
+
+@import "../../../../stylesheets/palette";
+
+.repos-settings {
+  width: 100%;
+  overflow: scroll;
+
+  .smaller {
+    font-size: smaller;
+    margin-left: 20px;
+  }
+
+  .section-title {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .plus-button {
+      margin-left: 40px;
+      padding: 10px;
+      font-size: unset;
+      width: auto;
+      border-radius: 2px;
+    }
+  }
+
+
+  .item_list {
+    overflow: scroll;
+    max-height: 120px;
+    width: fit-content;
+    background-color: $toolbar;
+    padding: 10px;
+
+    p {
+      font-size: smaller;
+    }
+  }
+
+  .repos-settings-authorizations {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 30px;
+    padding: 0;
+    max-height: 300px;
+
+    .repos-setting-authorization {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      align-items: center;
+
+      .column {
+        display: flex;
+        flex: 1 1 0;
+        height: 100%;
+        justify-content: center;
+      }
+
+      select {
+        flex-grow: unset;
+        width: 100%;
+      }
+
+      button {
+        flex-grow: unset;
+        width: 40px;
+        min-width: unset;
+        margin-left: auto;
+        margin-right: 5%;
+      }
+    }
+  }
+
+  #repos-settings-information {
+    p {
+      font-weight: lighter;
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+  }
+}
+
+
+@media (orientation: portrait) {
+  .repos-settings {
+    margin-top: 40px;
+
+    .section-title {
+      flex-direction: column;
+      margin-bottom: 20px;
+      margin-left: 0;
+      text-align: center;
+
+      h2 {
+        margin: 10px;
+      }
+
+      .plus-button {
+        margin-left: 0;
+      }
+    }
+
+    #repos-settings-information {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}

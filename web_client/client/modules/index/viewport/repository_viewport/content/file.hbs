@@ -1,0 +1,12 @@
+<div class='item-button global-no-selection' ondblclick="{{ctx 'dblclicked(event)'}}" onclick="{{ctx 'clicked(event)'}}"
+     onmouseenter="{{ctx 'enter()'}}" onmouseleave="{{ctx 'leave()'}}" oncontextmenu="{{ctx 'context_menu(event)'}}">
+    <div class="item-preview">
+        <div class="item_thumbnail">
+            {{item_thumbnail item}}
+        </div>
+        <div class="title">
+            <p>{{item.name}}{{#if display_size}} ({{display_size}}){{/if}}{{#if display_date}}
+                ({{display_date}}){{/if}}</p>
+        </div>
+    </div>
+</div>

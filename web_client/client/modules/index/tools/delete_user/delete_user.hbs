@@ -1,0 +1,11 @@
+<h1>Supprimer le compte {{login}} (attention, celà entraine la suppression de toutes les données stockées sans exception)</h1>
+<form onsubmit="{{ctx 'delete_user(event)'}}">
+    <label for='username'>
+        <input {{object "login"}} type="text" name="username" placeholder="Nom d'utilisateur / email" id="username" required>
+    </label>
+    <label for='password'>
+        <input {{object "password"}} type="password" name="password" placeholder="Mot de passe" id="password" required>
+    </label>
+
+    <input type="submit" value="Supprimer">
+</form>

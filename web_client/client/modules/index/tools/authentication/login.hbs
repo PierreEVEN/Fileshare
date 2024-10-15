@@ -1,0 +1,15 @@
+<h1>Connexion</h1>
+<form onsubmit="{{ctx 'login(event)'}}">
+    <label for='username'>
+        <input {{object "login"}} type="text" name="username" placeholder="Nom d'utilisateur / email" id="username" required>
+    </label>
+    <label for='password'>
+        <input {{object "password"}} type="password" name="password" placeholder="Mot de passe" id="password" required>
+    </label>
+
+    <input type="submit" value="Se connecter">
+    <a id="forgot-password" href="javascript:{{ctx 'reset_password()'}}">mot de passe oublié</a>
+    <div class='footer'>
+        <p>Pas encore de compte ?</p> <a href="javascript:{{ctx 'signup()'}};">Créer un compte</a>
+    </div>
+</form>

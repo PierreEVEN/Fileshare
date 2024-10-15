@@ -1,0 +1,19 @@
+[package]
+name = "fileshare-server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+api = { path = "../api" }
+utils = { path = "../utils" }
+client_web = { path = "../client_web" }
+database = { path = "../database" }
+types = { path = "../types" }
+
+axum = "0.7.7"
+axum-extra = { version = "0.9.3", features = ["cookie"] }
+axum-server = {  version = "0.7.1", features = ["tls-rustls"] }
+axum-server-dual-protocol = "0.7.0"
+tracing = "0.1.40"
+http-body-util = "0.1.2"
+tracing-subscriber = "0.3.18"

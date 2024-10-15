@@ -1,0 +1,120 @@
+@import "../../../stylesheets/palette";
+
+
+#modal-root {
+  position: absolute;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 100000;
+  pointer-events: none;
+
+  opacity: 0;
+  transition-duration: 0.1s;
+  backdrop-filter: blur(10px);
+  background-color: rgba(0,0,0,0.3);
+
+  &.display {
+    opacity: 100%;
+    pointer-events: all;
+  }
+
+  #modal-box {
+    display: flex;
+    justify-content: center;
+    background-color: $background;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px $border-default dotted;
+    border-radius: 5px;
+    box-shadow: 10px 5px 5px #000000;
+
+    #modal-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      overflow-y: auto;
+      overflow-x: clip;
+      max-height: 90vh;
+      max-width: 90vw;
+      padding-bottom: 30px;
+
+
+      h1 {
+        font-size: 24px;
+        font-weight: 100;
+        margin-bottom: 25px;
+        margin-top: 50px;
+      }
+
+      form {
+        padding: 0 60px;
+        display: flex;
+        flex-direction: column;
+        width: 75%;
+        overflow: scroll;
+
+        input[type="submit"] {
+          margin-bottom: 30px;
+          min-height: 40px;
+        }
+
+        .field {
+          display: flex;
+          flex-direction: row;
+          width: 100%;
+
+          p:first-of-type {
+            margin-right: 20px;
+          }
+        }
+
+        label {
+          display: flex;
+          margin-bottom: 20px;
+          flex-grow: 1;
+        }
+
+        a {
+          align-self: center;
+        }
+
+        .danger-zone {
+          padding: 15px;
+          border-radius: 5px;
+          border: 1px #a40a0a solid;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-bottom: 25px;
+          background-color: #ff00000f;
+
+          h2 {
+            margin-top: 2px;
+          }
+        }
+      }
+
+      .footer {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        bottom: 20px;
+        font-size: 15px;
+        border-top: 1px solid $border-default;
+        color: $border-default;
+        position: absolute;
+        padding-top: 5px;
+        align-self: center;
+
+        p {
+          margin: 8px;
+        }
+      }
+    }
+  }
+}

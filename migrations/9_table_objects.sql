@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS SCHEMA_NAME.objects (
+        id BIGSERIAL PRIMARY KEY,
+        hash VARCHAR(64) NOT NULL
+    );
+
+CREATE INDEX IF NOT EXISTS SCHEMA_NAME_objects_hash_index ON SCHEMA_NAME.objects USING hash(hash);

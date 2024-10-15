@@ -1,0 +1,22 @@
+<div class="global-header">
+    <div class="title">
+        <h1>FileShare</h1>
+    </div>
+    <div class="burger-menu" onclick="{{ctx "menu()"}}">
+        <button><img src="/public/images/icons/icons8-menu-96.png" alt="menu" {{object "menu_img"}}></button>
+    </div>
+    <div class="search-box">
+        <label>
+            <input type="text" placeholder="search">
+            <img src="/public/images/icons/icons8-search-100.png">
+        </label>
+    </div>
+    <div class="signin" {{object "signin"}}>
+        <button onclick="{{ctx 'signup()'}}">Nouveau compte</button>
+        <button onclick="{{ctx 'login()'}}">Connexion</button>
+    </div>
+    <div class="user" {{object "user"}}>
+        <button onclick="{{ctx 'logout()'}}">Déconnexion</button>
+        <button class="user-button" {{object "username"}} onclick="{{ctx 'user()'}}">username</button>
+    </div>
+</div>

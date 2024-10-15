@@ -1,0 +1,59 @@
+<h1>Modifier le dépôt {{display_name}}</h1>
+<form onsubmit="{{ctx 'submit(event)'}}">
+    <div class="field">
+        <p>Nom</p>
+        <label for='display_name'>
+            <input type="text" name="display_name" placeholder="Nom" id="display_name" required
+                   value="{{display_name}}">
+        </label>
+    </div>
+    <div class="field">
+        <p>Description</p>
+        <label for='description'>
+            <textarea name="description" placeholder="Description" id="description" rows="8">{{description}}</textarea>
+        </label>
+    </div>
+    <div class="field">
+        <p>Taille maximale des fichiers</p>
+        <label for='max_file_size'>
+            <input type="number" name="max_file_size" id="max_file_size" required value="{{max_file_size}}">
+        </label>
+    </div>
+    <div class="field">
+        <p>Durée de vie des données invités</p>
+        <label for='visitor_file_lifetime'>
+            <input type="number" name="visitor_file_lifetime" id="visitor_file_lifetime" required
+                   value="{{visitor_file_lifetime}}">
+        </label>
+    </div>
+    <div class="danger-zone">
+        <h2>⚠️Danger zone⚠️</h2>
+        <div class="field">
+            <p>Nom dans l'url</p>
+            <label for='name'>
+                <input type="text" name="name" id="url_name" required value="{{url_name}}">
+            </label>
+        </div>
+        <div class="field">
+            <p>Visibilité</p>
+            <label for='status'>
+                <select name="status" onChange="" id="status">
+                    <option value="hidden" {{#if prop_hidden}}selected{{/if}}>Invisible</option>
+                    <option value="public" {{#if prop_public}}selected{{/if}}>Publique</option>
+                    <option value="private" {{#if prop_private}}selected{{/if}}>Privé</option>
+                </select>
+            </label>
+        </div>
+        <div class="field">
+            <p>Ouvrir la mise en ligne de fichiers à tous </p>
+            <label for='allow_visitor_upload'>
+                <input type="checkbox" name="allow_visitor_upload" id="allow_visitor_upload"
+                       {{#if allow_visitor_upload}}checked{{/if}}>
+            </label>
+        </div>
+        <button type="button" class="cancel-button" onclick="{{ctx 'delete()'}}">Supprimer le dépôt et son
+            contenu
+        </button>
+    </div>
+    <input type="submit" value="Confirmer">
+</form>

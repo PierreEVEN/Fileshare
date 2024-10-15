@@ -1,0 +1,12 @@
+<div class="uploader-item">
+    <button class="field" onclick="{{ctx "expand()"}}">
+        {{#if directory}}
+            <p class="arrow">▸</p><img src="/public/images/icons/icons8-folder-96.png">
+        {{else}}
+            {{item_thumbnail data}}
+        {{/if}}
+        <p class="title">{{data.name}}</p>
+        <div class="remove-item" onclick="{{ctx "remove()"}}">×</div>
+    </button>
+    <div {{object "content"}} class="content"></div>
+</div>

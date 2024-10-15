@@ -1,0 +1,11 @@
+
+@import "base_design/a";
+@import "base_design/buttons";
+@import "base_design/label";
+@import "base_design/textarea";
+
+.global-no-selection {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}

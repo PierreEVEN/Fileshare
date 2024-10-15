@@ -1,0 +1,20 @@
+[package]
+name = "client_web"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.89"
+serde = { version = "1.0.210", features = ["derive"] }
+tokio = { version = "1.40.0", features = ["fs", "process", "rt-multi-thread"] }
+tokio-util = { version = "0.7.12", features = ["io"] }
+tracing = "0.1.40"
+which = "6.0.3"
+serde_json = "1.0.128"
+axum = "0.7.7"
+mime_guess = "2.0.5"
+
+utils = { path = "../utils" }
+api = { path = "../api" }
+database = { path = "../database" }
+types = { path = "../types" }

@@ -1,0 +1,32 @@
+@import "../../../stylesheets/palette";
+
+.context-action-box {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background-color: $secondary;
+  z-index: 200000;
+  padding: 10px;
+  box-shadow: 10px 5px 15px black;
+  border: 1px solid black;
+  border-radius: 20px;
+
+  p {
+    width: 100%;
+    text-align: left;
+  }
+
+  img {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+  }
+
+  button {
+    transition-duration: 0.15s;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+  }
+}

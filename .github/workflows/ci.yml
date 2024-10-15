@@ -1,0 +1,141 @@
+name: Build app
+
+on:
+  push:
+    tags:
+      - '**'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_rust_linux:
+    name: Linux - Rust app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.3
+        with:
+          prefix-key: "cache-ubuntu"
+      - run: cargo build --release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-rust-linux
+          retention-days: 1
+          path: |
+            ./migrations/*
+            ./target/release/fileshare-cli
+            ./target/release/fileshare-server
+            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
+            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
+
+  build_rust_windows:
+    name: Windows - Rust app
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.3
+        with:
+          prefix-key: "cache-windows"
+      - run: cargo build --release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-rust-windows
+          retention-days: 1
+          path: |
+            ./migrations/*
+            ./target/release/fileshare-cli.exe
+            ./target/release/fileshare-server.exe
+            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
+            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
+
+  build_web_app:
+    name: Web app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - working-directory: ./web_client
+        run: npm install
+      - working-directory: ./web_client
+        run: npm run prod
+      - uses: actions/upload-artifact@main
+        with:
+          name: webapp-artifact
+          retention-days: 1
+          path: ./web_client/public/*
+
+  package:
+    name: Upload release
+    runs-on: ubuntu-latest
+    needs: [build_rust_windows, build_rust_linux, build_web_app]
+    steps:
+      # Download generated artifacts
+      - name: Retrieve artifact Rust/Windows
+        uses: actions/download-artifact@main
+        with:
+          name: artifact-rust-windows
+          path: ./artifact_rust_windows
+
+      - name: Retrieve artifact Rust/Linux
+        uses: actions/download-artifact@main
+        with:
+          name: artifact-rust-linux
+          path: ./artifact_rust_linux
+
+      - name: Retrieve artifact Web app
+        uses: actions/download-artifact@main
+        with:
+          name: webapp-artifact
+          path: ./artifact_web_app/public
+
+      # Download Pdfium binaries
+      - run: wget https://github.com/bblanchon/pdfium-binaries/releases/latest/download/pdfium-linux-x64.tgz
+      - run: tar zxvf pdfium-linux-x64.tgz
+
+      # Create Linux server zip
+      - run: mkdir fileshare
+      - run: mkdir fileshare/migrations
+      - run: cp ./lib/libpdfium.so ./fileshare/
+      - run: mv ./artifact_rust_linux/migrations/* ./fileshare/migrations
+      - run: mv ./artifact_rust_linux/target/release/fileshare-server ./fileshare/
+      - run: cp -r ./artifact_web_app/* ./fileshare/
+      - run: zip -r fileshare_server_linux.zip ./fileshare/
+      - run: rm -r ./fileshare
+
+      # Create Windows server zip
+      - run: mkdir fileshare
+      - run: mkdir fileshare/migrations
+      - run: mv ./artifact_rust_windows/migrations/* ./fileshare/migrations
+      - run: mv ./artifact_rust_windows/target/release/fileshare-server.exe ./fileshare/
+      - run: cp -r ./artifact_web_app/* ./fileshare/
+      - run: zip -r fileshare_server_windows.zip ./fileshare/
+      - run: rm -r ./fileshare
+
+      # Create Linux client zip
+      - run: mkdir fileshare
+      - run: mv ./artifact_rust_linux/target/release/fileshare-cli ./fileshare/fileshare
+      - run: zip -r fileshare_cli_linux.zip ./fileshare/
+      - run: rm -r ./fileshare
+
+      # Create Windows client zip
+      - run: mkdir fileshare
+      - run: mv ./artifact_rust_windows/target/release/fileshare-cli.exe ./fileshare/fileshare.exe
+      - run: zip -r fileshare_cli_windows.zip ./fileshare/
+      - run: rm -r ./fileshare
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            fileshare_server_linux.zip
+            fileshare_server_windows.zip
+            fileshare_cli_linux.zip
+            fileshare_cli_windows.zip

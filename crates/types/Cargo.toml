@@ -1,0 +1,23 @@
+[package]
+name = "types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.209", features = ["derive"] }
+anyhow = "1.0.89"
+tracing = "0.1.40"
+deunicode = "1.6.0"
+urlencoding = "2.1.3"
+
+tokio-postgres = { version = "0.7.12", optional = true }
+postgres-from-row = { version = "0.5.2", optional = true }
+postgres-types = { version = "0.2.7", optional = true }
+axum = { version = "0.7.7", optional = true }
+bcrypt = {version = "0.15.1", optional = true}
+
+[features]
+default = []
+tokio-postgres = ["dep:postgres-types", "dep:tokio-postgres", "dep:postgres-from-row"]
+axum = ["dep:axum"]
+password = ["dep:bcrypt"]

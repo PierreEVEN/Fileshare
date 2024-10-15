@@ -1,0 +1,50 @@
+@import "../../../../../stylesheets/palette";
+
+.viewport-toolbar {
+  display: flex;
+  width: 100%;
+
+  .root-button {
+    display: flex;
+    padding: 0 5px;
+    img {
+      width: 25px;
+    }
+
+    @media (orientation: portrait) {
+      p {
+        display: none;
+      }
+    }
+  }
+
+  .path {
+    display: flex;
+    flex-direction: row-reverse;
+    overflow-x: scroll;
+    flex-grow: 1;
+    background-color: $secondary;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    button {
+      border-radius: 5px;
+      padding: 4px;
+    }
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+
+    button {
+      padding: 0 8px;
+
+      img {
+        width: 25px;
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+<h1>Paramètres du compte {{display_name}}</h1>
+<form onsubmit="{{ctx 'submit(event)'}}">
+    <div class="field">
+        <p>Nom</p>
+        <label for='display_name'>
+            <input type="text" name="display_name" placeholder="Nom" id="display_name" required
+                   value="{{login}}">
+        </label>
+    </div>
+    <div class="field">
+        <p>Masker mon email</p>
+        <label for='mask_email'>
+            <input type="checkbox" name="mask_email" id="mask_email"
+                   {{#if mask_email}}checked{{/if}}>
+        </label>
+    </div>
+    <div class="danger-zone">
+        <h2>⚠️Danger zone⚠️</h2>
+        <div class="field">
+            <p>Nom dans l'url</p>
+            <label for='name'>
+                <input type="text" name="name" id="url_name" required value="{{name}}">
+            </label>
+        </div>
+        <button type="button" class="cancel-button" onclick="{{ctx 'delete()'}}">Supprimer le compte et toutes les données associées</button>
+    </div>
+    <input type="submit" value="Confirmer">
+</form>

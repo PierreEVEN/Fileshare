@@ -1,9 +1,15 @@
+# Bugs avant release V3.0
+
+- viewport
+    - navigation
+- reimplementer le reset-password
 
 # TODO
-- Download multiple items
-- ajouter des filtres avancés (par auteur, par date précise etc...)
+- fix taille des dossiers cassée
+- implémenter les filtres
+- fix connexion forcée
+- fix preview CR2 terne sous debian ??
 - supporter plus de 1000 items par dossiers
-- pouvoir ajouter des utilisateurs à un sous-dossier
 - gérer le zoom dans le carousel sur les images / vidéos
 - menu d'action groupée sur plusieurs éléments
     - Conversion automatique HEVC => AV1

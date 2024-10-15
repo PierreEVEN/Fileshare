@@ -1,0 +1,43 @@
+<div id="uploader-container">
+    <div id="uploader" {{object "uploader"}}>
+        <div class="header" onclick="{{ctx "expand(event)"}}">
+            <p {{object "infos"}}>Ajouter des fichiers</p>
+            <div class="details">
+                <p class="speed" {{object "speed"}}></p>
+                <p class="time" {{object "time"}}></p>
+            </div>
+            <button class="expand" {{object "expand"}}><img src="/public/images/icons/icons8-expand-50.png"></button>
+        </div>
+        <div class="add-files">
+            <button onclick="{{ctx "add_files()"}}"><img alt="new_file" src="/public/images/icons/icons8-add-properties-96.png"><p> ajouter des fichiers</p></button>
+            <button onclick="{{ctx "add_directory()"}}"><img alt="new_file" src="/public/images/icons/icons8-add-folder-48.png"><p> ajouter un dossier</p></button>
+        </div>
+        <div class="file-list" {{object "file_list"}}>
+        </div>
+        <button class="start-upload-button" {{object "upload_button"}} onclick="{{ctx "start_upload()"}}">
+            ENVOYER
+        </button>
+        <div class="upload-in-progress" {{object "upload_in_progress"}}>
+            <div class="thumbnail">
+                <img src="/public/images/icons/mime-icons/text.png" alt="thumbnail">
+            </div>
+            <div class="infos">
+                <div class="title">
+                    <div class="name-line">
+                        <p class="name" {{object "upload_file_name"}}></p>
+                        <button class="close" onclick="{{ctx "pause()"}}"><img
+                                src="/public/images/icons/icons8-pause-30.png" {{object "pause_img"}}></button>
+                    </div>
+                    <p class="size" {{object "upload_file_size"}}></p>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar">
+                        <div class="progress-status-after" {{object "progress_after"}}></div>
+                        <div class="progress-status" {{object "progress"}}></div>
+                    </div>
+                    <p class="progress-percents" {{object "percents"}}></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

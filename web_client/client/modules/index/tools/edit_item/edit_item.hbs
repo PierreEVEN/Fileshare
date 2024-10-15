@@ -1,0 +1,26 @@
+<h1>Modifier l'élément {{name}}</h1>
+<form onsubmit="{{ctx 'submit(event)'}}">
+    <div class="field">
+        <p>Nom</p>
+        <label for='display_name'>
+            <input type="text" name="display_name" placeholder="Nom" id="display_name" required
+                   value="{{name}}">
+        </label>
+    </div>
+    <div class="field">
+        <p>Description</p>
+        <label for='description'>
+            <textarea name="description" placeholder="Description" id="description" rows="8">{{description}}</textarea>
+        </label>
+    </div>
+    {{#if is_directory}}
+        <div class="field">
+            <p>Ouvrir la mise en ligne de fichiers à tous </p>
+            <label for='allow_visitor_upload'>
+                <input type="checkbox" name="allow_visitor_upload" id="allow_visitor_upload"
+                       {{#if open_upload}}checked{{/if}}>
+            </label>
+        </div>
+    {{/if}}
+    <input type="submit" value="Confirmer">
+</form>

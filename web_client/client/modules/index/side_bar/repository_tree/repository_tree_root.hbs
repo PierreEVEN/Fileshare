@@ -1,0 +1,15 @@
+<div {{object "category"}}>
+    <button class="field" onclick="{{ctx "expand()"}}" oncontextmenu="{{ctx "context(event)"}}">
+        <p class="arrow" {{object "arrow"}}>▸</p><img src="/public/images/icons/icons8-storage-96.png">
+        <p class="title">{{display_name}}</p>
+    </button>
+    <div class="content">
+        <div {{object "content"}} class="content"></div>
+        <div {{object "trash"}} class="trash">
+            <button onclick="{{ctx "trash()"}}" class="field">
+                <img src="/public/images/icons/icons8-full-trash-96.png" alt="trash">
+                <p>corbeille</p>
+            </button>
+        </div>
+    </div>
+</div>

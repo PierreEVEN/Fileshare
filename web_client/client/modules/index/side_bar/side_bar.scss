@@ -1,0 +1,48 @@
+.side-bar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  button {
+    justify-content: left;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+
+    .title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    img {
+      width: 20px;
+      margin-right: 10px;
+      margin-left: 2px;
+    }
+
+    .arrow {
+      transition-duration: 0.2s;
+      min-width: 15px;
+    }
+  }
+
+  .expand {
+    > button {
+      > p.arrow {
+        rotate: 90deg;
+      }
+    }
+  }
+
+  .content {
+    .trash {
+      display: none;
+    }
+  }
+}
+
+.side-bar-selected > .field {
+  border: 1px solid gray;
+}
