@@ -18,6 +18,8 @@ import {CarouselList} from "./carousel/list/carousel_list";
 import {humanFileSize} from "../../../../utilities/utils";
 import {Selector} from "./selector";
 import {MODAL} from "../../modal/modal";
+import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
+import {delete_item} from "../../tools/delete_item/delete_item";
 
 require('./repository_viewport.scss')
 
@@ -25,17 +27,17 @@ require('./repository_viewport.scss')
  * @type {RepositoryViewport}
  */
 let CURRENT_VIEWPORT = null;
-document.addEventListener('keydown', async (event) => {
+document.addEventListener('keydown', async function (event) {
     if (!CURRENT_VIEWPORT)
         return;
     if (event.target.type === 'text')
         return;
+    if (MODAL.is_open()) {
+        if ((event.key === 'Backspace' || event.key === 'Escape'))
+            MODAL.close();
+        return;
+    }
     if ((event.key === 'Backspace' || event.key === 'Escape')) {
-        if (MODAL.is_open()) {
-            if (event.key === 'Escape')
-                MODAL.close();
-            return;
-        }
         if (CURRENT_VIEWPORT.carousel) {
             await CURRENT_VIEWPORT.close_carousel();
         } else {
@@ -48,6 +50,7 @@ document.addEventListener('keydown', async (event) => {
                         await APP.set_display_item(await item.filesystem().fetch_item(item.parent_item));
                     else
                         await APP.set_display_repository(await Repository.find(item.repository));
+                    CURRENT_VIEWPORT.selector.select_item(item.id, false, false);
                 }
             }
         }
@@ -58,7 +61,7 @@ document.addEventListener('keydown', async (event) => {
             return;
         } else if (MODAL.is_open())
             return;
-        CURRENT_VIEWPORT.selector.select_next(event.shiftKey, event.ctrlKey);
+        await CURRENT_VIEWPORT.selector.select_next(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'ArrowLeft') {
         if (CURRENT_VIEWPORT.carousel) {
@@ -66,32 +69,33 @@ document.addEventListener('keydown', async (event) => {
             return;
         } else if (MODAL.is_open())
             return;
-        CURRENT_VIEWPORT.selector.select_previous(event.shiftKey, event.ctrlKey);
+        await CURRENT_VIEWPORT.selector.select_previous(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'ArrowUp') {
-        if (MODAL.is_open() || (this.directory_content && this.directory_content.item_carousel))
+        if (MODAL.is_open() || CURRENT_VIEWPORT.carousel)
             return;
         const item_per_row = CURRENT_VIEWPORT.container.offsetWidth / 120;
         for (let i = 1; i < item_per_row; ++i)
-            CURRENT_VIEWPORT.selector.select_previous(event.shiftKey, event.ctrlKey);
+            await CURRENT_VIEWPORT.selector.select_previous(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'ArrowDown') {
-        if (MODAL.is_open() || (this.directory_content && this.directory_content.item_carousel))
+        if (MODAL.is_open() || CURRENT_VIEWPORT.carousel)
             return;
         const item_per_row = CURRENT_VIEWPORT.container.offsetWidth / 120;
         for (let i = 1; i < item_per_row; ++i)
-            CURRENT_VIEWPORT.selector.select_next(event.shiftKey, event.ctrlKey);
+            await CURRENT_VIEWPORT.selector.select_next(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'Enter') {
         if (MODAL.is_open())
             return;
 
-        const current_data = this.filesystem.get_object_data(this.navigator.last_selected_item);
-        if (current_data) {
-            if (current_data.is_regular_file) {
-                CURRENT_VIEWPORT.open_carousel()
+        if (CURRENT_VIEWPORT.selector.get_last_selected_item()) {
+            let data = await CURRENT_VIEWPORT.try_get_item_data(CURRENT_VIEWPORT.selector.get_last_selected_item());
+            if (!data || data.in_trash) return;
+            if (data.is_regular_file) {
+                await CURRENT_VIEWPORT.open_carousel(data)
             } else
-                this.navigator.set_current_dir(current_data.id);
+                await CURRENT_VIEWPORT.open_item(data);
         }
     }
     if (!MODAL.is_open() && !CURRENT_VIEWPORT.carousel) {
@@ -101,13 +105,35 @@ document.addEventListener('keydown', async (event) => {
             event.preventDefault();
         }
         if ((event.key === 'x' || event.key === 'X') && event.ctrlKey) {
-            this.cut_selection();
+            CLIPBOARD.clear();
+            for (const item of CURRENT_VIEWPORT.selector.get_selected_items())
+                CLIPBOARD.push(await CURRENT_VIEWPORT.try_get_item_data(item));
+            CLIPBOARD.set_move_mode(true);
+        }
+        if ((event.key === 'c' || event.key === 'C') && event.ctrlKey) {
+            CLIPBOARD.clear();
+            for (const item of CURRENT_VIEWPORT.selector.get_selected_items())
+                CLIPBOARD.push(await CURRENT_VIEWPORT.try_get_item_data(item));
+            CLIPBOARD.set_move_mode(true);
         }
         if ((event.key === 'v' || event.key === 'V') && event.ctrlKey) {
-            this.navigator.move_clipboard_to_parent(this.navigator.get_current_directory())
+
+            if (CURRENT_VIEWPORT.content.get_content_provider() instanceof DirectoryContentProvider) {
+                let directory = CURRENT_VIEWPORT.content.get_content_provider().directory;
+                await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), directory.repository, directory.id);
+            } else if (CURRENT_VIEWPORT.content.get_content_provider() instanceof RepositoryRootProvider) {
+                let repository = CURRENT_VIEWPORT.content.get_content_provider().repository;
+                await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), repository.id, null);
+            }
         }
         if (event.key === 'Delete') {
-            this.move_selection_to_trash();
+            let items = [];
+            for (const it of CURRENT_VIEWPORT.selector.get_selected_items())
+                items.push(await CURRENT_VIEWPORT.try_get_item_data(it));
+            if (CURRENT_VIEWPORT.content.get_content_provider() instanceof TrashContentProvider || event.shiftKey)
+                await delete_item(items, false);
+            else
+                await delete_item(items, true);
         }
     }
 }, false);
@@ -153,7 +179,7 @@ class RepositoryViewport extends MemoryTracker {
         let content_num_items = 0;
         let content_total_size = 0;
 
-        this.content.events.add('add', (item) => {
+        this.content.events.add('add', async (item) => {
 
             let in_trash = this.content.get_content_provider() instanceof TrashContentProvider;
 
@@ -225,7 +251,7 @@ class RepositoryViewport extends MemoryTracker {
      */
     async open_item(item) {
         if (!item.is_regular_file) {
-            this.close_carousel();
+            await this.close_carousel();
             await this.content.set_content_provider(new DirectoryContentProvider(item));
         } else {
             await this.open_carousel(item);
@@ -233,9 +259,21 @@ class RepositoryViewport extends MemoryTracker {
         await this.toolbar.set_path_to(item, false);
     }
 
+    async try_get_item_data(item_id) {
+        let fs = null;
+        if (this.content.get_content_provider().directory) {
+            fs = this.content.get_content_provider().directory.filesystem();
+        } else if (this.content.get_content_provider().repository) {
+            fs = this.content.get_content_provider().repository.content;
+        }
+
+        if (fs) {
+            return await fs.fetch_item(item_id)
+        }
+    }
 
     async open_root() {
-        this.close_carousel();
+        await this.close_carousel();
         if (this.content && (!this.content.get_content_provider() || !(this.content.get_content_provider() instanceof RepositoryRootProvider))) {
             await this.content.set_content_provider(new RepositoryRootProvider(this.repository));
             await this.toolbar.set_path_to(null, false);
@@ -243,7 +281,7 @@ class RepositoryViewport extends MemoryTracker {
     }
 
     async open_trash() {
-        this.close_carousel();
+        await this.close_carousel();
         if (this.content && (!this.content.get_content_provider() || !(this.content.get_content_provider() instanceof TrashContentProvider))) {
             await this.content.set_content_provider(new TrashContentProvider(this.repository));
             await this.toolbar.set_path_to(null, true);
@@ -287,7 +325,7 @@ class RepositoryViewport extends MemoryTracker {
     }
 
     async open_carousel(item) {
-        this.close_carousel();
+        await this.close_carousel();
 
         if (item.parent_item) {
             await this.content.set_content_provider(new DirectoryContentProvider(await item.filesystem().fetch_item(item.parent_item)));
@@ -295,7 +333,7 @@ class RepositoryViewport extends MemoryTracker {
             await this.content.set_content_provider(new RepositoryRootProvider(await Repository.find(item.repository)));
         }
 
-        const view_item = async (item) => {
+        const view_item = async (item, carousel_list) => {
             if (this.carousel)
                 this.carousel.delete();
             this.carousel = null;
@@ -306,15 +344,16 @@ class RepositoryViewport extends MemoryTracker {
             this.carousel.on_close = async () => {
                 await this.close_carousel();
             }
+            this.carousel.list = carousel_list;
             await APP.state.open_item(item);
         }
 
         Carousel.get_fullscreen_container().root.style.display = 'flex';
         const container = Carousel.get_fullscreen_container();
         const item_list = new CarouselList(this, (item) => {
-            view_item(item);
+            view_item(item, item_list);
         });
-        await view_item(item);
+        await view_item(item, item_list);
         await item_list.build_visual(container.list_container);
         item_list.select_item(item, true);
     }

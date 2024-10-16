@@ -8,6 +8,7 @@ import {edit_user} from "../../tools/edit_user/edit_user";
 import {APP_CONFIG} from "../../../../types/app_config";
 import {APP_COOKIES} from "../../../../utilities/cookies";
 import {GLOBAL_EVENTS} from "../../../../types/event_manager";
+import {human_readable_timestamp} from "../../../../utilities/utils";
 
 require('./user_settings.scss')
 
@@ -80,7 +81,7 @@ class UserViewport extends MemoryTracker {
                     continue;
                 const div = require('./token.hbs')({
                     device: decodeURIComponent(token.device),
-                    expdate: token.expdate,
+                    expdate: human_readable_timestamp(token.expdate),
                 }, {
                     delete: async () => {
                         await fetch_api('user/logout/', 'POST', null, token.token)

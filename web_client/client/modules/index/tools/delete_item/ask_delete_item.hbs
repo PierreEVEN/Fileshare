@@ -1,0 +1,5 @@
+<h1>Étes vous sûr de vouloir supprimer définitivement ces éléments ?</h1>
+<form onsubmit="{{ctx 'delete(event)'}}">
+    <input type="submit" value="Supprimer">
+    <input type="button" value="Annuler" onclick="{{ctx "cancel()"}}">
+</form>

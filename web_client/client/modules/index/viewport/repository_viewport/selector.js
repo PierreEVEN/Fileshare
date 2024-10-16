@@ -98,6 +98,44 @@ class Selector extends MemoryTracker {
         this._internal_select(item_id);
     }
 
+    get_last_selected_item() {
+        return this._last_selected;
+    }
+
+    async select_next(local_edit) {
+        if (this.sorted_elements.length === 0)
+            return;
+        if (!this._last_selected)
+            return this.select_item(this.sorted_elements[0], local_edit, false);
+
+        let index = null;
+        for (const item in this.sorted_elements)
+            if (this.sorted_elements[item] === this._last_selected) {
+                index = Number(item);
+                break;
+            }
+        if (index === null || this.sorted_elements.length - 1 === index)
+            return;
+        return this.select_item(this.sorted_elements[index + 1], local_edit, false);
+    }
+
+    async select_previous(local_edit, fill_space) {
+        if (this.sorted_elements.length === 0)
+            return;
+        if (!this._last_selected)
+            return this.select_item(this.sorted_elements[this.sorted_elements.length - 1], local_edit, false);
+
+        let index = null;
+        for (const item in this.sorted_elements)
+            if (this.sorted_elements[item] === this._last_selected) {
+                index = Number(item);
+                break;
+            }
+        if (index === null || index === 0)
+            return;
+        return this.select_item(this.sorted_elements[index - 1], local_edit, false);
+    }
+
     is_selected(item_id) {
         return this._selected_items.has(item_id);
     }

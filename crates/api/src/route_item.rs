@@ -20,7 +20,8 @@ use regex::Regex;
 use serde::Deserialize;
 use std::sync::Arc;
 use tokio_util::io::ReaderStream;
-use types::database_ids::{DatabaseId, ItemId};
+use database::repository::DbRepository;
+use types::database_ids::{DatabaseId, ItemId, RepositoryId};
 use types::item::{CreateDirectoryParams, DirectoryData, Item};
 
 pub struct ItemRoutes {}
@@ -41,6 +42,7 @@ impl ItemRoutes {
             .route("/preview/:path/", get(download).with_state(ctx.clone()))
             .route("/update/", post(edit).with_state(ctx.clone()))
             .route("/search/", post(search).with_state(ctx.clone()))
+            .route("/copy/", post(copy).with_state(ctx.clone()))
         )
     }
 }
@@ -327,6 +329,74 @@ async fn search(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl
     for data in result {
         if permissions.view_item(&ctx.database, data.id()).await?.granted() {
             items.push(data.id().clone());
+        }
+    }
+    Ok(Json(items))
+}
+
+/// Search item by filter
+async fn copy(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
+    let permissions = Permissions::new(&request)?;
+
+    #[derive(Deserialize)]
+    pub struct Copy {
+        destination_repository: RepositoryId,
+        destination_directory: Option<ItemId>,
+        items: Vec<ItemId>,
+        remove_sources: bool,
+    }
+
+    let data = Json::<Copy>::from_request(request, &ctx).await?.0;
+
+    let destination_directory = if let Some(directory) = data.destination_directory {
+        permissions.upload_to_directory(&ctx.database, &directory).await?.require()?;
+        Some(DbItem::from_id(&ctx.database, &directory, Trash::No).await?)
+    } else { None };
+    let destination_repository = DbRepository::from_id(&ctx.database, &data.destination_repository).await?;
+    if destination_directory.is_none() {
+        permissions.upload_to_repository(&ctx.database, destination_repository.id()).await?.require()?;
+    }
+
+    let mut items = vec![];
+    for item in data.items {
+        if !permissions.view_item(&ctx.database, &item).await?.granted() { continue; }
+        let mut item = DbItem::from_id(&ctx.database, &item, Trash::No).await?;
+
+        if let Some(parent_dir) = &destination_directory {
+            item.parent_item = Some(parent_dir.id().clone());
+            item.repository = parent_dir.repository.clone();
+        } else {
+            item.parent_item = None;
+            item.repository = destination_repository.id().clone();
+        }
+        if data.remove_sources {
+            DbItem::push(&mut item, &ctx.database).await?;
+            items.push(item);
+        } else {
+            // Create a new item
+            let old_directory = item.clear_id();
+            DbItem::push(&mut item, &ctx.database).await?;
+            if item.directory.is_some() {
+                let mut directories_to_copy = vec![];
+                directories_to_copy.push((old_directory, item.id().clone()));
+
+                // Copy directory content recursively
+                while let Some((old, new)) = directories_to_copy.pop() {
+                    let children = DbItem::from_parent(&ctx.database, &old, Trash::No).await?;
+                    for child in children {
+                        let mut child = child.clone();
+                        let old_id = child.clear_id();
+                        child.repository = item.repository.clone();
+                        child.parent_item = Some(new.clone());
+                        DbItem::push(&mut child, &ctx.database).await?;
+                        if child.directory.is_some() {
+                            directories_to_copy.push((old_id, child.id().clone()));
+                        }
+                        items.push(child);
+                    }
+                }
+            }
+            items.push(item);
         }
     }
     Ok(Json(items))

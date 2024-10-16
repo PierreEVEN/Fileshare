@@ -127,6 +127,7 @@
   #tokens {
     display: flex;
     flex-direction: column;
+    overflow: scroll;
 
     .token {
       border-bottom: 1px dotted $text-secondary;

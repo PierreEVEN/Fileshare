@@ -3,6 +3,8 @@ import {create_directory} from "../../tools/create_directory/create_directory";
 import {delete_item, restore_item} from "../../tools/delete_item/delete_item";
 import {edit_item} from "../../tools/edit_item/edit_item";
 import {FilesystemItem} from "../../../../types/filesystem_stream";
+import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
+import {Repository} from "../../../../types/repository";
 
 /**
  * @param item {FilesystemItem|FilesystemItem[]}
@@ -31,6 +33,31 @@ function context_menu_item(item) {
         } else
             await item.download();
     }, false));
+
+    ctx.add_action(new MenuAction("Copier", "/public/images/icons/icons8-copy-48.png", async () => {
+        CLIPBOARD.clear();
+        if (multi) {
+            for (const it of item)
+                CLIPBOARD.push(it);
+        } else
+            CLIPBOARD.push(item);
+        CLIPBOARD.set_move_mode(false);
+    }, false));
+    ctx.add_action(new MenuAction("Couper", "/public/images/icons/icons8-cut-48.png", async () => {
+        CLIPBOARD.clear();
+        if (multi) {
+            for (const it of item)
+                CLIPBOARD.push(it);
+        } else
+            CLIPBOARD.push(item);
+        CLIPBOARD.set_move_mode(true);
+    }, false));
+
+    if (CLIPBOARD.has_items())
+        ctx.add_action(new MenuAction("Coller ici", "/public/images/icons/icons8-paste-48.png", async () => {
+            await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), item.repository, item.id);
+        }, false));
+
     const in_trash = (!multi && item.in_trash) || (multi && item.length !== 0 && item[0].in_trash);
     if (in_trash)
         ctx.add_action(new MenuAction("Restorer", "/public/images/icons/icons8-restore-96.png", async () => {

@@ -1,10 +1,5 @@
-# Bugs avant release V3.0
-
-- viewport
-    - navigation
-- reimplementer le reset-password
-
 # TODO
+- reimplementer le reset-password / mot de passe oublié
 - fix taille des dossiers cassée
 - implémenter les filtres
 - fix connexion forcée

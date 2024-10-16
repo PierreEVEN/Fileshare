@@ -1,6 +1,7 @@
 import {fetch_api} from "../../../../utilities/request";
 import {FilesystemItem} from "../../../../types/filesystem_stream";
 import {Message, NOTIFICATION} from "../message_box/notification";
+import {MODAL} from "../../modal/modal";
 
 /**
  * @param item {FilesystemItem|FilesystemItem[]}
@@ -18,11 +19,34 @@ async function delete_item(item, move_to_trash) {
             ids.push(it.id);
             fs_map.set(it.id, it.filesystem());
         }
-    }
-    else {
+    } else {
         ids = [item.id];
         fs_map.set(item.id, item.filesystem());
     }
+
+    if (!move_to_trash) {
+        if (!await new Promise((resolve, reject) => {
+            MODAL.open(require('./ask_delete_item.hbs')({}, {
+                delete: () => {
+                    resolve(true)
+                },
+                cancel: () => {
+                    resolve(false);
+                }
+            }), {
+                custom_width: '500px', custom_height: '300px', on_close: () => {
+                    resolve(false);
+                }
+            })
+        })) {
+            NOTIFICATION.warn(new Message("Opération annulée"));
+            MODAL.close();
+            return;
+        }
+        MODAL.close();
+    }
+
+
     const items = await fetch_api(`item/${move_to_trash ? 'move-to-trash' : 'delete'}/`, 'POST',
         ids
     ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de supprimer le(s) fichier(s)")));
@@ -56,8 +80,7 @@ async function restore_item(item) {
             ids.push(it.id);
             fs_map.set(it.id, it.filesystem());
         }
-    }
-    else {
+    } else {
         ids = [item.id];
         fs_map.set(item.id, item.filesystem());
     }

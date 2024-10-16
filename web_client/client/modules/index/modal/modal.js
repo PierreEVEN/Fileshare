@@ -80,20 +80,20 @@ const MODAL = {
     /**
      * @return {boolean}
      */
-    is_open: () => {
-        MODAL_SINGLETON && MODAL_SINGLETON.is_open();
+    is_open: function () {
+        return MODAL_SINGLETON && MODAL_SINGLETON.is_open();
     },
     /**
      * @param content {HTMLElement}
      * @param create_infos {CreateInfos}
      * @return {HTMLElement}
      */
-    open: (content, create_infos = {}) => {
+    open: function (content, create_infos = {}) {
         if (!MODAL_SINGLETON)
             MODAL_SINGLETON = new Modal();
         return MODAL_SINGLETON.open(content, create_infos);
     },
-    close: () => {
+    close: function () {
         MODAL_SINGLETON.close();
     }
 }

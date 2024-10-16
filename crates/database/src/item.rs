@@ -148,9 +148,9 @@ impl DbItem {
                 item.id(), item.repository, item.owner, item.name, item.file.is_some(), item.description, item.parent_item, item.absolute_path, item.in_trash);
         } else {
             let res = query_object!(db, ItemId, "INSERT INTO SCHEMA_NAME.items
-                        (repository, owner, name, is_regular_file, description, parent_item, absolute_path, in_trash) VALUES
-                        ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-                item.repository, item.owner, item.name, item.file.is_some(), item.description, item.parent_item, item.absolute_path, item.in_trash);
+                        (repository, owner, name, is_regular_file, description, parent_item, in_trash) VALUES
+                        ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+                item.repository, item.owner, item.name, item.file.is_some(), item.description, item.parent_item, item.in_trash);
             if let Some(res) = res {
                 item.set_id(res)?;
             }

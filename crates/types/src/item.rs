@@ -52,6 +52,11 @@ impl Item {
             Ok(())
         }
     }
+    pub fn clear_id(&mut self) -> ItemId {
+        let old_id = self.id.clone();
+        self.id = Default::default();
+        old_id
+    }
     pub fn id(&self) -> &ItemId {
         &self.id
     }
