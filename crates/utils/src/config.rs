@@ -19,7 +19,8 @@ pub struct WebClientConfig {
     pub client_path: PathBuf,
     pub debug: bool,
     pub check_for_packages_updates: bool,
-    pub build_webpack: bool
+    pub build_webpack: bool,
+    pub force_secure_requests: bool
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -84,6 +85,7 @@ impl Default for Config {
                 debug: false,
                 check_for_packages_updates: true,
                 build_webpack: true,
+                force_secure_requests: false,
             },
             tls_config: TlsConfig {
                 certificate: PathBuf::from("/Path/To/certificate.pem"),
