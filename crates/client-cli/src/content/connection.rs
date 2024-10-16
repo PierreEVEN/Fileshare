@@ -67,7 +67,13 @@ impl Connection {
             .send().await?;
         let repositories: Vec<Repository> = self.parse_result(response).await?.error_for_status()?.json().await?;
         if repositories.is_empty() {
-            Err(Error::msg("Repository does not exists"))
+            if self.authentication_token.is_some() {
+                Err(Error::msg("Repository does not exists"))
+            }
+            else {
+                self.authenticate(None).await?;
+                Err(Error::msg("Please try again"))
+            }
         } else {
             Ok(repositories[0].clone())
         }
