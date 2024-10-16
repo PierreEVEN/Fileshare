@@ -11,7 +11,7 @@ env:
 jobs:
   build_rust_linux:
     name: Linux - Rust app
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@main
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -57,7 +57,7 @@ jobs:
 
   build_web_app:
     name: Web app
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@main
       - working-directory: ./web_client
@@ -72,7 +72,7 @@ jobs:
 
   package:
     name: Upload release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [build_rust_windows, build_rust_linux, build_web_app]
     steps:
       # Download generated artifacts
