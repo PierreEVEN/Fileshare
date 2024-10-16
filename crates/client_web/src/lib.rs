@@ -168,8 +168,6 @@ struct ClientAppConfig {
 
 fn get_origin(ctx: &Arc<AppCtx>, request: &Request) -> Result<String, ServerError> {
     let use_https = if let Some(scheme) = request.uri().scheme_str() { scheme == "https" } else { ctx.config.use_tls || ctx.config.web_client_config.force_secure_requests };
-
-    println!("request : {:?} {:?} {:?} {:?}", request.uri(), request.uri().host(), request.uri().authority(), request.uri().scheme_str());
     Ok(format!("{}://{}", if use_https { "https" } else { "http" }, match request.headers().get("host") {
         None => {
             match request.uri().host() {

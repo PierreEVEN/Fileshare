@@ -1,7 +1,8 @@
 use anyhow::Error;
 use std::ffi::OsString;
 use std::{env, fs};
-use std::path::{PathBuf};
+use std::fmt::format;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 
@@ -54,7 +55,7 @@ impl Thumbnail {
         Ok(())
     }
 
-    fn image_thumbnail(input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, size: u32) -> Result<(), Error> {
+    fn image_thumbnail(input_path: &Path, output_path: &PathBuf, mimetype: &String, size: u32) -> Result<(), Error> {
         fs::create_dir_all(output_path.parent().unwrap())?;
         let mime_plain = match mimetype.as_str() {
             "image/x-icon" => {
@@ -154,11 +155,14 @@ impl Thumbnail {
                 output_path,
                 image::ImageFormat::WebP,
             )
-            .map_err(|_| PdfiumError::ImageError)?;
+            .map_err(|err| {Error::msg(format!("Failed to render PDF thumbnail : {err} (source file path : '{}' to '{}')", input_path.display(), output_path.display()))})?;
         Ok(())
     }
 
     pub fn create(input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, size: u32) -> Result<PathBuf, Error> {
+        if !input_path.exists() {
+            return Err(Error::msg(format!("Cannot create thumbnail : the source file {} does not exists", input_path.display())))
+        }
         if mimetype.contains("pdf") {
             Self::pdf_thumbnail(input_path, output_path, size)?;
             return Ok(output_path.clone());
