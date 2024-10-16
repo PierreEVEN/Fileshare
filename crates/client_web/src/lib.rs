@@ -167,7 +167,10 @@ struct ClientAppConfig {
 }
 
 fn get_origin(ctx: &Arc<AppCtx>, request: &Request) -> Result<String, ServerError> {
-    Ok(format!("{}://{}", if ctx.config.use_tls { "https" } else { "http" }, match request.headers().get("host") {
+    let use_https = if let Some(scheme) = request.uri().scheme_str() { scheme == "https" } else { ctx.config.use_tls };
+
+    println!("request : {:?} {:?} {:?} {:?}", request.uri(), request.uri().host(), request.uri().authority(), request.uri().scheme_str());
+    Ok(format!("{}://{}", if use_https { "https" } else { "http" }, match request.headers().get("host") {
         None => {
             match request.uri().host() {
                 None => { ctx.config.addresses[0].to_string() }
@@ -224,7 +227,7 @@ async fn link(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl I
         origin: String,
         id: RepositoryId,
     }
-    let repository = require_display_repository!(request);    
+    let repository = require_display_repository!(request);
     let response = Response {
         origin: get_origin(&ctx, &request)?,
         id: repository.id().clone(),
