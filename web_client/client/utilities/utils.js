@@ -58,4 +58,14 @@ function human_readable_timestamp(timestamp) {
     return dayjs.unix(timestamp).locale('fr').format('DD/MM/YYYY - HH:MM:ss');
 }
 
-export {humanFileSize, seconds_to_str, human_readable_timestamp}
+let is_touch = true;
+window.addEventListener('mousemove', function mouse_move_detector() {
+    is_touch = false;
+    window.removeEventListener('mousemove', mouse_move_detector);
+});
+
+function is_touch_screen() {
+    return window.matchMedia("(pointer: coarse)").matches
+}
+
+export {humanFileSize, seconds_to_str, human_readable_timestamp, is_touch_screen}

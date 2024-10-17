@@ -119,7 +119,6 @@ async fn main() {
         }
     });
 
-
     if env::args().len() > 0 {
         let mut upgrade = false;
         let mut fix_encoded_strings = false;

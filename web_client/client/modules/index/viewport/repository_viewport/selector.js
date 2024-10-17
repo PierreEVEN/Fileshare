@@ -1,4 +1,4 @@
-import {GLOBAL_EVENTS} from "../../../../types/event_manager";
+import {EventManager, GLOBAL_EVENTS} from "../../../../types/event_manager";
 import {MemoryTracker} from "../../../../types/memory_handler";
 
 class Selector extends MemoryTracker {
@@ -30,6 +30,8 @@ class Selector extends MemoryTracker {
         });
 
         this._last_selected = null;
+
+        this.events = new EventManager();
     }
 
     delete() {
@@ -171,6 +173,7 @@ class Selector extends MemoryTracker {
         if (!this._selected_items.has(item_id)) {
             this._selected_items.add(item_id);
             this.viewport.get_div(item_id).classList.add('selected');
+            this.events.broadcast('update_selection', item_id);
         }
     }
 
@@ -178,6 +181,7 @@ class Selector extends MemoryTracker {
         if (this._selected_items.has(item_id)) {
             this._selected_items.delete(item_id);
             this.viewport.get_div(item_id).classList.remove('selected');
+            this.events.broadcast('update_selection', item_id);
         }
     }
 }

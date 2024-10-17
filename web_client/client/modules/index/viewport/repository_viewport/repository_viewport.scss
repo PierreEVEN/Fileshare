@@ -7,6 +7,40 @@
   height: 100%;
   position: relative;
 
+  .mobile-selection {
+    display: flex;
+    width: 100%;
+    height: 0;
+    background-color: $toolbar;
+    border-top: 1px dotted $text-secondary;
+    transition-duration: 0.2s;
+    align-items: center;
+    overflow: hidden;
+
+    button {
+      display: flex;
+      flex-direction: row;
+      padding: 8px;
+      align-items: center;
+    }
+
+    .more-btn {
+      margin-left: auto;
+    }
+
+    p {
+      margin-left: 10px;
+    }
+
+    img {
+      width: 20px;
+    }
+
+    &.visible {
+      height: 40px;
+    }
+  }
+
   .repository-toolbar {
     display: flex;
     flex-direction: row;

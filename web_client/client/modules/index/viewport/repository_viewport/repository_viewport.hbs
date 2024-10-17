@@ -2,6 +2,10 @@
     <div class="repository-toolbar" {{object "toolbar"}}>
 
     </div>
+    <div class="mobile-selection" {{object "mobile_selection"}}>
+        <button onclick="{{ctx "unselect_all()"}}"><img src="/public/images/icons/icons8-back-50.png" alt="back"><p {{object "num_elements"}}></p></button>
+        <button class="more-btn" onclick="{{ctx "ctx_selection()"}}"><img src="/public/images/icons/icons8-ellipsis-90.png" alt="back"></button>
+    </div>
     <div class="repository-content">
         <div class="file-list" oncontextmenu="{{ctx "background_context(event)"}}">
             <div class="content" {{object "content"}}>

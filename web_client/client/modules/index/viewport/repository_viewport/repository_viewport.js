@@ -15,7 +15,7 @@ import {ViewportToolbar} from "./toolbar/toolbar";
 import {Carousel} from "./carousel/carousel";
 import {Repository} from "../../../../types/repository";
 import {CarouselList} from "./carousel/list/carousel_list";
-import {humanFileSize} from "../../../../utilities/utils";
+import {humanFileSize, is_touch_screen} from "../../../../utilities/utils";
 import {Selector} from "./selector";
 import {MODAL} from "../../modal/modal";
 import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
@@ -158,6 +158,16 @@ class RepositoryViewport extends MemoryTracker {
             open_upload: () => {
                 this.open_upload_container()
                 div.elements.upload_button.style.display = 'none';
+            },
+            ctx_selection: async () => {
+                const items = [];
+                for (const item_id of this.selector.get_selected_items()) {
+                    items.push(await this.content.get_filesystem().fetch_item(item_id));
+                }
+                context_menu_item(items);
+            },
+            unselect_all: () => {
+                this.selector.clear_selection();
             }
         });
 
@@ -194,18 +204,41 @@ class RepositoryViewport extends MemoryTracker {
                     await APP.set_display_item(item);
                 },
                 select: async (local_edit, fill_space) => {
-                    this.selector.action_select(item.id, local_edit, fill_space);
+                    if (is_touch_screen()) {
+                        if (this.mobile_selection) {
+                            this.selector.action_select(item.id, true, false);
+                        } else {
+                            await APP.set_display_item(item);
+                        }
+                    } else {
+                        this.selector.action_select(item.id, local_edit, fill_space);
+                    }
                 },
                 context_menu: async () => {
-                    if (this.selector.is_selected(item.id)) {
-                        const items = [];
-                        for (const item_id of this.selector.get_selected_items()) {
-                            items.push(await item.filesystem()?.fetch_item(item_id));
+                    if (is_touch_screen()) {
+                        if (!this.mobile_selection || !this.selector.is_selected(item.id)) {
+                            this.selector.clear_selection();
+                            this.mobile_selection = true;
+                            this.selector.action_select(item.id, false, false);
+                        } else {
+                            const items = [];
+                            for (const item_id of this.selector.get_selected_items()) {
+                                items.push(await item.filesystem()?.fetch_item(item_id));
+                            }
+                            context_menu_item(items);
                         }
-                        context_menu_item(items);
+                        this.update_selection();
                     } else {
-                        this.selector.select_item(item.id, false, false);
-                        context_menu_item(item);
+                        if (this.selector.is_selected(item.id)) {
+                            const items = [];
+                            for (const item_id of this.selector.get_selected_items()) {
+                                items.push(await item.filesystem()?.fetch_item(item_id));
+                            }
+                            context_menu_item(items);
+                        } else {
+                            this.selector.select_item(item.id, false, false);
+                            context_menu_item(item);
+                        }
                     }
                 }
             }))
@@ -239,6 +272,15 @@ class RepositoryViewport extends MemoryTracker {
         });
 
         this.selector = new Selector(this);
+        this.selector.events.add('update_selection', () => {
+            if (this.mobile_selection && this.selector.get_selected_items().length > 0) {
+                this._elements.num_elements.innerText = `${this.selector.get_selected_items().length} éléments`;
+                this._elements.mobile_selection.classList.add('visible');
+            } else {
+                this.mobile_selection = false;
+                this._elements.mobile_selection.classList.remove('visible');
+            }
+        })
     }
 
     get_div(item_id) {
