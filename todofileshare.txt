@@ -1,3 +1,7 @@
+# Urgent :
+
+- faire une fonction qui rehash tous les fichiers
+
 # TODO
 - reimplementer le reset-password / mot de passe oublié
 - fix taille des dossiers cassée

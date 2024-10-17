@@ -1,7 +1,6 @@
 use anyhow::Error;
 use std::ffi::OsString;
 use std::{env, fs};
-use std::fmt::format;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;

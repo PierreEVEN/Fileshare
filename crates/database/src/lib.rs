@@ -15,6 +15,7 @@ pub mod user;
 pub mod subscription;
 pub mod async_zip;
 pub mod compatibility_upgrade;
+pub mod fix_encoded_strings;
 
 pub struct Database {
     db: Client,

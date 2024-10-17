@@ -15,7 +15,7 @@ make_wrapped_db_type!(EncString, String, Default, Serialize, Clone);
 
 impl EncString {
     pub fn plain(&self) -> Result<String, Error> {
-        Ok(urlencoding::decode(self.0.as_str())?.to_string())
+        Self::decode_encoded(self.0.as_str())
     }
     pub fn encoded(&self) -> &String {
         &self.0
@@ -35,6 +35,10 @@ impl EncString {
             .join("-").to_lowercase().as_str()))
     }
 
+    pub fn decode_encoded(encoded: &str) -> Result<String, Error> {
+        Ok(urlencoding::decode(encoded)?.to_string())
+    }
+    
     fn new(encoded: String) -> Result<Self, Error> {
         let encoded_test = encoded.replace("%", "a");
         if urlencoding::encode(encoded_test.as_str()) != encoded_test {
