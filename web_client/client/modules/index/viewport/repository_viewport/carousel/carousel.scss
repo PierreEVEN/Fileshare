@@ -100,11 +100,21 @@
           justify-content: center;
           flex-direction: column;
 
-
-          img.item-small {
+          .item-small {
             max-width: 90px;
             max-height: 70px;
             transition-duration: 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+
+            .item-overlay {
+              position: absolute;
+              width: 50px;
+              height: 50px;
+              filter: drop-shadow(5px 5px 8px black);
+            }
           }
 
           &:hover {
