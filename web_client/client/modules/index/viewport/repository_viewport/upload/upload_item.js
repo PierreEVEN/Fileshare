@@ -175,6 +175,10 @@ class UploadItem {
             if (!this.parent.directory) {
                 await this.parent.create_directory(filesystem);
             }
+            if (!this.parent.directory) {
+                console.error(`Failed to create parent directory for : ${this.parent.name}`);
+                return;
+            }
             this.directory = await this._get_or_create_dir(this.name, this.parent.directory.repository, this.parent.directory.id);
         } else {
             this.directory = await this._get_or_create_dir(this.name, this.parent.viewport.repository.id, null);

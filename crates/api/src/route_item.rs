@@ -20,6 +20,7 @@ use regex::Regex;
 use serde::Deserialize;
 use std::sync::Arc;
 use tokio_util::io::ReaderStream;
+use tracing::warn;
 use database::repository::DbRepository;
 use types::database_ids::{DatabaseId, ItemId, RepositoryId};
 use types::item::{CreateDirectoryParams, DirectoryData, Item};
@@ -84,8 +85,14 @@ async fn new_directory(State(ctx): State<Arc<AppCtx>>, request: Request) -> Resu
         let mut item = Item::default();
 
         if let Some(parent_item) = &params.parent_item {
-            if !permissions.upload_to_directory(&ctx.database, parent_item).await?.granted() { continue; }
-        } else if !permissions.upload_to_repository(&ctx.database, &params.repository).await?.granted() { continue; }
+            if !permissions.upload_to_directory(&ctx.database, parent_item).await?.granted() {
+                warn!("Cannot upload to directory {}", parent_item);
+                continue;
+            }
+        } else if !permissions.upload_to_repository(&ctx.database, &params.repository).await?.granted() {
+            warn!("Cannot upload to repository {}", params.repository);
+            continue;
+        }
 
         let re = Regex::new(r#"[<>:"/\\|?*\x00-\x1F]|^(?:aux|con|clock\$|nul|prn|com[1-9]|lpt[1-9])$"#)?;
         if re.is_match(item.name.plain()?.as_str()) {

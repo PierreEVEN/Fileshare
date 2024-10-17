@@ -68,6 +68,7 @@ impl Permissions {
     }
 
     pub async fn edit_repository(&self, db: &Database, repository_id: &RepositoryId) -> Result<PermissionResult, ServerError> {
+        self.view_repository(db, repository_id).await?.granted();
         let repository = DbRepository::from_id(db, repository_id).await?;
         Ok(if let Some(user) = &*self.request_context.connected_user().await {
             if repository.owner == *user.id() {
@@ -86,6 +87,7 @@ impl Permissions {
     }
 
     pub async fn upload_to_repository(&self, db: &Database, repository_id: &RepositoryId) -> Result<PermissionResult, ServerError> {
+        self.view_repository(db, repository_id).await?.granted();
         let repository = DbRepository::from_id(db, repository_id).await?;
         Ok(if let Some(user) = &*self.request_context.connected_user().await {
             if repository.owner == *user.id() || repository.allow_visitor_upload {
@@ -110,8 +112,11 @@ impl Permissions {
     }
 
     pub async fn edit_item(&self, db: &Database, item_id: &ItemId) -> Result<PermissionResult, ServerError> {
+        self.view_item(db, item_id).await?.granted();
         let item = DbItem::from_id(db, item_id, Trash::Both).await?;
-        self.edit_repository(db, &item.repository).await?.require()?;
+        if self.edit_repository(db, &item.repository).await?.granted() {
+            return Ok(PermissionResult::Granted)
+        }
         Ok(if let Some(user) = &*self.request_context.connected_user().await {
             if item.owner == *user.id() {
                 PermissionResult::Granted
@@ -124,8 +129,11 @@ impl Permissions {
     }
 
     pub async fn upload_to_directory(&self, db: &Database, item_id: &ItemId) -> Result<PermissionResult, ServerError> {
+        self.view_item(db, item_id).await?.granted();
         let item = DbItem::from_id(db, item_id, Trash::Both).await?;
-        self.upload_to_repository(db, &item.repository).await?.require()?;
+        if self.upload_to_repository(db, &item.repository).await?.granted() {
+            return Ok(PermissionResult::Granted)
+        }
         Ok(if let Some(user) = &*self.request_context.connected_user().await {
             if item.owner == *user.id() {
                 PermissionResult::Granted
