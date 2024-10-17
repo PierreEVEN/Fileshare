@@ -4,7 +4,6 @@ import {delete_item, restore_item} from "../../tools/delete_item/delete_item";
 import {edit_item} from "../../tools/edit_item/edit_item";
 import {FilesystemItem} from "../../../../types/filesystem_stream";
 import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
-import {Repository} from "../../../../types/repository";
 
 /**
  * @param item {FilesystemItem|FilesystemItem[]}
@@ -13,7 +12,10 @@ function context_menu_item(item) {
     const ctx = new ContextMenu();
 
     let multi = item instanceof Array;
-
+    if (multi && item.length === 1) {
+        multi = false;
+        item = item[0];
+    }
     if (!multi) {
         ctx.add_action(new MenuAction("Modifier", "/public/images/icons/icons8-edit-96.png", async () => {
             await edit_item(item);
