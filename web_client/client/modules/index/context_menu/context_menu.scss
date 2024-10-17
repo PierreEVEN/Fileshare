@@ -4,7 +4,7 @@
   position: absolute;
   display: flex;
   flex-direction: column;
-  background-color: $secondary;
+  background-color: opaque($secondary);
   z-index: 200000;
   padding: 10px;
   box-shadow: 10px 5px 15px black;

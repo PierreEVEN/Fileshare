@@ -133,7 +133,7 @@ class SideBar {
 
             for (const repository_id of APP_COOKIES.get_last_repositories()) {
                 const repository = await Repository.find(repository_id);
-                if (!this._recent_repositories_loaded.has(repository.id))
+                if (repository && !this._recent_repositories_loaded.has(repository.id))
                     this._recent_repositories_loaded.set(repository.id, new RepositoryTree(this, this._elements.recent, repository));
             }
         } else {
@@ -183,7 +183,6 @@ class SideBar {
      * @return {Promise<void>}
      */
     async expand_to(target_repository, item, trash) {
-        console.log("expand recent")
         await this.expand_recent(true);
         let recent_tree = this._recent_repositories_loaded.get(target_repository.id);
         if (!recent_tree) {
