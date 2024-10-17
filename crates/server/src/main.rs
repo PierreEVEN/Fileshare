@@ -16,8 +16,9 @@ use http_body_util::BodyExt;
 use api::app_ctx::AppCtx;
 use api::{RequestContext, RootRoutes};
 use client_web::WebClient;
-use database::compatibility_upgrade::Upgrade;
-use database::fix_encoded_strings::FixEncodedStrings;
+use database::upgrades::compatibility_upgrade::Upgrade;
+use database::upgrades::fix_encoded_strings::FixEncodedStrings;
+use database::upgrades::rehash_files::RehashFiles;
 use database::user::DbUser;
 use types::enc_string::EncString;
 use utils::config::{Config, WebClientConfig};
@@ -122,6 +123,7 @@ async fn main() {
     if env::args().len() > 0 {
         let mut upgrade = false;
         let mut fix_encoded_strings = false;
+        let mut rehash_files = false;
         let mut upgrade_schema = None;
         for arg in env::args() {
             if upgrade {
@@ -131,6 +133,8 @@ async fn main() {
                 upgrade = true;
             } else if arg == "--fix-encoded-strings" {
                 fix_encoded_strings = true;
+            } else if arg == "--rehash-files" {
+                rehash_files = true;
             }
         }
         if let Some(upgrade_schema) = upgrade_schema {
@@ -154,6 +158,18 @@ async fn main() {
                 }
                 Err(err) => {
                     error!("Failed to fix encoded strings : {err}");
+                    return;
+                }
+            };
+        }
+        if rehash_files {
+            match RehashFiles::run(&ctx.database).await {
+                Ok(_) => {
+                    info!("Successfully rehashed files");
+                    return;
+                }
+                Err(err) => {
+                    error!("Failed to rehash files : {err}");
                     return;
                 }
             };

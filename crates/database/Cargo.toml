@@ -13,6 +13,7 @@ serde = { version = "1.0.209", features = ["derive"] }
 rand = "0.8.5"
 tokio-postgres = "0.7.12"
 tokio-util = "0.7.12"
+blake3 = "1.5.4"
 
 utils = { path = "../utils" }
 types = { path = "../types", features = ["axum", "tokio-postgres", "password"] }
