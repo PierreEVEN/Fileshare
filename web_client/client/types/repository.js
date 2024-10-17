@@ -3,6 +3,7 @@ import {FilesystemStream} from "./filesystem_stream";
 import {fetch_api} from "../utilities/request";
 import {GLOBAL_EVENTS} from "./event_manager";
 import {Message, NOTIFICATION} from "../modules/index/tools/message_box/notification";
+import {APP_COOKIES} from "../utilities/cookies";
 
 class RepositoryStatus {
     constructor(data) {
@@ -89,6 +90,7 @@ class Repository {
         const existing = Repository._LOCAL_CACHE.get(data.id);
         if (existing)
             return existing;
+        APP_COOKIES.push_last_repositories(data.id);
         return new Repository(data)
     }
 

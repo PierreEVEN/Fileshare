@@ -183,11 +183,13 @@ class SideBar {
      * @return {Promise<void>}
      */
     async expand_to(target_repository, item, trash) {
-        await this.expand_my_repositories(true);
-        let tree = this._my_repositories_loaded.get(target_repository.id);
-        if (!tree)
+        console.log("expand recent")
+        await this.expand_recent(true);
+        let recent_tree = this._recent_repositories_loaded.get(target_repository.id);
+        if (!recent_tree) {
             return;
-        await tree.expand_to_item(item, trash);
+        }
+        await recent_tree.expand_to_item(item, trash);
     }
 
     select_div(div) {

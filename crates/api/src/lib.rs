@@ -16,7 +16,7 @@ use crate::route_user::UserRoutes;
 mod route_repository;
 mod route_item;
 mod route_user;
-mod permissions;
+pub mod permissions;
 mod upload;
 pub mod app_ctx;
 

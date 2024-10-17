@@ -19,6 +19,7 @@ use which::which;
 use utils::config::WebClientConfig;
 use api::{get_action, get_connected_user, get_display_item, get_display_repository, get_display_user, require_display_repository};
 use api::app_ctx::AppCtx;
+use api::permissions::Permissions;
 use database::item::{DbItem, Trash};
 use api::RequestContext;
 use database::repository::DbRepository;
@@ -198,9 +199,13 @@ async fn get_index(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<i
         client_config.display_user = Some(user.clone());
     });
     get_display_repository!(request, repository, {
+        let permission = Permissions::new(&request)?;
+        permission.view_repository(&ctx.database, repository.id()).await?.require()?;
         client_config.display_repository = Some(repository.clone());
     });
     get_display_item!(request, item, {
+        let permission = Permissions::new(&request)?;
+        permission.view_item(&ctx.database, item.id()).await?.require()?;
         client_config.display_item = Some(item.clone());
     });
 
