@@ -292,9 +292,18 @@ class RepositoryViewport extends MemoryTracker {
      * @return {Promise<void>}
      */
     async open_item(item) {
+        this._elements.current_description.style.display = 'none';
+        this._elements.current_description.innerText = '';
         if (!item.is_regular_file) {
             await this.close_carousel();
             await this.content.set_content_provider(new DirectoryContentProvider(item));
+            if (item.description && item.description.plain().length !== 0) {
+                import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown_loader => {
+                    this._elements.current_description.innerHTML = showdown_loader.convert_text(item.description.plain())
+                })
+                if (!this.uploader)
+                    this._elements.current_description.style.display = 'flex';
+            }
         } else {
             await this.open_carousel(item);
         }
@@ -315,14 +324,25 @@ class RepositoryViewport extends MemoryTracker {
     }
 
     async open_root() {
+        this._elements.current_description.style.display = 'none';
+        this._elements.current_description.innerText = '';
         await this.close_carousel();
         if (this.content && (!this.content.get_content_provider() || !(this.content.get_content_provider() instanceof RepositoryRootProvider))) {
             await this.content.set_content_provider(new RepositoryRootProvider(this.repository));
+            if (this.repository.description && this.repository.description.plain().length !== 0) {
+                import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown_loader => {
+                    this._elements.current_description.innerHTML = showdown_loader.convert_text(this.repository.description.plain())
+                })
+                if (!this.uploader)
+                    this._elements.current_description.style.display = 'flex';
+            }
             await this.toolbar.set_path_to(null, false);
         }
     }
 
     async open_trash() {
+        this._elements.current_description.style.display = 'none';
+        this._elements.current_description.innerText = '';
         await this.close_carousel();
         if (this.content && (!this.content.get_content_provider() || !(this.content.get_content_provider() instanceof TrashContentProvider))) {
             await this.content.set_content_provider(new TrashContentProvider(this.repository));
@@ -336,6 +356,9 @@ class RepositoryViewport extends MemoryTracker {
         if (this.uploader)
             this.uploader.delete();
         this.uploader = null;
+        if (this._elements.current_description.innerText.length !== 0) {
+            this._elements.current_description.style.display = 'flex';
+        }
     }
 
     open_upload_container() {
@@ -344,6 +367,7 @@ class RepositoryViewport extends MemoryTracker {
             this.uploader.delete();
         this.uploader = new Uploader(this._elements.upload_container, this)
         this.uploader.expand(true);
+        this._elements.current_description.style.display = 'none';
     }
 
     delete() {
