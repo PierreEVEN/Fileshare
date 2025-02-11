@@ -1,9 +1,10 @@
 use std::{env, fs};
+use std::fs::OpenOptions;
 use std::net::{SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::Ordering::SeqCst;
-use axum::{middleware, Router, ServiceExt};
+use axum::{middleware, Router};
 use axum::body::{Body, Bytes};
 use axum::extract::State;
 use axum::http::{Request, StatusCode};
@@ -12,7 +13,7 @@ use axum::response::{Html, IntoResponse, Response};
 use axum_extra::extract::CookieJar;
 use axum_server::tls_rustls::RustlsConfig;
 use axum_server_dual_protocol::{tokio, ServerExt};
-use tracing::{error, info, warn};
+use tracing::{error, info, warn, Level};
 use http_body_util::BodyExt;
 use api::app_ctx::AppCtx;
 use api::{RequestContext, RootRoutes};
@@ -22,9 +23,12 @@ use database::upgrades::fix_encoded_strings::FixEncodedStrings;
 use database::upgrades::rehash_files::RehashFiles;
 use database::user::DbUser;
 use serde::Serialize;
+use tracing_subscriber::{filter, fmt, Layer, Registry};
+use tracing_subscriber::layer::{SubscriberExt};
 use types::enc_string::EncString;
 use utils::config::{Config, WebClientConfig};
 use utils::server_error::ServerError;
+use chrono::{DateTime, Utc};
 
 async fn start_web_client(config: WebClientConfig) {
     match WebClient::new(&config).await {
@@ -102,7 +106,55 @@ impl Server {
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt().init();
+
+    fs::create_dir_all("fileshare_logs").unwrap();
+    let error_file = "fileshare_logs/errors.log";
+    let log_file = "fileshare_logs/logs.log";
+    if fs::exists(error_file).unwrap() {
+        let last_write_time : DateTime<Utc>= fs::metadata(error_file).unwrap().modified().unwrap().into();
+        let last_write_time = format!("{last_write_time}").replace(":", "-").replace(" ", "_");
+        fs::rename(error_file, format!("fileshare_logs/error_{}.log", last_write_time)).unwrap();
+    }
+
+    if fs::exists(log_file).unwrap() {
+        let last_write_time : DateTime<Utc>= fs::metadata(log_file).unwrap().modified().unwrap().into();
+        let last_write_time = format!("{last_write_time}").replace(":", "-").replace(" ", "_");
+        fs::rename(log_file, format!("fileshare_logs/logs_{}.log", last_write_time)).unwrap();
+    }
+
+    let err_file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(error_file)
+        .unwrap();
+    let debug_file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(log_file)
+        .unwrap();
+
+    let subscriber = Registry::default()
+        .with(
+            // stdout layer, to view everything in the console
+            fmt::layer()
+                .compact()
+                .with_ansi(true)
+        )
+        .with(
+            // log-error file, to log the errors that arise
+            fmt::layer()
+                .with_ansi(false)
+                .with_writer(err_file)
+                .with_filter(filter::LevelFilter::from_level(Level::WARN))
+        )
+        .with(
+            // log-debug file, to log the debug
+            fmt::layer()
+                .with_ansi(false)
+                .with_writer(debug_file)
+        );
+
+    tracing::subscriber::set_global_default(subscriber).unwrap();
 
     // Open Config
     let config = match Config::from_file(env::current_exe().expect("Failed to find executable path").parent().unwrap().join("config.json")) {
@@ -258,34 +310,33 @@ async fn print_request_response(State(ctx): State<Arc<AppCtx>>, req: Request<Bod
         warn!("{} ({}) : {}", parts.status, path, data_string);
         // Embed the response into a html webpage if it was sent from a web client
         if let Some(context) = context {
-            let context = context.is_web_client.load(SeqCst);
-            let index_path_buf = ctx.config.web_client_config.client_path.join("public").join("index.html");
-            let index_path = index_path_buf.to_str().unwrap();
-            let index_data = match fs::read_to_string(index_path) {
-                Ok(file) => { file }
-                Err(err) => { return Err(ServerError::msg(StatusCode::INTERNAL_SERVER_ERROR, format!("Cannot find index file : {err} (searching in {index_path})"))) }
-            };
+            if context.is_web_client.load(SeqCst) {
+                let index_path_buf = ctx.config.web_client_config.client_path.join("public").join("index.html");
+                let index_path = index_path_buf.to_str().unwrap();
+                let index_data = match fs::read_to_string(index_path) {
+                    Ok(file) => { file }
+                    Err(err) => { return Err(ServerError::msg(StatusCode::INTERNAL_SERVER_ERROR, format!("Cannot find index file : {err} (searching in {index_path})"))) }
+                };
 
-            #[derive(Serialize, Default)]
-            struct ErrorInfos {
-                origin: String,
-                error_message: String,
-                error_code: String,
+                #[derive(Serialize, Default)]
+                struct ErrorInfos {
+                    origin: String,
+                    error_message: String,
+                    error_code: String,
+                }
+                let infos = ErrorInfos {
+                    origin,
+                    error_message: data_string,
+                    error_code: parts.status.to_string(),
+                };
+
+                let index_data = index_data.replace(r#"data-app_config='{}'"#, format!(r##"data-app_config='{}'"##, match serde_json::to_string(&infos) {
+                    Ok(data) => { data.replace("'", "&apos;") }
+                    Err(err) => { return Err(ServerError::msg(StatusCode::INTERNAL_SERVER_ERROR, err.to_string())) }
+                }).as_str());
+
+                return Ok(Html(index_data).into_response());
             }
-            let infos = ErrorInfos {
-                origin,
-                error_message: data_string,
-                error_code: parts.status.to_string(),
-            };
-
-            let index_data = index_data.replace(r#"data-app_config='{}'"#, format!(r##"data-app_config='{}'"##, match serde_json::to_string(&infos) {
-                Ok(data) => { data.replace("'", "&apos;") }
-                Err(err) => { return Err(ServerError::msg(StatusCode::INTERNAL_SERVER_ERROR, err.to_string())) }
-            }).as_str());
-
-            println!("respond web : {}", index_data);
-
-            return Ok(Html(index_data).into_response());
         }
 
         res = Response::from_parts(parts, Body::from(bytes));
@@ -307,10 +358,5 @@ where
             ));
         }
     };
-
-    if let Ok(body) = std::str::from_utf8(&bytes) {
-        tracing::debug!("{direction} body = {body:?}");
-    }
-
     Ok(bytes)
 }

@@ -15,7 +15,7 @@ use axum::{middleware, Json, Router};
 use axum::routing::{get};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
-use tracing::{info, warn};
+use tracing::{info};
 use which::which;
 use utils::config::WebClientConfig;
 use api::{get_action, get_connected_user, get_display_item, get_display_repository, get_display_user, require_display_repository};
