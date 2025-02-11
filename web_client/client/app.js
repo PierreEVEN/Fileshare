@@ -15,6 +15,7 @@ import {Repository} from "./types/repository";
 import {Viewport} from "./modules/index/viewport/viewport";
 import {APP_CONFIG} from "./types/app_config";
 import {FilesystemItem} from "./types/filesystem_stream";
+import {ErrorPage} from "./modules/index/viewport/error_page";
 
 class FileshareApp {
     constructor() {
@@ -36,7 +37,7 @@ class FileshareApp {
         this._elements = layout['elements'];
 
         /**
-         * @type {Viewport}
+         * @type {Viewport|ErrorPage}
          * @private
          */
         this._viewport = null;
@@ -63,19 +64,23 @@ class FileshareApp {
         this.state = new State(this);
 
         (async () => {
-            if (await APP_CONFIG.display_item()) {
-                await this._side_bar.expand_to(APP_CONFIG.display_repository(), await APP_CONFIG.display_item(), false);
-                await this.set_display_item(await APP_CONFIG.display_item());
-            } else if (APP_CONFIG.display_repository()) {
-                await this._side_bar.expand_to(APP_CONFIG.display_repository(), null, APP_CONFIG.in_trash());
-                if (APP_CONFIG.in_trash())
-                    await this.set_display_trash(APP_CONFIG.display_repository());
-                else if (APP_CONFIG.repository_settings())
-                    await this.set_display_repository_settings(APP_CONFIG.display_repository());
-                else
-                    await this.set_display_repository(APP_CONFIG.display_repository());
-            } else if (APP_CONFIG.display_user()) {
-                await this.set_display_user(APP_CONFIG.display_user());
+            if (APP_CONFIG.error())
+                await this.set_display_error(APP_CONFIG.error());
+            else {
+                if (await APP_CONFIG.display_item()) {
+                    await this._side_bar.expand_to(APP_CONFIG.display_repository(), await APP_CONFIG.display_item(), false);
+                    await this.set_display_item(await APP_CONFIG.display_item());
+                } else if (APP_CONFIG.display_repository()) {
+                    await this._side_bar.expand_to(APP_CONFIG.display_repository(), null, APP_CONFIG.in_trash());
+                    if (APP_CONFIG.in_trash())
+                        await this.set_display_trash(APP_CONFIG.display_repository());
+                    else if (APP_CONFIG.repository_settings())
+                        await this.set_display_repository_settings(APP_CONFIG.display_repository());
+                    else
+                        await this.set_display_repository(APP_CONFIG.display_repository());
+                } else if (APP_CONFIG.display_user()) {
+                    await this.set_display_user(APP_CONFIG.display_user());
+                }
             }
         })().catch(error => console.error(`initialization failed :`, error));
     }
@@ -141,6 +146,15 @@ class FileshareApp {
             this._viewport = new Viewport(this._elements.viewport);
         await this._viewport.set_display_user(user);
         await this.state.open_user(user);
+    }
+
+    /**
+     * @return {Promise<void>}
+     * @param error {object}
+     */
+    async set_display_error(error) {
+        if (!this._viewport)
+            this._viewport = new ErrorPage(this._elements.viewport, error);
     }
 }
 

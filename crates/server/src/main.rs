@@ -1,13 +1,14 @@
-use std::{env};
+use std::{env, fs};
 use std::net::{SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
-use axum::{middleware, Router};
+use std::sync::atomic::Ordering::SeqCst;
+use axum::{middleware, Router, ServiceExt};
 use axum::body::{Body, Bytes};
 use axum::extract::State;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
-use axum::response::{IntoResponse, Response};
+use axum::response::{Html, IntoResponse, Response};
 use axum_extra::extract::CookieJar;
 use axum_server::tls_rustls::RustlsConfig;
 use axum_server_dual_protocol::{tokio, ServerExt};
@@ -20,6 +21,7 @@ use database::upgrades::compatibility_upgrade::Upgrade;
 use database::upgrades::fix_encoded_strings::FixEncodedStrings;
 use database::upgrades::rehash_files::RehashFiles;
 use database::user::DbUser;
+use serde::Serialize;
 use types::enc_string::EncString;
 use utils::config::{Config, WebClientConfig};
 use utils::server_error::ServerError;
@@ -183,8 +185,8 @@ async fn main() {
     let router = Router::new()
         .nest("/api/", RootRoutes::create(&ctx).unwrap())
         .nest("/", WebClient::router(&ctx).unwrap())
-        .layer(middleware::from_fn_with_state(ctx.clone(), middleware_get_request_context))
-        .layer(middleware::from_fn(print_request_response));
+        .layer(middleware::from_fn_with_state(ctx.clone(), print_request_response))
+        .layer(middleware::from_fn_with_state(ctx.clone(), middleware_get_request_context));
 
     // Create http server
     let mut server = Server::default();
@@ -198,6 +200,8 @@ async fn main() {
 
     info!("Server closed !");
 }
+
+pub async fn handle_error() {}
 
 pub async fn middleware_get_request_context(jar: CookieJar, State(ctx): State<Arc<AppCtx>>, mut request: Request<Body>, next: Next) -> Result<Response, ServerError> {
     let mut context = RequestContext::default();
@@ -222,12 +226,27 @@ pub async fn middleware_get_request_context(jar: CookieJar, State(ctx): State<Ar
     request.extensions_mut().insert(Arc::new(context));
     Ok(next.run(request).await)
 }
-async fn print_request_response(req: Request<Body>, next: Next) -> Result<impl IntoResponse, (StatusCode, String)> {
+async fn print_request_response(State(ctx): State<Arc<AppCtx>>, req: Request<Body>, next: Next) -> Result<impl IntoResponse, impl IntoResponse> {
     let path = req.uri().path().to_string();
+    let origin = client_web::get_origin(&ctx, &req)?;
+
+    // Retrieve the request context object
+    let context = match req.extensions().get::<Arc<RequestContext>>() {
+        None => { None }
+        Some(context) => { Some(context.clone()) }
+    };
+
+    // Execute the request and get the response
     let mut res = next.run(req).await;
+
     if !res.status().is_success() {
+
+        // Get response message
         let (parts, body) = res.into_parts();
-        let bytes = buffer_and_print("response", body).await?;
+        let bytes = match buffer_and_print("response", body).await {
+            Ok(res) => { res }
+            Err((code, msg)) => { return Err(ServerError::msg(code, msg)) }
+        };
         let data_string = match String::from_utf8(bytes.as_ref().to_vec()) {
             Ok(data) => { data }
             Err(err) => {
@@ -235,9 +254,41 @@ async fn print_request_response(req: Request<Body>, next: Next) -> Result<impl I
                 return Ok(Response::from_parts(parts, Body::from(bytes)));
             }
         };
-        res = Response::from_parts(parts, Body::from(bytes));
 
-        warn!("{} ({}) : {}", res.status().to_string(), path, data_string);
+        warn!("{} ({}) : {}", parts.status, path, data_string);
+        // Embed the response into a html webpage if it was sent from a web client
+        if let Some(context) = context {
+            let context = context.is_web_client.load(SeqCst);
+            let index_path_buf = ctx.config.web_client_config.client_path.join("public").join("index.html");
+            let index_path = index_path_buf.to_str().unwrap();
+            let index_data = match fs::read_to_string(index_path) {
+                Ok(file) => { file }
+                Err(err) => { return Err(ServerError::msg(StatusCode::INTERNAL_SERVER_ERROR, format!("Cannot find index file : {err} (searching in {index_path})"))) }
+            };
+
+            #[derive(Serialize, Default)]
+            struct ErrorInfos {
+                origin: String,
+                error_message: String,
+                error_code: String,
+            }
+            let infos = ErrorInfos {
+                origin,
+                error_message: data_string,
+                error_code: parts.status.to_string(),
+            };
+
+            let index_data = index_data.replace(r#"data-app_config='{}'"#, format!(r##"data-app_config='{}'"##, match serde_json::to_string(&infos) {
+                Ok(data) => { data.replace("'", "&apos;") }
+                Err(err) => { return Err(ServerError::msg(StatusCode::INTERNAL_SERVER_ERROR, err.to_string())) }
+            }).as_str());
+
+            println!("respond web : {}", index_data);
+
+            return Ok(Html(index_data).into_response());
+        }
+
+        res = Response::from_parts(parts, Body::from(bytes));
     }
     Ok(res)
 }

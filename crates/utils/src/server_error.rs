@@ -20,8 +20,7 @@ impl IntoResponse for ServerError {
         (
             self.0.0,
             format!("{}: {}", self.0.0.as_str(), self.0.1),
-        )
-            .into_response()
+        ).into_response()
     }
 }
 

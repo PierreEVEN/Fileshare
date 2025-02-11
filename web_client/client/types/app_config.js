@@ -5,6 +5,7 @@ import {GLOBAL_EVENTS} from "./event_manager";
 
 class AppConfig {
     constructor() {
+        console.log(document.body.dataset['app_config'])
         const data = JSON.parse(document.body.dataset['app_config']);
         console.assert(data, "Invalid application configuration data")
 
@@ -26,7 +27,6 @@ class AppConfig {
         this._display_item = null;
         this._pre_init_item = data['display_item'];
 
-        console.assert(data.origin, "MISSING ORIGIN IN RECEIVED CONFIG");
         /**
          * @type {String}
          */
@@ -39,6 +39,19 @@ class AppConfig {
          * @type {boolean}
          */
         this._repository_settings = data.repository_settings;
+
+        /**
+         * @type {string|null}
+         */
+        this._error_message = data.error_message;
+
+        /**
+         * @type {string|null}
+         */
+        this._error_code = data.error_code;
+
+        if (!this._error_code)
+            console.assert(data.origin, "MISSING ORIGIN IN RECEIVED CONFIG");
     }
 
     set_connected_user(new_user) {
@@ -86,6 +99,12 @@ class AppConfig {
 
     origin() {
         return this._origin;
+    }
+
+    error() {
+        if (this._error_code || this._error_message)
+            return {code: this._error_code, message: this._error_message}
+        return null;
     }
 }
 

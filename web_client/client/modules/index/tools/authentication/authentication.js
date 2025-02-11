@@ -23,6 +23,9 @@ const Authentication = {
                         return;
                     APP_COOKIES.login(result.token);
                     APP_CONFIG.set_connected_user(User.new(result.user));
+                    if (APP_CONFIG.error())
+                        location.reload();
+
                     success();
                     MODAL.close();
                 },
@@ -88,6 +91,7 @@ const Authentication = {
             .catch(error => NOTIFICATION.error(new Message(error).title("Erreur lors de la déconnexion")));
         APP_COOKIES.logout();
         APP_CONFIG.set_connected_user(null);
+        location.reload();
     }
 }
 

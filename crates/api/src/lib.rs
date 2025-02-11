@@ -1,13 +1,18 @@
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering::SeqCst;
 use anyhow::Error;
 use axum::body::Body;
+use axum::extract::{Path, State};
 use axum::http::{Request, StatusCode};
-use axum::response::IntoResponse;
+use axum::middleware::Next;
+use axum::response::{IntoResponse, Response};
 use axum::Router;
 use tracing::warn;
 use types::item::Item;
 use types::repository::Repository;
 use types::user::User;
+use utils::server_error::ServerError;
 use crate::app_ctx::AppCtx;
 use crate::route_item::ItemRoutes;
 use crate::route_repository::RepositoryRoutes;
@@ -133,6 +138,7 @@ pub struct RequestContext {
     pub display_repository: tokio::sync::RwLock<Option<Repository>>,
     pub display_item: tokio::sync::RwLock<Option<Item>>,
     pub action: tokio::sync::RwLock<Option<String>>,
+    pub is_web_client: AtomicBool,
 }
 
 impl RequestContext {

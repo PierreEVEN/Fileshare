@@ -4,6 +4,7 @@ use std::{env, fs};
 use std::collections::VecDeque;
 use std::process::{Stdio};
 use std::sync::Arc;
+use std::sync::atomic::Ordering::SeqCst;
 use anyhow::Error;
 use axum::body::Body;
 use axum::extract::{Path, Request, State};
@@ -14,7 +15,7 @@ use axum::{middleware, Json, Router};
 use axum::routing::{get};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
-use tracing::{info};
+use tracing::{info, warn};
 use which::which;
 use utils::config::WebClientConfig;
 use api::{get_action, get_connected_user, get_display_item, get_display_repository, get_display_user, require_display_repository};
@@ -115,6 +116,7 @@ pub struct PathData {
 
 pub async fn middleware_get_path_context(State(ctx): State<Arc<AppCtx>>, Path(PathData { display_user, display_repository }): Path<PathData>, request: axum::http::Request<Body>, next: Next) -> Result<Response, ServerError> {
     let context = request.extensions().get::<Arc<RequestContext>>().unwrap();
+    context.is_web_client.store(true, SeqCst);
     if let Some(display_user) = display_user {
         if let Ok(display_user) = DbUser::from_url_name(&ctx.database, &EncString::from_url_path(display_user.clone())?).await {
             *context.display_user.write().await = Some(display_user);
@@ -167,7 +169,7 @@ struct ClientAppConfig {
     pub repository_settings: bool,
 }
 
-fn get_origin(ctx: &Arc<AppCtx>, request: &Request) -> Result<String, ServerError> {
+pub fn get_origin(ctx: &Arc<AppCtx>, request: &Request) -> Result<String, ServerError> {
     let use_https = if let Some(scheme) = request.uri().scheme_str() { scheme == "https" } else { ctx.config.use_tls || ctx.config.web_client_config.force_secure_requests };
     Ok(format!("{}://{}", if use_https { "https" } else { "http" }, match request.headers().get("host") {
         None => {

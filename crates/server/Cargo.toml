@@ -17,3 +17,5 @@ axum-server-dual-protocol = "0.7.0"
 tracing = "0.1.40"
 http-body-util = "0.1.2"
 tracing-subscriber = "0.3.18"
+serde_json = "1.0.128"
+serde = { version = "1.0.210", features = ["derive"] }
