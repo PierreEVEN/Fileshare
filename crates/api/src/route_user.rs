@@ -103,7 +103,7 @@ pub struct UserCredentials {
 
 /// Get authentication token
 async fn login(State(ctx): State<Arc<AppCtx>>, Json(payload): Json<LoginInfos>) -> Result<impl IntoResponse, ServerError> {
-    let user = DbUser::from_credentials(&ctx.database, &payload.login, &payload.password).await.map_err(|err| {ServerError::msg(StatusCode::UNAUTHORIZED, format!("{err}"))})?;
+    let user = DbUser::from_credentials(&ctx.database, &payload.login, &payload.password).await.map_err(|err| {ServerError::msg(StatusCode::UNAUTHORIZED, format!("Connection failed : invalid credentials {err}"))})?;
     let auth_token = DbUser::generate_auth_token(&user, &ctx.database, &match payload.device {
         None => { EncString::from("Unknown device") }
         Some(device) => { device }

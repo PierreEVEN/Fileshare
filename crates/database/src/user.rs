@@ -70,7 +70,9 @@ impl DbUser {
     }
 
     pub async fn from_credentials(db: &Database, login: &EncString, password: &EncString) -> Result<User, Error> {
-        let user = query_object!(db, User, r#"SELECT * FROM SCHEMA_NAME.users WHERE login = $1 OR email = $1"#, login.encoded()).ok_or(Error::msg("User not found"))?;
+        let user = query_object!(db, User, r#"SELECT * FROM SCHEMA_NAME.users WHERE login = $1 OR email = $1"#, login.encoded())
+            .ok_or(Error::msg("User not found"))
+            .map_err(|err| Error::msg(format!("Failed to query credentials for user : {}", err)))?;
         if user.password().verify(password)? {
             Ok(user)
         } else {
