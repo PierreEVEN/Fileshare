@@ -24,7 +24,7 @@ function create_directory(repository, parent_item = null) {
                 }
             }
 
-            const directories = await fetch_api('item/new-directory/', 'POST',
+            const directories = await fetch_api('item/new-directory', 'POST',
                 [{
                     name: EncString.from_client(new_name),
                     repository: repository,

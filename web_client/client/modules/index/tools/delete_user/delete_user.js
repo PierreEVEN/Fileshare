@@ -15,7 +15,7 @@ async function delete_user(user) {
             if (widget.elements.login.value !== user.login.plain())
                 return;
 
-            await fetch_api(`user/delete/`, 'POST',
+            await fetch_api(`user/delete`, 'POST',
                 {
                     login: EncString.from_client(widget.elements.login.value),
                     password: EncString.from_client(widget.elements.password.value)

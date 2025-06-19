@@ -12,7 +12,7 @@ const Authentication = {
             let login_div = require('./login.hbs')({}, {
                 login: async (event) => {
                     event.preventDefault();
-                    let result = await fetch_api('user/login/', 'POST', {
+                    let result = await fetch_api('user/login', 'POST', {
                         login: EncString.from_client(login_div.elements.login.value),
                         password: EncString.from_client(login_div.elements.password.value),
                         device: EncString.from_client(navigator.userAgent)
@@ -50,7 +50,7 @@ const Authentication = {
                 signup: async (event) => {
                     event.preventDefault();
                     let errored = false;
-                    await fetch_api('user/create/', 'POST', {
+                    await fetch_api('user/create', 'POST', {
                         username: EncString.from_client(signup_div.elements.login.value),
                         email: EncString.from_client(signup_div.elements.email.value),
                         password: EncString.from_client(signup_div.elements.password.value)
@@ -62,7 +62,7 @@ const Authentication = {
                     if (errored)
                         return;
 
-                    let login_result = await fetch_api('user/login/', 'POST', {
+                    let login_result = await fetch_api('user/login', 'POST', {
                         login: EncString.from_client(signup_div.elements.login.value),
                         password: EncString.from_client(signup_div.elements.password.value),
                         device: EncString.from_client(navigator.userAgent)
@@ -87,7 +87,7 @@ const Authentication = {
         });
     },
     logout: async () => {
-        await fetch_api('user/logout/', 'POST')
+        await fetch_api('user/logout', 'POST')
             .catch(error => NOTIFICATION.error(new Message(error).title("Erreur lors de la déconnexion")));
         APP_COOKIES.logout();
         APP_CONFIG.set_connected_user(null);

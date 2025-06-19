@@ -22,7 +22,7 @@ class RepositorySettings extends MemoryTracker {
 
         this.container.innerHTML = '';
 
-        fetch_api(`repository/stats/`, 'POST', repository.id)
+        fetch_api(`repository/stats`, 'POST', repository.id)
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de lire les informations du dépôt")))
             .then(async (data) => {
                 let merged_data = repository.display_data();
@@ -72,7 +72,7 @@ class RepositorySettings extends MemoryTracker {
 
                 this.container.append(this.div);
 
-                fetch_api(`repository/subscriptions/`, 'POST', repository.id).then(async subscriptions => {
+                fetch_api(`repository/subscriptions`, 'POST', repository.id).then(async subscriptions => {
                     for (const subscription of subscriptions) {
                         await this._add_subscription(subscription);
                     }
@@ -110,7 +110,7 @@ class RepositorySettings extends MemoryTracker {
                 access_type: access_type
             }]
         };
-        let subscriptions = await fetch_api(`repository/subscribe/`, 'POST', data)
+        let subscriptions = await fetch_api(`repository/subscribe`, 'POST', data)
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible d'ajouter l'utilisateur")));
         for (const subscription of subscriptions) {
             await this._add_subscription(subscription);
@@ -118,7 +118,7 @@ class RepositorySettings extends MemoryTracker {
     }
 
     async _remove_subscription(repository, owner) {
-        await fetch_api(`repository/unsubscribe/`, 'POST', {
+        await fetch_api(`repository/unsubscribe`, 'POST', {
             repository: repository,
             users: [owner]
         }).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible d'ajouter l'utilisateur")));

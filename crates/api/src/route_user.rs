@@ -25,15 +25,15 @@ pub struct UserRoutes {}
 impl UserRoutes {
     pub fn router(ctx: &Arc<AppCtx>) -> Result<Router, Error> {
         let router = Router::new()
-            .route("/find/", post(find_users).with_state(ctx.clone()))
-            .route("/login/", post(login).with_state(ctx.clone()))
-            .route("/delete/", post(delete_user).with_state(ctx.clone()))
-            .route("/logout/", post(logout).with_state(ctx.clone()))
-            .route("/search/", post(search).with_state(ctx.clone()))
-            .route("/tokens/", get(auth_tokens).with_state(ctx.clone()))
-            .route("/update/", post(update).with_state(ctx.clone()))
-            .route("/repositories/:user_id/", get(repositories).with_state(ctx.clone()))
-            .route("/create/", post(create_user).with_state(ctx.clone()));
+            .route("/find", post(find_users).with_state(ctx.clone()))
+            .route("/login", post(login).with_state(ctx.clone()))
+            .route("/delete", post(delete_user).with_state(ctx.clone()))
+            .route("/logout", post(logout).with_state(ctx.clone()))
+            .route("/search", post(search).with_state(ctx.clone()))
+            .route("/tokens", get(auth_tokens).with_state(ctx.clone()))
+            .route("/update", post(update).with_state(ctx.clone()))
+            .route("/repositories/:user_id", get(repositories).with_state(ctx.clone()))
+            .route("/create", post(create_user).with_state(ctx.clone()));
 
         Ok(router)
     }

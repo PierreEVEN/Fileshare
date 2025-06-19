@@ -206,7 +206,7 @@ class UploadItem {
             return existing;
         }
 
-        const directories = await fetch_api('item/new-directory/', 'POST',
+        const directories = await fetch_api('item/new-directory', 'POST',
             [{
                 name: EncString.from_client(name),
                 repository: repository_id,

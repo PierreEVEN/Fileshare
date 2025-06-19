@@ -16,7 +16,7 @@ async function delete_repository(repository) {
             if (widget.elements.repository.value !== repository.display_name.plain())
                 return;
 
-            const repositories = await fetch_api(`repository/delete/`, 'POST',
+            const repositories = await fetch_api(`repository/delete`, 'POST',
                 {
                     credentials: {
                         login: EncString.from_client(widget.elements.login.value),

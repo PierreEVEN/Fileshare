@@ -47,7 +47,7 @@ async function delete_item(item, move_to_trash) {
     }
 
 
-    const items = await fetch_api(`item/${move_to_trash ? 'move-to-trash' : 'delete'}/`, 'POST',
+    const items = await fetch_api(`item/${move_to_trash ? 'move-to-trash' : 'delete'}`, 'POST',
         ids
     ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de supprimer le(s) fichier(s)")));
     if (move_to_trash)
@@ -84,7 +84,7 @@ async function restore_item(item) {
         ids = [item.id];
         fs_map.set(item.id, item.filesystem());
     }
-    const items = await fetch_api(`item/restore/`, 'POST',
+    const items = await fetch_api(`item/restore`, 'POST',
         ids
     ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de restorer le fichier")));
     for (const item_id of items) {

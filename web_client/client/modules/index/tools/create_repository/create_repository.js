@@ -8,7 +8,7 @@ async function create_repository() {
     const widget = require('./create_repository.hbs')({}, {
         create_repository: async (e) => {
             e.preventDefault();
-            const repositories = await fetch_api('repository/create/', 'POST',
+            const repositories = await fetch_api('repository/create', 'POST',
                 [{
                     name: EncString.from_client(document.getElementById('repository-name').value),
                     status: document.getElementById('repository-type').value

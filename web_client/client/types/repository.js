@@ -126,7 +126,7 @@ class Repository {
         if (local)
             return local;
         console.assert(id, "Invalid repository ID !");
-        let repositories = await fetch_api('repository/find/', 'POST', [id])
+        let repositories = await fetch_api('repository/find', 'POST', [id])
             .catch(error => NOTIFICATION.error(new Message(`Dépôt ${id} inconnu`)));
         for (const repository of repositories)
             Repository.new(repository);
@@ -152,7 +152,7 @@ class Repository {
      * @return {Promise<Repository[]>}
      */
     static async my_repositories() {
-        const my_repositories = await fetch_api('repository/owned/')
+        const my_repositories = await fetch_api('repository/owned')
             .catch(error => {
                 NOTIFICATION.error(new Message(error).title(`Impossible de télécharger la liste des dépôts possédés`));
                 return [];
@@ -168,7 +168,7 @@ class Repository {
      * @return {Promise<Repository[]>}
      */
     static async shared_repositories() {
-        const shared_repositories = await fetch_api('repository/shared/')
+        const shared_repositories = await fetch_api('repository/shared')
             .catch(error => {NOTIFICATION.warn(new Message(error).title("Impossible de récupérer les dépôts partagés")); return;});
         const repositories = [];
         for (const repository of shared_repositories) {

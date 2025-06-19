@@ -106,7 +106,7 @@ class User {
     }
 
     async refresh() {
-        let data = await fetch_api("user/find/", "POST", [this.id])
+        let data = await fetch_api("user/find", "POST", [this.id])
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Impossible de trouver l'utilisateur ${this.id}`)));
         if (data.length !== 0) {
             this._build_from_data(data[0]);
@@ -128,7 +128,7 @@ class User {
      * @returns {Promise<User[]>}
      */
     static async search_from_name(name, exact) {
-        let users = await fetch_api("user/search/", "POST", {name: name, exact: exact})
+        let users = await fetch_api("user/search", "POST", {name: name, exact: exact})
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Recherche échouée`)));
         const found_users = [];
         for (const user_id of users) {
@@ -145,7 +145,7 @@ class User {
         const current = User._LOCAL_CACHE.get(id);
         if (current)
             return current;
-        let user = await fetch_api("user/find/", "POST", [id])
+        let user = await fetch_api("user/find", "POST", [id])
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Impossible de trouver l'utilisateur ${id}`)));
         if (user.length !== 0)
             return User.new(user[0]);

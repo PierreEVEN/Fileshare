@@ -227,7 +227,7 @@ class FilesystemStream {
         if (existing) {
             return existing;
         }
-        for (const item of await fetch_api(`item/find/`, 'POST', [item_id])
+        for (const item of await fetch_api(`item/find`, 'POST', [item_id])
             .catch(error => {
                 NOTIFICATION.warn(new Message(error).title(`L'object ${item_id} n'existe pas`));
                 return [];
@@ -257,7 +257,7 @@ class FilesystemStream {
             return existing.children;
         }
         existing.children = new Set();
-        for (const item of await fetch_api(`item/directory-content/`, 'POST', [item_id])
+        for (const item of await fetch_api(`item/directory-content`, 'POST', [item_id])
             .catch(error => {
                 NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de l'objet ${item_id}`))
                 return [];
@@ -273,7 +273,7 @@ class FilesystemStream {
     async root_content() {
         if (!this._roots) {
             this._roots = new Set();
-            for (const item of await fetch_api(`repository/root-content/`, 'POST', [this._repository.id])
+            for (const item of await fetch_api(`repository/root-content`, 'POST', [this._repository.id])
                 .catch(error => {
                     NOTIFICATION.warn(new Message(error).title(`Impossible de lire la racion du dépot ${this._repository.url_name.plain()}`));
                     return [];
@@ -290,7 +290,7 @@ class FilesystemStream {
     async trash_content() {
         if (!this._trash_roots) {
             this._trash_roots = new Set();
-            for (const item of await fetch_api(`repository/trash-content/`, 'POST', [this._repository.id])
+            for (const item of await fetch_api(`repository/trash-content`, 'POST', [this._repository.id])
                 .catch(error => {
                     NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de la corbeille de ${this._repository.url_name.plain()}`));
                     return [];

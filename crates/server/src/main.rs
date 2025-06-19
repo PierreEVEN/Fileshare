@@ -1,5 +1,6 @@
+mod logger;
+
 use std::{env, fs};
-use std::fs::OpenOptions;
 use std::net::{SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -13,7 +14,7 @@ use axum::response::{Html, IntoResponse, Response};
 use axum_extra::extract::CookieJar;
 use axum_server::tls_rustls::RustlsConfig;
 use axum_server_dual_protocol::{tokio, ServerExt};
-use tracing::{error, info, warn, Level};
+use tracing::{error, info, warn};
 use http_body_util::BodyExt;
 use api::app_ctx::AppCtx;
 use api::{RequestContext, RootRoutes};
@@ -23,12 +24,10 @@ use database::upgrades::fix_encoded_strings::FixEncodedStrings;
 use database::upgrades::rehash_files::RehashFiles;
 use database::user::DbUser;
 use serde::Serialize;
-use tracing_subscriber::{filter, fmt, Layer, Registry};
-use tracing_subscriber::layer::{SubscriberExt};
 use types::enc_string::EncString;
 use utils::config::{Config, WebClientConfig};
 use utils::server_error::ServerError;
-use chrono::{DateTime, Utc};
+use crate::logger::init_logger;
 
 async fn start_web_client(config: WebClientConfig) {
     match WebClient::new(&config).await {
@@ -106,55 +105,7 @@ impl Server {
 
 #[tokio::main]
 async fn main() {
-
-    fs::create_dir_all("fileshare_logs").unwrap();
-    let error_file = "fileshare_logs/errors.log";
-    let log_file = "fileshare_logs/logs.log";
-    if fs::exists(error_file).unwrap() {
-        let last_write_time : DateTime<Utc>= fs::metadata(error_file).unwrap().modified().unwrap().into();
-        let last_write_time = format!("{last_write_time}").replace(":", "-").replace(" ", "_");
-        fs::rename(error_file, format!("fileshare_logs/error_{}.log", last_write_time)).unwrap();
-    }
-
-    if fs::exists(log_file).unwrap() {
-        let last_write_time : DateTime<Utc>= fs::metadata(log_file).unwrap().modified().unwrap().into();
-        let last_write_time = format!("{last_write_time}").replace(":", "-").replace(" ", "_");
-        fs::rename(log_file, format!("fileshare_logs/logs_{}.log", last_write_time)).unwrap();
-    }
-
-    let err_file = OpenOptions::new()
-        .append(true)
-        .create(true)
-        .open(error_file)
-        .unwrap();
-    let debug_file = OpenOptions::new()
-        .append(true)
-        .create(true)
-        .open(log_file)
-        .unwrap();
-
-    let subscriber = Registry::default()
-        .with(
-            // stdout layer, to view everything in the console
-            fmt::layer()
-                .compact()
-                .with_ansi(true)
-        )
-        .with(
-            // log-error file, to log the errors that arise
-            fmt::layer()
-                .with_ansi(false)
-                .with_writer(err_file)
-                .with_filter(filter::LevelFilter::from_level(Level::WARN))
-        )
-        .with(
-            // log-debug file, to log the debug
-            fmt::layer()
-                .with_ansi(false)
-                .with_writer(debug_file)
-        );
-
-    tracing::subscriber::set_global_default(subscriber).unwrap();
+    init_logger();
 
     // Open Config
     let config = match Config::from_file(env::current_exe().expect("Failed to find executable path").parent().unwrap().join("config.json")) {
@@ -173,6 +124,7 @@ async fn main() {
         }
     });
 
+    /*********************** READ ARGS  ***********************/
     if env::args().len() > 0 {
         let mut upgrade = false;
         let mut fix_encoded_strings = false;
@@ -229,14 +181,14 @@ async fn main() {
         }
     }
 
-    start_web_client(config.web_client_config.clone()).await;
-
     // Start web client
+    start_web_client(config.web_client_config.clone()).await;
 
     // Instantiate router
     let router = Router::new()
-        .nest("/api/", RootRoutes::create(&ctx).unwrap())
-        .nest("/", WebClient::router(&ctx).unwrap())
+        .nest("/api", RootRoutes::create(&ctx).unwrap())
+        .merge(WebClient::router(&ctx).unwrap())
+        .layer(middleware::from_fn(middleware_remove_trailing_slash))
         .layer(middleware::from_fn_with_state(ctx.clone(), print_request_response))
         .layer(middleware::from_fn_with_state(ctx.clone(), middleware_get_request_context));
 
@@ -252,8 +204,6 @@ async fn main() {
 
     info!("Server closed !");
 }
-
-pub async fn handle_error() {}
 
 pub async fn middleware_get_request_context(jar: CookieJar, State(ctx): State<Arc<AppCtx>>, mut request: Request<Body>, next: Next) -> Result<Response, ServerError> {
     let mut context = RequestContext::default();
@@ -278,6 +228,16 @@ pub async fn middleware_get_request_context(jar: CookieJar, State(ctx): State<Ar
     request.extensions_mut().insert(Arc::new(context));
     Ok(next.run(request).await)
 }
+
+pub async fn middleware_remove_trailing_slash(mut request: Request<Body>, next: Next) -> Result<impl IntoResponse, ServerError> {
+    let uri = request.uri_mut();
+    let path_str = uri.path();
+    if path_str.ends_with('/') && path_str.len() > 1 {
+        return Ok(axum::response::Redirect::to(&path_str[..path_str.len() - 1]).into_response());
+    }
+    Ok(next.run(request).await)
+}
+
 async fn print_request_response(State(ctx): State<Arc<AppCtx>>, req: Request<Body>, next: Next) -> Result<impl IntoResponse, impl IntoResponse> {
     let path = req.uri().path().to_string();
     let origin = client_web::get_origin(&ctx, &req)?;

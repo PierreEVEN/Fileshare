@@ -22,7 +22,7 @@ function edit_user(user) {
                 allow_contact: !document.getElementById('mask_email').checked
             };
 
-            await fetch_api(`user/update/`, 'POST', new_data)
+            await fetch_api(`user/update`, 'POST', new_data)
                 .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de modifier le dépôt")));
 
             user.login = new_data.login;

@@ -30,7 +30,7 @@ class State {
         history.pushState({
             app_action: true,
             repository: repository.id,
-        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/`);
+        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}`);
     }
 
     /**
@@ -46,7 +46,7 @@ class State {
             app_action: true,
             repository: repository.id,
             settings: true
-        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/settings/`);
+        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/settings`);
     }
 
     /**
@@ -64,7 +64,7 @@ class State {
             app_action: true,
             item: item.id,
             repository: item.repository
-        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/tree${item.absolute_path.encoded()}${item.is_regular_file ? "" : "/"}`);
+        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/tree${item.absolute_path.encoded()}${item.is_regular_file ? "" : ""}`);
     }
 
     /**
@@ -77,7 +77,7 @@ class State {
             app_action: true,
             repository: repository.id,
             trash: true
-        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/trash/`);
+        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/trash`);
     }
 
     async open_user(user) {
@@ -86,7 +86,7 @@ class State {
         history.pushState({
             app_action: true,
             user: user.id
-        }, "", `${APP_CONFIG.origin()}/${user.name.encoded()}/`);
+        }, "", `${APP_CONFIG.origin()}/${user.name.encoded()}`);
     }
 
     async _handle_state(state) {

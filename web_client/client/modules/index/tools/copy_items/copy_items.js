@@ -72,7 +72,7 @@ async function copy_items(items, remove_sources, destination_repository, destina
     /**
      * @type {FilesystemItem[]}
      */
-    const new_items = await fetch_api(`item/copy/`, 'POST',
+    const new_items = await fetch_api(`item/copy`, 'POST',
         {
             destination_repository: destination_repository,
             destination_directory: destination_directory,

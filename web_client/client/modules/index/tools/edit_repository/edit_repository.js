@@ -31,7 +31,7 @@ function edit_repository(repository) {
                 description: EncString.from_client(description.length === 0 ? null : description)
             };
 
-            const repositories = await fetch_api(`repository/update/`, 'POST', [new_data])
+            const repositories = await fetch_api(`repository/update`, 'POST', [new_data])
                 .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de modifier le dépôt")));
             if (repositories.length !== 0) {
                 repository.display_name = new_data.display_name;

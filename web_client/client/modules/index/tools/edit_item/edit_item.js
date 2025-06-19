@@ -23,7 +23,7 @@ async function edit_item(item) {
                 open_upload: item.is_regular_file ? null : document.getElementById('allow_visitor_upload').checked,
             };
 
-            const items = await fetch_api(`item/update/`, 'POST', [new_data])
+            const items = await fetch_api(`item/update`, 'POST', [new_data])
                 .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de modifier l'object")));
             if (items.length !== 0) {
                 item.name = new_data.name;

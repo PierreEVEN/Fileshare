@@ -54,7 +54,7 @@ class UserViewport extends MemoryTracker {
         this.container.append(viewport);
         this._elements = viewport.elements;
 
-        let repositories = await fetch_api(`user/repositories/${this.user.id}/`)
+        let repositories = await fetch_api(`user/repositories/${this.user.id}`)
             .catch(err => {
                 NOTIFICATION.warn(new Message(err).title("Failed to retrieve user repositories"));
                 return [];
@@ -71,7 +71,7 @@ class UserViewport extends MemoryTracker {
         }
 
         if (this.user === APP_CONFIG.connected_user()) {
-            let tokens = await fetch_api('user/tokens/')
+            let tokens = await fetch_api('user/tokens')
                 .catch(err => {
                     NOTIFICATION.warn(new Message(err).title("Failed to retrieve user tokens"));
                     return [];
@@ -84,7 +84,7 @@ class UserViewport extends MemoryTracker {
                     expdate: human_readable_timestamp(token.expdate),
                 }, {
                     delete: async () => {
-                        await fetch_api('user/logout/', 'POST', null, token.token)
+                        await fetch_api('user/logout', 'POST', null, token.token)
                             .catch(err => {
                                 NOTIFICATION.warn(new Message(err).title("Failed to delete token"));
                                 return [];
