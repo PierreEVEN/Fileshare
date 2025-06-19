@@ -9,6 +9,11 @@
     <label for='password'>
         <input type="password" name="password" placeholder="Mot de passe" id="password" required {{object "password"}}>
     </label>
+    <p class="authentication-error" {{object "error"}}></p>
+
+    <label for='remember-me'>Rester connecté
+        <input {{object "stay_connected"}} type="checkbox" name="remember_me" checked id="remember-me">
+    </label>
 
     <input type="submit" value="Créer un compte">
     <div class='footer'>

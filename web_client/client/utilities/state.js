@@ -2,7 +2,7 @@ import {User} from "../types/user";
 import {Repository} from "../types/repository";
 import {FilesystemItem} from "../types/filesystem_stream";
 import {APP_CONFIG} from "../types/app_config";
-import {APP_COOKIES} from "./cookies";
+import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
 
 class State {
     /**

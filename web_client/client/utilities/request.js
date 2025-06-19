@@ -1,5 +1,5 @@
 import {APP_CONFIG} from "../types/app_config";
-import {APP_COOKIES} from "./cookies";
+import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
 import {Authentication} from "../modules/index/tools/authentication/authentication";
 
 /**

@@ -45,7 +45,7 @@ class UploadItem {
                 this.remove();
             }
         });
-        this._elements = this.div.elements;
+        this._elements = this.div.hb_elements;
         container.append(this.div)
     }
 

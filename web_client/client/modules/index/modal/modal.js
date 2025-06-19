@@ -10,13 +10,13 @@ class Modal {
 
         const modal_div = require('./modal.hbs')({}, {
             close: (event) => {
-                if (event && event.target !== modal_div.elements.root)
+                if (event && event.target !== modal_div.hb_elements.root)
                     return;
                 this.close();
             }
         });
         document.body.append(modal_div);
-        this._elements = modal_div.elements;
+        this._elements = modal_div.hb_elements;
     }
 
     close() {

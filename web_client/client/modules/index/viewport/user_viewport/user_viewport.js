@@ -6,7 +6,7 @@ import {User} from "../../../../types/user";
 import {APP} from "../../../../app";
 import {edit_user} from "../../tools/edit_user/edit_user";
 import {APP_CONFIG} from "../../../../types/app_config";
-import {APP_COOKIES} from "../../../../utilities/cookies";
+import {APP_COOKIES} from "../../tools/cookies/cookies";
 import {GLOBAL_EVENTS} from "../../../../types/event_manager";
 import {human_readable_timestamp} from "../../../../utilities/utils";
 
@@ -52,7 +52,7 @@ class UserViewport extends MemoryTracker {
             }
         });
         this.container.append(viewport);
-        this._elements = viewport.elements;
+        this._elements = viewport.hb_elements;
 
         let repositories = await fetch_api(`user/repositories/${this.user.id}`)
             .catch(err => {

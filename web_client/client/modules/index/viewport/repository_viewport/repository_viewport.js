@@ -157,7 +157,7 @@ class RepositoryViewport extends MemoryTracker {
             },
             open_upload: () => {
                 this.open_upload_container()
-                div.elements.upload_button.style.display = 'none';
+                div.hb_elements.upload_button.style.display = 'none';
             },
             ctx_selection: async () => {
                 const items = [];
@@ -177,7 +177,7 @@ class RepositoryViewport extends MemoryTracker {
          * @type {Repository}
          */
         this.repository = repository;
-        this._elements = div.elements;
+        this._elements = div.hb_elements;
 
         this.content = new ViewportContent();
         /**
@@ -244,7 +244,7 @@ class RepositoryViewport extends MemoryTracker {
             }))
         });
 
-        this.toolbar = new ViewportToolbar(div.elements.toolbar, this.repository);
+        this.toolbar = new ViewportToolbar(div.hb_elements.toolbar, this.repository);
 
         this.content.events.add('remove', (item) => {
             const div = this._visible_items.get(item.id);

@@ -37,12 +37,12 @@ class GlobalHeader {
 
         SIDE_BAR.events.add('show_mobile', (show) => {
             if (show) {
-                div.elements.menu_img.src = "/public/images/icons/icons8-expand-50.png";
-                div.elements.menu_img.style.transform = 'rotate(90deg)';
+                div.hb_elements.menu_img.src = "/public/images/icons/icons8-expand-50.png";
+                div.hb_elements.menu_img.style.transform = 'rotate(90deg)';
             }
             else {
-                div.elements.menu_img.src = "/public/images/icons/icons8-menu-96.png";
-                div.elements.menu_img.style.transform = 'unset';
+                div.hb_elements.menu_img.src = "/public/images/icons/icons8-menu-96.png";
+                div.hb_elements.menu_img.style.transform = 'unset';
             }
         })
 
@@ -51,7 +51,7 @@ class GlobalHeader {
             this.refresh(data.new);
         });
 
-        this._elements = div['elements'];
+        this._elements = div['hb_elements'];
         container.append(div);
 
         this.refresh(APP_CONFIG.connected_user())

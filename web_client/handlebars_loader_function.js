@@ -58,16 +58,16 @@ module.exports = (data, ctx) => {
         }
     }
     if (body.children.length === 1) {
-        body.children[0].elements = elements;
+        body.children[0].hb_elements = elements;
         return body.children[0];
     }
     delete document.__handlebar_custom_loader.__registered_objects_container[container_id];
     // Force children generation
     const children = [];
     for (let i = 0; i < body.children.length; ++i) {
-        body.children[i].elements = elements;
+        body.children[i].hb_elements = elements;
         children.push(body.children[i]);
     }
-    children.elements = elements;
+    children.hb_elements = elements;
     return children;
 }

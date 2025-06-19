@@ -1,0 +1,8 @@
+<form onsubmit="{{ctx 'submit(event)'}}" class="calendar-modal login-modal">
+    <h1>Nouveau mot de passe</h1>
+    <label for='password'>
+        <input {{object "password"}} type="password" name="password" placeholder="Nouveau mot de passe" id="password" required>
+    </label>
+    <p class="authentication-error" {{object "error"}}></p>
+    <input type="submit" value="Changer le mot de passe">
+</form>

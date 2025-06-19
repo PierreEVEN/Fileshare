@@ -1,0 +1,10 @@
+<form onsubmit="{{ctx 'send(event)'}}" class="calendar-modal login-modal">
+    <h1>Accepter les cookies ?</h1>
+    <p>Attention !<br>Les cookies doivent être activés pour rester connecté</p>
+    <input type="button" value="Autoriser les cookies" onclick="{{ctx "validate()"}}">
+    <input type="button" value="Ne pas se souvenir de moi" onclick="{{ctx "reject()"}}">
+    <div class="footer">
+        <p>Note : Les cookies sont un petit fichier stocké dans votre ordinateur permettant de sauvegarder certaines informations.<br>
+            Ces données ne sont pas accessibles par des services tiers dans des conditions d'utilisation normale.</p>
+    </div>
+</form>

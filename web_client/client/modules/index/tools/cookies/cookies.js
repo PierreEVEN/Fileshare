@@ -1,8 +1,12 @@
-import {APP_CONFIG} from "../types/app_config";
+import {APP_CONFIG} from "../../../../types/app_config";
+import {Message, NOTIFICATION} from "../message_box/notification";
+import {MODAL} from "../../modal/modal";
 
 const dayjs = require('dayjs')
 const utc = require("dayjs/plugin/utc");
 dayjs.extend(utc);
+
+require('./cookies.scss')
 
 class CookieString {
     constructor(data) {
@@ -53,6 +57,25 @@ class AppCookies {
         this._last_uri = document.documentURI;
         if (this._authtoken)
             this._authtoken_exp = cookies.read("authtoken-exp");
+
+        this._allow_cookies = Boolean(cookies.read("allow-cookies"));
+        this._stay_connected = cookies.read("stay-connected");
+        if (!this._allow_cookies) {
+            this._cookies_div = require("./cookies_div.hbs")({}, {
+                enable: () => {
+                    this._allow_cookies = true;
+                    this.save_cookies();
+                    this._cookies_div.remove();
+                },
+                skip: () => {
+                    this._allow_cookies = false;
+                    this.save_cookies();
+                    this._cookies_div.remove();
+                }
+            });
+            document.body.append(this._cookies_div);
+        }
+
         /**
          * @type {string | null}
          * @private
@@ -105,12 +128,34 @@ class AppCookies {
 
     /**
      * @param authentication_token {Object}
+     * @param stay_connected {boolean}
      */
-    login(authentication_token) {
-        if (authentication_token.token) {
+    async login(authentication_token, stay_connected) {
+        if (authentication_token && authentication_token.token) {
+            if (!this._allow_cookies && stay_connected) {
+                this._allow_cookies = await new Promise((resolve) => {
+                    MODAL.open(require('./ask_for_cookies.hbs')({}, {
+                        validate: () => {
+                            if (this._cookies_div)
+                                this._cookies_div.remove();
+                            resolve(true);
+                        },
+                        reject: () => {
+                            resolve(false);
+                        }
+                    }), {
+                        on_close: () => {
+                            resolve(false);
+                        }
+                    });
+                });
+            }
+            this._stay_connected = stay_connected;
             this._authtoken = authentication_token.token;
             this._authtoken_exp = authentication_token.expiration_date;
             this.save_cookies();
+        } else {
+            NOTIFICATION.error(new Message("Invalid authentication token"))
         }
     }
 
@@ -124,13 +169,22 @@ class AppCookies {
     save_cookies() {
         const cookies = new CookieString();
 
-        if (this._authtoken)
+        // Don't save if not allowed on current browser
+        if (this._allow_cookies)
+            cookies.set("allow-cookies", this._allow_cookies);
+        else
+            return cookies.save();
+
+        cookies.set("stay-connected", this._stay_connected);
+        if (this._stay_connected) {
+            if (this._authtoken)
+                if (this._authtoken_exp)
+                    cookies.set("authtoken", this._authtoken, this._authtoken_exp)
+                else
+                    cookies.set("authtoken", this._authtoken, dayjs().unix() + 36000)
             if (this._authtoken_exp)
-                cookies.set("authtoken", this._authtoken, this._authtoken_exp)
-            else
-                cookies.set("authtoken", this._authtoken, dayjs().unix() + 36000)
-        if (this._authtoken_exp)
-            cookies.set("authtoken-exp", this._authtoken_exp)
+                cookies.set("authtoken-exp", this._authtoken_exp)
+        }
         cookies.set("last-repos", this._last_repos)
         cookies.save();
     }

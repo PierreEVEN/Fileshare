@@ -5,7 +5,6 @@ import {GLOBAL_EVENTS} from "./event_manager";
 
 class AppConfig {
     constructor() {
-        console.log(document.body.dataset['app_config'])
         const data = JSON.parse(document.body.dataset['app_config']);
         console.assert(data, "Invalid application configuration data")
 

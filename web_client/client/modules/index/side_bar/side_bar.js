@@ -4,7 +4,7 @@ import {User} from "../../../types/user";
 import {RepositoryTree} from "./repository_tree/repository_tree";
 import {context_menu_my_repositories} from "../context_menu/contexts/context_my_repositories";
 import {EventManager, GLOBAL_EVENTS} from "../../../types/event_manager";
-import {APP_COOKIES} from "../../../utilities/cookies";
+import {APP_COOKIES} from "../tools/cookies/cookies";
 
 require('./side_bar.scss')
 
@@ -42,7 +42,7 @@ class SideBar {
             }
         });
         this.div = div;
-        this._elements = div['elements'];
+        this._elements = div['hb_elements'];
         container.append(div);
 
         GLOBAL_EVENTS.add('on_connected_user_changed', async (data) => {

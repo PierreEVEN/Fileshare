@@ -34,7 +34,7 @@ class FileshareApp {
          * @type {object}
          * @private
          */
-        this._elements = layout['elements'];
+        this._elements = layout['hb_elements'];
 
         /**
          * @type {Viewport|ErrorPage}
@@ -56,9 +56,9 @@ class FileshareApp {
 
         this._side_bar.events.add('show_mobile', (show) => {
             if (show)
-                layout.elements.mobile_bg.classList.add('selected')
+                layout.hb_elements.mobile_bg.classList.add('selected')
             else
-                layout.elements.mobile_bg.classList.remove('selected')
+                layout.hb_elements.mobile_bg.classList.remove('selected')
         })
 
         this.state = new State(this);

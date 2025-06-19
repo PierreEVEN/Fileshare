@@ -12,13 +12,13 @@ async function delete_user(user) {
         delete_user: async (e) => {
             e.preventDefault();
 
-            if (widget.elements.login.value !== user.login.plain())
+            if (widget.hb_elements.login.value !== user.login.plain())
                 return;
 
             await fetch_api(`user/delete`, 'POST',
                 {
-                    login: EncString.from_client(widget.elements.login.value),
-                    password: EncString.from_client(widget.elements.password.value)
+                    login: EncString.from_client(widget.hb_elements.login.value),
+                    password: EncString.from_client(widget.hb_elements.password.value)
                 }
             ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de supprimer le compte")));
 

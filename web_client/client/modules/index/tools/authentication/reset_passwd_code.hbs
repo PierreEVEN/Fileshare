@@ -1,0 +1,11 @@
+<form onsubmit="{{ctx 'code(event)'}}" class="calendar-modal login-modal">
+    <h1>Code de réinitialisation</h1>
+    <label for='code'>
+        <input {{object "code"}} type="text" name="code" placeholder="Code de réinitialisation" id="code" required>
+    </label>
+    <p class="authentication-error" {{object "error"}}></p>
+    <input type="submit" value="Envoyer le code">
+    <div class="footer">
+        <p>Nous vous avons transmis un code de vérification à 8 caractère par email. Veuillez vérifier votre boite mail ainsi que vos spams.</p>
+    </div>
+</form>

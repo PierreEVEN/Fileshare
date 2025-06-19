@@ -3,7 +3,7 @@ import {FilesystemStream} from "./filesystem_stream";
 import {fetch_api} from "../utilities/request";
 import {GLOBAL_EVENTS} from "./event_manager";
 import {Message, NOTIFICATION} from "../modules/index/tools/message_box/notification";
-import {APP_COOKIES} from "../utilities/cookies";
+import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
 
 class RepositoryStatus {
     constructor(data) {
@@ -127,7 +127,9 @@ class Repository {
             return local;
         console.assert(id, "Invalid repository ID !");
         let repositories = await fetch_api('repository/find', 'POST', [id])
-            .catch(error => NOTIFICATION.error(new Message(`Dépôt ${id} inconnu`)));
+            .catch(error => NOTIFICATION.warn(new Message(`Dépôt ${id} inconnu`)));
+        if (!repositories)
+            return null;
         for (const repository of repositories)
             Repository.new(repository);
 

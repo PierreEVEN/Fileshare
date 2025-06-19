@@ -32,7 +32,7 @@ class ViewportToolbar {
         });
         this.current_item = null;
         this.repository = repository;
-        this.elements = div.elements;
+        this.hb_elements = div.hb_elements;
         container.append(div);
     }
 
@@ -43,10 +43,10 @@ class ViewportToolbar {
     async set_path_to(current_item, is_trash) {
         this.current_item = current_item;
         this.is_trash = is_trash && !current_item;
-        this.elements.root.innerText = this.repository.display_name.plain();
-        this.elements.repos_icon.src = is_trash ? '/public/images/icons/icons8-full-trash-96.png' : '/public/images/icons/icons8-storage-96.png'
+        this.hb_elements.root.innerText = this.repository.display_name.plain();
+        this.hb_elements.repos_icon.src = is_trash ? '/public/images/icons/icons8-full-trash-96.png' : '/public/images/icons/icons8-storage-96.png'
 
-        this.elements.path.innerHTML = '';
+        this.hb_elements.path.innerHTML = '';
         if (current_item) {
             let first = true;
             let item = current_item;
@@ -62,7 +62,7 @@ class ViewportToolbar {
                         first = false;
                         div.style['margin-right'] = 'auto';
                     }
-                    this.elements.path.append(div);
+                    this.hb_elements.path.append(div);
                 }
                 item = item.parent_item ? await item.filesystem().fetch_item(item.parent_item) : null;
             }

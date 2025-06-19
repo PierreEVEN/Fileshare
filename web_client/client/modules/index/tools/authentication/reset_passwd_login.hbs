@@ -1,0 +1,9 @@
+<form onsubmit="{{ctx 'reset(event)'}}" class="calendar-modal login-modal">
+    <h1>Réinitialisation du mot de passe</h1>
+    <label for='display_name'>
+        <input {{object "reset"}} type="text" name="display_name" placeholder="Nom d'utilisateur / email" id="username"
+                                  required>
+    </label>
+    <p class="authentication-error" {{object "error"}}></p>
+    <input type="submit" value="Réinitialiser">
+</form>

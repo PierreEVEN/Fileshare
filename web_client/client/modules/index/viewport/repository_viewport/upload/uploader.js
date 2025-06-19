@@ -99,7 +99,7 @@ class Uploader extends MemoryTracker {
             }
         });
         this.pause = false;
-        this._elements = div.elements;
+        this._elements = div.hb_elements;
         this.total_items = 0;
         this.total_size = 0;
         container.append(div);

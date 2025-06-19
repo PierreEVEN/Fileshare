@@ -95,11 +95,11 @@ class RepositorySettings extends MemoryTracker {
             },
             set_access_type: async () => {
                 await this._remove_subscription(data.repository, data.owner);
-                await this._register_subscription(data.repository, data.owner, auth_widget.elements.access_type.value);
+                await this._register_subscription(data.repository, data.owner, auth_widget.hb_elements.access_type.value);
                 auth_widget.remove();
             }
         });
-        this.div.elements.subscriptions.append(auth_widget);
+        this.div.hb_elements.subscriptions.append(auth_widget);
     }
 
     async _register_subscription(repository, owner, access_type) {

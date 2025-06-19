@@ -37,7 +37,7 @@ class RepositoryNode {
         });
         this.data = data;
         this._div = div;
-        this._elements = div.elements;
+        this._elements = div.hb_elements;
         this._container.append(div);
         return this;
     }
@@ -145,14 +145,14 @@ class RepositoryTree {
             },
             trash: async () => {
                 await APP.set_display_trash(this.repository);
-                this.side_bar.select_div(root_div.elements.trash);
+                this.side_bar.select_div(root_div.hb_elements.trash);
             },
             context: (e) => {
                 context_menu_repository(repository);
                 e.preventDefault();
             }
         });
-        this._elements = root_div.elements;
+        this._elements = root_div.hb_elements;
         this.root = root_div;
         this.side_bar = side_bar;
         container.append(root_div);

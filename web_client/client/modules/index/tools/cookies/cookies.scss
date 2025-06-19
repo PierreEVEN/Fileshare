@@ -1,0 +1,21 @@
+#ask-for-cookies {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background-color: #3e3e3e;
+  z-index: 10000;
+
+  p {
+    flex-grow: 1;
+    text-align: center;
+    color: #919191;
+  }
+
+  > :last-child {
+    margin-right: 10px;
+  }
+}
