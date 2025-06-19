@@ -181,7 +181,7 @@ class AppCookies {
                 if (this._authtoken_exp)
                     cookies.set("authtoken", this._authtoken, this._authtoken_exp)
                 else
-                    cookies.set("authtoken", this._authtoken, dayjs().unix() + 36000)
+                    cookies.set("authtoken", this._authtoken, dayjs().unix() + 1000 * 60 * 60 * 24 * 30)
             if (this._authtoken_exp)
                 cookies.set("authtoken-exp", this._authtoken_exp)
         }

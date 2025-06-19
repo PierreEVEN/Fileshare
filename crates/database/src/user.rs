@@ -94,6 +94,7 @@ impl DbUser {
         }
         let enc_token = EncString::encode(token.as_str());
 
+        //@TODO : set a valid exp date
         let exp_date = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
 
         query_fmt!(db, "INSERT INTO SCHEMA_NAME.authtoken (owner, token, device, expdate) VALUES ($1, $2, $3, $4)", user.id(), enc_token, device, exp_date);
