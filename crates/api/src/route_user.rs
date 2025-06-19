@@ -9,11 +9,12 @@ use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use axum_extra::extract::CookieJar;
-use serde::{Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::log::info;
 use database::repository::DbRepository;
+use database::reset_passwords::ResetPasswords;
 use database::user::{DbAuthToken, DbUser};
 use types::database_ids::{DatabaseId, PasswordHash, UserId};
 use types::repository::RepositoryStatus;
@@ -33,7 +34,10 @@ impl UserRoutes {
             .route("/tokens", get(auth_tokens).with_state(ctx.clone()))
             .route("/update", post(update).with_state(ctx.clone()))
             .route("/repositories/:user_id", get(repositories).with_state(ctx.clone()))
-            .route("/create", post(create_user).with_state(ctx.clone()));
+            .route("/create", post(create_user).with_state(ctx.clone()))
+            .route("/forgot-password-create", post(forgot_password_create).with_state(ctx.clone()))
+            .route("/forgot-password-check", post(forgot_password_check).with_state(ctx.clone()))
+            .route("/forgot-password-update", post(forgot_password_update).with_state(ctx.clone()));
 
         Ok(router)
     }
@@ -103,7 +107,7 @@ pub struct UserCredentials {
 
 /// Get authentication token
 async fn login(State(ctx): State<Arc<AppCtx>>, Json(payload): Json<LoginInfos>) -> Result<impl IntoResponse, ServerError> {
-    let user = DbUser::from_credentials(&ctx.database, &payload.login, &payload.password).await.map_err(|err| {ServerError::msg(StatusCode::UNAUTHORIZED, format!("Connection failed : invalid credentials {err}"))})?;
+    let user = DbUser::from_credentials(&ctx.database, &payload.login, &payload.password).await.map_err(|err| { ServerError::msg(StatusCode::UNAUTHORIZED, format!("Connection failed : invalid credentials {err}")) })?;
     let auth_token = DbUser::generate_auth_token(&user, &ctx.database, &match payload.device {
         None => { EncString::from("Unknown device") }
         Some(device) => { device }
@@ -208,7 +212,7 @@ async fn search(State(ctx): State<Arc<AppCtx>>, request: axum::extract::Request)
     #[derive(Deserialize, Debug)]
     struct Data {
         name: EncString,
-        exact: bool
+        exact: bool,
     }
     let json = Json::<Data>::from_request(request, &ctx).await?.0;
     let mut users = vec![];
@@ -216,4 +220,63 @@ async fn search(State(ctx): State<Arc<AppCtx>>, request: axum::extract::Request)
         users.push(user.id().clone());
     }
     Ok(Json(users))
+}
+
+async fn forgot_password_create(State(ctx): State<Arc<AppCtx>>, request: axum::extract::Request) -> Result<impl IntoResponse, ServerError> {
+    let payload = Json::<EncString>::from_request(request, &ctx).await?;
+    let users = DbUser::from_login(&ctx.database, &payload, &payload)
+        .await
+        .map_err(|err| {
+            ServerError::msg(StatusCode::NOT_FOUND, format!("User not found : {}", err))
+        })?;
+
+    if users.is_empty() {
+        return Err(ServerError::msg(StatusCode::NOT_FOUND, "User not found"));
+    }
+
+    for user in users {
+        ResetPasswords::create(&ctx.database, &ctx.config.backend_config.emailer, user.id()).await?;
+    }
+    Ok(())
+}
+async fn forgot_password_check(State(ctx): State<Arc<AppCtx>>, request: axum::extract::Request) -> Result<impl IntoResponse, ServerError> {
+    #[derive(Serialize, Deserialize)]
+    pub struct Payload {
+        pub user: EncString,
+        pub code: EncString,
+    }
+    let payload = Json::<Payload>::from_request(request, &ctx).await?;
+    let users = DbUser::from_login(&ctx.database, &payload.user, &payload.user)
+        .await
+        .map_err(|err| ServerError::msg(StatusCode::NOT_FOUND, err))?;
+    for user in users {
+        match ResetPasswords::from_user(&ctx.database, user.id(), &payload.code.plain()?).await {
+            Ok(_) => return Ok(()),
+            Err(_) => {}
+        }
+    }
+    Err(ServerError::msg(StatusCode::NOT_FOUND, "Invalid code"))
+}
+
+async fn forgot_password_update(State(ctx): State<Arc<AppCtx>>, request: axum::extract::Request) -> Result<impl IntoResponse, ServerError> {
+    #[derive(Serialize, Deserialize)]
+    pub struct Payload {
+        pub login: EncString,
+        pub code: EncString,
+        pub new_password: EncString,
+    }
+    let payload = Json::<Payload>::from_request(request, &ctx).await?;
+    let users = DbUser::from_login(&ctx.database, &payload.login, &payload.login)
+        .await
+        .map_err(|err| ServerError::msg(StatusCode::NOT_FOUND, err))?;
+    for user in users {
+        match ResetPasswords::from_user(&ctx.database, user.id(), &payload.code.plain()?).await {
+            Ok(item) => {
+                item.reset_password(&ctx.database, &payload.new_password).await?;
+                return Ok(());
+            }
+            Err(_) => {}
+        }
+    }
+    Err(ServerError::msg(StatusCode::NOT_FOUND, "Invalid code"))
 }

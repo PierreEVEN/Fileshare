@@ -3,13 +3,13 @@ use crate::subscription::Subscription;
 use crate::{query_fmt, query_object, query_objects};
 use crate::Database;
 use anyhow::Error;
-use rand::distributions::{Alphanumeric, DistString};
 use rand::random;
 use std::time::{SystemTime, UNIX_EPOCH};
 use types::database_ids::{DatabaseId, DatabaseIdTrait, PasswordHash, UserId};
 use types::enc_string::EncString;
 use types::user::{AuthToken, User};
 use postgres_from_row::FromRow;
+use rand::distr::{Alphanumeric, SampleString};
 
 pub struct DbAuthToken;
 
@@ -69,6 +69,10 @@ impl DbUser {
         }
     }
 
+    pub async fn from_login(db: &Database, name: &EncString, email: &EncString) -> Result<Vec<User>, Error> {
+        Ok(query_objects!(db, User, r#"SELECT * FROM SCHEMA_NAME.users WHERE name = $1 OR email = $2"#, name, email))
+    }
+
     pub async fn from_credentials(db: &Database, login: &EncString, password: &EncString) -> Result<User, Error> {
         let user = query_object!(db, User, r#"SELECT * FROM SCHEMA_NAME.users WHERE login = $1 OR email = $1"#, login.encoded())
             .ok_or(Error::msg("User not found"))
@@ -87,7 +91,7 @@ impl DbUser {
     pub async fn generate_auth_token(user: &User, db: &Database, device: &EncString) -> Result<AuthToken, Error> {
         let mut token: String;
         loop {
-            token = Alphanumeric.sample_string(&mut rand::thread_rng(), 64);
+            token = Alphanumeric.sample_string(&mut rand::rng(), 64);
             if query_fmt!(db, "SELECT token FROM SCHEMA_NAME.authtoken WHERE token = $1", token).is_empty() {
                 break;
             }

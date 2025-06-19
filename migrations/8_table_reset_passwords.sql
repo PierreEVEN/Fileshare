@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS SCHEMA_NAME.resetpasswords (
+    user_id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(8) NOT NULL,
+    expdate BIGINT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES SCHEMA_NAME.users(id)
+);

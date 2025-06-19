@@ -15,6 +15,7 @@ pub mod user;
 pub mod subscription;
 pub mod async_zip;
 pub mod upgrades;
+pub mod reset_passwords;
 
 pub struct Database {
     db: Client,

@@ -15,19 +15,19 @@ pub struct PostgresConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
+pub struct EMailerConfig {
+    pub source_address: String,
+    pub smtp_server: String,
+    pub smtp_auth: Option<(String, String)>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct WebClientConfig {
     pub client_path: PathBuf,
     pub debug: bool,
     pub check_for_packages_updates: bool,
     pub build_webpack: bool,
     pub force_secure_requests: bool
-}
-
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
-pub struct ServiceEmailConfig {
-    pub host: String,
-    pub smtp_port: String,
-    pub email_username: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -43,13 +43,13 @@ pub struct BackendConfig {
     pub thumbnail_size: usize,
     pub max_parallel_task: usize,
     pub postgres: PostgresConfig,
+    pub emailer: EMailerConfig,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub addresses: Vec<String>,
     pub backend_config: BackendConfig,
-    pub server_mail_server: ServiceEmailConfig,
     pub web_client_config: WebClientConfig,
     pub tls_config: TlsConfig,
     pub use_tls: bool,
@@ -74,11 +74,11 @@ impl Default for Config {
                     ssl_mode: false,
                     scheme_name: "fileshare_v3".to_string()
                 },
-            },
-            server_mail_server: ServiceEmailConfig {
-                host: "mail.fileshare.fr".to_string(),
-                smtp_port: "465".to_string(),
-                email_username: "noreply@fileshare.fr".to_string(),
+                emailer: EMailerConfig {
+                    source_address: "noreply@fileshare.com".to_string(),
+                    smtp_server: "mail.fileshare.com".to_string(),
+                    smtp_auth: None,
+                },
             },
             web_client_config: WebClientConfig {
                 client_path: PathBuf::from("./web_client"),

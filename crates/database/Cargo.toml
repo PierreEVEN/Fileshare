@@ -10,10 +10,11 @@ tracing = "0.1.40"
 postgres-from-row = "0.5.2"
 postgres-types = "0.2.7"
 serde = { version = "1.0.209", features = ["derive"] }
-rand = "0.8.5"
+rand = "0.9.1"
 tokio-postgres = "0.7.12"
 tokio-util = "0.7.12"
 blake3 = "1.5.4"
+lettre = "0.11.17"
 
 utils = { path = "../utils" }
 types = { path = "../types", features = ["axum", "tokio-postgres", "password"] }
