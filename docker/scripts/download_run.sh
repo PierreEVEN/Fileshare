@@ -3,7 +3,8 @@
 VERSION=${1:-latest}
 
 # Remove old binary
-rm -rf /opt/fileshare/fileshare
+rm -rf /opt/fileshare/fileshare-server
+rm -rf /opt/fileshare/libpdfium.so
 rm -rf /opt/fileshare/public
 rm -rf /opt/fileshare/migrations
 
@@ -16,6 +17,8 @@ chmod u+x /opt/fileshare/fileshare-server
 
 # Cleanup
 rm /opt/fileshare/fileshare.zip
+
+sleep 1000
 
 # Run
 /opt/fileshare/fileshare-server

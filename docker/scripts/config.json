@@ -9,12 +9,16 @@
     "max_parallel_task": 0,
     "postgres": {
       "username": "postgres",
-      "secret": "password",
+      "secret": "fileshare-pswd",
       "url": "127.0.0.1",
       "port": 5432,
       "database": "postgres",
       "ssl_mode": false,
       "scheme_name": "fileshare_v3"
+    },
+    "emailer": {
+      "source_address": "noreply@schedulator.com",
+      "smtp_server": "mail.schedulator.com"
     }
   },
   "server_mail_server": {

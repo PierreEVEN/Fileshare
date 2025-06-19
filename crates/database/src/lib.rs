@@ -5,7 +5,7 @@ use anyhow::{Error};
 use tokio::net::TcpStream;
 use tokio_postgres::{Client, Config, Connection};
 use tokio_postgres::tls::NoTlsStream;
-use tracing::info;
+use tracing::{error, info};
 use utils::config::{BackendConfig};
 
 pub mod item;
@@ -24,22 +24,48 @@ pub struct Database {
     pub thumbnail_storage_path: PathBuf,
 }
 
-async fn connect_raw(s: &str) -> Result<(Client, Connection<TcpStream, NoTlsStream>), Error> {
-    let socket = TcpStream::connect("127.0.0.1:5432").await?;
-    let config = s.parse::<Config>()?;
-    Ok(config.connect_raw(socket, tokio_postgres::NoTls).await?)
-}
-
-async fn connect(s: &str) -> Result<Client, Error> {
-    let (client, connection) = connect_raw(s).await?;
-    tokio::spawn(connection);
-    Ok(client)
-}
-
 impl Database {
     pub async fn new(config: &BackendConfig) -> Result<Self, Error> {
-        let db = connect(format!("host={} port={} user={} password={} dbname={} sslmode={}", config.postgres.url, config.postgres.port, config.postgres.username, config.postgres.secret, config.postgres.database, if config.postgres.ssl_mode { "enable" } else { "disable" }).as_str()).await?;
+        let (db, connection) = tokio_postgres::connect(
+            format!(
+                "host={} port={} user={} password={} dbname={}",
+                config.postgres.url,
+                config.postgres.port,
+                config.postgres.username,
+                config.postgres.secret,
+                config.postgres.database,
+            )
+                .as_str(),
+            tokio_postgres::NoTls,
+        )
+            .await
+            .or_else(|error| {
+                Err(Error::msg(format!(
+                    "Failed to connect to postgres database postgres://{}@{}:{}-{} : {}",
+                    config.postgres.username,
+                    config.postgres.url,
+                    config.postgres.port,
+                    config.postgres.database,
+                    error
+                )))
+            })?;
+
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                error!("Postgres database connection error: {}", e)
+            }
+        });
+
+        info!(
+            "Connected to postgres database postgres://{}@{}:{}-{}",
+            config.postgres.username,
+            config.postgres.url,
+            config.postgres.port,
+            config.postgres.database
+        );
+
         let database = Self { db, schema_name: config.postgres.scheme_name.to_string(), file_storage_path: config.file_storage_path.clone(), thumbnail_storage_path: config.thumbnail_storage_path.clone() };
+
         database.migrate(PathBuf::from("./migrations"), config.postgres.scheme_name.as_str()).await?;
         Ok(database)
     }
