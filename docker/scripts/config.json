@@ -10,7 +10,7 @@
     "postgres": {
       "username": "postgres",
       "secret": "fileshare-pswd",
-      "url": "127.0.0.1",
+      "url": "fileshare-db",
       "port": 5432,
       "database": "postgres",
       "ssl_mode": false,

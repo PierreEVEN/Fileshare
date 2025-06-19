@@ -15,10 +15,10 @@ unzip /opt/fileshare/fileshare.zip -d /opt
 # Install
 chmod u+x /opt/fileshare/fileshare-server
 
+cp -r /opt/fileshare/migrations /migrations
+
 # Cleanup
 rm /opt/fileshare/fileshare.zip
-
-sleep 1000
 
 # Run
 /opt/fileshare/fileshare-server
