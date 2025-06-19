@@ -15,10 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2.7.3
-        with:
-          prefix-key: "cache-ubuntu"
       - run: cargo build --release
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -29,19 +25,28 @@ jobs:
             ./migrations/*
             ./target/release/fileshare-cli
             ./target/release/fileshare-server
-            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
-            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
 
+  build_rust_linux_musl:
+    name: Linux Musl - Rust app
+    runs-on: ubuntu-22.04
+    container: ghcr.io/blackdex/rust-musl:x86_64-musl
+    steps:
+      - uses: actions/checkout@v4
+      - run:  cargo build --release --package fileshare-server
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-linux_musl
+          retention-days: 1
+          path: |
+            ./target/x86_64-unknown-linux-musl/release/fileshare-server
+            
   build_rust_windows:
     name: Windows - Rust app
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@main
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2.7.3
-        with:
-          prefix-key: "cache-windows"
       - run: cargo build --release
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -52,8 +57,6 @@ jobs:
             ./migrations/*
             ./target/release/fileshare-cli.exe
             ./target/release/fileshare-server.exe
-            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
-            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
 
   build_web_app:
     name: Web app
@@ -73,21 +76,15 @@ jobs:
   package:
     name: Upload release
     runs-on: ubuntu-22.04
-    needs: [build_rust_windows, build_rust_linux, build_web_app]
+    needs: [build_rust_windows, build_rust_linux, build_rust_linux_musl, build_web_app]
     steps:
+      - uses: actions/checkout@v4
+        
+      # Create Docker setup zip
+      - run: mv docker fileshare-dockerized
+      - run: zip -r fileshare-dockerized.zip ./fileshare-dockerized/
+                  
       # Download generated artifacts
-      - name: Retrieve artifact Rust/Windows
-        uses: actions/download-artifact@main
-        with:
-          name: artifact-rust-windows
-          path: ./artifact_rust_windows
-
-      - name: Retrieve artifact Rust/Linux
-        uses: actions/download-artifact@main
-        with:
-          name: artifact-rust-linux
-          path: ./artifact_rust_linux
-
       - name: Retrieve artifact Web app
         uses: actions/download-artifact@main
         with:
@@ -99,6 +96,12 @@ jobs:
       - run: tar zxvf pdfium-linux-x64.tgz
 
       # Create Linux server zip
+      - name: Retrieve artifact Rust/Linux
+        uses: actions/download-artifact@main
+        with:
+          name: artifact-rust-linux
+          path: ./artifact_rust_linux
+
       - run: mkdir fileshare
       - run: mkdir fileshare/migrations
       - run: cp ./lib/libpdfium.so ./fileshare/
@@ -108,7 +111,29 @@ jobs:
       - run: zip -r fileshare_server_linux.zip ./fileshare/
       - run: rm -r ./fileshare
 
+      # Create Linux Musl server zip
+      - name: Retrieve artifact Rust/Linux
+        uses: actions/download-artifact@main
+        with:
+          name: artifact-rust-linux_musl
+          path: ./artifact_rust_linux_musl
+
+      - run: mkdir fileshare
+      - run: mkdir fileshare/migrations
+      - run: cp ./lib/libpdfium.so ./fileshare/
+      - run: mv ./artifact_rust_linux_musl/migrations/* ./fileshare/migrations
+      - run: mv ./artifact_rust_linux_musl/target/release/fileshare-server ./fileshare/
+      - run: cp -r ./artifact_web_app/* ./fileshare/
+      - run: zip -r fileshare_server_linux_musl.zip ./fileshare/
+      - run: rm -r ./fileshare
+
       # Create Windows server zip
+      - name: Retrieve artifact Rust/Windows
+        uses: actions/download-artifact@main
+        with:
+          name: artifact-rust-windows
+          path: ./artifact_rust_windows
+
       - run: mkdir fileshare
       - run: mkdir fileshare/migrations
       - run: mv ./artifact_rust_windows/migrations/* ./fileshare/migrations
@@ -136,6 +161,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             fileshare_server_linux.zip
+            fileshare_server_linux_musl.zip
             fileshare_server_windows.zip
             fileshare_cli_linux.zip
             fileshare_cli_windows.zip
+            fileshare-dockerized.zip

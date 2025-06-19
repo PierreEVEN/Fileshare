@@ -1,0 +1,43 @@
+services:
+  fileshare-db:
+    image: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    shm_size: 128mb
+    volumes:
+      - fileshare_db:/var/lib/postgresql/data/
+    networks:
+      fileshare:
+        ipv4_address: 172.21.0.2
+    container_name: fileshare-db
+
+  fileshare:
+    links:
+      - fileshare-db
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile
+      args:
+        - VERSION=${VERSION}
+    networks:
+      fileshare:
+        ipv4_address: 172.21.0.3
+    restart: unless-stopped
+    ports:
+      - "5100:5100"
+    volumes:
+      - ${FULLCHAIN}:/opt/fileshare_certificates/fullchain.pem # Set this directory to the one containing certificates
+      - ${PRIVKEY}:/opt/fileshare_certificates/privkey.pem # Set this directory to the one containing certificates
+    container_name: fileshare-app
+
+volumes:
+  fileshare_db: {}
+
+networks:
+  fileshare:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.21.0.0/16
+      driver: default

@@ -1,0 +1,38 @@
+{
+  "addresses": [
+    "172.21.0.3:5100"
+  ],
+  "backend_config": {
+    "file_storage_path": "data/files",
+    "thumbnail_storage_path": "data/thumbnails",
+    "thumbnail_size": 100,
+    "max_parallel_task": 0,
+    "postgres": {
+      "username": "postgres",
+      "secret": "password",
+      "url": "127.0.0.1",
+      "port": 5432,
+      "database": "postgres",
+      "ssl_mode": false,
+      "scheme_name": "fileshare_v3"
+    }
+  },
+  "server_mail_server": {
+    "host": "mail.fileshare.fr",
+    "smtp_port": "465",
+    "email_username": "noreply@fileshare.fr"
+  },
+  "web_client_config": {
+    "client_path": "/opt/fileshare/",
+    "debug": false,
+    "check_for_packages_updates": false,
+    "build_webpack": false,
+    "force_secure_requests": false
+  },
+  "tls_config": {
+    "certificate": "/opt/fileshare_certificates/fullchain.pem",
+    "private_key": "/opt/fileshare_certificates/privkey.pem"
+  },
+  "use_tls": false,
+  "admin_user_name": "admin"
+}
