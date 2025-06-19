@@ -27,6 +27,7 @@ services:
     ports:
       - "5100:5100"
     volumes:
+      - fileshare_db:/opt/data/
       - ${FULLCHAIN}:/opt/fileshare_certificates/fullchain.pem # Set this directory to the one containing certificates
       - ${PRIVKEY}:/opt/fileshare_certificates/privkey.pem # Set this directory to the one containing certificates
     container_name: fileshare-app
