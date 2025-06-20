@@ -2,6 +2,7 @@ mod static_file_server;
 
 use std::{env, fs};
 use std::collections::VecDeque;
+use std::path::PathBuf;
 use std::process::{Stdio};
 use std::sync::Arc;
 use std::sync::atomic::Ordering::SeqCst;
@@ -49,10 +50,16 @@ impl WebClient {
     async fn try_create_client(config: &WebClientConfig) -> Result<Self, Error> {
         if config.build_webpack {
             env::set_current_dir(&config.client_path)?;
-
+            
             let result = which("node").or(Err(Error::msg("Failed to find node path. Please ensure nodejs is correctly installed")))?;
-            let npm_cli_path = result.parent().unwrap().join("node_modules").join("npm").join("bin").join("npm-cli.js");
-
+            let mut npm_cli_path = result.parent().unwrap().join("node_modules").join("npm").join("bin").join("npm-cli.js");
+            if !npm_cli_path.exists() {
+                npm_cli_path = PathBuf::from("/usr/lib/node_modules/npm/bin/npm-cli.js");
+            }
+            if !npm_cli_path.exists() {
+                return Err(Error::msg("NPM cli does not exist"));
+            }
+            
             if config.check_for_packages_updates {
                 info!("Installing webclient dependencies...");
                 let mut install_cmd = Command::new("node")

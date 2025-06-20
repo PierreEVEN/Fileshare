@@ -28,8 +28,6 @@ class Modal {
     }
     /**
      * @typedef {Object} CreateInfos
-     * @property {string|undefined} custom_width
-     * @property {string|undefined} custom_height
      * @property {string|undefined} modal_class
      * @property {function} on_close
      */
@@ -44,14 +42,6 @@ class Modal {
         this._is_open = true;
         this._elements.root.classList.add('display')
 
-        if (create_infos.custom_width)
-            this._elements.modal.style.width = create_infos.custom_width;
-        else
-            this._elements.modal.style.width = 'fit-content';
-        if (create_infos.custom_height)
-            this._elements.modal.style.height = create_infos.custom_height;
-        else
-            this._elements.container.style.height = 'fit-content';
         this._elements.container.innerHTML = "";
         if (create_infos.modal_class)
             this._elements.modal.classList.add(create_infos.modal_class)
