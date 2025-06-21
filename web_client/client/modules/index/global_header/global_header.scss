@@ -48,6 +48,10 @@
     align-items: center;
     background-color: rgba(255, 255, 255, 0.16);
 
+    input {
+      margin: 0;
+    }
+
     &:hover {
       background-color: rgba(255, 255, 255, 0.3);
     }
