@@ -240,6 +240,10 @@ class ViewportContent extends MemoryTracker {
         return null;
     }
 
+    get_displayed_items() {
+        return this._displayed_items;
+    }
+
     async _add(item) {
         if (this._displayed_items.has(item.id))
             return;

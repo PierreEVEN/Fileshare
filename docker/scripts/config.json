@@ -31,7 +31,7 @@
     "debug": false,
     "check_for_packages_updates": false,
     "build_webpack": false,
-    "force_secure_requests": false
+    "force_secure_requests": true
   },
   "tls_config": {
     "certificate": "/opt/fileshare_certificates/fullchain.pem",
