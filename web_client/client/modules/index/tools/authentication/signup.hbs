@@ -1,19 +1,19 @@
-<h1>Créer un compte</h1>
-<form onsubmit="{{ctx 'signup(event)'}}">
-    <label for='username'>
-        <input type="text" name="username" placeholder="Nom d'utilisateur" id="username" required {{object "login"}}>
-    </label>
-    <label for='email'>
-        <input type="email" name="email" placeholder="e-mail" id="email" required {{object "email"}}>
-    </label>
-    <label for='password'>
-        <input type="password" name="password" placeholder="Mot de passe" id="password" required {{object "password"}}>
-    </label>
+<form onsubmit="{{ctx 'signup(event)'}}" class="calendar-modal login-modal">
+    <h1>Créer un compte</h1>
+    <label for="display_name"></label>
+    <input type="text" name="display_name" placeholder="Nom d'utilisateur" required {{object "login"}}
+           id="display_name">
+    <label for="email"></label>
+    <input type="email" name="email" placeholder="e-mail" required {{object "email"}} id="email">
+    <label for="password"></label>
+    <input type="password" name="password" placeholder="Mot de passe" required {{object "password"}} id="password">
+
     <p class="authentication-error" {{object "error"}}></p>
 
-    <label for='remember-me'>Rester connecté
-        <input {{object "stay_connected"}} type="checkbox" name="remember_me" checked id="remember-me">
-    </label>
+    <div class="field">
+        <label for='remember-me'>Rester connecté</label>
+        <check-slider {{object "stay_connected"}} checked id="remember-me"></check-slider>
+    </div>
 
     <input type="submit" value="Créer un compte">
     <div class='footer'>

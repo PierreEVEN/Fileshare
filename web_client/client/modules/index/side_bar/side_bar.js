@@ -113,8 +113,7 @@ class SideBar {
         if (expanded) {
             this._elements.div_shared.classList.add('expand');
             for (const repository of await Repository.shared_repositories()) {
-                if (!this._shared_repositories_loaded.has(repository.id))
-                    this._shared_repositories_loaded.set(repository.id, new RepositoryTree(this, this._elements.shared, repository));
+                this._shared_repositories_loaded.set(repository.id, new RepositoryTree(this, this._elements.shared, repository));
             }
         } else {
             this._elements.div_shared.classList.remove('expand');

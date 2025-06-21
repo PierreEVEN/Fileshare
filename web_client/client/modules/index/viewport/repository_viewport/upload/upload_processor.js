@@ -103,7 +103,7 @@ class UploadProcessor extends MemoryTracker {
 
         const chunk =  this.item.file.slice(start, this._cursor);
 
-        this._request.open("POST", '/api/item/send/');
+        this._request.open("POST", '/api/item/send');
         if (!this.state) {
             this._request.setRequestHeader('Content-Name', EncString.from_client(this.item.name).encoded());
             this._request.setRequestHeader('Content-Size', this.item.file.size.toString());
