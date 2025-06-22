@@ -5,3 +5,5 @@ CREATE TABLE IF NOT EXISTS SCHEMA_NAME.authtoken(
         expdate BIGINT NOT NULL,
         FOREIGN KEY(owner) REFERENCES SCHEMA_NAME.users(id)
     );
+
+CREATE INDEX IF NOT EXISTS SCHEMA_NAME_authtoken_token_index ON SCHEMA_NAME.authtoken USING hash(token);

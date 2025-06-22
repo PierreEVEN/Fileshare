@@ -1,4 +1,3 @@
-use database::item::{DbItem, Trash};
 use database::subscription::{Subscription, SubscriptionAccessType};
 use database::Database;
 use crate::RequestContext;
@@ -7,8 +6,8 @@ use axum::extract::Request;
 use axum::http::StatusCode;
 use std::sync::Arc;
 use database::repository::DbRepository;
-use types::database_ids::{ItemId, RepositoryId};
-use types::repository::RepositoryStatus;
+use types::item::Item;
+use types::repository::{Repository, RepositoryStatus};
 
 pub struct Permissions {
     request_context: Arc<RequestContext>,
@@ -45,8 +44,7 @@ impl Permissions {
         })
     }
 
-    pub async fn view_repository(&self, db: &Database, repository_id: &RepositoryId) -> Result<PermissionResult, ServerError> {
-        let repository = DbRepository::from_id(db, repository_id).await?;
+    pub async fn view_repository(&self, db: &Database, repository: &Repository) -> Result<PermissionResult, ServerError> {
         match repository.status {
             RepositoryStatus::Public | RepositoryStatus::Hidden => {
                 return Ok(PermissionResult::Granted);
@@ -57,7 +55,7 @@ impl Permissions {
         Ok(if let Some(user) = &*self.request_context.connected_user().await {
             if repository.owner == *user.id() {
                 PermissionResult::Granted
-            } else if Subscription::find(db, user.id(), repository_id).await.is_ok() {
+            } else if Subscription::find(db, user.id(), repository.id()).await.is_ok() {
                 PermissionResult::Granted
             } else {
                 PermissionResult::Denied
@@ -67,13 +65,12 @@ impl Permissions {
         })
     }
 
-    pub async fn edit_repository(&self, db: &Database, repository_id: &RepositoryId) -> Result<PermissionResult, ServerError> {
-        self.view_repository(db, repository_id).await?.granted();
-        let repository = DbRepository::from_id(db, repository_id).await?;
+    pub async fn edit_repository(&self, db: &Database, repository: &Repository) -> Result<PermissionResult, ServerError> {
+        self.view_repository(db, repository).await?.granted();
         Ok(if let Some(user) = &*self.request_context.connected_user().await {
             if repository.owner == *user.id() {
                 PermissionResult::Granted
-            } else if let Ok(subscription) = Subscription::find(db, user.id(), repository_id).await {
+            } else if let Ok(subscription) = Subscription::find(db, user.id(), repository.id()).await {
                 match subscription.access_type {
                     SubscriptionAccessType::Moderator => { PermissionResult::Granted }
                     _ => { PermissionResult::Denied }
@@ -86,13 +83,12 @@ impl Permissions {
         })
     }
 
-    pub async fn upload_to_repository(&self, db: &Database, repository_id: &RepositoryId) -> Result<PermissionResult, ServerError> {
-        self.view_repository(db, repository_id).await?.granted();
-        let repository = DbRepository::from_id(db, repository_id).await?;
+    pub async fn upload_to_repository(&self, db: &Database, repository: &Repository) -> Result<PermissionResult, ServerError> {
+        self.view_repository(db, repository).await?.granted();
         Ok(if let Some(user) = &*self.request_context.connected_user().await {
             if repository.owner == *user.id() || repository.allow_visitor_upload {
                 PermissionResult::Granted
-            } else if let Ok(subscription) = Subscription::find(db, user.id(), repository_id).await {
+            } else if let Ok(subscription) = Subscription::find(db, user.id(), repository.id()).await {
                 match subscription.access_type {
                     SubscriptionAccessType::Contributor |
                     SubscriptionAccessType::Moderator => { PermissionResult::Granted }
@@ -106,15 +102,13 @@ impl Permissions {
         })
     }
 
-    pub async fn view_item(&self, db: &Database, item_id: &ItemId) -> Result<PermissionResult, ServerError> {
-        let item = DbItem::from_id(db, item_id, Trash::Both).await?;
-        self.view_repository(db, &item.repository).await
+    pub async fn view_item(&self, db: &Database, item: &Item) -> Result<PermissionResult, ServerError> {
+        self.view_repository(db, &DbRepository::from_id(db, &item.repository).await?).await
     }
 
-    pub async fn edit_item(&self, db: &Database, item_id: &ItemId) -> Result<PermissionResult, ServerError> {
-        self.view_item(db, item_id).await?.granted();
-        let item = DbItem::from_id(db, item_id, Trash::Both).await?;
-        if self.edit_repository(db, &item.repository).await?.granted() {
+    pub async fn edit_item(&self, db: &Database, item: &Item) -> Result<PermissionResult, ServerError> {
+        self.view_item(db, item).await?.granted();
+        if self.edit_repository(db, &DbRepository::from_id(db, &item.repository).await?).await?.granted() {
             return Ok(PermissionResult::Granted)
         }
         Ok(if let Some(user) = &*self.request_context.connected_user().await {
@@ -128,16 +122,15 @@ impl Permissions {
         })
     }
 
-    pub async fn upload_to_directory(&self, db: &Database, item_id: &ItemId) -> Result<PermissionResult, ServerError> {
-        self.view_item(db, item_id).await?.granted();
-        let item = DbItem::from_id(db, item_id, Trash::Both).await?;
-        if self.upload_to_repository(db, &item.repository).await?.granted() {
+    pub async fn upload_to_directory(&self, db: &Database, item: &Item) -> Result<PermissionResult, ServerError> {
+        self.view_item(db, item).await?.granted();
+        if self.upload_to_repository(db, &DbRepository::from_id(db, &item.repository).await?).await?.granted() {
             return Ok(PermissionResult::Granted)
         }
         Ok(if let Some(user) = &*self.request_context.connected_user().await {
             if item.owner == *user.id() {
                 PermissionResult::Granted
-            } else if let Some(directory_data) = item.directory {
+            } else if let Some(directory_data) = &item.directory {
                 if directory_data.open_upload {
                     PermissionResult::Granted
                 } else {

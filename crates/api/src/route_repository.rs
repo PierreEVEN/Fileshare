@@ -51,11 +51,9 @@ async fn find_repositories(State(ctx): State<Arc<AppCtx>>, request: Request) -> 
     let permission = Permissions::new(&request)?;
     let json = Json::<Vec<RepositoryId>>::from_request(request, &ctx).await.map_err(|err| { Error::msg(format!("Invalid body, {err} : expected Vec<RepositoryId>")) })?;
     let mut repositories = vec![];
-    for repository in &json.0 {
-        if let Ok(repository_data) = DbRepository::from_id(&ctx.database, repository).await {
-            if permission.view_repository(&ctx.database, repository).await?.granted() {
-                    repositories.push(repository_data);
-            }
+    for repository in DbRepository::from_ids(&ctx.database, &json.0).await? {
+        if permission.view_repository(&ctx.database, &repository).await?.granted() {
+            repositories.push(repository);
         }
     }
     Ok(Json(repositories))
@@ -95,7 +93,7 @@ async fn create_repository(State(ctx): State<Arc<AppCtx>>, request: Request) -> 
 async fn content(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, request: Request) -> Result<impl IntoResponse, ServerError> {
     let repository = RepositoryId::from(id);
     let permissions = Permissions::new(&request)?;
-    permissions.view_repository(&ctx.database, &repository).await?.require()?;
+    permissions.view_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.require()?;
     let items = DbItem::from_repository(&ctx.database, &repository, Trash::No).await?;
     Ok(Json(items))
 }
@@ -156,7 +154,7 @@ pub async fn root_content(State(ctx): State<Arc<AppCtx>>, request: axum::http::R
 
     let mut result = vec![];
     for repository in data.0 {
-        permission.view_repository(&ctx.database, &repository).await?.require()?;
+        permission.view_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.require()?;
         result.append(&mut DbItem::repository_root(&ctx.database, &repository, Trash::Both).await?);
     }
     Ok(Json(result))
@@ -170,7 +168,7 @@ pub async fn trash_content(State(ctx): State<Arc<AppCtx>>, request: axum::http::
 
     let mut result = vec![];
     for repository in data.0 {
-        permission.edit_repository(&ctx.database, &repository).await?.require()?;
+        permission.edit_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.require()?;
         result.append(&mut DbItem::repository_trash_root(&ctx.database, &repository).await?);
     }
     Ok(Json(result))
@@ -196,8 +194,8 @@ async fn update(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl
     let json = Json::<Vec<Data>>::from_request(request, &ctx).await?;
     let mut repositories = vec![];
     for data in json.0 {
-        if permissions.edit_repository(&ctx.database, &data.id).await?.granted() {
-            if let Ok(mut repository) = DbRepository::from_id(&ctx.database, &data.id).await {
+        if let Ok(mut repository) = DbRepository::from_id(&ctx.database, &data.id).await {
+            if permissions.edit_repository(&ctx.database, &repository).await?.granted() {
                 repository.display_name = data.display_name;
                 repository.description = data.description;
                 repository.url_name = data.url_name;
@@ -217,7 +215,7 @@ async fn update(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl
 async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, request: Request) -> Result<impl IntoResponse, ServerError> {
     let repository = DbRepository::from_id(&ctx.database, &RepositoryId::from(id)).await?;
     let permissions = Permissions::new(&request)?;
-    permissions.view_repository(&ctx.database, repository.id()).await?.require()?;
+    permissions.view_repository(&ctx.database, &repository).await?.require()?;
 
     let mut zip = AsyncDirectoryZip::new();
     for item in DbItem::from_repository(&ctx.database, &RepositoryId::from(id), Trash::No).await? {
@@ -258,7 +256,7 @@ async fn subscribe(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<i
 
     let permissions = Permissions::new(&request)?;
     let data = Json::<Data>::from_request(request, &ctx).await?.0;
-    permissions.edit_repository(&ctx.database, &data.repository).await?.require()?;
+    permissions.edit_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &data.repository).await?).await?.require()?;
     let mut subscriptions = vec![];
     for user in &data.users {
         let mut subscription = Subscription::default();
@@ -283,7 +281,7 @@ async fn unsubscribe(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result
 
     let permissions = Permissions::new(&request)?;
     let data = Json::<Data>::from_request(request, &ctx).await?.0;
-    permissions.edit_repository(&ctx.database, &data.repository).await?.require()?;
+    permissions.edit_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &data.repository).await?).await?.require()?;
     for user in &data.users {
         Subscription::find(&ctx.database, user, &data.repository).await?.delete(&ctx.database).await?;
     }
@@ -294,7 +292,7 @@ async fn unsubscribe(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result
 async fn subscriptions(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
     let permissions = Permissions::new(&request)?;
     let data = Json::<RepositoryId>::from_request(request, &ctx).await?.0;
-    permissions.edit_repository(&ctx.database, &data).await?.require()?;
+    permissions.edit_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &data).await?).await?.require()?;
     Ok(Json(Subscription::from_repository(&ctx.database, &data).await?))
 }
 
@@ -302,6 +300,6 @@ async fn subscriptions(State(ctx): State<Arc<AppCtx>>, request: Request) -> Resu
 async fn stats(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
     let permissions = Permissions::new(&request)?;
     let data = Json::<RepositoryId>::from_request(request, &ctx).await?.0;
-    permissions.edit_repository(&ctx.database, &data).await?.require()?;
+    permissions.edit_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &data).await?).await?.require()?;
     Ok(Json(DbRepository::stats(&DbRepository::from_id(&ctx.database, &data).await?, &ctx.database).await?))
 }

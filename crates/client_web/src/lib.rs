@@ -16,6 +16,7 @@ use axum::{middleware, Json, Router};
 use axum::routing::{get};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
+use tower_http::compression::CompressionLayer;
 use tracing::{info};
 use which::which;
 use utils::config::WebClientConfig;
@@ -98,6 +99,12 @@ impl WebClient {
     }
 
     pub fn router(ctx: &Arc<AppCtx>) -> Result<Router, Error> {
+        let compression_layer: CompressionLayer = CompressionLayer::new()
+            .br(true)
+            .deflate(true)
+            .gzip(true)
+            .zstd(true);
+
         Ok(Router::new()
             .route("/", get(get_index).with_state(ctx.clone()))
             .route("/:display_user", get(get_index).with_state(ctx.clone()))
@@ -106,6 +113,7 @@ impl WebClient {
             .route("/:display_user/:display_repository/api-link", get(link).with_state(ctx.clone()))
             .route("/favicon.ico", get(Self::get_favicon).with_state(ctx.clone()))
             .nest("/public", StaticFileServer::router(ctx.config.web_client_config.client_path.join("public")))
+            .layer(compression_layer)
             .layer(middleware::from_fn_with_state(ctx.clone(), middleware_get_path_context))
         )
     }
@@ -209,12 +217,12 @@ async fn get_index(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<i
     });
     get_display_repository!(request, repository, {
         let permission = Permissions::new(&request)?;
-        permission.view_repository(&ctx.database, repository.id()).await?.require()?;
+        permission.view_repository(&ctx.database, &repository).await?.require()?;
         client_config.display_repository = Some(repository.clone());
     });
     get_display_item!(request, item, {
         let permission = Permissions::new(&request)?;
-        permission.view_item(&ctx.database, item.id()).await?.require()?;
+        permission.view_item(&ctx.database, item).await?.require()?;
         client_config.display_item = Some(item.clone());
     });
 

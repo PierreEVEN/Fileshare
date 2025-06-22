@@ -55,9 +55,9 @@ async fn find_items(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<
     let permissions = Permissions::new(&request)?;
     let json = Json::<Vec<ItemId>>::from_request(request, &ctx).await?;
     let mut items = vec![];
-    for item_id in json.0 {
-        if permissions.view_item(&ctx.database, &item_id).await?.granted() {
-            items.push(DbItem::from_id(&ctx.database, &item_id, Trash::Both).await?)
+    for item in DbItem::from_ids(&ctx.database, &json.0, Trash::Both).await? {
+        if permissions.view_item(&ctx.database, &item).await?.granted() {
+            items.push(item);
         }
     }
     Ok(Json(items))
@@ -71,10 +71,10 @@ async fn content_to(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<
     for target in json.0 {
         let mut current_target = target;
         loop {
-            if !permissions.view_item(&ctx.database, &current_target).await?.granted() {
+            let data = DbItem::from_id(&ctx.database, &current_target, Trash::Both).await?;
+            if !permissions.view_item(&ctx.database, &data).await?.granted() {
                 break;
             }
-            let data = DbItem::from_id(&ctx.database, &current_target, Trash::Both).await?;
             for content_item in DbItem::from_parent(&ctx.database, data.id(), Trash::Both).await? {
                 items.insert(content_item.id().clone(), content_item);
             }
@@ -96,7 +96,7 @@ async fn directory_content(State(ctx): State<Arc<AppCtx>>, request: Request) -> 
     let json = Json::<Vec<ItemId>>::from_request(request, &ctx).await?;
     let mut items = vec![];
     for directory in json.0 {
-        if permissions.view_item(&ctx.database, &directory).await?.granted() {
+        if permissions.view_item(&ctx.database, &DbItem::from_id(&ctx.database, &directory, Trash::Both).await?).await?.granted() {
             items.append(&mut DbItem::from_parent(&ctx.database, &directory, Trash::Both).await?);
         }
     }
@@ -114,11 +114,11 @@ async fn new_directory(State(ctx): State<Arc<AppCtx>>, request: Request) -> Resu
         let mut item = Item::default();
 
         if let Some(parent_item) = &params.parent_item {
-            if !permissions.upload_to_directory(&ctx.database, parent_item).await?.granted() {
+            if !permissions.upload_to_directory(&ctx.database, &DbItem::from_id(&ctx.database, &parent_item, Trash::Both).await?).await?.granted() {
                 warn!("Cannot upload to directory {}", parent_item);
                 continue;
             }
-        } else if !permissions.upload_to_repository(&ctx.database, &params.repository).await?.granted() {
+        } else if !permissions.upload_to_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &params.repository).await?).await?.granted() {
             warn!("Cannot upload to repository {}", params.repository);
             continue;
         }
@@ -151,9 +151,9 @@ async fn move_to_trash(State(ctx): State<Arc<AppCtx>>, request: Request) -> Resu
     let json = Json::<Vec<ItemId>>::from_request(request, &ctx).await?;
     let mut items = vec![];
     for item in json.0 {
-        if permissions.edit_item(&ctx.database, &item).await?.granted() {
-            if let Ok(mut item) = DbItem::from_id(&ctx.database, &item, Trash::No).await
-            {
+        if let Ok(mut item) = DbItem::from_id(&ctx.database, &item, Trash::No).await
+        {
+            if permissions.edit_item(&ctx.database, &item).await?.granted() {
                 item.in_trash = true;
                 DbItem::push(&mut item, &ctx.database).await?;
                 items.push(item.id().clone());
@@ -169,8 +169,8 @@ async fn restore(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<imp
     let json = Json::<Vec<ItemId>>::from_request(request, &ctx).await?;
     let mut items = vec![];
     for item in json.0 {
-        if permissions.edit_item(&ctx.database, &item).await?.granted() {
-            if let Ok(mut item) = DbItem::from_id(&ctx.database, &item, Trash::Yes).await {
+        if let Ok(mut item) = DbItem::from_id(&ctx.database, &item, Trash::Yes).await {
+            if permissions.edit_item(&ctx.database, &item).await?.granted() {
                 item.in_trash = false;
                 DbItem::push(&mut item, &ctx.database).await?;
                 items.push(item.id().clone());
@@ -187,8 +187,9 @@ async fn delete(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl
     let json = Json::<Vec<ItemId>>::from_request(request, &ctx).await?;
     let mut items = vec![];
     for item_id in json.0 {
-        if permissions.edit_item(&ctx.database, &item_id).await?.granted() {
-            DbItem::delete(&DbItem::from_id(&ctx.database, &item_id, Trash::Both).await?, &ctx.database).await?;
+        let item = DbItem::from_id(&ctx.database, &item_id, Trash::Both).await?;
+        if permissions.edit_item(&ctx.database, &item).await?.granted() {
+            DbItem::delete(&item, &ctx.database).await?;
             items.push(item_id);
         }
     }
@@ -200,7 +201,7 @@ async fn delete(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl
 async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, request: Request) -> Result<impl IntoResponse, ServerError> {
     let item = DbItem::from_id(&ctx.database, &ItemId::from(id), Trash::Both).await?;
     let permissions = Permissions::new(&request)?;
-    permissions.view_item(&ctx.database, item.id()).await?.require()?;
+    permissions.view_item(&ctx.database, &item).await?.require()?;
 
     let file = match &item.file {
         None => { return Err(ServerError::msg(StatusCode::NOT_ACCEPTABLE, "Cannot generate thumbnail for a directory")) }
@@ -231,9 +232,9 @@ async fn send(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl I
         // Register new upload
         let upload = Upload::new(headers, connected_user.id().clone())?;
         if let Some(parent) = &upload.item().parent_item {
-            permissions.upload_to_directory(&ctx.database, parent).await?.require()?;
+            permissions.upload_to_directory(&ctx.database, &DbItem::from_id(&ctx.database, parent, Trash::Both).await?).await?.require()?;
         } else {
-            permissions.upload_to_repository(&ctx.database, &upload.item().repository).await?.require()?;
+            permissions.upload_to_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &upload.item().repository).await?).await?.require()?;
         }
         ctx.add_upload(upload).await?
     };
@@ -254,7 +255,7 @@ async fn send(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl I
 async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, request: Request) -> Result<impl IntoResponse, ServerError> {
     let item = DbItem::from_id(&ctx.database, &ItemId::from(id), Trash::Both).await?;
     let permissions = Permissions::new(&request)?;
-    permissions.view_item(&ctx.database, item.id()).await?.require()?;
+    permissions.view_item(&ctx.database, &item).await?.require()?;
 
     if let Some(file) = item.file {
         let object = Object::from_id(&ctx.database, &file.object).await?;
@@ -301,8 +302,8 @@ async fn download_multi(State(ctx): State<Arc<AppCtx>>, Path(ids): Path<String>,
 
     let mut zip = AsyncDirectoryZip::new();
     for item in items {
-        permissions.view_item(&ctx.database, &item).await?.require()?;
         let item = DbItem::from_id(&ctx.database, &item, Trash::Both).await?;
+        permissions.view_item(&ctx.database, &item).await?.require()?;
         zip.push_item(&ctx.database, item.clone()).await?;
     }
     let size = zip.size()?;
@@ -337,8 +338,8 @@ async fn edit(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl I
     let json = Json::<Vec<Data>>::from_request(request, &ctx).await?;
     let mut items = vec![];
     for data in json.0 {
-        if permissions.edit_item(&ctx.database, &data.id).await?.granted() {
-            if let Ok(mut item) = DbItem::from_id(&ctx.database, &data.id, Trash::Both).await {
+        if let Ok(mut item) = DbItem::from_id(&ctx.database, &data.id, Trash::Both).await {
+            if permissions.edit_item(&ctx.database, &item).await?.granted() {
                 item.name = data.name;
                 item.description = data.description;
 
@@ -363,7 +364,8 @@ async fn search(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl
     let result = DbItem::search(&ctx.database, data).await?;
     let mut items = vec![];
     for data in result {
-        if permissions.view_item(&ctx.database, data.id()).await?.granted() {
+        let item = DbItem::from_id(&ctx.database, data.id(), Trash::Both).await?;
+        if permissions.view_item(&ctx.database, &item).await?.granted() {
             items.push(data.id().clone());
         }
     }
@@ -385,18 +387,19 @@ async fn copy(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl I
     let data = Json::<Copy>::from_request(request, &ctx).await?.0;
 
     let destination_directory = if let Some(directory) = data.destination_directory {
+        let directory = DbItem::from_id(&ctx.database, &directory, Trash::No).await?;
         permissions.upload_to_directory(&ctx.database, &directory).await?.require()?;
-        Some(DbItem::from_id(&ctx.database, &directory, Trash::No).await?)
+        Some(directory)
     } else { None };
     let destination_repository = DbRepository::from_id(&ctx.database, &data.destination_repository).await?;
     if destination_directory.is_none() {
-        permissions.upload_to_repository(&ctx.database, destination_repository.id()).await?.require()?;
+        permissions.upload_to_repository(&ctx.database, &destination_repository).await?.require()?;
     }
 
     let mut items = vec![];
     for item in data.items {
-        if !permissions.view_item(&ctx.database, &item).await?.granted() { continue; }
         let mut item = DbItem::from_id(&ctx.database, &item, Trash::No).await?;
+        if !permissions.view_item(&ctx.database, &item).await?.granted() { continue; }
 
         if let Some(parent_dir) = &destination_directory {
             item.parent_item = Some(parent_dir.id().clone());
