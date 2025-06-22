@@ -22,23 +22,70 @@ class CarouselViewport {
             });
         }
 
+        this._visual = visual;
+
         container.append(visual);
 
         this.scale = 1;
         this.translationX = 0;
         this.translationY = 0;
 
+        this._drag = false;
+        this._drag_start_x = 0
+        this._drag_start_y = 0
+
+        visual.addEventListener('pointerdown', e => {
+            this._drag_start_x = e.clientX;
+            this._drag_start_y = e.clientY;
+            this._drag = true;
+            e.preventDefault();
+        })
+
+        visual.addEventListener('pointermove', e => {
+            if (this._drag) {
+                e.preventDefault();
+                this.translationX += (e.clientX - this._drag_start_x) / this.scale;
+                this.translationY += (e.clientY - this._drag_start_y) / this.scale;
+
+                this._drag_start_x = e.clientX;
+                this._drag_start_y = e.clientY;
+
+                this.update_transform();
+            }
+        })
+
+        document.addEventListener('pointerup', e => {
+            this._drag = false;
+        })
+
         visual.addEventListener("wheel", e => {
             if (e.ctrlKey) {
                 e.stopPropagation();
                 const zoom = -clamp(e.deltaY, -29, 29) / 30 + 1;
+                const bounds = this._visual.getBoundingClientRect();
+                const offsetX = e.clientX - (bounds.width / 2 + bounds.left);
+                const offsetY = e.clientY - (bounds.height / 2 + bounds.top);
+
+                //const offsetX = e.clientX - (window.innerWidth / 2);
+                //const offsetY = e.clientY - (window.innerHeight / 2);
+
                 this.scale = clamp(this.scale * zoom, 1, 50);
-                const offsetX = e.clientX - window.width / 2;
-                const offsetY = e.clientY - window.height / 2;
-                visual.style.transform = `scale(${this.scale}) translate(${this.translationX}px, ${this.translationY}px)`;
+
+                const delta_x = (offsetX / this.scale)
+                const delta_y = (offsetY / this.scale)
+                this.translationX += delta_x;
+                this.translationY += delta_y;
+
+                console.log(window.width / 2)
+
+                this.update_transform();
                 e.preventDefault();
             }
         });
+    }
+
+    update_transform() {
+        this._visual.style.transform = `scale(${this.scale}) translate(${this.translationX}px, ${this.translationY}px)`;
     }
 }
 
