@@ -39,6 +39,7 @@ pub fn init_logger() {
             fmt::layer()
                 .compact()
                 .with_ansi(true)
+                .with_filter(filter::LevelFilter::from_level(Level::INFO))
         )
         .with(
             // log-error file, to log the errors that arise
@@ -52,6 +53,7 @@ pub fn init_logger() {
             fmt::layer()
                 .with_ansi(false)
                 .with_writer(debug_file)
+                .with_filter(filter::LevelFilter::from_level(Level::INFO))
         );
 
     tracing::subscriber::set_global_default(subscriber).unwrap();
