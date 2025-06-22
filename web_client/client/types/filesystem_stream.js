@@ -268,6 +268,46 @@ class FilesystemStream {
     }
 
     /**
+     * @param item_id {number}
+     * @return {Promise<>}
+     */
+    async preload_to(item_id) {
+        const items = await fetch_api(`item/content-to`, 'POST', [item_id])
+            .catch(error => {
+                NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de l'objet ${item_id}`))
+                return [];
+            });
+        /**
+         * @type {Map<number, FilesystemItem>}
+         */
+        const indexed_items = new Map();
+        for (const item of items)
+            indexed_items.set(item.id, new FilesystemItem(item));
+
+        if (!this._roots)
+            this._roots = new Set();
+
+        const try_register_item = (item_id) => {
+            const existing = this.find(item_id);
+            if (existing)
+                return existing;
+            const data = indexed_items.get(item_id);
+            if (data.parent_item) {
+                let parent = this.find(data.parent_item);
+                if (!parent)
+                    parent = try_register_item(data.parent_item);
+                if (!parent.children)
+                    parent.children = new Set();
+                parent.children.add(item_id);
+            }
+            this._register_item(data);
+            return data;
+        }
+        for (const item of items)
+            try_register_item(item.id);
+    }
+
+    /**
      * @return {Promise<Set<number>>}
      */
     async root_content() {
@@ -308,13 +348,32 @@ class FilesystemStream {
         if (this._items.has(item.id)) {
             await this.remove_item(item);
         }
+        if (item.parent_item !== undefined) {
+            if (!this.find(item.parent_item)) {
+                await this.preload_to(item.id);
+            }
+            // Fetch parents and parent's children
+            const parent = await this.fetch_item(item.parent_item);
+            if (!parent.children)
+                await parent.filesystem().directory_content(parent.id);
+        }
+        this._register_item(item);
+    }
+
+    /**
+     * @param item
+     * @private
+     */
+    _register_item(item) {
         this._items.set(item.id, item);
         if (item.parent_item !== undefined) {
-            const parent = await this.fetch_item(item.parent_item);
+            const parent = this.find(item.parent_item);
+            if (!parent)
+                console.error("Parent have not been preloaded")
             if (item.in_trash && !parent.in_trash && this._trash_roots)
                 this._trash_roots.add(item.id);
             if (!parent.children)
-                await parent.filesystem().directory_content(parent.id);
+                console.error("Children have not been preloaded");
             else
                 parent.children.add(item.id);
         } else {

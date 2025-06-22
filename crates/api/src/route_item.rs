@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::str::FromStr;
 use crate::app_ctx::AppCtx;
 use database::item::{DbItem, ItemSearchData, Trash};
@@ -36,6 +37,7 @@ impl ItemRoutes {
             .route("/restore", post(restore).with_state(ctx.clone()))
             .route("/new-directory", post(new_directory).with_state(ctx.clone()))
             .route("/directory-content", post(directory_content).with_state(ctx.clone()))
+            .route("/content-to", post(content_to).with_state(ctx.clone()))
             .route("/thumbnail/:id", get(thumbnail).with_state(ctx.clone()))
             .route("/send", post(send).with_state(ctx.clone()))
             .route("/get/:path", get(download).with_state(ctx.clone()))
@@ -59,6 +61,33 @@ async fn find_items(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<
         }
     }
     Ok(Json(items))
+}
+
+/// Get all items from root to this item recursively
+async fn content_to(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
+    let permissions = Permissions::new(&request)?;
+    let json = Json::<Vec<ItemId>>::from_request(request, &ctx).await?;
+    let mut items = HashMap::new();
+    for target in json.0 {
+        let mut current_target = target;
+        loop {
+            if !permissions.view_item(&ctx.database, &current_target).await?.granted() {
+                break;
+            }
+            let data = DbItem::from_id(&ctx.database, &current_target, Trash::Both).await?;
+            for content_item in DbItem::from_parent(&ctx.database, data.id(), Trash::Both).await? {
+                items.insert(content_item.id().clone(), content_item);
+            }
+            items.insert(data.id().clone(), data.clone());
+            if let Some(parent) = data.parent_item {
+                current_target = parent;
+            }
+            else {
+                break;
+            }
+        }
+    }
+    Ok(Json(items.values().cloned().collect::<Vec<Item>>()))
 }
 
 /// Get items inside a given directory
