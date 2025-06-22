@@ -118,22 +118,32 @@ class Repository {
     }
 
     /**
-     * @param id {number}
-     * @returns {Promise<Repository>}
+     * @param repos {number|number[]}
+     * @returns {Promise<Repository|Repository[]>}
      */
-    static async find(id) {
-        const local = Repository._LOCAL_CACHE.get(id);
-        if (local)
-            return local;
-        console.assert(id, "Invalid repository ID !");
-        let repositories = await fetch_api('repository/find', 'POST', [id])
-            .catch(error => NOTIFICATION.warn(new Message(`Dépôt ${id} inconnu`)));
-        if (!repositories)
-            return null;
-        for (const repository of repositories)
-            Repository.new(repository);
+    static async find(repos) {
+        const is_array = repos.constructor.name === 'Array';
+        const ids = is_array ? repos : [repos];
 
-        return Repository._LOCAL_CACHE.get(id);
+        const found = [];
+        const not_found = [];
+        for (const id of ids) {
+            console.assert(id, "Invalid repository ID !");
+            const local = Repository._LOCAL_CACHE.get(id);
+            if (local)
+                found.push(local);
+            else
+                not_found.push(id);
+        }
+        let repositories = await fetch_api('repository/find', 'POST', not_found)
+            .catch(error => {
+                NOTIFICATION.warn(new Message(`Impossible de récupérer les dépots ${not_found} : ${error.message}`))
+                throw error;
+            });
+        for (const repository of repositories)
+            found.push(Repository.new(repository));
+
+        return is_array ? found : repos.length > 0 ? found[0] : null;
     }
 
     remove() {

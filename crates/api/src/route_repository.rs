@@ -52,8 +52,10 @@ async fn find_repositories(State(ctx): State<Arc<AppCtx>>, request: Request) -> 
     let json = Json::<Vec<RepositoryId>>::from_request(request, &ctx).await.map_err(|err| { Error::msg(format!("Invalid body, {err} : expected Vec<RepositoryId>")) })?;
     let mut repositories = vec![];
     for repository in &json.0 {
-        if permission.view_repository(&ctx.database, repository).await?.granted() {
-            repositories.push(DbRepository::from_id(&ctx.database, repository).await?);
+        if let Ok(repository_data) = DbRepository::from_id(&ctx.database, repository).await {
+            if permission.view_repository(&ctx.database, repository).await?.granted() {
+                    repositories.push(repository_data);
+            }
         }
     }
     Ok(Json(repositories))

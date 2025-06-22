@@ -5,6 +5,7 @@ use std::net::{SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::Ordering::SeqCst;
+use std::time::Instant;
 use axum::{middleware, Router};
 use axum::body::{Body, Bytes};
 use axum::extract::State;
@@ -14,7 +15,7 @@ use axum::response::{Html, IntoResponse, Response};
 use axum_extra::extract::CookieJar;
 use axum_server::tls_rustls::RustlsConfig;
 use axum_server_dual_protocol::{tokio, ServerExt};
-use tracing::{error, info, warn};
+use tracing::{error, info, trace, warn};
 use http_body_util::BodyExt;
 use api::app_ctx::AppCtx;
 use api::{RequestContext, RootRoutes};
@@ -242,6 +243,8 @@ async fn print_request_response(State(ctx): State<Arc<AppCtx>>, req: Request<Bod
     let path = req.uri().path().to_string();
     let origin = client_web::get_origin(&ctx, &req)?;
 
+    let start = Instant::now();
+
     // Retrieve the request context object
     let context = match req.extensions().get::<Arc<RequestContext>>() {
         None => { None }
@@ -295,12 +298,14 @@ async fn print_request_response(State(ctx): State<Arc<AppCtx>>, req: Request<Bod
                     Err(err) => { return Err(ServerError::msg(StatusCode::INTERNAL_SERVER_ERROR, err.to_string())) }
                 }).as_str());
 
+                trace!("REQUEST ({:2?}) - {}", start.elapsed(), path);
                 return Ok(Html(index_data).into_response());
             }
         }
 
         res = Response::from_parts(parts, Body::from(bytes));
     }
+    trace!("REQUEST ({:2?}) - {}", start.elapsed(), path);
     Ok(res)
 }
 
