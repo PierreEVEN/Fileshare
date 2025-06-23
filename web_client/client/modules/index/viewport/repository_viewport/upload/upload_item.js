@@ -105,7 +105,7 @@ class UploadItem {
     static FromUploadModal(name, file = null) {
         if (file && !file.type)
             file.mimetype = mime.getType(file.name);
-        else
+        else if (file)
             file.mimetype = file.type;
         return new UploadItem({
             is_regular_file: !!file,

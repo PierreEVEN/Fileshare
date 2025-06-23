@@ -1,0 +1,19 @@
+<form onsubmit="{{ctx 'login(event)'}}" class="calendar-modal login-modal">
+    <h1>Connexion</h1>
+    <label for="display_name"></label>
+    <input {{object "login"}} type="text" name="display_name" placeholder="Nom d'utilisateur / email" id="username"
+                              required id="display_name">
+    <label for="password"></label>
+    <input {{object "password"}} type="password" name="password" placeholder="Mot de passe" required id="password">
+
+    <p class="authentication-error" {{object "error"}}></p>
+    <div class="field">
+        <label for='remember-me'>Rester connecté</label>
+        <check-slider {{object "stay_connected"}} checked id="remember-me"></check-slider>
+    </div>
+    <input type="submit" value="Se connecter">
+    <a id="forgot-password" href="javascript:{{ctx 'reset_password()'}}">mot de passe oublié</a>
+    <div class='footer'>
+        <p>Pas encore de compte ?</p> <a href="javascript:{{ctx 'signup()'}};">Créer un compte</a>
+    </div>
+</form>

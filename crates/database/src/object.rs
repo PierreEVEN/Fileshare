@@ -6,6 +6,7 @@ use std::fs;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use tracing::{error};
 use types::database_ids::{ItemId, ObjectId};
 
@@ -23,7 +24,7 @@ impl Object {
     pub fn thumbnail_path(object: &ObjectId, db: &Database) -> PathBuf {
         db.thumbnail_storage_path.join(object.to_string().as_str())
     }
-    
+
     pub async fn from_id(db: &Database, id: &ObjectId) -> Result<Self, Error> {
         Ok(query_object!(db, Object, "SELECT * FROM SCHEMA_NAME.objects WHERE id = $1", id).unwrap())
     }
@@ -41,13 +42,23 @@ impl Object {
         if !Object::data_path(new_object.id(), db).parent().unwrap().exists() {
             fs::create_dir_all(Object::data_path(new_object.id(), db).parent().unwrap())?;
         }
-        match fs::rename(file, Object::data_path(new_object.id(), db)) {
-            Ok(_) => {}
-            Err(err) => {
-                query_fmt!(db, r#"DELETE FROM SCHEMA_NAME.objects WHERE id = $1;"#, *new_object.id);
-                return Err(Error::msg(format!("Failed to store new object : {err}")));
+        if cfg!(unix) {
+            match Command::new("mv").arg(file).arg(Object::data_path(new_object.id(), db)).output() {
+                Ok(result) => {if !result.status.success() {
+                    return Err(Error::msg(format!("Failed to store new object : {}", std::str::from_utf8(result.stderr.as_slice())?)));
+                }}
+                Err(err) => {
+                    return Err(Error::msg(format!("Failed to store new object : {err}")));
+                }
             }
-        };
+        } else {
+            if let Err(err) = fs::rename(file, Object::data_path(new_object.id(), db)) {
+                query_fmt!(db, r#"DELETE FROM SCHEMA_NAME.objects WHERE id = $1;"#, *new_object.id);
+                error!("Failed to rename object from {} to {}", file.display(), Object::data_path(new_object.id(), db).display());
+                let _ = fs::remove_file(file);
+                return Err(Error::msg(format!("Failed to store new object : {err} (please see server logs for more details) ")));
+            };
+        }
         Ok(new_object)
     }
 
@@ -67,7 +78,7 @@ impl Object {
         query_fmt!(db, r#"DELETE FROM SCHEMA_NAME.objects WHERE id = any($1);"#, objects);
         Ok(())
     }
-    
+
     pub fn id(&self) -> &ObjectId {
         &self.id
     }

@@ -132,20 +132,24 @@ macro_rules! query_fmt {
 #[macro_export]
 macro_rules! query_objects {
     ($db:expr, $StructType:ty, $query:expr) => {{
+        let now = std::time::Instant::now();
         let query = $db.db().query(&$query.replace("SCHEMA_NAME", &$db.schema_name), &[]).await?;
         let mut rows = Vec::with_capacity(query.len());
         for row in query {
             rows.push(<$StructType>::try_from_row(&row)?);
         }
+        tracing::trace!("DB-QUERY ({:.2?}) {}", now.elapsed(), $query);
         rows
     }};
     ($db:expr, $StructType:ty, $query:expr, $( $bound_values:expr),*) => {{
+        let now = std::time::Instant::now();
         let params: &[&(dyn postgres_types::ToSql + Sync)] = &[$(&$bound_values,)*];
         let query = $db.db().query(&$query.replace("SCHEMA_NAME", &$db.schema_name), params).await?;
         let mut rows = Vec::with_capacity(query.len());
         for row in query {
             rows.push(<$StructType>::try_from_row(&row)?);
         }
+        tracing::trace!("DB-QUERY ({:.2?}) {}", now.elapsed(), $query);
         rows
     }}
 }
@@ -153,21 +157,25 @@ macro_rules! query_objects {
 #[macro_export]
 macro_rules! query_object {
     ($db:expr, $StructType:ty, $query:expr) => {{
+        let now = std::time::Instant::now();
         let mut query = $db.db().query(&$query.replace("SCHEMA_NAME", &$db.schema_name), &[]).await?;
         if query.len() > 1 {
             return Err(Error::msg("Received more than one expected item"))
         }
+        tracing::trace!("DB-QUERY ({:.2?}) {}", now.elapsed(), $query);
         match query.pop() {
             Some(item) => { Some(<$StructType>::try_from_row(&item)?) }
             None => { None }
         }
     }};
     ($db:expr, $StructType:ty, $query:expr, $( $bound_values:expr),*) => {{
+        let now = std::time::Instant::now();
         let params: &[&(dyn postgres_types::ToSql + Sync)] = &[$(&$bound_values,)*];
         let mut query = $db.db().query(&$query.replace("SCHEMA_NAME", &$db.schema_name), params).await?;
         if query.len() > 1 {
             return Err(Error::msg("Received more than one expected item"))
         }
+        tracing::trace!("DB-QUERY ({:.2?}) {}", now.elapsed(), $query);
         match query.pop() {
             Some(item) => { Some(<$StructType>::try_from_row(&item)?) }
             None => { None }

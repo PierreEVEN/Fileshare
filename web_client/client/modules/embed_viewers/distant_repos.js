@@ -2,8 +2,8 @@ import {get_mime_icon_path} from "../../utilities/mime_utils";
 import {APP_CONFIG} from "../../types/app_config";
 
 function get(item) {
-    const url = `${APP_CONFIG.origin()}/api/item/preview/${item.id}/`;
-    const thumbnail_url = `/api/item/thumbnail/${item.id}/`;
+    const url = `${APP_CONFIG.origin()}/api/item/preview/${item.id}`;
+    const thumbnail_url = `/api/item/thumbnail/${item.id}`;
     const mimetype = item.mimetype.split('/');
     switch (mimetype[0]) {
         case 'image':
@@ -18,6 +18,7 @@ function get(item) {
             switch (mimetype[1]) {
                 case 'x-pdf':
                 case 'pdf':
+                    return `<pdf-embed src="${url}"></pdf-embed>`;
                     return `<object data="${url}" type="application/pdf" width="100%" height="100%">
                                 <pdf-embed src="${url}"></pdf-embed>
                             </object>`

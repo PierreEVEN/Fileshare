@@ -1,4 +1,3 @@
-import {APP_CONFIG} from "../../../../types/app_config";
 import {Message, NOTIFICATION} from "../message_box/notification";
 import {MODAL} from "../../modal/modal";
 
@@ -163,7 +162,6 @@ class AppCookies {
         delete this._authtoken;
         delete this._authtoken_exp;
         this.save_cookies();
-        APP_CONFIG.set_connected_user(null);
     }
 
     save_cookies() {

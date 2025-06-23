@@ -1,12 +1,10 @@
-
 # TODO
-- reimplementer le reset-password / mot de passe oublié
+- gérer le zoom dans le carousel sur les images / vidéos
+- fix la lecture de PDF sur mobile
 - fix taille des dossiers cassée
 - implémenter les filtres
-- fix connexion forcée
 - fix preview CR2 terne sous debian ??
 - supporter plus de 1000 items par dossiers
-- gérer le zoom dans le carousel sur les images / vidéos
 - menu d'action groupée sur plusieurs éléments
     - Conversion automatique HEVC => AV1
     - Menu pour compresser des videos / images et les convertir

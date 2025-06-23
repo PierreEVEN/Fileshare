@@ -1,35 +1,32 @@
 require('./modal.scss')
 
-class Modal {
+class ModalContainer extends HTMLElement {
     constructor() {
-        /**
-         * @type {boolean}
-         * @private
-         */
-        this._is_open = false;
+        super();
 
-        const modal_div = require('./modal.hbs')({}, {
-            close: (event) => {
-                if (event && event.target !== modal_div.hb_elements.root)
-                    return;
+        this.addEventListener('click', (element) => {
+            if (element.target === this) {
                 this.close();
             }
-        });
-        document.body.append(modal_div);
-        this._elements = modal_div.hb_elements;
+        })
+    }
+
+    connectedCallback() {
+        this.modal_box = document.createElement('div');
+        this.modal_box.classList.add('modal-box');
+        this.append(this.modal_box)
     }
 
     close() {
-        this._elements.container.innerHTML = '';
-        this._elements.root.classList.remove('display')
-        if (this.create_infos.on_close)
-            this.create_infos.on_close();
-        this._is_open = false;
+        if (this._create_infos && this._create_infos.on_close)
+            this._create_infos.on_close();
+        this._create_infos = null;
+        this.modal_box.innerHTML = '';
+        this.classList.remove('modal-open');
     }
+
     /**
      * @typedef {Object} CreateInfos
-     * @property {string|undefined} custom_width
-     * @property {string|undefined} custom_height
      * @property {string|undefined} modal_class
      * @property {function} on_close
      */
@@ -40,39 +37,44 @@ class Modal {
      * @return {HTMLElement}
      */
     open(content, create_infos = {}) {
-        this.create_infos = create_infos;
-        this._is_open = true;
-        this._elements.root.classList.add('display')
-
-        if (create_infos.custom_width)
-            this._elements.modal.style.width = create_infos.custom_width;
-        else
-            this._elements.modal.style.width = 'fit-content';
-        if (create_infos.custom_height)
-            this._elements.modal.style.height = create_infos.custom_height;
-        else
-            this._elements.container.style.height = 'fit-content';
-        this._elements.container.innerHTML = "";
-        if (create_infos.modal_class)
-            this._elements.modal.classList.add(create_infos.modal_class)
-
-        if (content.length)
-            for (const item of content)
-                this._elements.container.append(item);
-        else
-            this._elements.container.append(content);
-
-        const inputs = this._elements.container.getElementsByTagName('input');
-        if (inputs.length !== 0)
-            inputs[0].focus();
-        return this._elements.container;
+        this.close();
+        this._create_infos = create_infos;
+        if (content.constructor.name === 'Array') {
+            content[0].append(document.createElement('modal-close'));
+            for (const element of content)
+                this.modal_box.append(element);
+        } else {
+            content.append(document.createElement('modal-close'));
+            this.modal_box.append(content);
+        }
+        this.classList.add('modal-open');
+        this.modal_box.style.left = 'auto'
+        this.modal_box.style.top = 'auto'
     }
 
     is_open() {
-        return this._is_open;
+        return this.classList.contains('modal-open');
     }
 
 }
+
+customElements.define("modal-container", ModalContainer, {});
+
+class ModalClose extends HTMLElement {
+    constructor() {
+        super();
+        this.onclick = () => {
+            /**
+             * @type {ModalContainer}
+             */
+            const owning_modal = this.closest('modal-container');
+            console.assert(owning_modal, "'modal-close' doesn't belong to a valid 'modal-container'");
+            owning_modal.close();
+        }
+    }
+}
+
+customElements.define("modal-close", ModalClose);
 
 let MODAL_SINGLETON = null;
 
@@ -89,8 +91,10 @@ const MODAL = {
      * @return {HTMLElement}
      */
     open: function (content, create_infos = {}) {
-        if (!MODAL_SINGLETON)
-            MODAL_SINGLETON = new Modal();
+        if (!MODAL_SINGLETON) {
+            MODAL_SINGLETON = document.createElement("modal-container");
+            document.body.append(MODAL_SINGLETON);
+        }
         return MODAL_SINGLETON.open(content, create_infos);
     },
     close: function () {

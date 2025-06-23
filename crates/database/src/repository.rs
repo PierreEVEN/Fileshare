@@ -41,6 +41,9 @@ impl DbRepository {
             Some(user) => { Ok(user) }
         }
     }
+    pub async fn from_ids(db: &Database, ids: &Vec<RepositoryId>) -> Result<Vec<Repository>, Error> {
+        Ok(query_objects!(db, Repository, "SELECT * FROM SCHEMA_NAME.repository WHERE id = ANY($1)", ids))
+    }
     pub async fn from_user(db: &Database, user: &UserId) -> Result<Vec<Repository>, Error> {
         Ok(query_objects!(db, Repository, "SELECT * FROM SCHEMA_NAME.repository WHERE owner = $1", user))
     }

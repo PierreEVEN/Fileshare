@@ -79,7 +79,7 @@ class CarouselList {
         if (!provider)
             return;
 
-        for (const object of await provider.get_content()) {
+        for (const [_, object] of this.viewport.content.get_displayed_items()) {
             if (object.is_regular_file) {
                 const callbacks = {};
                 const item = carousel_list_item_hbs({item: object.display_data()}, callbacks);

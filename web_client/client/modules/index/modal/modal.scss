@@ -1,120 +1,109 @@
 @import "../../../stylesheets/palette";
 
-
-#modal-root {
+modal-container {
+  display: flex;
   position: absolute;
-  width: 100vw;
-  height: 100dvh;
-  z-index: 100000;
+  bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  justify-content: center;
+  align-items: center;
+  z-index: 20;
   pointer-events: none;
-
   opacity: 0;
-  transition-duration: 0.1s;
-  backdrop-filter: blur(10px);
-  background-color: rgba(0,0,0,0.3);
+  transition-duration: 0.2s;
 
-  &.display {
-    opacity: 100%;
-    pointer-events: all;
+
+  .modal-box {
+    scale: 0;
+    transition-duration: 0.2s;
+
+    border: solid 1px #151515;
+    box-shadow: -10px -5px 20px #000;
   }
 
-  #modal-box {
+  &.modal-open {
+    pointer-events: auto;
+    background-color: rgba(23, 23, 23, 0.8);
+    opacity: 1;
+
+    .modal-box {
+      scale: 100%;
+    }
+  }
+}
+
+.modal-box {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: min(30px, 5dvh) 30px;
+  background-color: #232527;
+  pointer-events: auto;
+  border-radius: 15px;
+  max-height: calc(95dvh - 30px);
+  max-width: calc(95dvw - 30px);
+  align-items: center;
+  justify-content: center;
+
+  .footer {
+    margin-top: 20px;
     display: flex;
-    justify-content: center;
-    background-color: $background;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    border: 1px $border-default dotted;
+    flex-direction: row;
+    align-items: end;
+
+    a {
+      font-size: 0.8rem;
+    }
+
+    p {
+      font-size: 0.8rem;
+      color: gray;
+      margin: 0 10px
+    }
+  }
+}
+
+modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  &:after{
+    display: inline-block;
+    content: "\00d7";
+    text-align: center;
+    color: white;
+    font-weight: 400;
+    font-size: 25px;
+  }
+  border-radius: 5px;
+  border: solid 1px rgba(150, 150, 150, 0);
+
+  &:hover {
+    background-color: rgba(255, 0, 0, 0.45);
+    border: solid 1px rgba(245, 245, 245, 0.56);
     border-radius: 5px;
-    box-shadow: 10px 5px 5px #000000;
 
-    #modal-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      overflow-y: auto;
-      overflow-x: clip;
-      max-height: 90vh;
-      max-width: 90vw;
-      padding-bottom: 30px;
+    &:after {
+      font-weight: 500;
+      font-size: 30px;
+    }
+  }
 
+  &:active {
+    background-color: rgba(112, 0, 0, 0.8);
+    border: solid 1px rgba(245, 245, 245, 0.81);
+    border-radius: 5px;
 
-      h1 {
-        font-size: 24px;
-        font-weight: 100;
-        margin-bottom: 25px;
-        margin-top: 50px;
-      }
-
-      form {
-        padding: 0 60px;
-        display: flex;
-        flex-direction: column;
-        width: 75%;
-        overflow: scroll;
-
-        input[type="submit"] {
-          margin-bottom: 30px;
-          min-height: 40px;
-        }
-
-        .field {
-          display: flex;
-          flex-direction: row;
-          width: 100%;
-
-          p:first-of-type {
-            margin-right: 20px;
-          }
-        }
-
-        label {
-          display: flex;
-          margin-bottom: 20px;
-          flex-grow: 1;
-        }
-
-        a {
-          align-self: center;
-        }
-
-        .danger-zone {
-          padding: 15px;
-          border-radius: 5px;
-          border: 1px #a40a0a solid;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin-bottom: 25px;
-          background-color: #ff00000f;
-
-          h2 {
-            margin-top: 2px;
-          }
-        }
-      }
-
-      .footer {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        bottom: 20px;
-        font-size: 15px;
-        border-top: 1px solid $border-default;
-        color: $border-default;
-        position: absolute;
-        padding-top: 5px;
-        align-self: center;
-
-        p {
-          margin: 8px;
-        }
-      }
+    &:after {
+      font-weight: 500;
+      font-size: 35px;
     }
   }
 }

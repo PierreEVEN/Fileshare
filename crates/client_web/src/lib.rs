@@ -2,6 +2,7 @@ mod static_file_server;
 
 use std::{env, fs};
 use std::collections::VecDeque;
+use std::path::PathBuf;
 use std::process::{Stdio};
 use std::sync::Arc;
 use std::sync::atomic::Ordering::SeqCst;
@@ -15,6 +16,7 @@ use axum::{middleware, Json, Router};
 use axum::routing::{get};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
+use tower_http::compression::CompressionLayer;
 use tracing::{info};
 use which::which;
 use utils::config::WebClientConfig;
@@ -49,10 +51,16 @@ impl WebClient {
     async fn try_create_client(config: &WebClientConfig) -> Result<Self, Error> {
         if config.build_webpack {
             env::set_current_dir(&config.client_path)?;
-
+            
             let result = which("node").or(Err(Error::msg("Failed to find node path. Please ensure nodejs is correctly installed")))?;
-            let npm_cli_path = result.parent().unwrap().join("node_modules").join("npm").join("bin").join("npm-cli.js");
-
+            let mut npm_cli_path = result.parent().unwrap().join("node_modules").join("npm").join("bin").join("npm-cli.js");
+            if !npm_cli_path.exists() {
+                npm_cli_path = PathBuf::from("/usr/lib/node_modules/npm/bin/npm-cli.js");
+            }
+            if !npm_cli_path.exists() {
+                return Err(Error::msg("NPM cli does not exist"));
+            }
+            
             if config.check_for_packages_updates {
                 info!("Installing webclient dependencies...");
                 let mut install_cmd = Command::new("node")
@@ -91,6 +99,12 @@ impl WebClient {
     }
 
     pub fn router(ctx: &Arc<AppCtx>) -> Result<Router, Error> {
+        let compression_layer: CompressionLayer = CompressionLayer::new()
+            .br(true)
+            .deflate(true)
+            .gzip(true)
+            .zstd(true);
+
         Ok(Router::new()
             .route("/", get(get_index).with_state(ctx.clone()))
             .route("/:display_user", get(get_index).with_state(ctx.clone()))
@@ -99,6 +113,7 @@ impl WebClient {
             .route("/:display_user/:display_repository/api-link", get(link).with_state(ctx.clone()))
             .route("/favicon.ico", get(Self::get_favicon).with_state(ctx.clone()))
             .nest("/public", StaticFileServer::router(ctx.config.web_client_config.client_path.join("public")))
+            .layer(compression_layer)
             .layer(middleware::from_fn_with_state(ctx.clone(), middleware_get_path_context))
         )
     }
@@ -202,12 +217,12 @@ async fn get_index(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<i
     });
     get_display_repository!(request, repository, {
         let permission = Permissions::new(&request)?;
-        permission.view_repository(&ctx.database, repository.id()).await?.require()?;
+        permission.view_repository(&ctx.database, &repository).await?.require()?;
         client_config.display_repository = Some(repository.clone());
     });
     get_display_item!(request, item, {
         let permission = Permissions::new(&request)?;
-        permission.view_item(&ctx.database, item.id()).await?.require()?;
+        permission.view_item(&ctx.database, item).await?.require()?;
         client_config.display_item = Some(item.clone());
     });
 

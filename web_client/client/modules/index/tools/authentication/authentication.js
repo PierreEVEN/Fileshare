@@ -1,10 +1,11 @@
-import {MODAL} from "../../modal/modal";
+import {APP_COOKIES} from "../cookies/cookies";
 import {fetch_api} from "../../../../utilities/request";
 import {EncString} from "../../../../types/encstring";
-import {APP_COOKIES} from "../cookies/cookies";
 import {APP_CONFIG} from "../../../../types/app_config";
 import {Message, NOTIFICATION} from "../message_box/notification";
+import {MODAL} from "../../modal/modal";
 import {User} from "../../../../types/user";
+require('../checkslider/checkslider')
 
 require('./authentication.scss')
 
@@ -24,24 +25,23 @@ function play_error_anim(div) {
 const Authentication = {
     login: async () => {
         return await new Promise((success, fail) => {
-            let login_div = require('./login.hbs')({}, {
+            let signin_div = require('./signin.hbs')({}, {
                 login: async (event) => {
                     event.preventDefault();
                     let result = await fetch_api('user/login', 'POST', {
-                        login: EncString.from_client(login_div.hb_elements.login.value),
-                        password: EncString.from_client(login_div.hb_elements.password.value),
+                        login: EncString.from_client(signin_div.hb_elements.login.value),
+                        password: EncString.from_client(signin_div.hb_elements.password.value),
                         device: EncString.from_client(navigator.userAgent)
                     }).catch(error => {
                         const msg = new Message(error)._text.split(':');
-                        login_div.hb_elements.error.innerText = msg[msg.length - 1];
-                        play_error_anim(login_div.hb_elements.error)
-                        login_div.hb_elements.password.value = '';
-                        login_div.hb_elements.login.focus();
+                        signin_div.hb_elements.error.innerText = msg[msg.length - 1];
+                        play_error_anim(signin_div.hb_elements.error)
+                        signin_div.hb_elements.password.value = '';
+                        signin_div.hb_elements.login.focus();
                         console.error(error);
                         throw new Error(error);
                     });
-
-                    await APP_COOKIES.login(result.token, login_div.hb_elements.stay_connected.checked);
+                    await APP_COOKIES.login(result.token, signin_div.hb_elements.stay_connected.checked);
                     APP_CONFIG.set_connected_user(User.new(result.user));
                     if (APP_CONFIG.error())
                         location.reload();
@@ -106,7 +106,7 @@ const Authentication = {
                                                 MODAL.close();
                                                 throw new Error(error);
                                             });
-                                            await APP_COOKIES.login(result.token, login_div.hb_elements.stay_connected.checked);
+                                            await APP_COOKIES.login(result.token, signin_div.hb_elements.stay_connected.checked);
                                             APP_CONFIG.set_connected_user(User.new(result.user));
                                             MODAL.close();
                                         }
@@ -122,7 +122,7 @@ const Authentication = {
                     MODAL.open(reset_passwd_div);
                 }
             });
-            MODAL.open(login_div, {on_close:
+            MODAL.open(signin_div, {on_close:
                     () => {
                         fail("Authentification annulée");
                     }
@@ -131,12 +131,11 @@ const Authentication = {
     },
     signup: async () => {
         return await new Promise((success, fail) => {
-            const signup_div = require('./signup.hbs')({},  {
+            const signup_div = require('./signup.hbs')({}, {
                 signup: async (event) => {
                     event.preventDefault();
-                    let errored = false;
                     await fetch_api('user/create', 'POST', {
-                        username: EncString.from_client(signup_div.hb_elements.login.value),
+                        display_name: EncString.from_client(signup_div.hb_elements.login.value),
                         email: EncString.from_client(signup_div.hb_elements.email.value),
                         password: EncString.from_client(signup_div.hb_elements.password.value)
                     }).catch(error => {
@@ -147,6 +146,7 @@ const Authentication = {
                         console.error(error);
                         throw new Error(error);
                     });
+
                     let login_result = await fetch_api('user/login', 'POST', {
                         login: EncString.from_client(signup_div.hb_elements.login.value),
                         password: EncString.from_client(signup_div.hb_elements.password.value),
@@ -164,7 +164,8 @@ const Authentication = {
                     Authentication.login().then(success).catch(fail);
                 }
             });
-            MODAL.open(signup_div, {on_close: () => {
+
+            MODAL.open(signup_div, { on_close: () => {
                     fail("Authentification annulée");
                 }
             });
@@ -175,7 +176,6 @@ const Authentication = {
             .catch(error => NOTIFICATION.error(new Message(error).title("Erreur lors de la déconnexion")));
         APP_COOKIES.logout();
         APP_CONFIG.set_connected_user(null);
-        location.reload();
     }
 }
 

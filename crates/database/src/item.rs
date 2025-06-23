@@ -49,6 +49,10 @@ impl DbItem {
     pub async fn from_id(db: &Database, id: &ItemId, filter: Trash) -> Result<Item, Error> {
         query_object!(db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE id = $1 {filter}"), id).ok_or(Error::msg("Failed to find item from id"))
     }
+    
+    pub async fn from_ids(db: &Database, id: &Vec<ItemId>, filter: Trash) -> Result<Vec<Item>, Error> {
+        Ok(query_objects!(db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE id = any($1) {filter}"), id))
+    }
 
     pub async fn from_path(db: &Database, path: &EncPath, repository: &RepositoryId, filter: Trash) -> Result<Item, Error> {
         query_object!(db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE absolute_path = $1 AND repository = $2 {filter}"), path, repository).ok_or(Error::msg(format!("Failed to find item from path : {path}")))

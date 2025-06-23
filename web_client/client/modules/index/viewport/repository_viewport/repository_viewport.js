@@ -20,6 +20,7 @@ import {Selector} from "./selector";
 import {MODAL} from "../../modal/modal";
 import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
 import {delete_item} from "../../tools/delete_item/delete_item";
+import {FilesystemStream} from "../../../../types/filesystem_stream";
 
 require('./repository_viewport.scss')
 
@@ -297,7 +298,7 @@ class RepositoryViewport extends MemoryTracker {
         if (!item.is_regular_file) {
             await this.close_carousel();
             await this.content.set_content_provider(new DirectoryContentProvider(item));
-            if (item.description && item.description.plain().length !== 0) {
+            if (item.description && item.description.plain().length !== 0 && item.description.plain() !== 'undefined') {
                 import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown_loader => {
                     this._elements.current_description.innerHTML = showdown_loader.convert_text(item.description.plain())
                 })
