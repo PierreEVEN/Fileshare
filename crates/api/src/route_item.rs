@@ -78,6 +78,9 @@ async fn content_to(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<
             for content_item in DbItem::from_parent(&ctx.database, data.id(), Trash::Both).await? {
                 items.insert(content_item.id().clone(), content_item);
             }
+            for content_item in DbItem::repository_root(&ctx.database, &data.repository, Trash::Both).await? {
+                items.insert(content_item.id().clone(), content_item);
+            }
             items.insert(data.id().clone(), data.clone());
             if let Some(parent) = data.parent_item {
                 current_target = parent;

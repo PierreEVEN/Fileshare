@@ -61,22 +61,23 @@ class CarouselViewport {
         visual.addEventListener("wheel", e => {
             if (e.ctrlKey) {
                 e.stopPropagation();
-                const zoom = -clamp(e.deltaY, -29, 29) / 30 + 1;
+                const zoom = -clamp(e.deltaY, -29, 29) / 100 + 1;
                 const bounds = this._visual.getBoundingClientRect();
-                const offsetX = e.clientX - (bounds.width / 2 + bounds.left);
-                const offsetY = e.clientY - (bounds.height / 2 + bounds.top);
+                const offsetX = (e.clientX - bounds.left) / bounds.width - 0.5;
+                const offsetY = 0;//e.clientY - (bounds.height / 2 + bounds.top);
 
                 //const offsetX = e.clientX - (window.innerWidth / 2);
                 //const offsetY = e.clientY - (window.innerHeight / 2);
 
-                this.scale = clamp(this.scale * zoom, 1, 50);
+                this.scale = this.scale * zoom;
+
+                console.log(offsetX)
 
                 const delta_x = (offsetX / this.scale)
                 const delta_y = (offsetY / this.scale)
+
                 this.translationX += delta_x;
                 this.translationY += delta_y;
-
-                console.log(window.width / 2)
 
                 this.update_transform();
                 e.preventDefault();
@@ -85,6 +86,7 @@ class CarouselViewport {
     }
 
     update_transform() {
+        this.scale = clamp(this.scale, 1, 50);
         this._visual.style.transform = `scale(${this.scale}) translate(${this.translationX}px, ${this.translationY}px)`;
     }
 }

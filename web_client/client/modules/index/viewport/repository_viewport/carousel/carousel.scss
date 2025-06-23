@@ -1,11 +1,15 @@
 @import "../../../../../stylesheets/palette";
 
 .carousel-viewport {
-  width: 100%;
+  width: fit-content;
   display: flex;
   flex-grow: 1;
   height: 0;
   z-index: 150;
+
+  audio {
+    min-width: 85dvw;
+  }
 
   .carousel-item-image {
     width: 100%;
@@ -40,7 +44,6 @@
 
     .carousel-item-image {
       flex-grow: 1;
-      height: 0;
     }
 
     .carousel-description {
@@ -201,6 +204,7 @@
   display: flex;
   flex-direction: column;
   z-index: 101;
+  width: 100%;
 
   .data-container {
     display: flex;

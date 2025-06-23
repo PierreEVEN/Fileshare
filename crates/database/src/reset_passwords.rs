@@ -63,9 +63,9 @@ impl ResetPasswords {
 
 
         let email = Message::builder()
-            .from(Mailbox::new(Some("Schedulator".to_string()), config.source_address.parse()?))
+            .from(Mailbox::new(Some("Fileshare".to_string()), config.source_address.parse()?))
             .to(Mailbox::new(Some(username.clone()), user.email.plain()?.parse()?))
-            .subject("Reset Schedulator password")
+            .subject("Reset Fileshare password")
             .multipart(MultiPart::alternative_plain_html(
                 String::from("You have asked for a password reinitialization."),
                 String::from(format!("This reset code expire in 15 minutes.\n<b>{code}</b>\n\n\nPlease inform us if this wasn't you.")),
