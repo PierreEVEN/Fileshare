@@ -23,7 +23,7 @@ class CarouselOverlay {
                 item.download();
             },
             share: async () => {
-                let url = `${APP_CONFIG.origin()}/api/item/get/${item.id}/`;
+                let url = `${APP_CONFIG.origin()}/api/item/get/${item.id}`;
                 await navigator.clipboard.writeText(url);
                 NOTIFICATION.success(new Message(url).title("Lien copié dans le presse-papier"))
             }

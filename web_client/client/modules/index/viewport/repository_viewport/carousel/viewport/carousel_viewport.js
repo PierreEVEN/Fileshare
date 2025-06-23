@@ -69,12 +69,12 @@ class CarouselViewport {
                 //const offsetX = e.clientX - (window.innerWidth / 2);
                 //const offsetY = e.clientY - (window.innerHeight / 2);
 
-                this.scale = this.scale * zoom;
-
                 console.log(offsetX)
 
-                const delta_x = (offsetX / this.scale)
+                const delta_x = -(offsetX / this.scale) * bounds.width / this.scale * 0.5;
                 const delta_y = (offsetY / this.scale)
+
+                this.scale = this.scale * zoom;
 
                 this.translationX += delta_x;
                 this.translationY += delta_y;
