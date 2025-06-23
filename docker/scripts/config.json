@@ -14,17 +14,12 @@
       "port": 5432,
       "database": "postgres",
       "ssl_mode": false,
-      "scheme_name": "fileshare_v3"
+      "scheme_name": "fileshare"
     },
     "emailer": {
-      "source_address": "noreply@schedulator.com",
-      "smtp_server": "mail.schedulator.com"
+      "source_address": "noreply@fileshare.com",
+      "smtp_server": "mail.fileshare.com"
     }
-  },
-  "server_mail_server": {
-    "host": "mail.fileshare.fr",
-    "smtp_port": "465",
-    "email_username": "noreply@fileshare.fr"
   },
   "web_client_config": {
     "client_path": "/opt/fileshare/",
