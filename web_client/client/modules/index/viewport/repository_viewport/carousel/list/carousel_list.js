@@ -59,6 +59,13 @@ class CarouselList {
                 this.select_next();
             }
         });
+
+        carousel_list.addEventListener('wheel', e => {
+            if (e.ctrlKey) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        })
         this.move_left_button = carousel_list.getElementsByClassName('carousel-move-left')[0];
         this.move_right_button = carousel_list.getElementsByClassName('carousel-move-right')[0];
 

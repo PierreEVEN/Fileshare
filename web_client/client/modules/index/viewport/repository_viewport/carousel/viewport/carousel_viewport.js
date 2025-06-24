@@ -35,17 +35,17 @@ class CarouselViewport {
         this._drag_start_y = 0
 
         visual.addEventListener('pointerdown', e => {
+            e.preventDefault();
             this._drag_start_x = e.clientX;
             this._drag_start_y = e.clientY;
             this._drag = true;
-            e.preventDefault();
         })
 
-        visual.addEventListener('pointermove', e => {
+        container.addEventListener('pointermove', e => {
             if (this._drag) {
                 e.preventDefault();
-                this.translationX += (e.clientX - this._drag_start_x) / this.scale;
-                this.translationY += (e.clientY - this._drag_start_y) / this.scale;
+                this.translationX += (e.clientX - this._drag_start_x);
+                this.translationY += (e.clientY - this._drag_start_y);
 
                 this._drag_start_x = e.clientX;
                 this._drag_start_y = e.clientY;
@@ -58,36 +58,36 @@ class CarouselViewport {
             this._drag = false;
         })
 
-        visual.addEventListener("wheel", e => {
+        container.addEventListener("wheel", e => {
             if (e.ctrlKey) {
+                e.preventDefault();
                 e.stopPropagation();
-                const zoom = -clamp(e.deltaY, -29, 29) / 100 + 1;
                 const bounds = this._visual.getBoundingClientRect();
-                const offsetX = (e.clientX - bounds.left) / bounds.width - 0.5;
-                const offsetY = 0;//e.clientY - (bounds.height / 2 + bounds.top);
+                if (bounds.width === 0 || bounds.height === 0)
+                    return;
 
-                //const offsetX = e.clientX - (window.innerWidth / 2);
-                //const offsetY = e.clientY - (window.innerHeight / 2);
+                const old_scale = this.scale;
+                const zoom = -clamp(e.deltaY, -29, 29) / 100 + 1;
+                this.scale = clamp(this.scale * zoom, 1, 50);
 
-                console.log(offsetX)
+                const pointer_x = clamp((e.clientX - bounds.left) / bounds.width * 2 - 1, -1, 1);
+                const pointer_y = clamp((e.clientY - bounds.top) / bounds.height * 2 - 1, -1, 1);
 
-                const delta_x = -(offsetX / this.scale) * bounds.width / this.scale * 0.5;
-                const delta_y = (offsetY / this.scale)
+                const delta_x = (this._visual.offsetWidth * old_scale - this._visual.offsetWidth * this.scale) * 0.5;
+                const delta_y = (this._visual.offsetHeight * old_scale - this._visual.offsetHeight * this.scale) * 0.5;
 
-                this.scale = this.scale * zoom;
-
-                this.translationX += delta_x;
-                this.translationY += delta_y;
+                this.translationX += delta_x * pointer_x;
+                this.translationY += delta_y * pointer_y;
 
                 this.update_transform();
-                e.preventDefault();
             }
         });
     }
 
     update_transform() {
-        this.scale = clamp(this.scale, 1, 50);
-        this._visual.style.transform = `scale(${this.scale}) translate(${this.translationX}px, ${this.translationY}px)`;
+        this.translationX = clamp(this.translationX, this._visual.offsetWidth * (-this.scale + 1) * 0.5, this._visual.offsetWidth * (this.scale - 1) * 0.5)
+        this.translationY = clamp(this.translationY, this._visual.offsetHeight * (-this.scale + 1) * 0.5, this._visual.offsetHeight * (this.scale - 1) * 0.5)
+        this._visual.style.transform = `translate(${this.translationX}px, ${this.translationY}px) scale(${this.scale})`;
     }
 }
 
