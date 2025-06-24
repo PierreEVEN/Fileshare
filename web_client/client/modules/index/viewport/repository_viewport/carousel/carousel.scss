@@ -6,6 +6,7 @@
   flex-grow: 1;
   height: 0;
   z-index: 150;
+  pointer-events: none;
 
   audio {
     min-width: 85%;
@@ -17,6 +18,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
+    > * {
+      pointer-events: auto;
+    }
 
     .item-large {
       display: flex;
