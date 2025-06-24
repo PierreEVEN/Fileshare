@@ -1,7 +1,7 @@
 import {get_mime_icon_path} from "./mime_utils";
 
 function from_distant_repos(item) {
-    const thumbnail_url = `/api/item/thumbnail/${item.id}/`;
+    const thumbnail_url = `/api/item/thumbnail/${item.id}`;
     const mime = item.mimetype.split('/');
     switch (mime[0]) {
         case 'video':
