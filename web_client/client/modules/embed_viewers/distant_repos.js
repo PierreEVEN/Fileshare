@@ -18,7 +18,6 @@ function get(item) {
             switch (mimetype[1]) {
                 case 'x-pdf':
                 case 'pdf':
-                    return `<pdf-embed src="${url}"></pdf-embed>`;
                     return `<object data="${url}" type="application/pdf" width="100%" height="100%">
                                 <pdf-embed src="${url}"></pdf-embed>
                             </object>`

@@ -1,6 +1,4 @@
 # TODO
-- gérer le zoom dans le carousel sur les images / vidéos
-- fix la lecture de PDF sur mobile
 - fix taille des dossiers cassée
 - implémenter les filtres
 - fix preview CR2 terne sous debian ??
@@ -8,3 +6,4 @@
 - menu d'action groupée sur plusieurs éléments
     - Conversion automatique HEVC => AV1
     - Menu pour compresser des videos / images et les convertir
+- améliorer le design du lecteur de pdf mobile

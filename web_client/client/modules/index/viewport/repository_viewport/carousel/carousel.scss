@@ -1,14 +1,14 @@
 @import "../../../../../stylesheets/palette";
 
 .carousel-viewport {
-  width: fit-content;
+  width: 100%;
   display: flex;
   flex-grow: 1;
   height: 0;
   z-index: 150;
 
   audio {
-    min-width: 85dvw;
+    min-width: 85%;
   }
 
   .carousel-item-image {
