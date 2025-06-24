@@ -33,15 +33,19 @@ class CarouselList {
     }
 
     async select_next() {
+        if (!this._last_selected.nextSibling.item_id)
+            return;
         const meta_data = await this.viewport.content.get_filesystem().fetch_item(this._last_selected.nextSibling.item_id);
-        if (meta_data.is_regular_file) {
+        if (meta_data && meta_data.is_regular_file) {
             this.select_item(meta_data, true);
         }
     }
 
     async select_previous() {
+        if (!this._last_selected.previousSibling.item_id)
+            return;
         const meta_data = await this.viewport.content.get_filesystem().fetch_item(this._last_selected.previousSibling.item_id);
-        if (meta_data.is_regular_file) {
+        if (meta_data && meta_data.is_regular_file) {
             this.select_item(meta_data, true);
         }
     }
