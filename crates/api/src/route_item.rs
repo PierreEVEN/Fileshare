@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::SeekFrom;
 use std::str::FromStr;
 use crate::app_ctx::AppCtx;
 use database::item::{DbItem, ItemSearchData, Trash};
@@ -13,13 +14,14 @@ use crate::upload::Upload;
 use anyhow::Error;
 use axum::body::Body;
 use axum::extract::{FromRequest, Path, Request, State};
-use axum::http::{header, StatusCode};
+use axum::http::{header, HeaderName, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use regex::Regex;
 use serde::Deserialize;
 use std::sync::Arc;
+use tokio::io::AsyncSeekExt;
 use tokio_util::io::ReaderStream;
 use tracing::warn;
 use database::repository::DbRepository;
@@ -42,7 +44,7 @@ impl ItemRoutes {
             .route("/send", post(send).with_state(ctx.clone()))
             .route("/get/:path", get(download).with_state(ctx.clone()))
             .route("/download/:ids", get(download_multi).with_state(ctx.clone()))
-            .route("/preview/:path", get(download).with_state(ctx.clone()))
+            .route("/preview/:path", get(preview).with_state(ctx.clone()))
             .route("/update", post(edit).with_state(ctx.clone()))
             .route("/search", post(search).with_state(ctx.clone()))
             .route("/copy", post(copy).with_state(ctx.clone()))
@@ -84,8 +86,7 @@ async fn content_to(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<
             items.insert(data.id().clone(), data.clone());
             if let Some(parent) = data.parent_item {
                 current_target = parent;
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -291,6 +292,93 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
         ];
         Ok((headers, body))
     }
+}
+
+
+/// Download item or directory
+async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, request: Request) -> Result<impl IntoResponse, ServerError> {
+    let item = DbItem::from_id(&ctx.database, &ItemId::from(id), Trash::Both).await?;
+    let permissions = Permissions::new(&request)?;
+    permissions.view_item(&ctx.database, &item).await?.require()?;
+
+    if let Some(file) = item.file {
+        let mimetype = file.mimetype.plain()?;
+
+        if mimetype.starts_with("video/") {
+            let object = Object::from_id(&ctx.database, &file.object).await?;
+
+            let headers = request.headers();
+            if let Some(range) = headers.get("range") {
+                let range = range.to_str()?.to_string();
+                let mut range_type = range.split("=");
+                if let Some(range_type) = range_type.next() {
+                    if range_type != "bytes" {
+                        return Err(ServerError::msg(StatusCode::BAD_REQUEST, "invalid range type"));
+                    }
+                } else {
+                    return Err(ServerError::msg(StatusCode::BAD_REQUEST, "invalid range header"));
+                }
+                let range_value = match range_type.next() {
+                    None => { return Err(ServerError::msg(StatusCode::BAD_REQUEST, "invalid range value")); }
+                    Some(value) => { value }
+                };
+
+                let mut initial_values = range_value.split('-');
+
+                let start = match initial_values.next() {
+                    None => { return Err(ServerError::msg(StatusCode::BAD_REQUEST, "cannot read range start")); }
+                    Some(start) => { i64::from_str(start)? }
+                };
+
+
+                warn!("Accept range for video : {:?}", range);
+
+                let mut data_file = tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?;
+
+                if let Err(err) = data_file.seek(SeekFrom::Start(start as u64)).await {
+                    return Err(ServerError::msg(StatusCode::NOT_FOUND, format!("Failed to seek to desired range : {err}")));
+                }
+
+                let stream = ReaderStream::new(data_file);
+                let body = Body::from_stream(stream);
+
+                let headers = [
+                    (header::CONTENT_TYPE, mimetype.clone()),
+                    (header::CONTENT_LENGTH, (file.size - start).to_string()),
+                    (header::CONTENT_RANGE, format!("{}-/{}", start, file.size - start)),
+                    (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+                ];
+                return Ok((StatusCode::PARTIAL_CONTENT, headers, body));
+            } else {
+                warn!("NO RANGE");
+            }
+
+            let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
+            let body = Body::from_stream(stream);
+
+            let headers = [
+                (header::CONTENT_TYPE, file.mimetype.plain()?),
+                (header::CONTENT_LENGTH, file.size.to_string()),
+                (header::ACCEPT_RANGES, "bytes".to_string()),
+                (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+            ];
+            return Ok((StatusCode::OK, headers, body));
+        }
+
+        let object = Object::from_id(&ctx.database, &file.object).await?;
+
+        let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
+        let body = Body::from_stream(stream);
+
+        let headers = [
+            (header::CONTENT_TYPE, file.mimetype.plain()?),
+            (header::CONTENT_LENGTH, file.size.to_string()),
+            (HeaderName::from_str("")?, String::new()),
+            (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+        ];
+        return Ok((StatusCode::OK, headers, body).into());
+    }
+    Err(ServerError::msg(StatusCode::NOT_FOUND, "Cannot preview directory content"))
 }
 
 /// Download item or directory
