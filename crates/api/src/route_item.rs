@@ -14,7 +14,7 @@ use crate::upload::Upload;
 use anyhow::Error;
 use axum::body::Body;
 use axum::extract::{FromRequest, Path, Request, State};
-use axum::http::{header, HeaderName, StatusCode};
+use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -310,33 +310,33 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
             let headers = request.headers();
             if let Some(range) = headers.get("range") {
                 let range = range.to_str()?.to_string();
+                warn!("Accept range for video : {:?}", range);
+
                 let mut range_type = range.split("=");
                 if let Some(range_type) = range_type.next() {
                     if range_type != "bytes" {
-                        return Err(ServerError::msg(StatusCode::BAD_REQUEST, "invalid range type"));
+                        return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range type"));
                     }
                 } else {
-                    return Err(ServerError::msg(StatusCode::BAD_REQUEST, "invalid range header"));
+                    return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range header"));
                 }
                 let range_value = match range_type.next() {
-                    None => { return Err(ServerError::msg(StatusCode::BAD_REQUEST, "invalid range value")); }
+                    None => { return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range value")); }
                     Some(value) => { value }
                 };
 
                 let mut initial_values = range_value.split('-');
 
                 let start = match initial_values.next() {
-                    None => { return Err(ServerError::msg(StatusCode::BAD_REQUEST, "cannot read range start")); }
+                    None => { return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "cannot read range start")); }
                     Some(start) => { i64::from_str(start)? }
                 };
 
 
-                warn!("Accept range for video : {:?}", range);
-
                 let mut data_file = tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?;
 
                 if let Err(err) = data_file.seek(SeekFrom::Start(start as u64)).await {
-                    return Err(ServerError::msg(StatusCode::NOT_FOUND, format!("Failed to seek to desired range : {err}")));
+                    return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, format!("Failed to seek to desired range : {err}")));
                 }
 
                 let stream = ReaderStream::new(data_file);
@@ -345,13 +345,14 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
                 let headers = [
                     (header::CONTENT_TYPE, mimetype.clone()),
                     (header::CONTENT_LENGTH, (file.size - start).to_string()),
-                    (header::CONTENT_RANGE, format!("{}-/{}", start, file.size - start)),
+                    (header::CONTENT_RANGE, format!("{}-{}/{}", start, file.size, file.size)),
+                    (header::ACCEPT_RANGES, "bytes".to_string()),
                     (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
                 ];
-                return Ok((StatusCode::PARTIAL_CONTENT, headers, body));
-            } else {
-                warn!("NO RANGE");
+                return Ok((StatusCode::PARTIAL_CONTENT, headers, body).into_response());
             }
+
+            warn!("Respond video with range");
 
             let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
             let body = Body::from_stream(stream);
@@ -362,7 +363,7 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
                 (header::ACCEPT_RANGES, "bytes".to_string()),
                 (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
             ];
-            return Ok((StatusCode::OK, headers, body));
+            return Ok((StatusCode::OK, headers, body).into_response());
         }
 
         let object = Object::from_id(&ctx.database, &file.object).await?;
@@ -373,10 +374,9 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
         let headers = [
             (header::CONTENT_TYPE, file.mimetype.plain()?),
             (header::CONTENT_LENGTH, file.size.to_string()),
-            (HeaderName::from_str("")?, String::new()),
             (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
         ];
-        return Ok((StatusCode::OK, headers, body).into());
+        return Ok((StatusCode::OK, headers, body).into_response());
     }
     Err(ServerError::msg(StatusCode::NOT_FOUND, "Cannot preview directory content"))
 }
