@@ -80,6 +80,13 @@ class FileshareApp {
                         await this.set_display_repository(APP_CONFIG.display_repository());
                 } else if (APP_CONFIG.display_user()) {
                     await this.set_display_user(APP_CONFIG.display_user());
+                } else {
+                    if (screen.availHeight > screen.availWidth)
+                        await this._side_bar.show_mobile();
+                    if (APP_CONFIG.connected_user())
+                        await this._side_bar.expand_my_repositories(true);
+                    else
+                        await this._side_bar.expand_recent(true);
                 }
             }
         })().catch(error => console.error(`initialization failed :`, error));
