@@ -5,17 +5,43 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MediaInfo {
-    streams: Vec<Stream>,
-    format: Format,
+    streams: Vec<StreamInfo>,
+    format: MediaFormat,
+}
+
+impl MediaInfo {
+    pub fn get_bitrate(&self) -> Option<u64> {
+        self.format.bit_rate.parse::<u64>().ok()
+    }
+
+    pub fn get_video_streams(&self) -> Vec<StreamInfo> {
+        let mut streams = vec![];
+        for stream in &self.streams {
+            if stream.codec_type == "video" {
+                streams.push(stream.clone());
+            }
+        }
+        streams
+    }
+}
+
+#[derive(Debug, Deserialize, Clone, PartialEq, Eq, Serialize)]
+pub struct Disposition {
+    pub default: i64,
+    pub dub: i64,
+    pub original: i64,
+    pub comment: i64,
+    pub lyrics: i64,
+    pub karaoke: i64,
+    pub forced: i64,
+    pub hearing_impaired: i64,
+    pub visual_impaired: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Stream {
+pub struct StreamInfo {
     pub index: i64,
-    #[serde(default)]
-    pub codec_name: String,
-    #[serde(default)]
-    pub codec_long_name: String,
+    pub codec_name: Option<String>,
     pub profile: Option<String>,
     pub codec_type: String,
     pub codec_time_base: Option<String>,
@@ -25,7 +51,10 @@ pub struct Stream {
     pub coded_height: Option<i64>,
     pub display_aspect_ratio: Option<String>,
     pub is_avc: Option<String>,
-    pub tags: Option<Tags>,
+    pub has_b_frames: Option<u64>,
+    pub pix_fmt: Option<String>,
+    pub level: Option<i64>,
+    pub tags: Option<StreamTags>,
     pub sample_rate: Option<String>,
     pub channels: Option<i64>,
     pub channel_layout: Option<String>,
@@ -34,10 +63,17 @@ pub struct Stream {
     pub duration: Option<String>,
     pub color_range: Option<String>,
     pub color_space: Option<String>,
+    pub disposition: Option<Disposition>,
+}
+
+impl StreamInfo {
+    pub fn get_bitrate(&self) -> Option<u64> {
+        self.tags.as_ref()?.bps_eng.as_ref()?.parse::<u64>().ok()
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Tags {
+pub struct StreamTags {
     pub language: Option<String>,
     pub title: Option<String>,
     #[serde(rename = "BPS-eng")]
@@ -59,7 +95,7 @@ pub struct Tags {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Format {
+pub struct MediaFormat {
     pub filename: String,
     pub nb_streams: i64,
     pub nb_programs: i64,
@@ -70,7 +106,6 @@ pub struct Format {
     pub size: String,
     pub bit_rate: String,
 }
-
 
 impl MediaInfo {
     #[allow(unused)]
