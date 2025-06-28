@@ -1,4 +1,5 @@
 use std::io;
+use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::process::Command;
 use serde::{Deserialize, Serialize};
@@ -18,6 +19,16 @@ impl MediaInfo {
         let mut streams = vec![];
         for stream in &self.streams {
             if stream.codec_type == "video" {
+                streams.push(stream.clone());
+            }
+        }
+        streams
+    }
+
+    pub fn get_audio_stream(&self) -> Vec<StreamInfo> {
+        let mut streams = vec![];
+        for stream in &self.streams {
+            if stream.codec_type == "audio" {
                 streams.push(stream.clone());
             }
         }
@@ -110,6 +121,9 @@ pub struct MediaFormat {
 impl MediaInfo {
     #[allow(unused)]
     pub fn new(source: &PathBuf) -> Result<Self, io::Error> {
+        if !source.exists() {
+            return Err(io::Error::new(ErrorKind::NotFound,"Input media file does not exists"))
+        }
         let probe = Command::new("ffprobe")
             .arg(source)
             .arg("-v")

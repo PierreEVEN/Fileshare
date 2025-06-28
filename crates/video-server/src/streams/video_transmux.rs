@@ -1,17 +1,14 @@
 use crate::media_info::StreamInfo;
 use crate::streams::{ContentType, Stream};
-use crate::video_avc::{get_avc1_tag, level_to_tag};
 use std::collections::HashMap;
 use std::io::Error;
 use std::path::PathBuf;
-use xmlwriter::XmlWriter;
 
 pub struct VideoTransmuxStream {
     source: PathBuf,
     media_id: u64,
     info: StreamInfo,
     stream_index: u32,
-    container_bitrate: Option<u64>,
     is_default: bool,
     args: HashMap<String, String>,
 }
@@ -39,7 +36,6 @@ impl VideoTransmuxStream {
         media_id: u64,
         info: StreamInfo,
         stream_index: u32,
-        container_bitrate: Option<u64>,
         is_default: bool,
     ) -> Self {
         Self {
@@ -47,7 +43,6 @@ impl VideoTransmuxStream {
             media_id,
             info,
             stream_index,
-            container_bitrate,
             is_default,
             args: Default::default(),
         }
@@ -60,76 +55,27 @@ impl VideoTransmuxStream {
 }
 
 impl Stream for VideoTransmuxStream {
-    fn build_manifest(&self, w: &mut XmlWriter, start_num: u32) {
-        let bitrate = self
-            .info
-            .get_bitrate()
-            .or(self.container_bitrate)
-            .unwrap_or(10_000_000);
-
-        // Each audio stream must be in a separate adaptation set otherwise they are treated as
-        // different bitrates of the same track rather than separate tracks.
-        w.start_element("AdaptationSet");
-        {
-            w.write_attribute("contentType", "video");
-            w.write_attribute("id", &self.stream_index); // stream index
-
-            // write representations
-            w.start_element("Representation");
-            {
-                let video_avc =
-                    self.info
-                        .level
-                        .and_then(|x| level_to_tag(x))
-                        .unwrap_or(get_avc1_tag(
-                            self.info.width.clone().unwrap_or(1920) as u64,
-                            self.info.height.clone().unwrap_or(1080) as u64,
-                            self.info
-                                .get_bitrate()
-                                .or(self.container_bitrate)
-                                .expect("Failed to pick bitrate for video stream"),
-                            24,
-                        ));
-
-                w.write_attribute("id", &self.media_id);
-                w.write_attribute("bandwidth", &bitrate);
-                w.write_attribute("mimeType", "video/mp4");
-                w.write_attribute("codecs", &video_avc.to_string());
-
-                for (k, v) in self.args.iter() {
-                    w.write_attribute(k, v);
-                }
-
-                // mark the default video track
-                if self.is_default {
-                    w.start_element("Role");
-                    {
-                        w.write_attribute("schemeIdUri", "urn:mpeg:dash:role:2011");
-                        w.write_attribute("value", "main");
-                    }
-                    w.end_element();
-                }
-
-                // write segment template
-                w.start_element("SegmentTemplate");
-                {
-                    w.write_attribute("timescale", &1);
-                    w.write_attribute("duration", &10);
-                    w.write_attribute("initialization", &format!("/init/{}/init.mp4", start_num));
-                    w.write_attribute("media", "/chunk/$Number$.m4s");
-                    w.write_attribute("startNumber", &start_num);
-                }
-                // close SegmentTemplate and Representation
-                w.end_element();
-            }
-            w.end_element();
-        }
-        // close AdaptationSet
-        w.end_element();
+    fn get_infos(&self) -> &StreamInfo {
+        &self.info
     }
 
-    fn build_args(&self) -> Result<Vec<String>, Error> {
-        let start_num = 0;
+    fn stream_index(&self) -> u32 {
+        self.stream_index
+    }
+
+    fn media_id(&self) -> u64 {
+        self.media_id
+    }
+
+    fn is_default(&self) -> bool {
+        self.is_default
+    }
+
+    fn args(&self) -> &HashMap<String, String> {
+        &self.args
+    }
+
+    fn build_args(&self, start_num: u32) -> Result<Vec<String>, Error> {
         let target_gop = 5;
         let output_dir = "./data/tmp_video";
         let input_stream = 0;

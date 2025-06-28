@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 use anyhow::Error;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use axum::response::{IntoResponse};
+use axum::response::IntoResponse;
 use axum::Router;
 use tracing::warn;
 use types::item::Item;
