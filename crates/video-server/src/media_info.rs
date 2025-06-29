@@ -19,21 +19,25 @@ impl MediaInfo {
         Some(self.format.duration.parse::<f64>().ok()? as i32)
     }
     
-    pub fn get_video_streams(&self) -> Vec<TrackInfo> {
+    pub fn get_video_streams(&self) -> Vec<u32> {
         let mut streams = vec![];
-        for stream in &self.streams {
-            if stream.codec_type == "video" {
-                streams.push(stream.clone());
+        for (index, track) in self.streams.iter().enumerate() {
+            if track.codec_type == "video" {
+                streams.push(index as u32);
             }
         }
         streams
     }
 
-    pub fn get_audio_stream(&self) -> Vec<TrackInfo> {
+    pub fn get_track(&self, index: u32) -> Result<&TrackInfo, io::Error> {
+        self.streams.get(index as usize).ok_or(io::Error::new(ErrorKind::NotFound, "Track not found"))
+    }
+
+    pub fn get_audio_stream(&self) -> Vec<u32> {
         let mut streams = vec![];
-        for stream in &self.streams {
-            if stream.codec_type == "audio" {
-                streams.push(stream.clone());
+        for (index, track) in self.streams.iter().enumerate() {
+            if track.codec_type == "audio" {
+                streams.push(index as u32);
             }
         }
         streams

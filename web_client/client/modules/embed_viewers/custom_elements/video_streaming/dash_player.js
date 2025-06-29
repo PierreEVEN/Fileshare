@@ -16,7 +16,7 @@ class DashPlayer extends HTMLElement {
 
         const stream = fetch_api(`stream/create`, 'POST', this.item)
             .then(stream_id => {
-                const url = `/api/stream/${stream_id}/manifest.mpd`;
+                const url = `/api/stream/${stream_id}/manifest/0`;
 
                 const video_div = document.createElement("video");
                 video_div.autoplay = true;

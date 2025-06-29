@@ -1,6 +1,5 @@
 pub mod media;
 pub mod media_info;
-pub mod router;
 pub mod stream_id;
 pub mod tracks;
 pub mod video_avc;

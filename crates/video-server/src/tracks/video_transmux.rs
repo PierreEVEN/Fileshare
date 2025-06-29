@@ -1,15 +1,17 @@
+use crate::media::MediaState;
 use crate::media_info::TrackInfo;
+use crate::stream_id::StreamId;
 use crate::tracks::{ContentType, Track};
 use std::collections::HashMap;
+use std::fs;
 use std::io::Error;
-use std::path::PathBuf;
-use crate::stream_id::StreamId;
+use std::sync::Arc;
+use tracing::info;
 
 pub struct VideoTransmuxTrack {
-    source: PathBuf,
-    stream_id: StreamId,
-    info: TrackInfo,
-    stream_index: u32,
+    state: Arc<MediaState>,
+    input_track: u32,
+    output_track: u32,
     is_default: bool,
     args: HashMap<String, String>,
 }
@@ -32,18 +34,12 @@ fn get_discont_flags(start_num: u32) -> Vec<String> {
 }
 
 impl VideoTransmuxTrack {
-    pub fn new(
-        source: PathBuf,
-        stream_id: StreamId,
-        info: TrackInfo,
-        stream_index: u32,
-        is_default: bool,
-    ) -> Self {
+    pub fn new(state: Arc<MediaState>, input_track: u32, output_track: u32, is_default: bool) -> Self {
+        info!("stream @{} Add track {:?}:{}->{}", state.stream_id(), ContentType::Video, input_track, output_track);
         Self {
-            source,
-            stream_id,
-            info,
-            stream_index,
+            state,
+            input_track,
+            output_track,
             is_default,
             args: Default::default(),
         }
@@ -56,16 +52,16 @@ impl VideoTransmuxTrack {
 }
 
 impl Track for VideoTransmuxTrack {
-    fn get_infos(&self) -> &TrackInfo {
-        &self.info
+    fn get_infos(&self) -> Result<&TrackInfo, Error> {
+        self.state.info().get_track(self.input_track)
     }
 
-    fn stream_index(&self) -> u32 {
-        self.stream_index
+    fn output_track(&self) -> u32 {
+        self.output_track
     }
 
-    fn stream_id(&self) -> StreamId {
-        self.stream_id
+    fn stream_id(&self) -> &StreamId {
+        self.state.stream_id()
     }
 
     fn is_default(&self) -> bool {
@@ -78,31 +74,30 @@ impl Track for VideoTransmuxTrack {
 
     fn build_args(&self, start_num: u32) -> Result<Vec<String>, Error> {
         let target_gop = 5;
-        let output_dir = "./data/tmp_video";
-        let input_stream = 0;
 
-        let start_num = start_num;
-        let stream = format!("0:{}", input_stream);
-        let init_seg = format!("{}_init.mp4", &start_num);
-        let segment_name = format!("{output_dir}/%d.m4s");
-        let outdir = format!("{output_dir}/playlist.m3u8");
+        let init_seg = self.state.init_seg(start_num, self.output_track)?;
+        let segment_name = self.state.chunk_path(self.output_track)?;
+        let outdir = self.state.playlist_path(self.output_track)?;
+        fs::create_dir_all(init_seg.parent().unwrap())?;
 
         let mut args = vec![
             "-y".into(),
             "-ss".into(),
             (start_num * target_gop).to_string(),
             "-i".into(),
-            self.source.to_str().unwrap().into(),
+            self.state.source().to_str().unwrap().into(),
             "-copyts".into(),
             "-map".into(),
-            stream,
+            format!("0:{}", self.input_track),
             "-c:0".into(),
             "copy".into(),
+            "-loglevel".into(),
+            "error".into()
         ];
 
         args.append(&mut vec![
             "-start_at_zero".into(),
-            "-vsync".into(),
+            "-fps_mode".into(),
             "passthrough".into(),
             "-avoid_negative_ts".into(),
             "disabled".into(),
@@ -131,7 +126,7 @@ impl Track for VideoTransmuxTrack {
         // args needed so we can distinguish between init fragments for new streams.
         // Basically on the web seeking works by reloading the entire video because of
         // discontinuity issues that browsers seem to not ignore like mpv.
-        args.append(&mut vec!["-hls_fmp4_init_filename".into(), init_seg]);
+        args.append(&mut vec!["-hls_fmp4_init_filename".into(), init_seg.display().to_string()]);
 
         args.append(&mut vec!["-hls_time".into(), target_gop.to_string()]);
 
@@ -149,8 +144,8 @@ impl Track for VideoTransmuxTrack {
             "-progress".into(),
             "pipe:1".into(),
         ]);
-        args.append(&mut vec!["-hls_segment_filename".into(), segment_name]);
-        args.push(outdir);
+        args.append(&mut vec!["-hls_segment_filename".into(), segment_name.display().to_string()]);
+        args.append(&mut vec![outdir.display().to_string()]);
 
         Ok(args)
     }

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::io;
+use std::io::Error;
 use xmlwriter::XmlWriter;
 use crate::media_info::TrackInfo;
 use crate::stream_id::StreamId;
@@ -9,21 +10,22 @@ pub mod video_transmux;
 pub mod video_transcode;
 pub mod audio_transcode;
 
+#[derive(Debug, Clone)]
 pub enum ContentType {
     Video,
     Audio,
     Subtitles
 }
 
-pub trait Track {
-    fn get_infos(&self) -> &TrackInfo;
-    fn stream_index(&self) -> u32;
-    fn stream_id(&self) -> StreamId;
+pub trait Track : Send + Sync {
+    fn get_infos(&self) -> Result<&TrackInfo, Error>;
+    fn output_track(&self) -> u32;
+    fn stream_id(&self) -> &StreamId;
     fn is_default(&self) -> bool;
     fn args(&self) -> &HashMap<String, String>;
-    fn build_manifest(&self, w: &mut XmlWriter, start_num: u32, media_bitrate: Option<u64>) {
+    fn build_manifest(&self, w: &mut XmlWriter, start_num: u32, media_bitrate: Option<u64>) -> Result<(), Error> {
 
-        let infos = self.get_infos();
+        let infos = self.get_infos()?;
 
         let bitrate = infos.get_bitrate()
             .or(media_bitrate)
@@ -34,7 +36,7 @@ pub trait Track {
         w.start_element("AdaptationSet");
         {
             w.write_attribute("contentType", "video");
-            w.write_attribute("id", &self.stream_index()); // stream index
+            w.write_attribute("id", &self.output_track()); // stream index
 
             // write representations
             w.start_element("Representation");
@@ -74,8 +76,8 @@ pub trait Track {
                 {
                     w.write_attribute("timescale", &1);
                     w.write_attribute("duration", &10);
-                    w.write_attribute("initialization", &format!("{}/init.mp4", self.stream_id()));
-                    w.write_attribute("media", "/chunk/$Number$.m4s");
+                    w.write_attribute("initialization", &format!("{}/init/{start_num}", self.stream_id()));
+                    w.write_attribute("media", "/data/$Number$");
                     w.write_attribute("startNumber", &start_num);
                 }
                 // close SegmentTemplate and Representation
@@ -85,6 +87,7 @@ pub trait Track {
         }
         // close AdaptationSet
         w.end_element();
+        Ok(())
     }
     fn build_args(&self, start_num: u32) -> Result<Vec<String>, io::Error>;
     fn content_type(&self) -> ContentType;
