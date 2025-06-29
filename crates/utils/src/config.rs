@@ -11,7 +11,7 @@ pub struct PostgresConfig {
     pub port: u16,
     pub database: String,
     pub ssl_mode: bool,
-    pub scheme_name: String
+    pub scheme_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -22,12 +22,17 @@ pub struct EMailerConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
+pub struct VideoServerConfig {
+    pub cache_path: PathBuf,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct WebClientConfig {
     pub client_path: PathBuf,
     pub debug: bool,
     pub check_for_packages_updates: bool,
     pub build_webpack: bool,
-    pub force_secure_requests: bool
+    pub force_secure_requests: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -42,6 +47,7 @@ pub struct BackendConfig {
     pub thumbnail_storage_path: PathBuf,
     pub thumbnail_size: usize,
     pub max_parallel_task: usize,
+    pub video_server: VideoServerConfig,
     pub postgres: PostgresConfig,
     pub emailer: EMailerConfig,
 }
@@ -53,7 +59,7 @@ pub struct Config {
     pub web_client_config: WebClientConfig,
     pub tls_config: TlsConfig,
     pub use_tls: bool,
-    pub admin_user_name: Option<String>
+    pub admin_user_name: Option<String>,
 }
 
 impl Default for Config {
@@ -65,6 +71,9 @@ impl Default for Config {
                 thumbnail_storage_path: PathBuf::from("data").join("thumbnails"),
                 thumbnail_size: 100,
                 max_parallel_task: 0,
+                video_server: VideoServerConfig {
+                    cache_path: PathBuf::from("data").join("streaming_cache"),
+                },
                 postgres: PostgresConfig {
                     username: "postgres".to_string(),
                     secret: "password".to_string(),
@@ -72,7 +81,7 @@ impl Default for Config {
                     port: 5432,
                     database: "postgres".to_string(),
                     ssl_mode: false,
-                    scheme_name: "fileshare_v3".to_string()
+                    scheme_name: "fileshare_v3".to_string(),
                 },
                 emailer: EMailerConfig {
                     source_address: "noreply@fileshare.com".to_string(),
@@ -101,10 +110,14 @@ impl Config {
     pub fn from_file(path: PathBuf) -> Result<Self, Error> {
         if path.exists() {
             Ok(serde_json::from_str(&fs::read_to_string(path)?)?)
-        }
-        else {
-            fs::write(path.clone(), serde_json::to_string_pretty(&Config::default())?)?;
-            Err(Error::msg("Created a new config file. Please fill in information first"))
+        } else {
+            fs::write(
+                path.clone(),
+                serde_json::to_string_pretty(&Config::default())?,
+            )?;
+            Err(Error::msg(
+                "Created a new config file. Please fill in information first",
+            ))
         }
     }
 }

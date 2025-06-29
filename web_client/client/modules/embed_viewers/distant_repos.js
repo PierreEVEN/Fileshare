@@ -9,6 +9,7 @@ function get(item) {
         case 'image':
             return `<lazy-img class="item-large" src="${url}" alternate-src="${thumbnail_url}""/>`
         case 'video':
+            return `<dash-player item="${item.id}"></dash-player>`;
             return `<video class="item-large video-js" preload="auto" data-setup="{}" autoplay="true" preload="auto" controls="true" height="100%" width="100%">
                         <source src="${url}" type="${item.mimetype}">
                     </video>`

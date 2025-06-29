@@ -1,15 +1,19 @@
-use utils::config::Config;
-use database::Database;
 use crate::upload::{Upload, UploadState};
 use anyhow::Error;
+use database::Database;
 use rand::random;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
+use types::database_ids::DatabaseId;
+use utils::config::Config;
+use video_server::media::Media;
+use video_server::stream_id::StreamId;
 
 pub struct AppCtx {
     pub config: Config,
     pub database: Database,
+    streams: tokio::sync::RwLock<HashMap<StreamId, Arc<Media>>>,
     uploads: tokio::sync::RwLock<HashMap<String, Arc<tokio::sync::RwLock<Upload>>>>,
 }
 
@@ -20,6 +24,7 @@ impl AppCtx {
         Ok(Self {
             config,
             database,
+            streams: Default::default(),
             uploads: Default::default(),
         })
     }
@@ -45,15 +50,41 @@ impl AppCtx {
 
     pub async fn get_upload(&self, id: &String) -> Result<Arc<tokio::sync::RwLock<Upload>>, Error> {
         match self.uploads.read().await.get(id) {
-            None => { Err(Error::msg("Upload not found")) }
-            Some(upload) => { Ok(upload.clone()) }
+            None => Err(Error::msg("Upload not found")),
+            Some(upload) => Ok(upload.clone()),
         }
     }
 
     pub async fn finalize_upload(&self, id: &String, db: &Database) -> Result<UploadState, Error> {
-        let item = self.uploads.write().await.remove(id).ok_or(Error::msg("Upload not found"))?;
+        let item = self
+            .uploads
+            .write()
+            .await
+            .remove(id)
+            .ok_or(Error::msg("Upload not found"))?;
         let mut upload = item.write().await;
         upload.store(db).await?;
         Ok(upload.get_state())
+    }
+
+    pub async fn create_stream(&self, mut stream: Media) -> StreamId {
+        let mut streams = self.streams.write().await;
+        let id: StreamId = loop {
+            let id = StreamId::from(random::<DatabaseId>().abs());
+            if !(*streams).contains_key(&id) {
+                break id;
+            }
+        };
+        stream.init_streams(id);
+        streams.insert(id, Arc::new(stream));
+        id
+    }
+
+    pub async fn get_stream(&self, id: &StreamId) -> Option<Arc<Media>> {
+        self.streams.write().await.get(id).cloned()
+    }
+
+    pub async fn kill_stream(&self, id: &StreamId) {
+        self.streams.write().await.remove(id);
     }
 }

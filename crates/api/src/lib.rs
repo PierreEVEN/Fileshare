@@ -12,6 +12,7 @@ use types::user::User;
 use crate::app_ctx::AppCtx;
 use crate::route_item::ItemRoutes;
 use crate::route_repository::RepositoryRoutes;
+use crate::route_stream::StreamRoutes;
 use crate::route_user::UserRoutes;
 
 mod route_repository;
@@ -20,6 +21,7 @@ mod route_user;
 pub mod permissions;
 mod upload;
 pub mod app_ctx;
+mod route_stream;
 
 #[macro_export]
 macro_rules! get_connected_user {
@@ -179,6 +181,7 @@ impl RootRoutes {
             .nest("/repository", RepositoryRoutes::create(ctx)?)
             .nest("/user", UserRoutes::router(ctx)?)
             .nest("/item", ItemRoutes::create(ctx)?)
+            .nest("/stream", StreamRoutes::create(ctx)?)
             .fallback(handler_404);
         Ok(router)
     }

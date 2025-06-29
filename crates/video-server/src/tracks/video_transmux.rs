@@ -1,8 +1,18 @@
+use crate::media_info::TrackInfo;
+use crate::tracks::{ContentType, Track};
 use std::collections::HashMap;
-use crate::streams::{ContentType, Stream};
 use std::io::Error;
 use std::path::PathBuf;
-use crate::media_info::StreamInfo;
+use crate::stream_id::StreamId;
+
+pub struct VideoTransmuxTrack {
+    source: PathBuf,
+    stream_id: StreamId,
+    info: TrackInfo,
+    stream_index: u32,
+    is_default: bool,
+    args: HashMap<String, String>,
+}
 
 fn get_discont_flags(start_num: u32) -> Vec<String> {
     // these args are needed if we start a new stream in the middle of a old one, such as when
@@ -21,35 +31,32 @@ fn get_discont_flags(start_num: u32) -> Vec<String> {
     }
 }
 
-pub struct VideoTranscodeStream {
-    source: PathBuf,
-    media_id: u64,
-    info: StreamInfo,
-    stream_index: u32,
-    is_default: bool,
-    args: HashMap<String, String>,
-}
-
-impl VideoTranscodeStream {
-    pub fn new(source: PathBuf, media_id: u64, info: StreamInfo, stream_index: u32, is_default: bool) -> Self {
+impl VideoTransmuxTrack {
+    pub fn new(
+        source: PathBuf,
+        stream_id: StreamId,
+        info: TrackInfo,
+        stream_index: u32,
+        is_default: bool,
+    ) -> Self {
         Self {
             source,
-            media_id,
+            stream_id,
             info,
             stream_index,
             is_default,
             args: Default::default(),
         }
     }
-    
+
     pub fn arg(mut self, key: &str, value: &str) -> Self {
         self.args.insert(key.into(), value.into());
         self
     }
 }
 
-impl Stream for VideoTranscodeStream {
-    fn get_infos(&self) -> &StreamInfo {
+impl Track for VideoTransmuxTrack {
+    fn get_infos(&self) -> &TrackInfo {
         &self.info
     }
 
@@ -57,8 +64,8 @@ impl Stream for VideoTranscodeStream {
         self.stream_index
     }
 
-    fn media_id(&self) -> u64 {
-        self.media_id
+    fn stream_id(&self) -> StreamId {
+        self.stream_id
     }
 
     fn is_default(&self) -> bool {
@@ -73,9 +80,6 @@ impl Stream for VideoTranscodeStream {
         let target_gop = 5;
         let output_dir = "./data/tmp_video";
         let input_stream = 0;
-        let height: Option<i32> = None;
-        let width: Option<i32> = None;
-        let bitrate: Option<i32> = None;
 
         let start_num = start_num;
         let stream = format!("0:{}", input_stream);
@@ -93,27 +97,15 @@ impl Stream for VideoTranscodeStream {
             "-map".into(),
             stream,
             "-c:0".into(),
-            "libx264".into(),
-            "-preset".into(),
-            "veryfast".into(),
+            "copy".into(),
         ];
 
-        if let Some(height) = height {
-            let width = width.unwrap_or(-2); // defaults to scaling by 2
-            args.push("-vf".into());
-            args.push(format!("scale={}:{}", height, width));
-        }
-
-        if let Some(bitrate) = bitrate {
-            args.push("-b:v".into());
-            args.push(bitrate.to_string());
-        }
-
         args.append(&mut vec![
+            "-start_at_zero".into(),
             "-vsync".into(),
             "passthrough".into(),
             "-avoid_negative_ts".into(),
-            "make_non_negative".into(),
+            "disabled".into(),
             "-max_muxing_queue_size".into(),
             "2048".into(),
         ]);
@@ -124,8 +116,6 @@ impl Stream for VideoTranscodeStream {
             "-start_number".into(),
             start_num.to_string(),
         ]);
-
-        args.append(&mut get_discont_flags(start_num));
 
         // needed so that in progress segments are named `tmp` and then renamed after the data is
         // on disk.
@@ -142,7 +132,11 @@ impl Stream for VideoTranscodeStream {
         // Basically on the web seeking works by reloading the entire video because of
         // discontinuity issues that browsers seem to not ignore like mpv.
         args.append(&mut vec!["-hls_fmp4_init_filename".into(), init_seg]);
+
         args.append(&mut vec!["-hls_time".into(), target_gop.to_string()]);
+
+        args.append(&mut get_discont_flags(start_num));
+
         args.append(&mut vec![
             "-force_key_frames".into(),
             format!("expr:gte(t,n_forced*{})", target_gop),

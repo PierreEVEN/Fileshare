@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::io;
 use xmlwriter::XmlWriter;
-use crate::media_info::StreamInfo;
+use crate::media_info::TrackInfo;
+use crate::stream_id::StreamId;
 use crate::video_avc::{get_avc1_tag, level_to_tag};
 
 pub mod video_transmux;
@@ -14,10 +15,10 @@ pub enum ContentType {
     Subtitles
 }
 
-pub trait Stream {
-    fn get_infos(&self) -> &StreamInfo;
+pub trait Track {
+    fn get_infos(&self) -> &TrackInfo;
     fn stream_index(&self) -> u32;
-    fn media_id(&self) -> u64;
+    fn stream_id(&self) -> StreamId;
     fn is_default(&self) -> bool;
     fn args(&self) -> &HashMap<String, String>;
     fn build_manifest(&self, w: &mut XmlWriter, start_num: u32, media_bitrate: Option<u64>) {
@@ -49,7 +50,7 @@ pub trait Stream {
                     ));
 
 
-                w.write_attribute("id", &self.media_id());
+                w.write_attribute("id", &self.stream_id());
                 w.write_attribute("bandwidth", &bitrate);
                 w.write_attribute("mimeType", "video/mp4");
                 w.write_attribute("codecs", &video_avc.to_string());
@@ -73,7 +74,7 @@ pub trait Stream {
                 {
                     w.write_attribute("timescale", &1);
                     w.write_attribute("duration", &10);
-                    w.write_attribute("initialization", &format!("/init/{}/init.mp4", start_num));
+                    w.write_attribute("initialization", &format!("{}/init.mp4", self.stream_id()));
                     w.write_attribute("media", "/chunk/$Number$.m4s");
                     w.write_attribute("startNumber", &start_num);
                 }

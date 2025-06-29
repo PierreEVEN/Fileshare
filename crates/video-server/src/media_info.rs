@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MediaInfo {
-    streams: Vec<StreamInfo>,
+    streams: Vec<TrackInfo>,
     format: MediaFormat,
 }
 
@@ -14,8 +14,12 @@ impl MediaInfo {
     pub fn get_bitrate(&self) -> Option<u64> {
         self.format.bit_rate.parse::<u64>().ok()
     }
-
-    pub fn get_video_streams(&self) -> Vec<StreamInfo> {
+    
+    pub fn get_duration(&self) -> Option<i32> {
+        Some(self.format.duration.parse::<f64>().ok()? as i32)
+    }
+    
+    pub fn get_video_streams(&self) -> Vec<TrackInfo> {
         let mut streams = vec![];
         for stream in &self.streams {
             if stream.codec_type == "video" {
@@ -25,7 +29,7 @@ impl MediaInfo {
         streams
     }
 
-    pub fn get_audio_stream(&self) -> Vec<StreamInfo> {
+    pub fn get_audio_stream(&self) -> Vec<TrackInfo> {
         let mut streams = vec![];
         for stream in &self.streams {
             if stream.codec_type == "audio" {
@@ -50,7 +54,7 @@ pub struct Disposition {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct StreamInfo {
+pub struct TrackInfo {
     pub index: i64,
     pub codec_name: Option<String>,
     pub profile: Option<String>,
@@ -77,7 +81,7 @@ pub struct StreamInfo {
     pub disposition: Option<Disposition>,
 }
 
-impl StreamInfo {
+impl TrackInfo {
     pub fn get_bitrate(&self) -> Option<u64> {
         self.tags.as_ref()?.bps_eng.as_ref()?.parse::<u64>().ok()
     }
