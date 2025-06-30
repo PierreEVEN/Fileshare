@@ -26,10 +26,10 @@ impl StreamRoutes {
             .route("/create", post(create_stream).with_state(ctx.clone()))
             .route("/:stream_id/manifest/:start_num", get(get_manifest).with_state(ctx.clone()))
             .route("/:stream_id/kill", post(kill).with_state(ctx.clone()))
-            .route("/:stream_id/init/:start_num", get(get_init_chunk).with_state(ctx.clone()))
+            .route("/:stream_id/init/:track_id/:start_num", get(get_init_chunk).with_state(ctx.clone()))
             .route("/:stream_id/stream.vtt", get(get_subtitle).with_state(ctx.clone()))
             .route("/:stream_id/stream.ass", get(get_subtitle_ass).with_state(ctx.clone()))
-            .route("/:stream_id/data/:chunk", get(get_chunk).with_state(ctx.clone()))
+            .route("/:stream_id/data/:track_id/:chunk", get(get_chunk).with_state(ctx.clone()))
         )
     }
 }
@@ -62,12 +62,12 @@ async fn get_manifest(State(ctx): State<Arc<AppCtx>>, Path((stream_id, start_num
     Ok(([(header::CONTENT_TYPE, "application/dash+xml")], stream.get_dash_manifest(start_num)?))
 }
 
-async fn get_init_chunk(State(ctx): State<Arc<AppCtx>>, Path((stream_id, start_num)): Path<(StreamId, u32)>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerError> {
+async fn get_init_chunk(State(ctx): State<Arc<AppCtx>>, Path((stream_id, track_id, start_num)): Path<(StreamId, u32, u32)>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerError> {
     let permissions = Permissions::new(&request)?;
     let stream = ctx.get_stream(&stream_id).await.ok_or(ServerError::msg(StatusCode::NOT_FOUND, "Stream not found"))?;
     let item = DbItem::from_id(&ctx.database, stream.item_id(), Trash::Both).await?;
     permissions.view_item(&ctx.database, &item).await?.require()?;
-    let path = stream.get_init_chunk(start_num).await?;
+    let path = stream.get_init_chunk(track_id, start_num).await?;
     let stream = ReaderStream::new(tokio::fs::File::open(&path).await?);
     let body = Body::from_stream(stream);
 
@@ -77,14 +77,13 @@ async fn get_init_chunk(State(ctx): State<Arc<AppCtx>>, Path((stream_id, start_n
     ];
     Ok((headers, body))
 }
-async fn get_chunk(State(ctx): State<Arc<AppCtx>>, Path((stream_id, chunk)): Path<(StreamId, u32)>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerError> {
+async fn get_chunk(State(ctx): State<Arc<AppCtx>>, Path((stream_id, track_id, chunk)): Path<(StreamId, u32, u32)>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerError> {
     let permissions = Permissions::new(&request)?;
     let stream = ctx.get_stream(&stream_id).await.ok_or(ServerError::msg(StatusCode::NOT_FOUND, "Stream not found"))?;
     let item = DbItem::from_id(&ctx.database, stream.item_id(), Trash::Both).await?;
     permissions.view_item(&ctx.database, &item).await?.require()?;
 
-    todo!();
-    let path = PathBuf::default();//stream.state.chunk_path(chunk);
+    let path = stream.get_chunk(track_id, chunk).await?;
     let stream = ReaderStream::new(tokio::fs::File::open(&path).await?);
     let body = Body::from_stream(stream);
 

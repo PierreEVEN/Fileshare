@@ -9,9 +9,11 @@ use std::process::Stdio;
 use std::sync::Arc;
 use std::{fs, io};
 use std::collections::HashMap;
+use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child, Command};
 use tokio::sync::RwLock;
+use tokio::time::sleep;
 use tracing::info;
 use types::database_ids::ItemId;
 use utils::config::VideoServerConfig;
@@ -34,7 +36,7 @@ pub struct MediaState {
 
 impl MediaState {
     pub fn new(config: VideoServerConfig, item_id: ItemId, source: PathBuf) -> Result<Self, io::Error> {
-        let source = std::path::absolute(source)?;
+        let source = if source.is_absolute() { source } else { std::path::absolute(source)? };
         let info = MediaInfo::new(&source)?;
         Ok(Self {
             config,
@@ -52,18 +54,22 @@ impl MediaState {
     pub fn info(&self) -> &MediaInfo { &self.info }
 
     pub fn chunk_path_num(&self, chunk_num: u32, track_id: u32) -> Result<PathBuf, io::Error> {
-        std::path::absolute(self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join(format!("{chunk_num}.m4s")))
+        let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join(format!("{chunk_num}.m4s"));
+        Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
     }
     pub fn chunk_path(&self, track_id: u32) -> Result<PathBuf, io::Error> {
-        std::path::absolute(self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join("%d.m4s".to_string()))
+        let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join("%d.m4s".to_string());
+        Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
     }
 
     pub fn init_seg(&self, start_num: u32, track_id: u32) -> Result<PathBuf, io::Error> {
-        std::path::absolute(self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join(format!("{}_init.mp4", &start_num)))
+        let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join(format!("{}_init.mp4", &start_num));
+        Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
     }
     pub fn playlist_path(&self, track_id: u32) -> Result<PathBuf, io::Error> {
-        std::path::absolute(self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join("playlist.m3u8"))
+        let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join("playlist.m3u8");
         //std::path::absolute(std::env::temp_dir().join("fileshare-video-streaming").join(self.stream_id.to_string()).join("playlist.m3u8"))
+        Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
     }
 }
 
@@ -134,7 +140,7 @@ impl Media {
         w.start_element("Period");
         w.write_attribute("duration", &duration);
         w.start_element("BaseURL");
-        w.write_text("/api/stream/");
+        w.write_text(format!("/api/stream/{}/", self.state.stream_id).as_str());
         w.end_element();
 
         for (track, _) in &self.tracks {
@@ -144,11 +150,44 @@ impl Media {
         Ok(w.end_document())
     }
 
-    pub async fn get_init_chunk(&self, start_num: u32) -> Result<PathBuf, io::Error> {
-        let path = self.state.config.cache_path.join(self.state.stream_id.to_string()).join("init.m4s");
+    pub async fn get_init_chunk(&self, track_id: u32, start_num: u32) -> Result<PathBuf, io::Error> {
+        let path = self.state.init_seg(start_num, track_id)?;
 
         if !path.exists() {
             self.reset_from(start_num).await?;
+        }
+
+        let mut attempt = 50;
+        loop {
+            if path.exists() {
+                return Ok(path);
+            }
+            sleep(Duration::from_millis(100)).await;
+            attempt -= 1;
+            if attempt == 0 { break }
+        }
+
+        if !path.exists() {
+            return Err(io::Error::new(ErrorKind::NotFound, format!("Failed to generate init chunk at {}", path.display())));
+        }
+
+        Ok(path)
+    }
+
+    pub async fn get_chunk(&self, track_id: u32, chunk_id: u32) -> Result<PathBuf, io::Error> {
+        let mut attempt = 50;
+        let path = self.state.chunk_path_num(chunk_id, track_id)?;
+        loop {
+            if path.exists() {
+                return Ok(path);
+            }
+            sleep(Duration::from_millis(100)).await;
+            attempt -= 1;
+            if attempt == 0 { break }
+        }
+
+        if !path.exists() {
+            return Err(io::Error::new(ErrorKind::NotFound, format!("Failed to generate chunk at {}", path.display())));
         }
 
         Ok(path)

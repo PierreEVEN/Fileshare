@@ -126,8 +126,7 @@ impl Track for VideoTransmuxTrack {
         // args needed so we can distinguish between init fragments for new streams.
         // Basically on the web seeking works by reloading the entire video because of
         // discontinuity issues that browsers seem to not ignore like mpv.
-        args.append(&mut vec!["-hls_fmp4_init_filename".into(), init_seg.display().to_string()]);
-
+        args.append(&mut vec!["-hls_fmp4_init_filename".into(), init_seg.file_name().unwrap().display().to_string()]);
         args.append(&mut vec!["-hls_time".into(), target_gop.to_string()]);
 
         args.append(&mut get_discont_flags(start_num));
