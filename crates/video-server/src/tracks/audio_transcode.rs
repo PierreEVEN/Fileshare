@@ -4,6 +4,7 @@ use crate::stream_id::StreamId;
 use crate::tracks::{ContentType, Track};
 use std::collections::HashMap;
 use std::io::Error;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::info;
 
@@ -69,7 +70,12 @@ impl Track for AudioTranscodeTrack {
         let target_gop = 5;
         let bitrate: Option<i32> = None;
 
-        let init_seg = self.state.init_seg(start_num, self.output_track)?;
+        let init_seg = if cfg!(target_os = "windows") {
+            self.state.init_seg(start_num, self.output_track)?
+        } else {
+            PathBuf::from(self.state.init_seg(start_num, self.output_track)?.file_name().unwrap())
+        };
+
         let segment_name = self.state.chunk_path(self.output_track)?;
 
         // NOTE: might need flags -fflages +genpts if seeking breaks.
@@ -155,7 +161,7 @@ impl Track for AudioTranscodeTrack {
         // discontinuity issues that browsers seem to not ignore like mpv.
         args.append(&mut vec![
             "-hls_fmp4_init_filename".into(),
-            init_seg.file_name().unwrap().display().to_string(),
+            init_seg.display().to_string(),
         ]);
 
         args.append(&mut vec![
