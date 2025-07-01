@@ -9,7 +9,6 @@ use xmlwriter::XmlWriter;
 
 pub mod audio_transcode;
 pub mod video_transcode;
-pub mod video_transmux;
 
 #[derive(Debug, Clone)]
 pub enum ContentType {

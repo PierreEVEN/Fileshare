@@ -13,8 +13,7 @@ class DashPlayer extends HTMLElement {
     connectedCallback() {
         if (!this.item)
             return;
-
-        const stream = fetch_api(`stream/create`, 'POST', this.item)
+        fetch_api(`stream/create`, 'POST', this.item)
             .then(stream_id => {
                 const url = `/api/stream/${stream_id}/manifest/0`;
 
@@ -33,7 +32,6 @@ class DashPlayer extends HTMLElement {
                         logLevel: 0
                     }
                 })
-                //https://dash.akamaized.net/envivio/Envivio-dash2/manifest.mpd
                 player.initialize(video_div, url, true);
             })
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Echec de la création du stream")));

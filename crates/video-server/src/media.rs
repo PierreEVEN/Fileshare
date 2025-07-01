@@ -1,7 +1,6 @@
 use crate::media_info::MediaInfo;
 use crate::stream_id::StreamId;
 use crate::tracks::audio_transcode::AudioTranscodeTrack;
-use crate::tracks::video_transmux::VideoTransmuxTrack;
 use crate::tracks::{Track};
 use std::io::ErrorKind;
 use std::path::PathBuf;
@@ -18,6 +17,7 @@ use tracing::info;
 use types::database_ids::ItemId;
 use utils::config::VideoServerConfig;
 use xmlwriter::XmlWriter;
+use crate::tracks::video_transcode::VideoTranscodeTrack;
 
 struct StreamingProcess {
     process: Child,
@@ -68,7 +68,6 @@ impl MediaState {
     }
     pub fn playlist_path(&self, track_id: u32) -> Result<PathBuf, io::Error> {
         let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join("playlist.m3u8");
-        //std::path::absolute(std::env::temp_dir().join("fileshare-video-streaming").join(self.stream_id.to_string()).join("playlist.m3u8"))
         Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
     }
 }
@@ -100,7 +99,7 @@ impl Media {
         let mut tracks: Vec<(Box<dyn Track>, RwLock<Option<StreamingProcess>>)> = vec![];
 
         fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
-        tracks.push((Box::new(VideoTransmuxTrack::new(
+        tracks.push((Box::new(VideoTranscodeTrack::new(
             state.clone(),
             state.info.get_video_streams()[0],
             tracks.len() as u32,
@@ -221,7 +220,7 @@ impl Media {
             }
             let mut process = Command::new("ffmpeg")
                 .stdout(Stdio::piped())
-                .stderr(Stdio::null())
+                .stderr(Stdio::inherit())
                 .stdin(Stdio::null())
                 .args(track.build_args(start_num)?.as_slice())
                 .spawn()?;

@@ -403,9 +403,9 @@ class RepositoryViewport extends MemoryTracker {
         const view_item = async (item, carousel_list) => {
             if (this.carousel)
                 this.carousel.delete();
-            this.carousel = null;
-            this.selector.select_item(item.id, false, false);
-            if (!this.selector.is_selected(item.id))
+
+            delete this.carousel;
+            if (!this.selector.is_selected(item.id) || this.selector.get_selected_items().length > 1)
                 this.selector.select_item(item.id, false, false);
             this.carousel = new Carousel(Carousel.get_fullscreen_container().background_container, item);
             this.carousel.on_close = async () => {
@@ -418,7 +418,8 @@ class RepositoryViewport extends MemoryTracker {
         Carousel.get_fullscreen_container().root.style.display = 'flex';
         const container = Carousel.get_fullscreen_container();
         const item_list = new CarouselList(this, (item) => {
-            view_item(item, item_list);
+            if (this.carousel && item.id !== this.carousel.base_item.id)
+                view_item(item, item_list);
         });
         await view_item(item, item_list);
         await item_list.build_visual(container.list_container);

@@ -16,8 +16,19 @@ pub struct AudioTranscodeTrack {
 }
 
 impl AudioTranscodeTrack {
-    pub fn new(state: Arc<MediaState>, input_track: u32, output_track: u32, is_default: bool) -> Self {
-        info!("stream @{} Add track {:?}:{}->{}", state.stream_id(), ContentType::Audio, input_track, output_track);
+    pub fn new(
+        state: Arc<MediaState>,
+        input_track: u32,
+        output_track: u32,
+        is_default: bool,
+    ) -> Self {
+        info!(
+            "stream @{} Add track {:?}:{}->{}",
+            state.stream_id(),
+            ContentType::Audio,
+            input_track,
+            output_track
+        );
         Self {
             state,
             input_track,
@@ -60,7 +71,6 @@ impl Track for AudioTranscodeTrack {
 
         let init_seg = self.state.init_seg(start_num, self.output_track)?;
         let segment_name = self.state.chunk_path(self.output_track)?;
-        let outdir = self.state.playlist_path(self.output_track)?;
 
         // NOTE: might need flags -fflages +genpts if seeking breaks.
         let mut args = vec![
@@ -72,22 +82,34 @@ impl Track for AudioTranscodeTrack {
             "-copyts".into(),
             "-map".into(),
             format!("0:{}", self.input_track),
-            "-c:0".into(),
-            "aac".into(),
             "-loglevel".into(),
-            "error".into()
+            "24".into(),
         ];
 
-        if self.get_infos()?.channels.unwrap_or(2) != 2 {
-            args.append(&mut vec![
-                "-af".into(),
-                "pan=stereo|FL=0.5*FC+0.707*FL+0.707*BL+0.5*LFE|FR=0.5*FC+0.707*FR+0.707*BR+0.5*LFE".into(),
-            ]);
-        }
+        // Copy existing stream if it is html5-compatible
+        let should_transcode = if let Some(codec) = &self.get_infos()?.codec_name {
+            match codec.as_str() {
+                "aac" | "libmp3lame" | "mp3" | "opus" | "libopus" | "vorbis" | "libvorbis" => false,
+                &_ => true,
+            }
+        } else {
+            true
+        } || self.get_infos()?.channels.unwrap_or(2) > 2;
 
-        let ab = bitrate.unwrap_or(120_000).to_string();
-        args.push("-ab".into());
-        args.push(ab);
+        if should_transcode {
+            info!("Stream {}:{} is using full audio transcoding", self.state.stream_id(), self.output_track);
+            let ab = bitrate.unwrap_or(120_000).to_string();
+            args.append(&mut vec!["-c:0".into(), "aac".into(), "ab".into(), ab]);
+
+            if self.get_infos()?.channels.unwrap_or(2) > 2 {
+                args.append(&mut vec![
+                    "-af".into(),
+                    "pan=stereo|FL=0.5*FC+0.707*FL+0.707*BL+0.5*LFE|FR=0.5*FC+0.707*FR+0.707*BR+0.5*LFE".into(),
+                ]);
+            }
+        } else {
+            args.append(&mut vec!["-c:0".into(), "copy".into()]);
+        }
 
         args.append(&mut vec![
             "-start_at_zero".into(),
@@ -131,7 +153,10 @@ impl Track for AudioTranscodeTrack {
         // args needed so we can distinguish between init fragments for new streams.
         // Basically on the web seeking works by reloading the entire video because of
         // discontinuity issues that browsers seem to not ignore like mpv.
-        args.append(&mut vec!["-hls_fmp4_init_filename".into(), init_seg.file_name().unwrap().display().to_string()]);
+        args.append(&mut vec![
+            "-hls_fmp4_init_filename".into(),
+            init_seg.file_name().unwrap().display().to_string(),
+        ]);
 
         args.append(&mut vec![
             "-hls_time".into(),
@@ -143,12 +168,16 @@ impl Track for AudioTranscodeTrack {
         args.append(&mut vec!["-hls_segment_type".into(), "1".into()]);
         args.append(&mut vec![
             "-loglevel".into(),
-            "info".into(),
+            "warning".into(),
             "-progress".into(),
             "pipe:1".into(),
         ]);
-        args.append(&mut vec!["-hls_segment_filename".into(), segment_name.display().to_string()]);
-        args.append(&mut vec![outdir.display().to_string()]);
+        args.append(&mut vec![
+            "-hls_segment_filename".into(),
+            segment_name.display().to_string(),
+        ]);
+
+        args.push(self.state.playlist_path(self.output_track)?.display().to_string());
 
         Ok(args)
     }

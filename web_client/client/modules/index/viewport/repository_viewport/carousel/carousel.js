@@ -18,6 +18,7 @@ class Carousel extends MemoryTracker {
             new CarouselViewport(container, base_item);
             new CarouselOverlay(this, container, base_item)
         });
+        this.base_item = base_item;
         this.container = container;
     }
 

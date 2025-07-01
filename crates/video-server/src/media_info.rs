@@ -2,6 +2,7 @@ use std::io;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::process::Command;
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -73,6 +74,7 @@ pub struct TrackInfo {
     pub has_b_frames: Option<u64>,
     pub pix_fmt: Option<String>,
     pub level: Option<i64>,
+    pub r_frame_rate: Option<String>,
     pub tags: Option<StreamTags>,
     pub sample_rate: Option<String>,
     pub channels: Option<i64>,
@@ -88,6 +90,20 @@ pub struct TrackInfo {
 impl TrackInfo {
     pub fn get_bitrate(&self) -> Option<u64> {
         self.tags.as_ref()?.bps_eng.as_ref()?.parse::<u64>().ok()
+    }
+
+    pub fn get_framerate(&self) -> Result<f32, io::Error> {
+        match &self.r_frame_rate {
+            None => {Err(io::Error::new(ErrorKind::InvalidData, "Cannot parse framerate"))}
+            Some(frame_rate) => {
+                let mut split = frame_rate.split("/");
+                let mut value = f32::from_str(split.next().ok_or(io::Error::new(ErrorKind::InvalidData, "Cannot parse framerate"))?).or(Err(io::Error::new(ErrorKind::InvalidData, "Cannot parse framerate")))?;
+                if let Some(div) = split.next() {
+                    value /= f32::from_str(div).or(Err(io::Error::new(ErrorKind::InvalidData, "Cannot parse framerate divisor")))?;
+                }
+                Ok(value)
+            }
+        }
     }
 }
 
