@@ -15,6 +15,7 @@ class DashPlayer extends HTMLElement {
             return;
         fetch_api(`stream/create`, 'POST', this.item)
             .then(stream_id => {
+                this.stream_id = stream_id;
                 const url = `/api/stream/${stream_id}/manifest/0`;
 
                 const video_div = document.createElement("video");
@@ -26,15 +27,24 @@ class DashPlayer extends HTMLElement {
                 video_div.style.width = "100%";
                 video_div.style.height = "100%";
                 this.append(video_div);
-                let player = dashjs.MediaPlayer().create();
-                player.updateSettings({
+                this.player = dashjs.MediaPlayer().create();
+                this.player.updateSettings({
                     debug: {
-                        logLevel: 0
+                        logLevel: 2
                     }
                 })
-                player.initialize(video_div, url, true);
+                this.player.initialize(video_div, url, true, 0);
             })
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Echec de la création du stream")));
+    }
+
+    disconnectedCallback() {
+        if (this.stream_id)
+            fetch_api(`stream/${this.stream_id}/kill`, 'POST')
+                .catch(console.error);
+        if (this.player)
+            this.player.destroy();
+        delete this.player;
     }
 }
 

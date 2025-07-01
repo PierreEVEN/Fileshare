@@ -49,7 +49,7 @@ async fn kill(State(ctx): State<Arc<AppCtx>>, Path(stream_id): Path<StreamId>, r
     let stream = ctx.get_stream(&stream_id).await.ok_or(ServerError::msg(StatusCode::NOT_FOUND, "Stream not found"))?;
     let item = DbItem::from_id(&ctx.database, stream.item_id(), Trash::Both).await?;
     permissions.view_item(&ctx.database, &item).await?.require()?;
-    ctx.kill_stream(&stream_id).await;
+    ctx.kill_stream(&stream_id).await?;
     Ok(())
 }
 

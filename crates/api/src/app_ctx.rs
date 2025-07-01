@@ -90,7 +90,10 @@ impl AppCtx {
         self.streams.write().await.get(id).cloned()
     }
 
-    pub async fn kill_stream(&self, id: &StreamId) {
-        self.streams.write().await.remove(id);
+    pub async fn kill_stream(&self, id: &StreamId) -> Result<(), Error> {
+        if let Some(stream) = self.streams.write().await.remove(id) {
+            stream.kill().await?;
+        }
+        Ok(())
     }
 }
