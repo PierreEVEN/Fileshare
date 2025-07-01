@@ -22,7 +22,9 @@ use crate::tracks::video_transcode::VideoTranscodeTrack;
 struct StreamingProcess {
     process: Child,
     start_num: u32,
+    #[allow(unused)]
     progress_state: Arc<RwLock<HashMap<String, String>>>,
+    #[allow(unused)]
     stdout_parse_process: tokio::task::JoinHandle<()>,
 }
 
