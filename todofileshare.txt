@@ -3,7 +3,4 @@
 - implémenter les filtres
 - fix preview CR2 terne sous debian ??
 - supporter plus de 1000 items par dossiers
-- menu d'action groupée sur plusieurs éléments
-    - Conversion automatique HEVC => AV1
-    - Menu pour compresser des videos / images et les convertir
 - améliorer le design du lecteur de pdf mobile
