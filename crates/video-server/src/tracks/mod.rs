@@ -1,44 +1,19 @@
 use crate::media_info::TrackInfo;
-use crate::video_avc::{get_avc1_tag, level_to_tag};
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 use xmlwriter::XmlWriter;
 use crate::error::StreamingError;
-use crate::media::MediaState;
+use crate::stream::StreamConfig;
+use crate::tracks::content_type::ContentType;
+use crate::tracks::utils::video_avc::{get_avc1_tag, level_to_tag};
 
 pub mod audio_transcode;
 pub mod video_transcode;
-
-#[derive(Debug, Clone)]
-pub enum ContentType {
-    Video,
-    Audio,
-    Subtitles,
-}
-
-impl ContentType {
-    pub fn mime(&self) -> &str {
-        match self {
-            ContentType::Video => {"video/mp4"}
-            ContentType::Audio => {"audio/mp4"}
-            ContentType::Subtitles => {"unknown/unknown"}
-        }
-    }
-}
-
-impl Display for ContentType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            ContentType::Video => "video",
-            ContentType::Audio => "audio",
-            ContentType::Subtitles => "subtitles",
-        })
-    }
-}
+mod utils;
+pub mod content_type;
 
 pub struct TrackConfig {
-    pub media_state: Arc<MediaState>,
+    pub media_state: Arc<StreamConfig>,
     pub input_track: u32,
     pub output_track: u32,
     pub force_transcoding: bool,
@@ -47,7 +22,7 @@ pub struct TrackConfig {
 }
 
 impl TrackConfig {
-    pub fn new(media_state: Arc<MediaState>, input_track: u32, output_track: u32) -> Self {
+    pub fn new(media_state: Arc<StreamConfig>, input_track: u32, output_track: u32) -> Self {
         Self {
             media_state,
             force_transcoding: false,

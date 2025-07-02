@@ -9,13 +9,13 @@ use tracing::info;
 use types::database_ids::DatabaseId;
 use utils::config::Config;
 use video_server::error::StreamingError;
-use video_server::media::{Media, MediaState};
+use video_server::stream::{Stream, StreamConfig};
 use video_server::stream_id::StreamId;
 
 pub struct AppCtx {
     pub config: Config,
     pub database: Database,
-    streams: tokio::sync::RwLock<HashMap<StreamId, Arc<Media>>>,
+    streams: tokio::sync::RwLock<HashMap<StreamId, Arc<Stream>>>,
     uploads: tokio::sync::RwLock<HashMap<String, Arc<tokio::sync::RwLock<Upload>>>>,
 }
 
@@ -72,7 +72,7 @@ impl AppCtx {
         Ok(upload.get_state())
     }
 
-    pub async fn create_stream(&self, state: MediaState) -> Result<StreamId, StreamingError> {
+    pub async fn create_stream(&self, state: StreamConfig) -> Result<StreamId, StreamingError> {
         let mut streams = self.streams.write().await;
         let id: StreamId = loop {
             let id = StreamId::from(random::<DatabaseId>().abs());
@@ -81,12 +81,12 @@ impl AppCtx {
             }
         };
         info!("Create stream @{} for item #{}", id, state.item_id());
-        let media = Media::new(state, id)?;
+        let media = Stream::new(state, id)?;
         streams.insert(id, Arc::new(media));
         Ok(id)
     }
 
-    pub async fn get_stream(&self, id: &StreamId) -> Option<Arc<Media>> {
+    pub async fn get_stream(&self, id: &StreamId) -> Option<Arc<Stream>> {
         self.streams.write().await.get(id).cloned()
     }
 

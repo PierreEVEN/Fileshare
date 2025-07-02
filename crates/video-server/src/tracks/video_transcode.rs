@@ -3,23 +3,6 @@ use crate::tracks::{ContentType, Track, TrackConfig};
 use tracing::info;
 use crate::error::StreamingError;
 
-fn get_discont_flags(start_num: u32) -> Vec<String> {
-    // these args are needed if we start a new stream in the middle of a old one, such as when
-    // seeking. These args will reset the base decode ts to equal the earliest presentation
-    // timestamp.
-    if start_num > 0 {
-        vec![
-            "-hls_segment_options".into(),
-            "movflags=frag_custom+dash+delay_moov+frag_discont".into(),
-        ]
-    } else {
-        vec![
-            "-hls_segment_options".into(),
-            "movflags=frag_custom+dash+delay_moov".into(),
-        ]
-    }
-}
-
 pub struct VideoTranscodeTrack {
     config: TrackConfig,
 }
@@ -120,9 +103,22 @@ impl Track for VideoTranscodeTrack {
             "-start_number".into(),
             start_num.to_string(),
         ]);
-
-        args.append(&mut get_discont_flags(start_num));
-
+        
+        // these args are needed if we start a new stream in the middle of a old one, such as when
+        // seeking. These args will reset the base decode ts to equal the earliest presentation
+        // timestamp.
+        if start_num > 0 {
+            args.append(&mut vec![
+                "-hls_segment_options".into(),
+                "movflags=frag_custom+dash+delay_moov+frag_discont".into(),
+            ])
+        } else {
+            args.append(&mut vec![
+                "-hls_segment_options".into(),
+                "movflags=frag_custom+dash+delay_moov".into(),
+            ])
+        }
+        
         // needed so that in progress segments are named `tmp` and then renamed after the data is
         // on disk.
         // This in theory practically prevents the web server from returning a segment that is

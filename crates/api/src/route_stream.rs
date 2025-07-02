@@ -13,7 +13,7 @@ use tokio_util::io::ReaderStream;
 use types::database_ids::ItemId;
 use utils::server_error::ServerError;
 use video_server::error::StreamingError;
-use video_server::media::MediaState;
+use video_server::stream::StreamConfig;
 use video_server::stream_id::StreamId;
 
 pub struct StreamRoutes {
@@ -40,7 +40,7 @@ async fn create_stream(State(ctx): State<Arc<AppCtx>>, request: axum::http::Requ
     let item = DbItem::from_id(&ctx.database, &item_id, Trash::Both).await?;
     permissions.view_item(&ctx.database, &item).await?.require()?;
     let object = item.file.ok_or(ServerError::msg(StatusCode::METHOD_NOT_ALLOWED, "Not a valid file"))?.object;
-    let state = MediaState::new(ctx.config.backend_config.video_server.clone(), item_id, Object::data_path(&object, &ctx.database)).map_err(|err| <StreamingError as Into<ServerError>>::into(err))?;
+    let state = StreamConfig::new(ctx.config.backend_config.video_server.clone(), item_id, Object::data_path(&object, &ctx.database)).map_err(|err| <StreamingError as Into<ServerError>>::into(err))?;
     let stream_id = ctx.create_stream(state).await.map_err(|err| <StreamingError as Into<ServerError>>::into(err))?;
     Ok(Json(stream_id))
 }

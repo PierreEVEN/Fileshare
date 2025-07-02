@@ -3,36 +3,21 @@ use crate::stream_id::StreamId;
 use crate::tracks::audio_transcode::AudioTranscodeTrack;
 use crate::tracks::{Track, TrackConfig};
 use std::path::PathBuf;
-use std::process::Stdio;
 use std::sync::Arc;
 use std::{fs};
 use std::collections::HashMap;
 use std::os::unix::fs::MetadataExt;
 use std::time::Duration;
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::process::{Child, Command};
 use tokio::sync::RwLock;
 use tokio::time::sleep;
-use tracing::{error, info};
 use types::database_ids::ItemId;
 use utils::config::VideoServerConfig;
 use xmlwriter::XmlWriter;
 use crate::error::{ErrorKind, StreamingError};
+use crate::stream_track_builder::StreamTrackBuilder;
 use crate::tracks::video_transcode::VideoTranscodeTrack;
-use crate::utils::teimstamp_to_xml;
 
-struct StreamingProcess {
-    process: Child,
-    start_num: u32,
-    #[allow(unused)]
-    progress_state: Arc<RwLock<HashMap<String, String>>>,
-    #[allow(unused)]
-    stdout_parse_process: tokio::task::JoinHandle<()>,
-    #[allow(unused)]
-    stderr_parse_process: tokio::task::JoinHandle<()>,
-}
-
-pub struct MediaState {
+pub struct StreamConfig {
     config: VideoServerConfig,
     item_id: ItemId,
     stream_id: StreamId,
@@ -40,7 +25,7 @@ pub struct MediaState {
     input_info: MediaInfo,
 }
 
-impl MediaState {
+impl StreamConfig {
     pub fn new(config: VideoServerConfig, item_id: ItemId, source: PathBuf) -> Result<Self, StreamingError> {
         let source = if source.is_absolute() { source } else { std::path::absolute(source)? };
         let info = MediaInfo::new(&source)?;
@@ -78,35 +63,36 @@ impl MediaState {
     }
 }
 
-pub struct Media {
-    state: Arc<MediaState>,
-    tracks: Vec<(Box<dyn Track>, RwLock<Option<StreamingProcess>>)>,
+static mut STREAM_TRACKS: HashMap<PathBuf, HashMap<u32, StreamTrackBuilder>> = HashMap::default();
+
+pub struct Stream {
+    state: Arc<StreamConfig>,
+    tracks: HashMap<u32, Box<dyn Track>>//Vec<(Box<dyn Track>, RwLock<Option<StreamerProcess>>)>,
 }
+unsafe impl Send for Stream {}
+unsafe impl Sync for Stream {}
 
-unsafe impl Send for Media {}
-unsafe impl Sync for Media {}
-
-impl Media {
-    pub fn new(mut state: MediaState, id: StreamId) -> Result<Self, StreamingError> {
+impl Stream {
+    pub fn new(mut state: StreamConfig, id: StreamId) -> Result<Self, StreamingError> {
         state.stream_id = id;
         let state = Arc::new(state);
 
-        let mut tracks: Vec<(Box<dyn Track>, RwLock<Option<StreamingProcess>>)> = vec![];
-
+        let mut tracks: HashMap<u32, Box<dyn Track>> = HashMap::new();
 
         for track in state.input_info.get_video_tracks() {
-            fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
-            tracks.push((Box::new(VideoTranscodeTrack::new(
-                TrackConfig::new(state.clone(), track, tracks.len() as u32)
-            )), RwLock::new(None)));
+            let track_id = tracks.len() as u32;
+            fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(track_id.to_string()))?;
+            tracks.insert(track_id, Box::new(VideoTranscodeTrack::new(
+                TrackConfig::new(state.clone(), track, track_id as u32)
+            )));
         }
 
-        fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
         for track in state.input_info.get_audio_tracks() {
-            fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
-            tracks.push((Box::new(AudioTranscodeTrack::new(
-                TrackConfig::new(state.clone(), track, tracks.len() as u32)
-            )), RwLock::new(None)));
+            let track_id = tracks.len() as u32;
+            fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(track_id.to_string()))?;
+            tracks.insert(track_id, Box::new(AudioTranscodeTrack::new(
+                TrackConfig::new(state.clone(), track, track_id as u32)
+            )));
         }
 
         Ok(Self {
@@ -116,7 +102,18 @@ impl Media {
     }
 
     pub fn get_dash_manifest(&self, start_num: u32) -> Result<String, StreamingError> {
-        let duration = teimstamp_to_xml(self.state.input_info.get_duration().ok_or(StreamingError::new(ErrorKind::MissingData("Duration")))? as u64);
+        fn timestamp_to_xml(t: u64) -> String {
+            let h = t / 3600;
+            let m = t % 3600 / 60;
+            let s = t % 3600 % 60;
+            let mut tag = "PT".to_string();
+            if h != 0 { tag = format!("{}{}H", tag, h); }
+            if m != 0 { tag = format!("{}{}M", tag, m); }
+            if s != 0 { tag = format!("{}{}S", tag, s); }
+            tag
+        }
+
+        let duration = timestamp_to_xml(self.state.input_info.get_duration().ok_or(StreamingError::new(ErrorKind::MissingData("Duration")))? as u64);
 
         let mut w = XmlWriter::new(Default::default());
         w.write_declaration();
@@ -153,7 +150,7 @@ impl Media {
         let path = self.state.init_seg(start_num, track_id)?;
 
         if !path.exists() {
-            self.reset_from(start_num).await?;
+            self.start_from(start_num).await?;
         }
 
         let mut attempt = 50;
@@ -174,90 +171,26 @@ impl Media {
     }
 
     pub async fn get_chunk(&self, track_id: u32, chunk_id: u32) -> Result<PathBuf, StreamingError> {
-        let mut attempt = 50;
-        let path = self.state.chunk_path_num(chunk_id, track_id)?;
-        loop {
-            if path.exists() && path.metadata()?.size() > 0 {
-                break;
+        unsafe {
+            if let Some(media) = STREAM_TRACKS.get(&self.state.chunk_path_num(chunk_id, track_id)?) {
+                let track = media.get(&track_id).ok_or(StreamingError::new(ErrorKind::NoTrack(track_id)))?;
+                track.get_chunk(&self.state.stream_id, chunk_id).await
+            } else {
+                todo!("Create media")
             }
-            sleep(Duration::from_millis(100)).await;
-            attempt -= 1;
-            if attempt == 0 { break }
         }
-        if !path.exists() {
-            return Err(StreamingError::new(ErrorKind::ChunkNotFound{track: track_id, num: chunk_id}));
-        }
-
-        Ok(path)
     }
 
     pub async fn kill(&self) -> Result<(), StreamingError> {
         for (_, streaming_process) in &self.tracks {
-            let mut processes = streaming_process.write().await;
-            if let Some(process) = processes.as_mut() {
-                process.process.kill().await?;
-                process.stderr_parse_process.abort();
-                process.stdout_parse_process.abort();
-                process.progress_state.write().await.clear();
-            }
-            *processes = None;
+            todo!()
         }
         Ok(())
     }
 
-    pub async fn reset_from(&self, start_num: u32) -> Result<(), StreamingError> {
+    pub async fn start_from(&self, start_num: u32) -> Result<(), StreamingError> {
         for (track, streaming_process) in &self.tracks {
-
-            let content_type = track.content_type();
-            let track_index = track.config().output_track;
-
-            let mut proc = streaming_process.write().await;
-            if let Some(proc) = proc.as_mut() {
-                if proc.start_num == start_num {
-                    continue;
-                } else {
-                    proc.process.kill().await?;
-                }
-            }
-            let mut process = Command::new("ffmpeg")
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .stdin(Stdio::null())
-                .args(track.build_args(start_num)?.as_slice())
-                .spawn()?;
-            let stdout = process.stdout.take().unwrap();
-            let stderr = process.stderr.take().unwrap();
-            let progress_state = Arc::new(RwLock::default());
-
-            let state = track.config().media_state.clone();
-            *proc = Some(StreamingProcess {
-                process,
-                start_num,
-                progress_state: progress_state.clone(),
-                stdout_parse_process: tokio::spawn(async move {
-                    let mut reader = BufReader::new(stdout);
-                    let mut input = String::new();
-                    'main_loop: while reader.read_line(&mut input).await.expect("Failed to read ffmpeg output line") != 0 {
-                        let mut result = progress_state.write().await;
-                        if let Some((key, value)) = input.split_once('=') {
-                            result.insert(key.trim().to_string(), value.trim().to_string());
-                            if key == "progress" && value == "end" {
-                                break 'main_loop;
-                            }
-                        }
-                        input.clear();
-                    }
-                    info!("Finished processing for {track_index}:{content_type:?} track");
-                }),
-                stderr_parse_process: tokio::spawn(async move {
-                    let mut reader = BufReader::new(stderr);
-                    let mut input = String::new();
-                    while reader.read_line(&mut input).await.expect("Failed to read ffmpeg output error line") != 0 {
-                        error!("Stream {}:{} : {}", state.stream_id(), track_index, input.trim());
-                        input.clear();
-                    }
-                }),
-            });
+            todo!()
         }
         Ok(())
     }
