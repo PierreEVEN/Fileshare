@@ -1,11 +1,11 @@
 use crate::media_info::TrackInfo;
-use crate::stream_id::StreamId;
 use crate::video_avc::{get_avc1_tag, level_to_tag};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::io;
-use std::io::Error;
+use std::sync::Arc;
 use xmlwriter::XmlWriter;
+use crate::error::StreamingError;
+use crate::media::MediaState;
 
 pub mod audio_transcode;
 pub mod video_transcode;
@@ -37,19 +37,53 @@ impl Display for ContentType {
     }
 }
 
+pub struct TrackConfig {
+    pub media_state: Arc<MediaState>,
+    pub input_track: u32,
+    pub output_track: u32,
+    pub force_transcoding: bool,
+    pub default: bool,
+    pub args: HashMap<String, String>,
+}
+
+impl TrackConfig {
+    pub fn new(media_state: Arc<MediaState>, input_track: u32, output_track: u32) -> Self {
+        Self {
+            media_state,
+            force_transcoding: false,
+            input_track,
+            output_track,
+            args: Default::default(),
+            default: false,
+        }
+    }
+    pub fn force_transcoding(mut self, force_transcoding: bool) -> Self {
+        self.force_transcoding = force_transcoding;
+        self
+    }
+    pub fn default(mut self, default: bool) -> Self {
+        self.default = default;
+        self
+    }
+    pub fn arg(mut self, key: String, value: String) -> Self {
+        self.args.insert(key, value);
+        self
+    }
+
+    pub fn track_info(&self) -> Result<&TrackInfo, StreamingError> {
+        self.media_state.info().get_track(self.input_track)
+    }
+}
+
 pub trait Track: Send + Sync {
-    fn get_infos(&self) -> Result<&TrackInfo, Error>;
-    fn output_track(&self) -> u32;
-    fn stream_id(&self) -> &StreamId;
-    fn is_default(&self) -> bool;
-    fn args(&self) -> &HashMap<String, String>;
+    fn config(&self) -> &TrackConfig;
     fn build_manifest(
         &self,
         w: &mut XmlWriter,
         start_num: u32,
         media_bitrate: Option<u64>,
-    ) -> Result<(), Error> {
-        let infos = self.get_infos()?;
+    ) -> Result<(), StreamingError> {
+        let infos = self.config().track_info()?;
 
         let bitrate = infos.get_bitrate().or(media_bitrate).unwrap_or(10_000_000);
 
@@ -58,7 +92,7 @@ pub trait Track: Send + Sync {
         w.start_element("AdaptationSet");
         {
             w.write_attribute("contentType", &self.content_type().to_string());
-            w.write_attribute("id", &self.output_track()); // stream index
+            w.write_attribute("id", &self.config().output_track); // stream index
 
             // write representations
             w.start_element("Representation");
@@ -73,17 +107,17 @@ pub trait Track: Send + Sync {
                         24,
                     ));
 
-                w.write_attribute("id", &self.stream_id());
+                w.write_attribute("id", &self.config().media_state.stream_id());
                 w.write_attribute("bandwidth", &bitrate);
                 w.write_attribute("mimeType", self.content_type().mime());
                 w.write_attribute("codecs", &if let ContentType::Audio = self.content_type() { "mp4a.40.2".to_string() } else { video_avc.to_string() });
 
-                for (k, v) in self.args().iter() {
+                for (k, v) in self.config().args.iter() {
                     w.write_attribute(k, v);
                 }
 
                 // mark the default video track
-                if self.is_default() {
+                if self.config().default {
                     w.start_element("Role");
                     {
                         w.write_attribute("schemeIdUri", "urn:mpeg:dash:role:2011");
@@ -99,9 +133,9 @@ pub trait Track: Send + Sync {
                     w.write_attribute("duration", &10);
                     w.write_attribute(
                         "initialization",
-                        &format!("init/{}/{start_num}", self.output_track()),
+                        &format!("init/{}/{start_num}", self.config().output_track),
                     );
-                    w.write_attribute("media", &format!("data/{}/$Number$", self.output_track()));
+                    w.write_attribute("media", &format!("data/{}/$Number$", self.config().output_track));
                     w.write_attribute("startNumber", &start_num);
                 }
                 // close SegmentTemplate and Representation
@@ -113,6 +147,6 @@ pub trait Track: Send + Sync {
         w.end_element();
         Ok(())
     }
-    fn build_args(&self, start_num: u32) -> Result<Vec<String>, io::Error>;
+    fn build_args(&self, start_num: u32) -> Result<Vec<String>, StreamingError>;
     fn content_type(&self) -> ContentType;
 }

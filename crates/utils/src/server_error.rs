@@ -12,6 +12,15 @@ impl ServerError {
     where E: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static {
         Self((code, anyhow::Error::msg(msg)))
     }
+
+
+    pub fn code<E>(code: u16, msg: E) -> Self
+    where E: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static {
+        match StatusCode::from_u16(code) {
+            Ok(code) => {Self((code, anyhow::Error::msg(msg)))}
+            Err(error) => {error.into()}
+        }
+    }
 }
 
 

@@ -1,23 +1,25 @@
 use crate::media_info::MediaInfo;
 use crate::stream_id::StreamId;
 use crate::tracks::audio_transcode::AudioTranscodeTrack;
-use crate::tracks::{Track};
-use std::io::ErrorKind;
+use crate::tracks::{Track, TrackConfig};
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::Arc;
-use std::{fs, io};
+use std::{fs};
 use std::collections::HashMap;
+use std::os::unix::fs::MetadataExt;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child, Command};
 use tokio::sync::RwLock;
 use tokio::time::sleep;
-use tracing::info;
+use tracing::{error, info};
 use types::database_ids::ItemId;
 use utils::config::VideoServerConfig;
 use xmlwriter::XmlWriter;
+use crate::error::{ErrorKind, StreamingError};
 use crate::tracks::video_transcode::VideoTranscodeTrack;
+use crate::utils::teimstamp_to_xml;
 
 struct StreamingProcess {
     process: Child,
@@ -26,6 +28,8 @@ struct StreamingProcess {
     progress_state: Arc<RwLock<HashMap<String, String>>>,
     #[allow(unused)]
     stdout_parse_process: tokio::task::JoinHandle<()>,
+    #[allow(unused)]
+    stderr_parse_process: tokio::task::JoinHandle<()>,
 }
 
 pub struct MediaState {
@@ -33,11 +37,11 @@ pub struct MediaState {
     item_id: ItemId,
     stream_id: StreamId,
     source: PathBuf,
-    info: MediaInfo,
+    input_info: MediaInfo,
 }
 
 impl MediaState {
-    pub fn new(config: VideoServerConfig, item_id: ItemId, source: PathBuf) -> Result<Self, io::Error> {
+    pub fn new(config: VideoServerConfig, item_id: ItemId, source: PathBuf) -> Result<Self, StreamingError> {
         let source = if source.is_absolute() { source } else { std::path::absolute(source)? };
         let info = MediaInfo::new(&source)?;
         Ok(Self {
@@ -45,7 +49,7 @@ impl MediaState {
             item_id,
             stream_id: Default::default(),
             source,
-            info,
+            input_info: info,
         })
     }
 
@@ -53,22 +57,22 @@ impl MediaState {
     pub fn stream_id(&self) -> &StreamId { &self.stream_id }
     pub fn config(&self) -> &VideoServerConfig { &self.config }
     pub fn source(&self) -> &PathBuf { &self.source }
-    pub fn info(&self) -> &MediaInfo { &self.info }
+    pub fn info(&self) -> &MediaInfo { &self.input_info }
 
-    pub fn chunk_path_num(&self, chunk_num: u32, track_id: u32) -> Result<PathBuf, io::Error> {
+    pub fn chunk_path_num(&self, chunk_num: u32, track_id: u32) -> Result<PathBuf, StreamingError> {
         let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join(format!("{chunk_num}.m4s"));
         Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
     }
-    pub fn chunk_path(&self, track_id: u32) -> Result<PathBuf, io::Error> {
+    pub fn chunk_path(&self, track_id: u32) -> Result<PathBuf, StreamingError> {
         let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join("%d.m4s".to_string());
         Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
     }
 
-    pub fn init_seg(&self, start_num: u32, track_id: u32) -> Result<PathBuf, io::Error> {
+    pub fn init_seg(&self, start_num: u32, track_id: u32) -> Result<PathBuf, StreamingError> {
         let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join(format!("{}_init.mp4", &start_num));
         Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
     }
-    pub fn playlist_path(&self, track_id: u32) -> Result<PathBuf, io::Error> {
+    pub fn playlist_path(&self, track_id: u32) -> Result<PathBuf, StreamingError> {
         let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join("playlist.m3u8");
         Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
     }
@@ -82,39 +86,30 @@ pub struct Media {
 unsafe impl Send for Media {}
 unsafe impl Sync for Media {}
 
-pub fn ts_to_xml(t: u64) -> String {
-    let h = t / 3600;
-    let m = t % 3600 / 60;
-    let s = t % 3600 % 60;
-    let mut tag = "PT".to_string();
-    if h != 0 { tag = format!("{}{}H", tag, h); }
-    if m != 0 { tag = format!("{}{}M", tag, m); }
-    if s != 0 { tag = format!("{}{}S", tag, s); }
-    tag
-}
-
 impl Media {
-    pub fn new(mut state: MediaState, id: StreamId) -> Result<Self, io::Error> {
+    pub fn new(mut state: MediaState, id: StreamId) -> Result<Self, StreamingError> {
         state.stream_id = id;
         let state = Arc::new(state);
 
         let mut tracks: Vec<(Box<dyn Track>, RwLock<Option<StreamingProcess>>)> = vec![];
 
-        fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
-        tracks.push((Box::new(VideoTranscodeTrack::new(
-            state.clone(),
-            state.info.get_video_streams()[0],
-            tracks.len() as u32,
-            true,
-        )), RwLock::new(None)));
+
+        for track in state.input_info.get_video_tracks() {
+            fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
+            tracks.push((Box::new(VideoTranscodeTrack::new(
+                TrackConfig::new(state.clone(), track, tracks.len() as u32)
+                    .default(true)
+            )), RwLock::new(None)));
+        }
 
         fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
-        tracks.push((Box::new(AudioTranscodeTrack::new(
-            state.clone(),
-            state.info.get_audio_stream()[0],
-            tracks.len() as u32,
-            true,
-        )), RwLock::new(None)));
+        for track in state.input_info.get_audio_tracks() {
+            fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
+            tracks.push((Box::new(AudioTranscodeTrack::new(
+                TrackConfig::new(state.clone(), track, tracks.len() as u32)
+                    .default(true)
+            )), RwLock::new(None)));
+        }
 
         Ok(Self {
             state,
@@ -122,8 +117,8 @@ impl Media {
         })
     }
 
-    pub fn get_dash_manifest(&self, start_num: u32) -> Result<String, io::Error> {
-        let duration = ts_to_xml(self.state.info.get_duration().ok_or(io::Error::new(ErrorKind::InvalidData, "Missing duration"))? as u64);
+    pub fn get_dash_manifest(&self, start_num: u32) -> Result<String, StreamingError> {
+        let duration = teimstamp_to_xml(self.state.input_info.get_duration().ok_or(StreamingError::new(ErrorKind::MissingData("Duration")))? as u64);
 
         let mut w = XmlWriter::new(Default::default());
         w.write_declaration();
@@ -145,13 +140,13 @@ impl Media {
         w.end_element();
 
         for (track, _) in &self.tracks {
-            track.build_manifest(&mut w, start_num, self.state.info.get_bitrate())?;
+            track.build_manifest(&mut w, start_num, self.state.input_info.get_bitrate())?;
         }
 
         Ok(w.end_document())
     }
 
-    pub async fn get_init_chunk(&self, track_id: u32, start_num: u32) -> Result<PathBuf, io::Error> {
+    pub async fn get_init_chunk(&self, track_id: u32, start_num: u32) -> Result<PathBuf, StreamingError> {
         let path = self.state.init_seg(start_num, track_id)?;
 
         if !path.exists() {
@@ -160,8 +155,8 @@ impl Media {
 
         let mut attempt = 50;
         loop {
-            if path.exists() {
-                return Ok(path);
+            if path.exists() && path.metadata()?.size() > 0 {
+                break;
             }
             sleep(Duration::from_millis(100)).await;
             attempt -= 1;
@@ -169,71 +164,75 @@ impl Media {
         }
 
         if !path.exists() {
-            return Err(io::Error::new(ErrorKind::NotFound, format!("Failed to generate init chunk at {}", path.display())));
+            return Err(StreamingError::new(ErrorKind::InitNotFound{track: track_id, num: start_num}));
         }
 
         Ok(path)
     }
 
-    pub async fn get_chunk(&self, track_id: u32, chunk_id: u32) -> Result<PathBuf, io::Error> {
+    pub async fn get_chunk(&self, track_id: u32, chunk_id: u32) -> Result<PathBuf, StreamingError> {
         let mut attempt = 50;
         let path = self.state.chunk_path_num(chunk_id, track_id)?;
         loop {
-            if path.exists() {
-                return Ok(path);
+            if path.exists() && path.metadata()?.size() > 0 {
+                break;
             }
             sleep(Duration::from_millis(100)).await;
             attempt -= 1;
             if attempt == 0 { break }
         }
-
         if !path.exists() {
-            return Err(io::Error::new(ErrorKind::NotFound, format!("Failed to generate chunk at {}", path.display())));
+            return Err(StreamingError::new(ErrorKind::ChunkNotFound{track: track_id, num: chunk_id}));
         }
 
         Ok(path)
     }
 
-    pub async fn kill(&self) -> Result<(), io::Error> {
+    pub async fn kill(&self) -> Result<(), StreamingError> {
         for (_, streaming_process) in &self.tracks {
             let mut processes = streaming_process.write().await;
             if let Some(process) = processes.as_mut() {
-                process.process.kill().await?
+                process.process.kill().await?;
+                process.stderr_parse_process.abort();
+                process.stdout_parse_process.abort();
+                process.progress_state.write().await.clear();
             }
             *processes = None;
         }
         Ok(())
     }
 
-    pub async fn reset_from(&self, start_num: u32) -> Result<(), io::Error> {
+    pub async fn reset_from(&self, start_num: u32) -> Result<(), StreamingError> {
         for (track, streaming_process) in &self.tracks {
 
             let content_type = track.content_type();
-            let track_index = track.get_infos()?.index;
+            let track_index = track.config().output_track;
 
             let mut proc = streaming_process.write().await;
             if let Some(proc) = proc.as_mut() {
                 if proc.start_num == start_num {
-                    proc.process.wait().await?;
-                    return Ok(());
+                    continue;
                 } else {
                     proc.process.kill().await?;
                 }
             }
             let mut process = Command::new("ffmpeg")
                 .stdout(Stdio::piped())
-                .stderr(Stdio::inherit())
+                .stderr(Stdio::piped())
                 .stdin(Stdio::null())
                 .args(track.build_args(start_num)?.as_slice())
                 .spawn()?;
-            let stderr = process.stdout.take().unwrap();
+            let stdout = process.stdout.take().unwrap();
+            let stderr = process.stderr.take().unwrap();
             let progress_state = Arc::new(RwLock::default());
+
+            let state = track.config().media_state.clone();
             *proc = Some(StreamingProcess {
                 process,
                 start_num,
                 progress_state: progress_state.clone(),
                 stdout_parse_process: tokio::spawn(async move {
-                    let mut reader = BufReader::new(stderr);
+                    let mut reader = BufReader::new(stdout);
                     let mut input = String::new();
                     'main_loop: while reader.read_line(&mut input).await.expect("Failed to read ffmpeg output line") != 0 {
                         let mut result = progress_state.write().await;
@@ -246,6 +245,14 @@ impl Media {
                         input.clear();
                     }
                     info!("Finished processing for {track_index}:{content_type:?} track");
+                }),
+                stderr_parse_process: tokio::spawn(async move {
+                    let mut reader = BufReader::new(stderr);
+                    let mut input = String::new();
+                    while reader.read_line(&mut input).await.expect("Failed to read ffmpeg output error line") != 0 {
+                        error!("Stream {}:{} : {}", state.stream_id(), track_index, input.trim());
+                        input.clear();
+                    }
                 }),
             });
         }

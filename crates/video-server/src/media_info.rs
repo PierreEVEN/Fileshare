@@ -1,9 +1,8 @@
-use std::io;
-use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use crate::error::{ErrorKind, StreamingError};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MediaInfo {
@@ -20,7 +19,7 @@ impl MediaInfo {
         Some(self.format.duration.parse::<f64>().ok()? as i32)
     }
     
-    pub fn get_video_streams(&self) -> Vec<u32> {
+    pub fn get_video_tracks(&self) -> Vec<u32> {
         let mut streams = vec![];
         for (index, track) in self.streams.iter().enumerate() {
             if track.codec_type == "video" {
@@ -30,11 +29,11 @@ impl MediaInfo {
         streams
     }
 
-    pub fn get_track(&self, index: u32) -> Result<&TrackInfo, io::Error> {
-        self.streams.get(index as usize).ok_or(io::Error::new(ErrorKind::NotFound, "Track not found"))
+    pub fn get_track(&self, index: u32) -> Result<&TrackInfo, StreamingError> {
+        self.streams.get(index as usize).ok_or(StreamingError::new(ErrorKind::NoTrack(index)))
     }
 
-    pub fn get_audio_stream(&self) -> Vec<u32> {
+    pub fn get_audio_tracks(&self) -> Vec<u32> {
         let mut streams = vec![];
         for (index, track) in self.streams.iter().enumerate() {
             if track.codec_type == "audio" {
@@ -92,14 +91,14 @@ impl TrackInfo {
         self.tags.as_ref()?.bps_eng.as_ref()?.parse::<u64>().ok()
     }
 
-    pub fn get_framerate(&self) -> Result<f32, io::Error> {
+    pub fn get_framerate(&self) -> Result<f32, StreamingError> {
         match &self.r_frame_rate {
-            None => {Err(io::Error::new(ErrorKind::InvalidData, "Cannot parse framerate"))}
+            None => {Err(StreamingError::new(ErrorKind::MissingData("r_frame_rate")))}
             Some(frame_rate) => {
                 let mut split = frame_rate.split("/");
-                let mut value = f32::from_str(split.next().ok_or(io::Error::new(ErrorKind::InvalidData, "Cannot parse framerate"))?).or(Err(io::Error::new(ErrorKind::InvalidData, "Cannot parse framerate")))?;
+                let mut value = f32::from_str(split.next().ok_or(StreamingError::new(ErrorKind::MissingData("framerate numerator")))?).or(Err(StreamingError::new(ErrorKind::ParseError("framerate numerator".into()))))?;
                 if let Some(div) = split.next() {
-                    value /= f32::from_str(div).or(Err(io::Error::new(ErrorKind::InvalidData, "Cannot parse framerate divisor")))?;
+                    value /= f32::from_str(div).or(Err(StreamingError::new(ErrorKind::ParseError("framerate denominator".into()))))?;
                 }
                 Ok(value)
             }
@@ -144,9 +143,9 @@ pub struct MediaFormat {
 
 impl MediaInfo {
     #[allow(unused)]
-    pub fn new(source: &PathBuf) -> Result<Self, io::Error> {
+    pub fn new(source: &PathBuf) -> Result<Self, StreamingError> {
         if !source.exists() {
-            return Err(io::Error::new(ErrorKind::NotFound,"Input media file does not exists"))
+            return Err(StreamingError::new(ErrorKind::Io(std::io::Error::new(std::io::ErrorKind::NotFound,"Input media file does not exists"))));
         }
         let probe = Command::new("ffprobe")
             .arg(source)

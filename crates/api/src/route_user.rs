@@ -33,7 +33,7 @@ impl UserRoutes {
             .route("/search", post(search).with_state(ctx.clone()))
             .route("/tokens", get(auth_tokens).with_state(ctx.clone()))
             .route("/update", post(update).with_state(ctx.clone()))
-            .route("/repositories/:user_id", get(repositories).with_state(ctx.clone()))
+            .route("/repositories/{user_id}", get(repositories).with_state(ctx.clone()))
             .route("/create", post(create_user).with_state(ctx.clone()))
             .route("/forgot-password-create", post(forgot_password_create).with_state(ctx.clone()))
             .route("/forgot-password-check", post(forgot_password_check).with_state(ctx.clone()))

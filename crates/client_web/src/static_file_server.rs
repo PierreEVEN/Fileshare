@@ -25,7 +25,7 @@ impl StaticFileServer {
         };
 
         Router::new()
-            .route("/*file_path", get(Self::serve_file).with_state(config.clone()))
+            .route("/{*file_path}", get(Self::serve_file).with_state(config.clone()))
     }
 
     pub async fn serve_file_from_path(file_path: PathBuf) -> Result<impl IntoResponse, ServerError> {

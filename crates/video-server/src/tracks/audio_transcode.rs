@@ -1,76 +1,37 @@
-use crate::media::MediaState;
-use crate::media_info::TrackInfo;
-use crate::stream_id::StreamId;
-use crate::tracks::{ContentType, Track};
-use std::collections::HashMap;
-use std::io::Error;
-use std::sync::Arc;
+use crate::tracks::{ContentType, Track, TrackConfig};
 use tracing::info;
+use crate::error::StreamingError;
 
 pub struct AudioTranscodeTrack {
-    state: Arc<MediaState>,
-    input_track: u32,
-    output_track: u32,
-    is_default: bool,
-    args: HashMap<String, String>,
+    config: TrackConfig,
 }
 
 impl AudioTranscodeTrack {
-    pub fn new(
-        state: Arc<MediaState>,
-        input_track: u32,
-        output_track: u32,
-        is_default: bool,
-    ) -> Self {
+    pub fn new(config: TrackConfig) -> Self {
         info!(
             "stream @{} Add track {:?}:{}->{}",
-            state.stream_id(),
-            ContentType::Audio,
-            input_track,
-            output_track
+            config.media_state.stream_id(),
+            ContentType::Video,
+            config.input_track,
+            config.output_track
         );
         Self {
-            state,
-            input_track,
-            output_track,
-            is_default,
-            args: Default::default(),
+            config,
         }
-    }
-
-    pub fn arg(mut self, key: &str, value: &str) -> Self {
-        self.args.insert(key.into(), value.into());
-        self
     }
 }
 
 impl Track for AudioTranscodeTrack {
-    fn get_infos(&self) -> Result<&TrackInfo, Error> {
-        self.state.info().get_track(self.input_track)
+    fn config(&self) -> &TrackConfig {
+        &self.config
     }
 
-    fn output_track(&self) -> u32 {
-        self.output_track
-    }
-
-    fn stream_id(&self) -> &StreamId {
-        self.state.stream_id()
-    }
-
-    fn is_default(&self) -> bool {
-        self.is_default
-    }
-
-    fn args(&self) -> &HashMap<String, String> {
-        &self.args
-    }
-
-    fn build_args(&self, start_num: u32) -> Result<Vec<String>, Error> {
+    fn build_args(&self, start_num: u32) -> Result<Vec<String>, StreamingError> {
         let target_gop = 5;
         let bitrate: Option<i32> = None;
 
-        let init_seg = self.state.init_seg(start_num, self.output_track)?;
-        let segment_name = self.state.chunk_path(self.output_track)?;
+        let init_seg = self.config().media_state.init_seg(start_num, self.config().output_track)?;
+        let segment_name = self.config().media_state.chunk_path(self.config().output_track)?;
 
         // NOTE: might need flags -fflages +genpts if seeking breaks.
         let mut args = vec![
@@ -78,30 +39,31 @@ impl Track for AudioTranscodeTrack {
             "-ss".into(),
             (start_num * target_gop).to_string(),
             "-i".into(),
-            self.state.source().to_str().unwrap().into(),
+            self.config().media_state.source().to_str().unwrap().into(),
             "-copyts".into(),
             "-map".into(),
-            format!("0:{}", self.input_track),
+            format!("0:{}", self.config().input_track),
             "-loglevel".into(),
             "24".into(),
         ];
 
         // Copy existing stream if it is html5-compatible
-        let should_transcode = if let Some(codec) = &self.get_infos()?.codec_name {
+        let should_transcode = if let Some(codec) = &self.config().track_info()?.codec_name {
             match codec.as_str() {
                 "aac" | "libmp3lame" | "mp3" | "opus" | "libopus" | "vorbis" | "libvorbis" => false,
                 &_ => true,
             }
         } else {
             true
-        } || self.get_infos()?.channels.unwrap_or(2) > 2;
+        } || self.config().track_info()?.channels.unwrap_or(2) > 2
+            || self.config.force_transcoding;
 
         if should_transcode {
-            info!("Stream {}:{} is using full audio transcoding", self.state.stream_id(), self.output_track);
+            info!("Stream {}:{} is using full audio transcoding", self.config().media_state.stream_id(), self.config().output_track);
             let ab = bitrate.unwrap_or(120_000).to_string();
-            args.append(&mut vec!["-c:0".into(), "aac".into(), "ab".into(), ab]);
+            args.append(&mut vec!["-c:0".into(), "aac".into(), "-ab".into(), ab]);
 
-            if self.get_infos()?.channels.unwrap_or(2) > 2 {
+            if self.config().track_info()?.channels.unwrap_or(2) > 2 {
                 args.append(&mut vec![
                     "-af".into(),
                     "pan=stereo|FL=0.5*FC+0.707*FL+0.707*BL+0.5*LFE|FR=0.5*FC+0.707*FR+0.707*BR+0.5*LFE".into(),
@@ -177,7 +139,7 @@ impl Track for AudioTranscodeTrack {
             segment_name.display().to_string(),
         ]);
 
-        args.push(self.state.playlist_path(self.output_track)?.display().to_string());
+        args.push(self.config().media_state.playlist_path(self.config().output_track)?.display().to_string());
 
         Ok(args)
     }

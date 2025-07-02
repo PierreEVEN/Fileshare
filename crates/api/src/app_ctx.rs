@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tracing::info;
 use types::database_ids::DatabaseId;
 use utils::config::Config;
-use utils::server_error::ServerError;
+use video_server::error::StreamingError;
 use video_server::media::{Media, MediaState};
 use video_server::stream_id::StreamId;
 
@@ -39,7 +39,7 @@ impl AppCtx {
 
         let mut id;
         loop {
-            id = random::<usize>().to_string();
+            id = random::<u64>().to_string();
             if !uploads.contains_key(&id) {
                 break;
             }
@@ -72,7 +72,7 @@ impl AppCtx {
         Ok(upload.get_state())
     }
 
-    pub async fn create_stream(&self, state: MediaState) -> Result<StreamId, ServerError> {
+    pub async fn create_stream(&self, state: MediaState) -> Result<StreamId, StreamingError> {
         let mut streams = self.streams.write().await;
         let id: StreamId = loop {
             let id = StreamId::from(random::<DatabaseId>().abs());
@@ -90,7 +90,7 @@ impl AppCtx {
         self.streams.write().await.get(id).cloned()
     }
 
-    pub async fn kill_stream(&self, id: &StreamId) -> Result<(), Error> {
+    pub async fn kill_stream(&self, id: &StreamId) -> Result<(), StreamingError> {
         if let Some(stream) = self.streams.write().await.remove(id) {
             stream.kill().await?;
         }
