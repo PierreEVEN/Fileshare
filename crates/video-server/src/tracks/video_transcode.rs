@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use crate::tracks::{ContentType, Track, TrackConfig};
 use tracing::info;
 use crate::error::StreamingError;
+use crate::tracks::track_preset::TrackPreset;
 
 pub struct VideoTranscodeTrack {
     config: TrackConfig,
@@ -27,7 +28,7 @@ impl Track for VideoTranscodeTrack {
         &self.config
     }
 
-    fn build_args(&self, start_num: u32) -> Result<Vec<String>, StreamingError> {
+    fn build_args(&self, start_num: u32, preset: TrackPreset) -> Result<Vec<String>, StreamingError> {
         let target_gop = 5;
         let height: Option<i32> = None;
         let width: Option<i32> = None;

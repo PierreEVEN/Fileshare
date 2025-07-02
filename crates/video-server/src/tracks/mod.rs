@@ -5,12 +5,14 @@ use xmlwriter::XmlWriter;
 use crate::error::StreamingError;
 use crate::stream::StreamConfig;
 use crate::tracks::content_type::ContentType;
+use crate::tracks::track_preset::TrackPreset;
 use crate::tracks::utils::video_avc::{get_avc1_tag, level_to_tag};
 
 pub mod audio_transcode;
 pub mod video_transcode;
 mod utils;
 pub mod content_type;
+pub mod track_preset;
 
 pub struct TrackConfig {
     pub media_state: Arc<StreamConfig>,
@@ -57,6 +59,7 @@ pub trait Track: Send + Sync {
         w: &mut XmlWriter,
         start_num: u32,
         media_bitrate: Option<u64>,
+        preset: TrackPreset
     ) -> Result<(), StreamingError> {
         let infos = self.config().track_info()?;
 
@@ -121,6 +124,6 @@ pub trait Track: Send + Sync {
         w.end_element();
         Ok(())
     }
-    fn build_args(&self, start_num: u32) -> Result<Vec<String>, StreamingError>;
+    fn build_args(&self, start_num: u32, preset: TrackPreset) -> Result<Vec<String>, StreamingError>;
     fn content_type(&self) -> ContentType;
 }

@@ -12,3 +12,4 @@ tracing = "0.1.40"
 
 utils = { path = "../utils" }
 types = { path = "../types" }
+lazy_static = "1.5.0"

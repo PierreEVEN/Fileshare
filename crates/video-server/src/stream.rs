@@ -8,6 +8,7 @@ use std::{fs};
 use std::collections::HashMap;
 use std::os::unix::fs::MetadataExt;
 use std::time::Duration;
+use lazy_static::lazy_static;
 use tokio::sync::RwLock;
 use tokio::time::sleep;
 use types::database_ids::ItemId;
@@ -15,6 +16,7 @@ use utils::config::VideoServerConfig;
 use xmlwriter::XmlWriter;
 use crate::error::{ErrorKind, StreamingError};
 use crate::stream_track_builder::StreamTrackBuilder;
+use crate::tracks::track_preset::TrackPreset;
 use crate::tracks::video_transcode::VideoTranscodeTrack;
 
 pub struct StreamConfig {
@@ -63,7 +65,11 @@ impl StreamConfig {
     }
 }
 
-static mut STREAM_TRACKS: HashMap<PathBuf, HashMap<u32, StreamTrackBuilder>> = HashMap::default();
+
+lazy_static! {
+    static ref STREAM_TRACKS: RwLock<HashMap<PathBuf, HashMap<u32, StreamTrackBuilder>>> = RwLock::default();
+}
+
 
 pub struct Stream {
     state: Arc<StreamConfig>,
@@ -79,19 +85,23 @@ impl Stream {
 
         let mut tracks: HashMap<u32, Box<dyn Track>> = HashMap::new();
 
+
         for track in state.input_info.get_video_tracks() {
-            let track_id = tracks.len() as u32;
-            fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(track_id.to_string()))?;
-            tracks.insert(track_id, Box::new(VideoTranscodeTrack::new(
-                TrackConfig::new(state.clone(), track, track_id as u32)
-            )));
+
+            for preset in TrackPreset::create_presets(state.input_info.get_track(track)?)? {
+                let track_id = tracks.len() as u32;
+                fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(track_id.to_string()))?;
+                tracks.insert(track_id, Box::new(VideoTranscodeTrack::new(
+                    TrackConfig::new(state.clone(), track, track_id)
+                )));
+            }
         }
 
         for track in state.input_info.get_audio_tracks() {
             let track_id = tracks.len() as u32;
             fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(track_id.to_string()))?;
             tracks.insert(track_id, Box::new(AudioTranscodeTrack::new(
-                TrackConfig::new(state.clone(), track, track_id as u32)
+                TrackConfig::new(state.clone(), track, track_id)
             )));
         }
 
