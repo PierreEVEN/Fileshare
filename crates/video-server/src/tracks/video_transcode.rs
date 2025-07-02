@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use crate::tracks::{ContentType, Track, TrackConfig};
 use tracing::info;
 use crate::error::StreamingError;
@@ -49,7 +50,12 @@ impl Track for VideoTranscodeTrack {
         let width: Option<i32> = None;
         let bitrate: Option<i32> = None;
 
-        let init_seg = self.config().media_state.init_seg(start_num, self.config().output_track)?;
+        let init_seg = if cfg!(target_os = "windows") {
+            self.config().media_state.init_seg(start_num, self.config().output_track)?
+        } else {
+            PathBuf::from(self.config().media_state.init_seg(start_num, self.config().output_track)?.file_name().unwrap())
+        };
+
         let segment_name = self.config().media_state.chunk_path(self.config().output_track)?;
         let outdir = self.config().media_state.playlist_path(self.config().output_track)?;
 
@@ -133,7 +139,7 @@ impl Track for VideoTranscodeTrack {
         // discontinuity issues that browsers seem to not ignore like mpv.
         args.append(&mut vec![
             "-hls_fmp4_init_filename".into(),
-            init_seg.file_name().unwrap().display().to_string(),
+            init_seg.display().to_string(),
         ]);
         args.append(&mut vec!["-hls_time".into(), target_gop.to_string()]);
         args.append(&mut vec![

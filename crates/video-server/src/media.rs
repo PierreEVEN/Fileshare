@@ -98,7 +98,6 @@ impl Media {
             fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
             tracks.push((Box::new(VideoTranscodeTrack::new(
                 TrackConfig::new(state.clone(), track, tracks.len() as u32)
-                    .default(true)
             )), RwLock::new(None)));
         }
 
@@ -107,7 +106,6 @@ impl Media {
             fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(tracks.len().to_string()))?;
             tracks.push((Box::new(AudioTranscodeTrack::new(
                 TrackConfig::new(state.clone(), track, tracks.len() as u32)
-                    .default(true)
             )), RwLock::new(None)));
         }
 
@@ -133,15 +131,20 @@ impl Media {
         w.write_attribute("minBufferTime", "PT20S");
         w.write_attribute("maxSegmentDuration", "PT20S");
 
-        w.start_element("Period");
-        w.write_attribute("duration", &duration);
         w.start_element("BaseURL");
-        w.write_text(format!("/api/stream/{}/", self.state.stream_id).as_str());
+        {
+            w.write_text(format!("/api/stream/{}/", self.state.stream_id).as_str());
+        }
         w.end_element();
 
-        for (track, _) in &self.tracks {
-            track.build_manifest(&mut w, start_num, self.state.input_info.get_bitrate())?;
+        w.start_element("Period");
+        {
+            w.write_attribute("duration", &duration);
+            for (track, _) in &self.tracks {
+                track.build_manifest(&mut w, start_num, self.state.input_info.get_bitrate())?;
+            }
         }
+        w.end_element();
 
         Ok(w.end_document())
     }

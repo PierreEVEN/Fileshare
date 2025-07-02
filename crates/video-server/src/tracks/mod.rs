@@ -94,6 +94,21 @@ pub trait Track: Send + Sync {
             w.write_attribute("contentType", &self.content_type().to_string());
             w.write_attribute("id", &self.config().output_track); // stream index
 
+            // write segment template
+            w.start_element("SegmentTemplate");
+            {
+                w.write_attribute("timescale", &1);
+                w.write_attribute("duration", &5);
+                w.write_attribute(
+                    "initialization",
+                    &format!("/api/stream/{}/init/{}/{start_num}", self.config().media_state.stream_id(), self.config().output_track),
+                );
+                w.write_attribute("media", &format!("/api/stream/{}/data/{}/$Number$", self.config().media_state.stream_id(), self.config().output_track));
+                w.write_attribute("startNumber", &start_num);
+            }
+            // close SegmentTemplate and Representation
+            w.end_element();
+
             // write representations
             w.start_element("Representation");
             {
@@ -108,10 +123,9 @@ pub trait Track: Send + Sync {
                     ));
 
                 w.write_attribute("id", &self.config().media_state.stream_id());
+                w.write_attribute("codecs", &if let ContentType::Audio = self.content_type() { "mp4a.40.2".to_string() } else { video_avc.to_string() });
                 w.write_attribute("bandwidth", &bitrate);
                 w.write_attribute("mimeType", self.content_type().mime());
-                w.write_attribute("codecs", &if let ContentType::Audio = self.content_type() { "mp4a.40.2".to_string() } else { video_avc.to_string() });
-
                 for (k, v) in self.config().args.iter() {
                     w.write_attribute(k, v);
                 }
@@ -125,21 +139,6 @@ pub trait Track: Send + Sync {
                     }
                     w.end_element();
                 }
-
-                // write segment template
-                w.start_element("SegmentTemplate");
-                {
-                    w.write_attribute("timescale", &1);
-                    w.write_attribute("duration", &10);
-                    w.write_attribute(
-                        "initialization",
-                        &format!("init/{}/{start_num}", self.config().output_track),
-                    );
-                    w.write_attribute("media", &format!("data/{}/$Number$", self.config().output_track));
-                    w.write_attribute("startNumber", &start_num);
-                }
-                // close SegmentTemplate and Representation
-                w.end_element();
             }
             w.end_element();
         }
