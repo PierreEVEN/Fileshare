@@ -159,9 +159,6 @@ impl Track for VideoTranscodeTrack {
             segment_name.display().to_string(),
         ]);
         args.append(&mut vec![outdir.display().to_string()]);
-
-        //println!("{:?}", args.join(" "));
-
         Ok(args)
     }
 
