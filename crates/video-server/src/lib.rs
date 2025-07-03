@@ -34,12 +34,14 @@ impl ServerContext {
 
     pub async fn create_stream(&self, state: StreamState) -> Result<StreamId, StreamingError> {
         let mut streams = self.streams.write().await;
+        // Generate a new stream id
         let id: StreamId = loop {
             let id = StreamId::from(random::<DatabaseId>().abs());
             if !(*streams).contains_key(&id) {
                 break id;
             }
         };
+        // Instantiate new stream
         info!("Create stream @{} for item #{}", id, state.item_id());
         streams.insert(id, Arc::new(Stream::new(state, id, self.builders.clone())?));
         Ok(id)

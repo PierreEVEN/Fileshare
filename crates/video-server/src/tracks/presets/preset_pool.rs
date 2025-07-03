@@ -9,15 +9,14 @@ use crate::tracks::presets::preset_ref::PresetRef;
 #[derive(Clone)]
 pub struct PresetPool {
     pool: Arc<RwLock<HashMap<PresetRef, Arc<PresetBuilder>>>>,
-    // Global configuration
-    global_config: VideoServerConfig,
+    global_config: Arc<VideoServerConfig>,
 }
 
 impl PresetPool {
     pub fn new(global_config: VideoServerConfig) -> Self {
         Self {
             pool: Arc::new(Default::default()),
-            global_config,
+            global_config: Arc::new(global_config),
         }
     }
 
@@ -37,6 +36,6 @@ impl PresetPool {
     }
 
     pub fn global_config(&self) -> &VideoServerConfig {
-        &self.global_config
+        &self.global_config.as_ref()
     }
 }

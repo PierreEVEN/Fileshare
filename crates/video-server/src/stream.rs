@@ -1,15 +1,13 @@
 use crate::error::{ErrorKind, StreamingError};
 use crate::media_info::MediaInfo;
 use crate::stream_id::StreamId;
-use crate::tracks::audio_transcode::AudioTranscodeTrack;
-use crate::tracks::video_transcode::VideoTranscodeTrack;
-use crate::tracks::{Track, TrackState};
 use crate::{PresetPool};
 use std::path::PathBuf;
 use std::sync::Arc;
 use types::database_ids::ItemId;
 use xmlwriter::XmlWriter;
 use crate::tracks::presets::preset_ref::PresetRef;
+use crate::tracks::track::Track;
 
 // Stream shared data
 pub struct StreamState {
@@ -23,8 +21,8 @@ pub struct StreamState {
 
 pub struct Stream {
     stream_state: Arc<StreamState>,
-    tracks: Vec<Box<dyn Track>>,
-    presets: PresetPool
+    tracks: Vec<Box<Track>>,
+    preset_pool: PresetPool,
 }
 
 impl StreamState {
@@ -39,34 +37,30 @@ impl StreamState {
     pub fn item_id(&self) -> &ItemId { &self.item_id }
     pub fn stream_id(&self) -> &StreamId { &self.stream_id }
     pub fn source(&self) -> &PathBuf { &self.source }
-    pub fn info(&self) -> &MediaInfo { &self.media_info }
+    pub fn media_info(&self) -> &MediaInfo { &self.media_info }
 }
 
 impl Stream {
-    pub fn new(mut state: StreamState, id: StreamId, presets: PresetPool) -> Result<Self, StreamingError> {
+    pub fn new(mut state: StreamState, id: StreamId, preset_pool: PresetPool) -> Result<Self, StreamingError> {
         state.stream_id = id;
-        let state = Arc::new(state);
+        let stream_state = Arc::new(state);
 
-        let mut tracks: Vec<Box<dyn Track>> = vec![];
+        let mut tracks: Vec<Box<Track>> = vec![];
 
-        for input_track in state.media_info.get_video_tracks() {
+        for input_track in stream_state.media_info.get_video_tracks() {
             let output_track = tracks.len() as u32;
-            tracks.push(Box::new(VideoTranscodeTrack::new(
-                TrackState::new(state.clone(), input_track, output_track)
-            )));
+            tracks.push(Box::new(Track::new(stream_state.clone(), input_track, output_track)));
         }
 
-        for input_track in state.media_info.get_audio_tracks() {
+        for input_track in stream_state.media_info.get_audio_tracks() {
             let output_track = tracks.len() as u32;
-            tracks.push(Box::new(AudioTranscodeTrack::new(
-                TrackState::new(state.clone(), input_track, output_track)
-            )));
+            tracks.push(Box::new(Track::new(stream_state.clone(), input_track, output_track)));
         }
 
         Ok(Self {
-            stream_state: state,
+            stream_state,
             tracks,
-            presets,
+            preset_pool,
         })
     }
 
@@ -107,9 +101,7 @@ impl Stream {
         {
             w.write_attribute("duration", &duration);
             for track in &self.tracks {
-                for preset in track.get_presets() {
-                    track.build_manifest(&mut w, start_num, self.stream_state.media_info.get_bitrate(), preset)?;
-                }
+                track.compile_manifest(&mut w, start_num)?;
             }
         }
         w.end_element();
@@ -119,13 +111,13 @@ impl Stream {
 
     pub async fn get_init_chunk(&self, track_index: u32, configuration: String, start_num: u32) -> Result<PathBuf, StreamingError> {
         let preset_ref = PresetRef::new(track_index, configuration, self.stream_state.source.clone());
-        let preset = self.presets.find_or_create_preset(&preset_ref).await?;
+        let preset = self.preset_pool.find_or_create_preset(&preset_ref).await?;
         preset.get_init_chunk(self.stream_state.stream_id(), start_num).await
     }
 
     pub async fn get_chunk(&self, track_index: u32, configuration: String, chunk: u32) -> Result<PathBuf, StreamingError> {
         let preset_ref = PresetRef::new(track_index, configuration, self.stream_state.source.clone());
-        let preset = self.presets.find_or_create_preset(&preset_ref).await?;
+        let preset = self.preset_pool.find_or_create_preset(&preset_ref).await?;
         preset.get_chunk(self.stream_state.stream_id(), chunk).await
     }
 
@@ -133,7 +125,7 @@ impl Stream {
         for track in &self.tracks {
             for preset in track.get_presets() {
                 let preset_ref = PresetRef::new(track.state().output_track, preset.to_string(), self.stream_state.source.clone());
-                if let Some(builder) = self.presets.get_builder(&preset_ref).await {
+                if let Some(builder) = self.preset_pool.get_builder(&preset_ref).await {
                     builder.disconnect_stream(self.stream_state.stream_id()).await?;
                 }
             }
