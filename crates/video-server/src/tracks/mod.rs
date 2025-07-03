@@ -1,21 +1,22 @@
-use crate::media_info::TrackInfo;
+use crate::media_info::MediaTrackInfo;
 use std::collections::HashMap;
 use std::sync::Arc;
 use xmlwriter::XmlWriter;
 use crate::error::StreamingError;
-use crate::stream::StreamConfig;
+use presets::track_preset::TrackPreset;
+use crate::stream::StreamState;
 use crate::tracks::content_type::ContentType;
-use crate::tracks::track_preset::TrackPreset;
 use crate::tracks::utils::video_avc::{get_avc1_tag, level_to_tag};
 
 pub mod audio_transcode;
 pub mod video_transcode;
 mod utils;
 pub mod content_type;
-pub mod track_preset;
+pub mod presets;
+mod track;
 
-pub struct TrackConfig {
-    pub media_state: Arc<StreamConfig>,
+pub struct TrackState {
+    pub media_state: Arc<StreamState>,
     pub input_track: u32,
     pub output_track: u32,
     pub force_transcoding: bool,
@@ -23,8 +24,8 @@ pub struct TrackConfig {
     pub args: HashMap<String, String>,
 }
 
-impl TrackConfig {
-    pub fn new(media_state: Arc<StreamConfig>, input_track: u32, output_track: u32) -> Self {
+impl TrackState {
+    pub fn new(media_state: Arc<StreamState>, input_track: u32, output_track: u32) -> Self {
         Self {
             media_state,
             force_transcoding: false,
@@ -47,13 +48,14 @@ impl TrackConfig {
         self
     }
 
-    pub fn track_info(&self) -> Result<&TrackInfo, StreamingError> {
+    pub fn track_info(&self) -> Result<&MediaTrackInfo, StreamingError> {
         self.media_state.info().get_track(self.input_track)
     }
 }
 
 pub trait Track: Send + Sync {
-    fn config(&self) -> &TrackConfig;
+    fn state(&self) -> &TrackState;
+    fn get_presets(&self) -> Vec<TrackPreset>;
     fn build_manifest(
         &self,
         w: &mut XmlWriter,
@@ -61,7 +63,7 @@ pub trait Track: Send + Sync {
         media_bitrate: Option<u64>,
         preset: TrackPreset
     ) -> Result<(), StreamingError> {
-        let infos = self.config().track_info()?;
+        let infos = self.state().track_info()?;
 
         let bitrate = infos.get_bitrate().or(media_bitrate).unwrap_or(10_000_000);
 
@@ -70,7 +72,7 @@ pub trait Track: Send + Sync {
         w.start_element("AdaptationSet");
         {
             w.write_attribute("contentType", &self.content_type().to_string());
-            w.write_attribute("id", &self.config().output_track); // stream index
+            w.write_attribute("id", &self.state().output_track); // stream index
 
             // write segment template
             w.start_element("SegmentTemplate");
@@ -79,9 +81,9 @@ pub trait Track: Send + Sync {
                 w.write_attribute("duration", &5);
                 w.write_attribute(
                     "initialization",
-                    &format!("/api/stream/{}/init/{}/{start_num}", self.config().media_state.stream_id(), self.config().output_track),
+                    &format!("/api/stream/{}/init/{}/{start_num}", self.state().media_state.stream_id(), self.state().output_track),
                 );
-                w.write_attribute("media", &format!("/api/stream/{}/data/{}/$Number$", self.config().media_state.stream_id(), self.config().output_track));
+                w.write_attribute("media", &format!("/api/stream/{}/data/{}/$Number$", self.state().media_state.stream_id(), self.state().output_track));
                 w.write_attribute("startNumber", &start_num);
             }
             // close SegmentTemplate and Representation
@@ -100,16 +102,16 @@ pub trait Track: Send + Sync {
                         24,
                     ));
 
-                w.write_attribute("id", &self.config().media_state.stream_id());
+                w.write_attribute("id", &self.state().media_state.stream_id());
                 w.write_attribute("codecs", &if let ContentType::Audio = self.content_type() { "mp4a.40.2".to_string() } else { video_avc.to_string() });
                 w.write_attribute("bandwidth", &bitrate);
                 w.write_attribute("mimeType", self.content_type().mime());
-                for (k, v) in self.config().args.iter() {
+                for (k, v) in self.state().args.iter() {
                     w.write_attribute(k, v);
                 }
 
                 // mark the default video track
-                if self.config().default {
+                if self.state().default {
                     w.start_element("Role");
                     {
                         w.write_attribute("schemeIdUri", "urn:mpeg:dash:role:2011");

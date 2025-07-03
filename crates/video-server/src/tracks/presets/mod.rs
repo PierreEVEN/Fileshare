@@ -1,28 +1,43 @@
 mod building_process;
+pub mod track_preset;
+pub mod preset_pool;
+pub mod preset_ref;
 
 use crate::error::StreamingError;
 use crate::stream_id::StreamId;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::RwLock;
-use crate::stream_track_builder::building_process::BuildingProcess;
-use crate::tracks::Track;
+use crate::tracks::presets::building_process::BuildingProcess;
+use crate::tracks::presets::preset_ref::PresetRef;
 
-pub struct StreamTrackBuilder {
-    built_inits: Vec<u32>,
-    built_chunks: Vec<u32>,
+pub struct PresetBuilder {
     building_processes: RwLock<HashMap<u32, Arc<RwLock<BuildingProcess>>>>,
     bound_streams: RwLock<HashMap<StreamId, Arc<RwLock<BuildingProcess>>>>,
     last_usage: RwLock<SystemTime>,
-    track: Box<dyn Track>
+    track_ref: PresetRef
 }
 
-impl StreamTrackBuilder {
-    pub async fn get_chunk(&self, stream: &StreamId, chunk: u32) -> Result<(), StreamingError> {
+impl PresetBuilder {
+    pub fn new(track_ref: PresetRef) -> Self {
+        Self {
+            building_processes: Default::default(),
+            bound_streams: Default::default(),
+            last_usage: RwLock::new(SystemTime::now()),
+            track_ref,
+        }
+    }
+
+    pub async fn get_init_chunk(&self, stream: &StreamId, chunk: u32) -> Result<PathBuf, StreamingError> {
+        todo!()
+    }
+
+    pub async fn get_chunk(&self, stream: &StreamId, chunk: u32) -> Result<PathBuf, StreamingError> {
         self.touch().await;
         if self.is_chunk_done(chunk).await {
-            return Ok(());
+            return self.wait_for_chunk(chunk).await
         }
 
         // Check if our stream is already bound to this current process
@@ -30,22 +45,18 @@ impl StreamTrackBuilder {
         if let Some(existing) = streams.get(stream) {
             let process = existing.write().await;
             // Check if our currently bound process have already generated our chunk or will generate it soon enough
-            if process.start_num() >= chunk && process.chunk_eta(chunk) < Duration::from_millis(1000)
-            {
+            if process.start_num() >= chunk && process.chunk_eta(chunk) < Duration::from_millis(1000) {
                 return self.wait_for_chunk(chunk).await;
             }
         }
 
         // Otherwise we should reset this stream to an existing valid process or a new one
         streams.insert(stream.clone(), self.find_or_create_process(chunk).await?);
-        Ok(())
+        self.wait_for_chunk(chunk).await
     }
 
     // Create a new ffmpeg process that will generate missing video chunks
-    async fn find_or_create_process(
-        &self,
-        chunk: u32,
-    ) -> Result<Arc<RwLock<BuildingProcess>>, StreamingError> {
+    async fn find_or_create_process(&self, chunk: u32) -> Result<Arc<RwLock<BuildingProcess>>, StreamingError> {
         let mut processes = self.building_processes.write().await;
 
         for (_, it) in &*processes {
@@ -77,7 +88,7 @@ impl StreamTrackBuilder {
         Ok(new_process)
     }
 
-    pub async fn wait_for_chunk(&self, chunk: u32) -> Result<(), StreamingError> {
+    pub async fn wait_for_chunk(&self, chunk: u32) -> Result<PathBuf, StreamingError> {
         todo!()
     }
 
@@ -106,7 +117,7 @@ impl StreamTrackBuilder {
         todo!()
     }
 
-    pub async fn disconnect_stream(&mut self, stream: &StreamId) -> Result<(), StreamingError> {
+    pub async fn disconnect_stream(&self, stream: &StreamId) -> Result<(), StreamingError> {
         let mut building_processes = self.building_processes.write().await;
         if let Some(removed_process) = self.bound_streams.write().await.remove(stream) {
             let mut removed_proc = removed_process.write().await;

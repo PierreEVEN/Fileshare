@@ -1,5 +1,5 @@
 use crate::error::{ErrorKind, StreamingError};
-use crate::media_info::TrackInfo;
+use crate::media_info::MediaTrackInfo;
 use std::fmt::{Display, Formatter};
 
 pub enum TrackPreset {
@@ -42,7 +42,7 @@ impl TrackPreset {
         })
     }
 
-    pub fn create_presets(info: &TrackInfo) -> Result<Vec<Self>, StreamingError> {
+    pub fn create_presets(info: &MediaTrackInfo) -> Result<Vec<Self>, StreamingError> {
         let mut presets = vec![];
 
         if info.codec_type == "video" {

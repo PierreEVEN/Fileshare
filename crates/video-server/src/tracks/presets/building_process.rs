@@ -23,7 +23,7 @@ pub struct BuildingProcess {
 impl BuildingProcess {
     pub async fn new(start_num: u32, limit: Option<u32>, track: &dyn Track) -> Result<Self, StreamingError> {
         let content_type = track.content_type();
-        let track_index = track.config().output_track;
+        let track_index = track.state().output_track;
 
         let mut process = Command::new("ffmpeg")
             .stdout(Stdio::piped())
@@ -35,7 +35,7 @@ impl BuildingProcess {
         let stderr = process.stderr.take().unwrap();
         let progress_state = Arc::new(RwLock::new(HashMap::<String, String>::new()));
 
-        let state = track.config().media_state.clone();
+        let state = track.state().media_state.clone();
         let stdout_progress_state = progress_state.clone();
         let stdout_parser = tokio::spawn(async move {
             let mut reader = BufReader::new(stdout);

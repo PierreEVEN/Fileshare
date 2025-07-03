@@ -9,7 +9,7 @@ use tracing::info;
 use types::database_ids::DatabaseId;
 use utils::config::Config;
 use video_server::error::StreamingError;
-use video_server::stream::{Stream, StreamConfig};
+use video_server::stream::{Stream, StreamState};
 use video_server::stream_id::StreamId;
 
 pub struct AppCtx {
@@ -72,7 +72,7 @@ impl AppCtx {
         Ok(upload.get_state())
     }
 
-    pub async fn create_stream(&self, state: StreamConfig) -> Result<StreamId, StreamingError> {
+    pub async fn create_stream(&self, state: StreamState) -> Result<StreamId, StreamingError> {
         let mut streams = self.streams.write().await;
         let id: StreamId = loop {
             let id = StreamId::from(random::<DatabaseId>().abs());

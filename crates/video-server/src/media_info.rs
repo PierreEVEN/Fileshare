@@ -6,7 +6,7 @@ use crate::error::{ErrorKind, StreamingError};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MediaInfo {
-    streams: Vec<TrackInfo>,
+    streams: Vec<MediaTrackInfo>,
     format: MediaFormat,
 }
 
@@ -29,7 +29,7 @@ impl MediaInfo {
         streams
     }
 
-    pub fn get_track(&self, index: u32) -> Result<&TrackInfo, StreamingError> {
+    pub fn get_track(&self, index: u32) -> Result<&MediaTrackInfo, StreamingError> {
         self.streams.get(index as usize).ok_or(StreamingError::new(ErrorKind::NoTrack(index)))
     }
 
@@ -58,7 +58,7 @@ pub struct Disposition {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct TrackInfo {
+pub struct MediaTrackInfo {
     pub index: i64,
     pub codec_name: Option<String>,
     pub profile: Option<String>,
@@ -86,7 +86,7 @@ pub struct TrackInfo {
     pub disposition: Option<Disposition>,
 }
 
-impl TrackInfo {
+impl MediaTrackInfo {
     pub fn get_bitrate(&self) -> Option<u64> {
         self.tags.as_ref()?.bps_eng.as_ref()?.parse::<u64>().ok()
     }

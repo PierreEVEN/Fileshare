@@ -1,117 +1,76 @@
+use crate::error::{ErrorKind, StreamingError};
 use crate::media_info::MediaInfo;
 use crate::stream_id::StreamId;
 use crate::tracks::audio_transcode::AudioTranscodeTrack;
-use crate::tracks::{Track, TrackConfig};
+use crate::tracks::video_transcode::VideoTranscodeTrack;
+use crate::tracks::{Track, TrackState};
+use crate::{PresetPool};
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::{fs};
-use std::collections::HashMap;
-use std::os::unix::fs::MetadataExt;
-use std::time::Duration;
-use lazy_static::lazy_static;
-use tokio::sync::RwLock;
-use tokio::time::sleep;
 use types::database_ids::ItemId;
-use utils::config::VideoServerConfig;
 use xmlwriter::XmlWriter;
-use crate::error::{ErrorKind, StreamingError};
-use crate::stream_track_builder::StreamTrackBuilder;
-use crate::tracks::track_preset::TrackPreset;
-use crate::tracks::video_transcode::VideoTranscodeTrack;
+use crate::tracks::presets::preset_ref::PresetRef;
 
-pub struct StreamConfig {
-    config: VideoServerConfig,
+// Stream shared data
+pub struct StreamState {
     item_id: ItemId,
     stream_id: StreamId,
+    // Source file path
     source: PathBuf,
-    input_info: MediaInfo,
+    // Media data fetched from ffprobe
+    media_info: MediaInfo,
 }
-
-impl StreamConfig {
-    pub fn new(config: VideoServerConfig, item_id: ItemId, source: PathBuf) -> Result<Self, StreamingError> {
-        let source = if source.is_absolute() { source } else { std::path::absolute(source)? };
-        let info = MediaInfo::new(&source)?;
-        Ok(Self {
-            config,
-            item_id,
-            stream_id: Default::default(),
-            source,
-            input_info: info,
-        })
-    }
-
-    pub fn item_id(&self) -> &ItemId { &self.item_id }
-    pub fn stream_id(&self) -> &StreamId { &self.stream_id }
-    pub fn config(&self) -> &VideoServerConfig { &self.config }
-    pub fn source(&self) -> &PathBuf { &self.source }
-    pub fn info(&self) -> &MediaInfo { &self.input_info }
-
-    pub fn chunk_path_num(&self, chunk_num: u32, track_id: u32) -> Result<PathBuf, StreamingError> {
-        let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join(format!("{chunk_num}.m4s"));
-        Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
-    }
-    pub fn chunk_path(&self, track_id: u32) -> Result<PathBuf, StreamingError> {
-        let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join("%d.m4s".to_string());
-        Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
-    }
-
-    pub fn init_seg(&self, start_num: u32, track_id: u32) -> Result<PathBuf, StreamingError> {
-        let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join(format!("{}_init.mp4", &start_num));
-        Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
-    }
-    pub fn playlist_path(&self, track_id: u32) -> Result<PathBuf, StreamingError> {
-        let path = self.config.cache_path.join(self.stream_id.to_string()).join(track_id.to_string()).join("playlist.m3u8");
-        Ok(if path.is_absolute() { path } else { std::path::absolute(path)? })
-    }
-}
-
-
-lazy_static! {
-    static ref STREAM_TRACKS: RwLock<HashMap<PathBuf, HashMap<u32, StreamTrackBuilder>>> = RwLock::default();
-}
-
 
 pub struct Stream {
-    state: Arc<StreamConfig>,
-    tracks: HashMap<u32, Box<dyn Track>>//Vec<(Box<dyn Track>, RwLock<Option<StreamerProcess>>)>,
+    stream_state: Arc<StreamState>,
+    tracks: Vec<Box<dyn Track>>,
+    presets: PresetPool
 }
-unsafe impl Send for Stream {}
-unsafe impl Sync for Stream {}
+
+impl StreamState {
+    pub fn new(item_id: ItemId, source: PathBuf) -> Result<Self, StreamingError> {
+        Ok(Self {
+            item_id,
+            stream_id: Default::default(),
+            media_info: MediaInfo::new(&source)?,
+            source: std::path::absolute(source)?,
+        })
+    }
+    pub fn item_id(&self) -> &ItemId { &self.item_id }
+    pub fn stream_id(&self) -> &StreamId { &self.stream_id }
+    pub fn source(&self) -> &PathBuf { &self.source }
+    pub fn info(&self) -> &MediaInfo { &self.media_info }
+}
 
 impl Stream {
-    pub fn new(mut state: StreamConfig, id: StreamId) -> Result<Self, StreamingError> {
+    pub fn new(mut state: StreamState, id: StreamId, presets: PresetPool) -> Result<Self, StreamingError> {
         state.stream_id = id;
         let state = Arc::new(state);
 
-        let mut tracks: HashMap<u32, Box<dyn Track>> = HashMap::new();
+        let mut tracks: Vec<Box<dyn Track>> = vec![];
 
-
-        for track in state.input_info.get_video_tracks() {
-
-            for preset in TrackPreset::create_presets(state.input_info.get_track(track)?)? {
-                let track_id = tracks.len() as u32;
-                fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(track_id.to_string()))?;
-                tracks.insert(track_id, Box::new(VideoTranscodeTrack::new(
-                    TrackConfig::new(state.clone(), track, track_id)
-                )));
-            }
+        for input_track in state.media_info.get_video_tracks() {
+            let output_track = tracks.len() as u32;
+            tracks.push(Box::new(VideoTranscodeTrack::new(
+                TrackState::new(state.clone(), input_track, output_track)
+            )));
         }
 
-        for track in state.input_info.get_audio_tracks() {
-            let track_id = tracks.len() as u32;
-            fs::create_dir_all(&state.config().cache_path.join(id.to_string()).join(track_id.to_string()))?;
-            tracks.insert(track_id, Box::new(AudioTranscodeTrack::new(
-                TrackConfig::new(state.clone(), track, track_id)
+        for input_track in state.media_info.get_audio_tracks() {
+            let output_track = tracks.len() as u32;
+            tracks.push(Box::new(AudioTranscodeTrack::new(
+                TrackState::new(state.clone(), input_track, output_track)
             )));
         }
 
         Ok(Self {
-            state,
+            stream_state: state,
             tracks,
+            presets,
         })
     }
 
-    pub fn get_dash_manifest(&self, start_num: u32) -> Result<String, StreamingError> {
+    pub fn compile_dash_manifest(&self, start_num: u32) -> Result<String, StreamingError> {
         fn timestamp_to_xml(t: u64) -> String {
             let h = t / 3600;
             let m = t % 3600 / 60;
@@ -123,7 +82,7 @@ impl Stream {
             tag
         }
 
-        let duration = timestamp_to_xml(self.state.input_info.get_duration().ok_or(StreamingError::new(ErrorKind::MissingData("Duration")))? as u64);
+        let duration = timestamp_to_xml(self.stream_state.media_info.get_duration().ok_or(StreamingError::new(ErrorKind::MissingData("Duration")))? as u64);
 
         let mut w = XmlWriter::new(Default::default());
         w.write_declaration();
@@ -140,15 +99,17 @@ impl Stream {
 
         w.start_element("BaseURL");
         {
-            w.write_text(format!("/api/stream/{}/", self.state.stream_id).as_str());
+            w.write_text(format!("/api/stream/{}/", self.stream_state.stream_id).as_str());
         }
         w.end_element();
 
         w.start_element("Period");
         {
             w.write_attribute("duration", &duration);
-            for (track, _) in &self.tracks {
-                track.build_manifest(&mut w, start_num, self.state.input_info.get_bitrate())?;
+            for track in &self.tracks {
+                for preset in track.get_presets() {
+                    track.build_manifest(&mut w, start_num, self.stream_state.media_info.get_bitrate(), preset)?;
+                }
             }
         }
         w.end_element();
@@ -156,56 +117,34 @@ impl Stream {
         Ok(w.end_document())
     }
 
-    pub async fn get_init_chunk(&self, track_id: u32, start_num: u32) -> Result<PathBuf, StreamingError> {
-        let path = self.state.init_seg(start_num, track_id)?;
-
-        if !path.exists() {
-            self.start_from(start_num).await?;
-        }
-
-        let mut attempt = 50;
-        loop {
-            if path.exists() && path.metadata()?.size() > 0 {
-                break;
-            }
-            sleep(Duration::from_millis(100)).await;
-            attempt -= 1;
-            if attempt == 0 { break }
-        }
-
-        if !path.exists() {
-            return Err(StreamingError::new(ErrorKind::InitNotFound{track: track_id, num: start_num}));
-        }
-
-        Ok(path)
+    pub async fn get_init_chunk(&self, track_index: u32, configuration: String, start_num: u32) -> Result<PathBuf, StreamingError> {
+        let preset_ref = PresetRef::new(track_index, configuration, self.stream_state.source.clone());
+        let preset = self.presets.find_or_create_preset(&preset_ref).await?;
+        preset.get_init_chunk(self.stream_state.stream_id(), start_num).await
     }
 
-    pub async fn get_chunk(&self, track_id: u32, chunk_id: u32) -> Result<PathBuf, StreamingError> {
-        unsafe {
-            if let Some(media) = STREAM_TRACKS.get(&self.state.chunk_path_num(chunk_id, track_id)?) {
-                let track = media.get(&track_id).ok_or(StreamingError::new(ErrorKind::NoTrack(track_id)))?;
-                track.get_chunk(&self.state.stream_id, chunk_id).await
-            } else {
-                todo!("Create media")
-            }
-        }
+    pub async fn get_chunk(&self, track_index: u32, configuration: String, chunk: u32) -> Result<PathBuf, StreamingError> {
+        let preset_ref = PresetRef::new(track_index, configuration, self.stream_state.source.clone());
+        let preset = self.presets.find_or_create_preset(&preset_ref).await?;
+        preset.get_chunk(self.stream_state.stream_id(), chunk).await
     }
 
     pub async fn kill(&self) -> Result<(), StreamingError> {
-        for (_, streaming_process) in &self.tracks {
-            todo!()
-        }
-        Ok(())
-    }
-
-    pub async fn start_from(&self, start_num: u32) -> Result<(), StreamingError> {
-        for (track, streaming_process) in &self.tracks {
-            todo!()
+        for track in &self.tracks {
+            for preset in track.get_presets() {
+                let preset_ref = PresetRef::new(track.state().output_track, preset.to_string(), self.stream_state.source.clone());
+                if let Some(builder) = self.presets.get_builder(&preset_ref).await {
+                    builder.disconnect_stream(self.stream_state.stream_id()).await?;
+                }
+            }
         }
         Ok(())
     }
 
     pub fn item_id(&self) -> &ItemId {
-        &self.state.item_id
+        &self.stream_state.item_id
     }
 }
+
+unsafe impl Send for Stream {}
+unsafe impl Sync for Stream {}
