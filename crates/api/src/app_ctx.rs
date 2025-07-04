@@ -11,11 +11,12 @@ use utils::config::Config;
 use video_server::error::StreamingError;
 use video_server::stream::{Stream, StreamState};
 use video_server::stream_id::StreamId;
+use video_server::StreamingContext;
 
 pub struct AppCtx {
     pub config: Config,
     pub database: Database,
-    streams: tokio::sync::RwLock<HashMap<StreamId, Arc<Stream>>>,
+    streaming_context: StreamingContext,
     uploads: tokio::sync::RwLock<HashMap<String, Arc<tokio::sync::RwLock<Upload>>>>,
 }
 
@@ -27,9 +28,9 @@ impl AppCtx {
         fs::remove_dir_all(&config.backend_config.video_server.cache_path);
 
         Ok(Self {
+            streaming_context: StreamingContext::new(config.backend_config.video_server.clone()),
             config,
             database,
-            streams: Default::default(),
             uploads: Default::default(),
         })
     }
@@ -72,28 +73,8 @@ impl AppCtx {
         Ok(upload.get_state())
     }
 
-    pub async fn create_stream(&self, state: StreamState) -> Result<StreamId, StreamingError> {
-        let mut streams = self.streams.write().await;
-        let id: StreamId = loop {
-            let id = StreamId::from(random::<DatabaseId>().abs());
-            if !(*streams).contains_key(&id) {
-                break id;
-            }
-        };
-        info!("Create stream @{} for item #{}", id, state.item_id());
-        let media = Stream::new(state, id)?;
-        streams.insert(id, Arc::new(media));
-        Ok(id)
-    }
 
-    pub async fn get_stream(&self, id: &StreamId) -> Option<Arc<Stream>> {
-        self.streams.write().await.get(id).cloned()
-    }
-
-    pub async fn kill_stream(&self, id: &StreamId) -> Result<(), StreamingError> {
-        if let Some(stream) = self.streams.write().await.remove(id) {
-            stream.kill().await?;
-        }
-        Ok(())
+    pub fn streaming_context(&self) -> &StreamingContext  {
+        &self.streaming_context
     }
 }

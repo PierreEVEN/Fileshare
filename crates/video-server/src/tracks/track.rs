@@ -4,8 +4,10 @@ use std::sync::Arc;
 use tracing::info;
 use xmlwriter::XmlWriter;
 use crate::error::{ErrorKind, StreamingError};
+use crate::media_info::MediaTrackInfo;
 use crate::stream::StreamState;
-use crate::tracks::presets::track_preset::TrackPreset;
+use crate::tracks::presets::preset_ref::PresetRef;
+use crate::tracks::presets::track_preset::PresetDescription;
 use crate::tracks::utils::is_supported_html5_codec;
 use crate::tracks::utils::video_avc::{get_avc1_tag, level_to_tag};
 
@@ -15,7 +17,7 @@ pub struct Track {
     output_track: u32,
     default: bool,
     args: HashMap<String, String>,
-    presets: HashMap<String, TrackPreset>,
+    presets: HashMap<PresetRef, PresetDescription>,
     target_gop: u32,
     force_transcoding: bool,
 }
@@ -44,7 +46,7 @@ impl Track {
             w.write_attribute("mimeType", match track_info.codec_type.as_str() {
                 "audio" => "audio/mp4",
                 "video" => "video/mp4",
-                &v => { return Err(StreamingError::new(ErrorKind::ParseError(format!("Unhandled codec type {v}", )))) }
+                v => { return Err(StreamingError::new(ErrorKind::ParseError(format!("Unhandled codec type {v}", )))) }
             });
             w.write_attribute("contentType", &track_info.codec_type);
             w.write_attribute("subsegmentAlignment", &true);
@@ -59,7 +61,7 @@ impl Track {
             }
             w.end_element();
 
-            for (preset_id, preset) in &self.presets {
+            for (_, preset) in &self.presets {
                 let codec = match track_info.codec_type.as_str() {
                     "audio" => "mp4a.40.2".to_string(),
                     "video" => {
@@ -69,17 +71,17 @@ impl Track {
                             .unwrap_or(get_avc1_tag(
                                 track_info.width.clone().unwrap_or(1920) as u64,
                                 track_info.height.clone().unwrap_or(1080) as u64,
-                                preset.bitrate,
+                                preset.get_bitrate(track_info) as u64,
                                 24,
                             ));
                         video_avc.to_string()
                     }
-                    &v => { return Err(StreamingError::new(ErrorKind::ParseError(format!("Unhandled codec type {v}", )))) }
+                    v => { return Err(StreamingError::new(ErrorKind::ParseError(format!("Unhandled codec type {v}", )))) }
                 };
 
                 w.start_element("Representation");
                 {
-                    w.write_attribute("id", &preset_id);
+                    w.write_attribute("id", &preset.to_string());
                     w.write_attribute("codecs", &codec);
                     w.write_attribute("bandwidth", &bitrate);
                     for (k, v) in self.args.iter() {
@@ -102,7 +104,7 @@ impl Track {
         Ok(())
     }
 
-    pub fn should_transcode(&self, preset: &TrackPreset) -> Result<bool, StreamingError> {
+    pub fn should_transcode(&self, preset: &PresetDescription) -> Result<bool, StreamingError> {
         if self.force_transcoding { return Ok(true); }
         let media_info = self.owning_stream.media_info();
         let track_info = media_info.get_track(self.input_track)?;
@@ -112,18 +114,31 @@ impl Track {
             None => return Ok(true)
         }
 
+        if let Some(max_height) = preset.max_height {
+            if let Some(track_height) = track_info.height {
+                if (max_height as i64) < track_height { return Ok(true) }
+            } else {
+                return Ok(true)
+            }
+        }
+
+        if preset.max_bitrate.is_some() {
+            return Ok(true)
+        }
+
+        if let Some(max_fps) = preset.max_frame_rate {
+            if let Ok(track_fps) = track_info.get_framerate() {
+                if max_fps < track_fps { return Ok(true) }
+            } else {
+                return Ok(true)
+            }
+        }
+
         Ok(false)
     }
 
-    fn build_args(&self, start_num: u32, preset: &TrackPreset) -> Result<Vec<String>, StreamingError> {
-        let init_seg = if cfg!(target_os = "windows") {
-            self.owning_stream.init_seg(start_num, self.output_track)?
-        } else {
-            PathBuf::from(self.owning_stream.init_seg(start_num, self.output_track)?.file_name().unwrap())
-        };
-
-        let segment_name = self.owning_stream.chunk_path(self.output_track)?;
-        let outdir = self.owning_stream.playlist_path(self.output_track)?;
+    pub fn build_args(&self, start_num: u32, preset_ref: &PresetRef) -> Result<Vec<String>, StreamingError> {
+        let preset = self.get_preset(preset_ref)?;
 
         let mut args = vec![
             "-y".into(),
@@ -135,19 +150,20 @@ impl Track {
         // Directly copy stream everytime it's possible to save CPU usage
         if self.should_transcode(preset)? {
             info!("Stream {}:{} is using full video transcoding", self.owning_stream.stream_id(), self.output_track);
-            if let Some(height) = height {
-                args.append(vec!["-vf".into(), format!("scale={}:{}", height, width)]);
-            }
 
-            if let Some(bitrate) = bitrate {
-                args.push("-b:v".into());
-                args.push(bitrate.to_string());
-            }
+            let track_info = self.track_info()?;
 
-            args.append(&mut vec![
-                "-c:0".into(), "h264".into(),
-                "-preset".into(), "veryfast".into(),
-            ]);
+            match track_info.codec_type.as_str() {
+                "audio" => {
+                    args.append(&mut vec!["-c:0".into(), "aac".into(), "-ab".into(), preset.get_bitrate(track_info).to_string()]);
+                },
+                "video" => {
+                    args.append(&mut vec!["-vf".into(), format!("scale={}:{}", preset.get_height(track_info), preset.get_width(track_info))]);
+                    args.append(&mut vec!["-b:v".into(), preset.get_bitrate(track_info).to_string()]);
+                    args.append(&mut vec!["-c:0".into(), "h264".into(), "-preset".into(), "veryfast".into()]);
+                }
+                c => { return Err(StreamingError::new(ErrorKind::UnknownCodec(c.to_string()))) }
+            }
         } else {
             args.append(&mut vec!["-c:0".into(), "copy".into()]);
         }
@@ -176,6 +192,9 @@ impl Track {
         // in progress.
         args.append(&mut vec!["-hls_flags".into(), "temp_file".into(), "-max_delay".into(), "5000000".into()]);
 
+        let init_seg = if cfg!(target_os = "windows") { preset_ref.init_path(start_num) }
+        else { PathBuf::from(preset_ref.init_path(start_num).file_name().unwrap()) };
+
         // args needed so we can distinguish between init fragments for new streams.
         // Basically on the web seeking works by reloading the entire video because of
         // discontinuity issues that browsers seem to not ignore like mpv.
@@ -185,8 +204,8 @@ impl Track {
 
         args.append(&mut vec!["-hls_segment_type".into(), "1".into()]);
         args.append(&mut vec!["-loglevel".into(), "warning".into(), "-progress".into(), "pipe:1".into()]);
-        args.append(&mut vec!["-hls_segment_filename".into(), segment_name.display().to_string()]);
-        args.append(&mut vec![outdir.display().to_string()]);
+        args.append(&mut vec!["-hls_segment_filename".into(), preset_ref.chunk_path("$Number$".to_string()).display().to_string()]);
+        args.append(&mut vec![preset_ref.playlist_path().display().to_string()]);
         Ok(args)
     }
 
@@ -201,5 +220,21 @@ impl Track {
     pub fn arg(mut self, key: String, value: String) -> Self {
         self.args.insert(key, value);
         self
+    }
+
+    pub fn owning_stream(&self) -> &Arc<StreamState> {
+        &self.owning_stream
+    }
+
+    pub fn output_track(&self) -> u32 {
+        self.output_track
+    }
+
+    pub fn track_info(&self) -> Result<&MediaTrackInfo, StreamingError>{
+        self.owning_stream.media_info().get_track(self.output_track)
+    }
+
+    pub fn get_preset(&self, preset_ref: &PresetRef) -> Result<&PresetDescription, StreamingError> {
+        self.presets.get(preset_ref).ok_or(StreamingError::new(ErrorKind::UnknownPreset(preset_ref.clone())))
     }
 }

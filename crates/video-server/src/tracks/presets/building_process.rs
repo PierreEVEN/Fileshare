@@ -7,7 +7,9 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::sync::RwLock;
 use tracing::{error, info};
 use crate::error::StreamingError;
-use crate::tracks::Track;
+use crate::tracks::presets::preset_ref::PresetRef;
+use crate::tracks::presets::track_preset::PresetDescription;
+use crate::tracks::track::Track;
 
 pub struct BuildingProcess {
     start_num: u32,
@@ -21,21 +23,20 @@ pub struct BuildingProcess {
 }
 
 impl BuildingProcess {
-    pub async fn new(start_num: u32, limit: Option<u32>, track: &dyn Track) -> Result<Self, StreamingError> {
-        let content_type = track.content_type();
-        let track_index = track.state().output_track;
+    pub async fn new(start_num: u32, limit: Option<u32>, track: &Track, preset: &PresetRef) -> Result<Self, StreamingError> {
 
         let mut process = Command::new("ffmpeg")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .stdin(Stdio::null())
-            .args(track.build_args(start_num)?.as_slice())
+            .args(track.build_args(start_num, preset)?.as_slice())
             .spawn()?;
         let stdout = process.stdout.take().unwrap();
         let stderr = process.stderr.take().unwrap();
         let progress_state = Arc::new(RwLock::new(HashMap::<String, String>::new()));
 
-        let state = track.state().media_state.clone();
+        let content_type = track.track_info()?.codec_type.clone();
+        let track_index = track.output_track();
         let stdout_progress_state = progress_state.clone();
         let stdout_parser = tokio::spawn(async move {
             let mut reader = BufReader::new(stdout);
@@ -52,6 +53,7 @@ impl BuildingProcess {
             }
             info!("Finished processing for {track_index}:{content_type:?} track");
         });
+        let state = track.owning_stream().clone();
         let stderr_parser = tokio::spawn(async move {
             let mut reader = BufReader::new(stderr);
             let mut input = String::new();
@@ -88,7 +90,7 @@ impl BuildingProcess {
         }
         todo!()
     }
-    
+
     pub async fn kill(&mut self) -> Result<(), StreamingError> {
         self.stdout_parser.abort();
         self.stderr_parser.abort();

@@ -19,12 +19,12 @@ pub mod stream_id;
 pub mod tracks;
 pub mod error;
 
-struct ServerContext {
+pub struct StreamingContext {
     streams: RwLock<HashMap<StreamId, Arc<Stream>>>,
     builders: PresetPool,
 }
 
-impl ServerContext {
+impl StreamingContext {
     pub fn new(global_config: VideoServerConfig) -> Self {
         Self {
             streams: Default::default(),

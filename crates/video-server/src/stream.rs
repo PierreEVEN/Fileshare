@@ -124,7 +124,7 @@ impl Stream {
     pub async fn kill(&self) -> Result<(), StreamingError> {
         for track in &self.tracks {
             for preset in track.get_presets() {
-                let preset_ref = PresetRef::new(track.state().output_track, preset.to_string(), self.stream_state.source.clone());
+                let preset_ref = PresetRef::new(track.output_track(), preset.to_string(), self.stream_state.source.clone());
                 if let Some(builder) = self.preset_pool.get_builder(&preset_ref).await {
                     builder.disconnect_stream(self.stream_state.stream_id()).await?;
                 }

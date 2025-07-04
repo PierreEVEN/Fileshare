@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::fs;
 use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
@@ -25,11 +26,17 @@ impl PresetRef {
     pub fn init_path(&self, start_num: u32) -> PathBuf {
         PathBuf::from(&self.source.file_name().unwrap()).join(self.track_index.to_string()).join(&self.preset).join(format!("{start_num}_init.mp4"))
     }
-    pub fn chunk_path(&self, chunk: u32) -> PathBuf {
+    pub fn chunk_path(&self, chunk: String) -> PathBuf {
         PathBuf::from(&self.source.file_name().unwrap()).join(self.track_index.to_string()).join(&self.preset).join(format!("{chunk}.m4v"))
     }
     pub fn playlist_path(&self) -> PathBuf {
         PathBuf::from(&self.source.file_name().unwrap()).join(self.track_index.to_string()).join(&self.preset).join("playlist.m4v")
+    }
+}
+
+impl Display for PresetRef {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.preset.fmt(f)
     }
 }
 

@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
 use utils::server_error::ServerError;
+use crate::tracks::presets::preset_ref::PresetRef;
 
 pub enum ErrorKind {
     InitNotFound { track: u32, num: u32 },
@@ -10,6 +11,8 @@ pub enum ErrorKind {
     Io(std::io::Error),
     Other(String),
     NoTrack(u32),
+    UnknownCodec(String),
+    UnknownPreset(PresetRef),
 }
 
 pub struct StreamingError(ErrorKind);
@@ -50,6 +53,8 @@ impl Display for StreamingError {
             }
             ErrorKind::ParseError(err) => std::fmt::Display::fmt(&err, f),
             ErrorKind::NoTrack(id) => f.write_fmt(format_args!("No track with id: {}", id)),
+            ErrorKind::UnknownCodec(codec) => {f.write_fmt(format_args!("Unknown codec '{}'", codec))}
+            ErrorKind::UnknownPreset(preset) => {f.write_fmt(format_args!("Unknown preset '{}'", preset))}
         }
     }
 }
@@ -70,13 +75,10 @@ impl Into<ServerError> for StreamingError {
     fn into(self) -> ServerError {
         let message = self.to_string();
         match &self.0 {
-            ErrorKind::InitNotFound { .. } => ServerError::code(404, message),
+            ErrorKind::InitNotFound { .. } | 
+            ErrorKind::NoTrack(_) | 
             ErrorKind::ChunkNotFound { .. } => ServerError::code(404, message),
-            ErrorKind::MissingData(_) => ServerError::code(500, message),
-            ErrorKind::ParseError(_) => ServerError::code(500, message),
-            ErrorKind::Io(_) => ServerError::code(500, message),
-            ErrorKind::Other(_) => ServerError::code(500, message),
-            ErrorKind::NoTrack(_) => ServerError::code(404, message),
+            _ => {ServerError::code(500, message)}
         }
     }
 }

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use xmlwriter::XmlWriter;
 use crate::error::StreamingError;
-use presets::track_preset::TrackPreset;
+use presets::track_preset::PresetDescription;
 use crate::stream::StreamState;
 use crate::tracks::content_type::ContentType;
 use crate::tracks::utils::video_avc::{get_avc1_tag, level_to_tag};
