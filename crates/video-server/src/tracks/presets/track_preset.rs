@@ -49,34 +49,34 @@ impl PresetDescription {
 
             let low_fps = if info.get_framerate()? <= 30. { None } else {Some(30.)};
 
-            if height >= 144 {
-                presets.push(PresetDescription::new_video("144p", Some(144), Some(200_000), low_fps)?);
-            }
-            if height >= 240 {
-                presets.push(PresetDescription::new_video("240p", Some(240), Some(400_000), low_fps)?);
-            }
-            if height >= 360 {
-                presets.push(PresetDescription::new_video("360p", Some(360), Some(1_000_000), low_fps)?);
-            }
-            if height >= 468 {
-                presets.push(PresetDescription::new_video("SD 468p", Some(468), Some(1_000_000), low_fps)?);
-            }
-            if height >= 720 {
-                presets.push(PresetDescription::new_video("HD 720p", Some(720), Some(500_000), low_fps)?);
-            }
-            if height >= 1080 {
-                presets.push(PresetDescription::new_video("Full HD 1080p", Some(1080), Some(8_000_000), low_fps)?);
-            }
-            if height >= 1440 {
-                presets.push(PresetDescription::new_video("QHD 2K", Some(1440), Some(16_000_000), low_fps)?);
+            presets.push(PresetDescription::new_video("Source", Some(height as u32), None, None)?);
+            if height >= 4320 {
+                presets.push(PresetDescription::new_video("UHD 8K", Some(4320), Some(80_000_000), low_fps)?);
             }
             if height >= 2160 {
                 presets.push(PresetDescription::new_video("UHD 4K", Some(2160), Some(35_000_000), low_fps)?);
             }
-            if height >= 4320 {
-                presets.push(PresetDescription::new_video("UHD 8K", Some(4320), Some(80_000_000), low_fps)?);
+            if height >= 1440 {
+                presets.push(PresetDescription::new_video("QHD 2K", Some(1440), Some(16_000_000), low_fps)?);
             }
-            presets.push(PresetDescription::new_video("Source", Some(height as u32), None, None)?);
+            if height >= 1080 {
+                presets.push(PresetDescription::new_video("Full HD 1080p", Some(1080), Some(8_000_000), low_fps)?);
+            }
+            if height >= 720 {
+                presets.push(PresetDescription::new_video("HD 720p", Some(720), Some(500_000), low_fps)?);
+            }
+            if height >= 468 {
+                presets.push(PresetDescription::new_video("SD 468p", Some(468), Some(1_000_000), low_fps)?);
+            }
+            if height >= 360 {
+                presets.push(PresetDescription::new_video("360p", Some(360), Some(1_000_000), low_fps)?);
+            }
+            if height >= 240 {
+                presets.push(PresetDescription::new_video("240p", Some(240), Some(400_000), low_fps)?);
+            }
+            if height >= 144 {
+                presets.push(PresetDescription::new_video("144p", Some(144), Some(200_000), low_fps)?);
+            }
         } else if info.codec_type == "audio" {
             presets.push(PresetDescription::new_audio("Source", None, None)?);
         }
@@ -116,10 +116,13 @@ impl PresetDescription {
 
 impl Display for PresetDescription {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.name.replace(" ", "_").fmt(f)
+        /*
         let mut format = String::new();
         if let Some(height) = self.max_height { format += format!("{height}p ").as_str(); }
         if let Some(bitrate) = self.max_bitrate { format += format!("{}kbps ", bitrate / 1000).as_str(); }
         if let Some(framerate) = self.max_frame_rate { format += format!("{framerate}fps ").as_str(); }
         format.trim().replace(" ", "_").fmt(f)
+         */
     }
 }

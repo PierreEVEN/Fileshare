@@ -1,6 +1,8 @@
 import * as dashjs from 'dashjs';
 import {fetch_api} from "../../../../utilities/request";
 import {Message, NOTIFICATION} from "../../../index/tools/message_box/notification";
+import {ControlBar} from "./ControlBar";
+require('./controlbar.scss')
 
 class DashPlayer extends HTMLElement {
     constructor() {
@@ -18,7 +20,8 @@ class DashPlayer extends HTMLElement {
                 this.stream_id = stream_id;
                 const url = `/api/stream/${stream_id}/manifest/0`;
 
-                const video_div = document.createElement("video");
+                let elements = require('./dash_player.hbs')({});
+                let video_div = elements.hb_elements.video;
                 video_div.autoplay = true;
                 video_div['data-dashjs-player'] = true;
                 video_div.controls = true;
@@ -26,7 +29,8 @@ class DashPlayer extends HTMLElement {
                 this.style.height = "100%";
                 video_div.style.width = "100%";
                 video_div.style.height = "100%";
-                this.append(video_div);
+                for (const element of elements)
+                    this.append(element);
                 this.player = dashjs.MediaPlayer().create();
                 this.player.updateSettings({
                     debug: {
@@ -34,6 +38,8 @@ class DashPlayer extends HTMLElement {
                     }
                 })
                 this.player.initialize(video_div, url, true, 0);
+                let control_bar = new ControlBar(this.player);
+                control_bar.initialize();
             })
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Echec de la création du stream")));
     }

@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-use std::path::PathBuf;
 use std::sync::Arc;
 use rand::random;
 use tokio::sync::RwLock;
@@ -9,7 +7,6 @@ use types::database_ids::DatabaseId;
 use utils::config::VideoServerConfig;
 use crate::error::StreamingError;
 use tracks::presets::preset_pool::PresetPool;
-use tracks::presets::PresetBuilder;
 use crate::stream::{Stream, StreamState};
 use crate::stream_id::StreamId;
 
@@ -43,7 +40,7 @@ impl StreamingContext {
         };
         // Instantiate new stream
         info!("Create stream @{} for item #{}", id, state.item_id());
-        streams.insert(id, Arc::new(Stream::new(state, id, self.builders.clone())?));
+        streams.insert(id, Arc::new(Stream::new(self.builders.global_config().clone(), state, id, self.builders.clone())?));
         Ok(id)
     }
 

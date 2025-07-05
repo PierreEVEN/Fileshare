@@ -1,12 +1,8 @@
+use crate::error::StreamingError;
 use crate::media_info::MediaTrackInfo;
+use crate::stream::StreamState;
 use std::collections::HashMap;
 use std::sync::Arc;
-use xmlwriter::XmlWriter;
-use crate::error::StreamingError;
-use presets::track_preset::PresetDescription;
-use crate::stream::StreamState;
-use crate::tracks::content_type::ContentType;
-use crate::tracks::utils::video_avc::{get_avc1_tag, level_to_tag};
 
 mod utils;
 pub mod content_type;

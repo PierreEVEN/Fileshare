@@ -26,7 +26,7 @@ impl PresetPool {
             Ok(track.clone())
         } else {
             track_ref.init_directories(&self.global_config.cache_path)?;
-            let new_builder = Arc::new(PresetBuilder::new(track_ref.clone()));
+            let new_builder = Arc::new(PresetBuilder::new(self.global_config.clone(), track_ref.clone()));
             builders.insert(track_ref.clone(), new_builder.clone());
             Ok(new_builder)
         }
@@ -35,7 +35,7 @@ impl PresetPool {
         self.pool.read().await.get(track_ref).cloned()
     }
 
-    pub fn global_config(&self) -> &VideoServerConfig {
-        &self.global_config.as_ref()
+    pub fn global_config(&self) -> &Arc<VideoServerConfig> {
+        &self.global_config
     }
 }

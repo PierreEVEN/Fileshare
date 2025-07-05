@@ -5,12 +5,7 @@ use rand::random;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
-use tracing::info;
-use types::database_ids::DatabaseId;
 use utils::config::Config;
-use video_server::error::StreamingError;
-use video_server::stream::{Stream, StreamState};
-use video_server::stream_id::StreamId;
 use video_server::StreamingContext;
 
 pub struct AppCtx {

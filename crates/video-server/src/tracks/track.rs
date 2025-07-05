@@ -23,17 +23,25 @@ pub struct Track {
 }
 
 impl Track {
-    pub fn new(owning_stream: Arc<StreamState>, input_track: u32, output_track: u32) -> Self {
-        Self {
+    pub fn new(owning_stream: Arc<StreamState>, input_track: u32, output_track: u32) -> Result<Self, StreamingError> {
+        let mut presets = HashMap::new();
+        for preset in PresetDescription::create_presets(owning_stream.media_info().get_track(input_track)?)? {
+            presets.insert(PresetRef::new(output_track, preset.to_string(), owning_stream.source().clone()), preset);
+        }
+        Ok(Self {
             owning_stream,
             input_track,
             output_track,
             default: false,
             args: Default::default(),
-            presets: Default::default(),
+            presets,
             target_gop: 5,
             force_transcoding: false,
-        }
+        })
+    }
+
+    pub fn get_presets(&self) -> &HashMap<PresetRef, PresetDescription> {
+        &self.presets
     }
 
     pub fn compile_manifest(&self, w: &mut XmlWriter, start_num: u32) -> Result<(), StreamingError> {
@@ -192,8 +200,10 @@ impl Track {
         // in progress.
         args.append(&mut vec!["-hls_flags".into(), "temp_file".into(), "-max_delay".into(), "5000000".into()]);
 
-        let init_seg = if cfg!(target_os = "windows") { preset_ref.init_path(start_num) }
-        else { PathBuf::from(preset_ref.init_path(start_num).file_name().unwrap()) };
+        let cache_path = &self.owning_stream.global_config()?.cache_path;
+
+        let init_seg = if cfg!(target_os = "windows") { preset_ref.init_path(cache_path, start_num) }
+        else { PathBuf::from(preset_ref.init_path(cache_path, start_num).file_name().unwrap()) };
 
         // args needed so we can distinguish between init fragments for new streams.
         // Basically on the web seeking works by reloading the entire video because of
@@ -204,8 +214,8 @@ impl Track {
 
         args.append(&mut vec!["-hls_segment_type".into(), "1".into()]);
         args.append(&mut vec!["-loglevel".into(), "warning".into(), "-progress".into(), "pipe:1".into()]);
-        args.append(&mut vec!["-hls_segment_filename".into(), preset_ref.chunk_path("$Number$".to_string()).display().to_string()]);
-        args.append(&mut vec![preset_ref.playlist_path().display().to_string()]);
+        args.append(&mut vec!["-hls_segment_filename".into(), preset_ref.chunk_path(cache_path, "%d".to_string()).display().to_string()]);
+        args.append(&mut vec![preset_ref.playlist_path(cache_path).display().to_string()]);
         Ok(args)
     }
 
