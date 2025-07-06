@@ -8,7 +8,10 @@ use crate::stream_id::StreamId;
 use crate::tracks::presets::building_process::BuildingProcess;
 use crate::tracks::track::Track;
 use std::collections::HashMap;
+#[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
+#[cfg(windows)]
+use std::os::windows::fs::MetadataExt;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -117,7 +120,7 @@ impl PresetBuilder {
             return false;
         }
         match path.metadata() {
-            Ok(data) => { data.size() > 0 }
+            Ok(data) => { data.file_size() > 0 }
             Err(_) => { false }
         }
     }
@@ -151,20 +154,6 @@ impl PresetBuilder {
     // Mark this stream as alive by resetting the destroy counter
     async fn touch(&self) {
         *self.last_usage.write().await = SystemTime::now();
-    }
-
-    async fn chunk_eta(&self, chunk: u32) -> Duration {
-        let mut min_eta = Duration::MAX;
-        for (_, it) in &*self.building_processes.read().await {
-            let process = it.read().await;
-            if process.start_num() <= chunk {
-                let eta = process.chunk_eta(chunk);
-                if eta < min_eta {
-                    min_eta = eta
-                }
-            }
-        }
-        min_eta
     }
 
     fn is_chunk_done(&self, chunk: u32) -> bool {

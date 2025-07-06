@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::info;
@@ -202,7 +203,7 @@ impl Track {
 
         let cache_path = &self.owning_stream.global_config()?.cache_path;
 
-        let init_seg = if cfg!(target_os = "windows") { preset_ref.init_path(cache_path, start_num) }
+        let init_seg = if cfg!(target_os = "windows") { path::absolute(preset_ref.init_path(cache_path, start_num))? }
         else { PathBuf::from(preset_ref.init_path(cache_path, start_num).file_name().unwrap()) };
 
         // args needed so we can distinguish between init fragments for new streams.
@@ -214,8 +215,8 @@ impl Track {
 
         args.append(&mut vec!["-hls_segment_type".into(), "1".into()]);
         args.append(&mut vec!["-loglevel".into(), "warning".into(), "-progress".into(), "pipe:1".into()]);
-        args.append(&mut vec!["-hls_segment_filename".into(), preset_ref.chunk_path(cache_path, "%d".to_string()).display().to_string()]);
-        args.append(&mut vec![preset_ref.playlist_path(cache_path).display().to_string()]);
+        args.append(&mut vec!["-hls_segment_filename".into(), path::absolute(preset_ref.chunk_path(cache_path, "%d".to_string()))?.display().to_string()]);
+        args.append(&mut vec![path::absolute(preset_ref.playlist_path(cache_path))?.display().to_string()]);
         Ok(args)
     }
 

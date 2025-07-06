@@ -1,6 +1,6 @@
 use crate::error::StreamingError;
 use std::fmt::{Display, Formatter};
-use std::fs;
+use std::{fs, path};
 use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 
@@ -21,7 +21,7 @@ impl PresetRef {
     }
 
     pub fn init_directories(&self, video_server_cache: &PathBuf) -> Result<(), StreamingError> {
-        Ok(fs::create_dir_all(video_server_cache.join(PathBuf::from(&self.source.file_name().unwrap()).join(self.track_index.to_string()).join(&self.preset)))?)
+        Ok(fs::create_dir_all(path::absolute(video_server_cache.join(PathBuf::from(&self.source.file_name().unwrap()).join(self.track_index.to_string()).join(&self.preset)))?)?)
     }
     pub fn init_path(&self, video_server_cache: &PathBuf, start_num: u32) -> PathBuf {
         video_server_cache.join(PathBuf::from(&self.source.file_name().unwrap()).join(self.track_index.to_string()).join(&self.preset).join(format!("{start_num}_init.mp4")))

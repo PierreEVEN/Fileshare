@@ -2,6 +2,7 @@ use anyhow::Error;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PostgresConfig {
@@ -24,6 +25,8 @@ pub struct EMailerConfig {
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct VideoServerConfig {
     pub cache_path: PathBuf,
+    pub cache_ttl: Duration,
+    max_waiting: Duration
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -73,6 +76,8 @@ impl Default for Config {
                 max_parallel_task: 0,
                 video_server: VideoServerConfig {
                     cache_path: PathBuf::from("data").join("streaming_cache"),
+                    cache_ttl: Duration::from_secs(600),
+                    max_waiting: Duration::from_secs(2),
                 },
                 postgres: PostgresConfig {
                     username: "postgres".to_string(),
