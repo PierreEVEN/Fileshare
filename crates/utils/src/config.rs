@@ -25,8 +25,11 @@ pub struct EMailerConfig {
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct VideoServerConfig {
     pub cache_path: PathBuf,
-    pub cache_ttl: Duration,
-    max_waiting: Duration
+    pub stream_ttl: Duration,
+    pub max_request_timout: Duration,
+    pub tick_interval_ms: u64,
+    pub segment_duration_sec: u32,
+    
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -76,8 +79,10 @@ impl Default for Config {
                 max_parallel_task: 0,
                 video_server: VideoServerConfig {
                     cache_path: PathBuf::from("data").join("streaming_cache"),
-                    cache_ttl: Duration::from_secs(600),
-                    max_waiting: Duration::from_secs(2),
+                    stream_ttl: Duration::from_secs(600),
+                    max_request_timout: Duration::from_secs(2),
+                    tick_interval_ms: 100,
+                    segment_duration_sec: 5,
                 },
                 postgres: PostgresConfig {
                     username: "postgres".to_string(),
