@@ -5,7 +5,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Deserializer, Serialize};
 use crate::error::{ErrorKind, StreamingError};
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Deserialize)]
 pub struct MediaInfo {
     streams: Vec<MediaTrackInfo>,
     format: MediaFormat,

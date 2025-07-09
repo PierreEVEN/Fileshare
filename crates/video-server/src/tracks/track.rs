@@ -10,7 +10,7 @@ use crate::stream::StreamState;
 use crate::tracks::presets::preset_ref::PresetRef;
 use crate::tracks::presets::track_preset::PresetDescription;
 use crate::tracks::utils::is_supported_html5_codec;
-use crate::tracks::utils::video_avc::{get_avc1_tag, level_to_tag};
+use crate::tracks::utils::video_avc::{find_avc1_level, level_to_tag};
 
 pub struct Track {
     owning_stream: Arc<StreamState>,
@@ -77,7 +77,7 @@ impl Track {
                         let video_avc = track_info
                             .level
                             .and_then(|x| level_to_tag(x))
-                            .unwrap_or(get_avc1_tag(
+                            .unwrap_or(find_avc1_level(
                                 track_info.width.clone().unwrap_or(1920) as u64,
                                 track_info.height.clone().unwrap_or(1080) as u64,
                                 preset.get_bitrate(track_info) as u64,

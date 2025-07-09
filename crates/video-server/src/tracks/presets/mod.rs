@@ -120,7 +120,16 @@ impl PresetBuilder {
             return false;
         }
         match path.metadata() {
-            Ok(data) => { data.file_size() > 0 }
+            Ok(data) => {
+                #[cfg(unix)]
+                {
+                    data.size() > 0
+                }
+                #[cfg(windows)]
+                {
+                    data.file_size() > 0
+                }
+            }
             Err(_) => { false }
         }
     }

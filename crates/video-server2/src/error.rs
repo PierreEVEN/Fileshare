@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
 use utils::server_error::ServerError;
-use crate::tracks::presets::preset_ref::PresetRef;
+use crate::media_stream::track_preset::PresetDescription;
 
 pub enum ErrorKind {
     InitNotFound { track: u32, num: u32 },
@@ -12,7 +12,7 @@ pub enum ErrorKind {
     Other(String),
     NoTrack(u32),
     UnknownCodec(String),
-    UnknownPreset(PresetRef),
+    UnknownPreset(PresetDescription),
 }
 
 pub struct StreamingError(ErrorKind);
