@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use serde::Deserialize;
 use crate::error::{ErrorKind, StreamingError};
-use crate::media_info::{CodecType, Framerate};
+use crate::media_info::media_info::{CodecType, Framerate};
 use crate::media_stream::stream_track::TrackDefinition;
 use crate::media_stream::video_avc1::{avc1_level_to_tag, find_avc1_level, Avc1Level};
 

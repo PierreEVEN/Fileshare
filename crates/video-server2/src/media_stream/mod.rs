@@ -5,15 +5,16 @@ pub mod video_avc1;
 pub mod preset_description;
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use utils::config::VideoServerConfig;
 use crate::error::StreamingError;
+use crate::media_info::stream_reference::StreamReference;
 use crate::media_stream::media_stream::MediaStream;
+
 #[derive(Clone)]
 pub struct MediaStreamPool {
-    pool: Arc<RwLock<HashMap<PathBuf, Arc<MediaStream>>>>,
+    pool: Arc<RwLock<HashMap<StreamReference, Arc<MediaStream>>>>,
     global_config: Arc<VideoServerConfig>,
 }
 
@@ -25,19 +26,19 @@ impl MediaStreamPool {
         }
     }
 
-    pub async fn get_or_create_stream(&self, file: &PathBuf) -> Result<Arc<MediaStream>, StreamingError> {
+    pub async fn get_or_create_stream(&self, stream_identifier: &StreamReference) -> Result<Arc<MediaStream>, StreamingError> {
         // Try get without lock
-        if let Some(stream) = self.pool.read().await.get(file) {
+        if let Some(stream) = self.pool.read().await.get(stream_identifier) {
             return Ok(stream.clone())
         }
 
         // Get or insert
         let mut pool = self.pool.write().await;
-        if let Some(stream) = pool.get(file) {
+        if let Some(stream) = pool.get(stream_identifier) {
             return Ok(stream.clone())
         }
-        let new_stream = Arc::new(MediaStream::new(self.global_config.clone(), file.clone())?);
-        pool.insert(file.clone(), new_stream.clone());
+        let new_stream = Arc::new(MediaStream::new(self.global_config.clone(), stream_identifier.clone())?);
+        pool.insert(stream_identifier.clone(), new_stream.clone());
         Ok(new_stream)
     }
 

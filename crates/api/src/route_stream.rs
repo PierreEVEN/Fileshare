@@ -8,13 +8,13 @@ use axum::routing::{get, post};
 use axum::{Error, Json, Router};
 use database::item::{DbItem, Trash};
 use database::object::Object;
-use std::str::FromStr;
 use std::sync::Arc;
 use tokio::io;
 use tokio_util::io::ReaderStream;
-use types::database_ids::{DatabaseId, ItemId};
+use types::database_ids::ItemId;
 use utils::server_error::ServerError;
 use video_server2::error::StreamingError;
+use video_server2::media_info::stream_reference::StreamReference;
 use video_server2::media_stream::media_stream::MediaStream;
 use video_server2::media_stream::preset_description::PresetDescription;
 
@@ -26,7 +26,11 @@ impl From<StreamingError> for ServerStreamError {
         Self(value.into())
     }
 }
-
+impl From<anyhow::Error> for ServerStreamError {
+    fn from(value: anyhow::Error) -> Self {
+        Self(value.into())
+    }
+}
 impl From<io::Error> for ServerStreamError {
     fn from(value: io::Error) -> Self {
         Self(value.into())
@@ -57,27 +61,26 @@ impl StreamRoutes {
     }
 }
 
-async fn get_stream(ctx: &Arc<AppCtx>, stream_id: String, request: axum::http::Request<Body>) -> Result<Arc<MediaStream>, ServerError> {
+async fn get_stream(ctx: &Arc<AppCtx>, item_id: ItemId, request: axum::http::Request<Body>) -> Result<Arc<MediaStream>, ServerStreamError> {
     let permissions = Permissions::new(&request)?;
-    let item_id = ItemId::from(DatabaseId::from_str(stream_id.as_str())?);
     let item = DbItem::from_id(&ctx.database, &item_id, Trash::Both).await?;
     permissions.view_item(&ctx.database, &item).await?.require()?;
     let object = item.file.ok_or(ServerError::msg(StatusCode::METHOD_NOT_ALLOWED, "Not a valid file"))?.object;
-    Ok(ctx.streaming_context().get_or_create_stream(&Object::data_path(&object, &ctx.database)).await.map_err(|err| <StreamingError as Into<ServerError>>::into(err))?)
+    Ok(ctx.streaming_context().get_or_create_stream(&StreamReference::new(Object::data_path(&object, &ctx.database), item_id.to_string())).await?)
 }
 
-async fn create_stream(State(ctx): State<Arc<AppCtx>>, Path(stream_id): Path<String>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerError> {
-    let stream = get_stream(&ctx, stream_id, request).await?;
-    Ok(Json(stream.identifier()))
+async fn create_stream(State(ctx): State<Arc<AppCtx>>, Path(item_id): Path<ItemId>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerStreamError> {
+    let stream = get_stream(&ctx, item_id, request).await?;
+    Ok(Json(stream.identifier().clone()))
 }
 
-async fn get_manifest(State(ctx): State<Arc<AppCtx>>, Path((stream_id, start_num)): Path<(String, u32)>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerStreamError> {
-    let stream = get_stream(&ctx, stream_id, request).await?;
+async fn get_manifest(State(ctx): State<Arc<AppCtx>>, Path((item_id, start_num)): Path<(ItemId, u32)>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerStreamError> {
+    let stream = get_stream(&ctx, item_id, request).await?;
     Ok(([(header::CONTENT_TYPE, "application/dash+xml")], stream.compile_dash_manifest(start_num).await.map_err(|err| <StreamingError as Into<ServerError>>::into(err))?))
 }
 
-async fn get_init_chunk(State(ctx): State<Arc<AppCtx>>, Path((stream_id, track_id, start_num)): Path<(String, u32, u32)>, preset: Query<PresetDescription>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerStreamError> {
-    let stream = get_stream(&ctx, stream_id, request).await?;
+async fn get_init_chunk(State(ctx): State<Arc<AppCtx>>, Path((item_id, track_id, start_num)): Path<(ItemId, u32, u32)>, preset: Query<PresetDescription>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerStreamError> {
+    let stream = get_stream(&ctx, item_id, request).await?;
     let track = stream.get_track(track_id).await?;
     let preset = track.get_or_create_preset(&preset).await?;
     let path = preset.get_init(start_num).await?;
@@ -90,8 +93,8 @@ async fn get_init_chunk(State(ctx): State<Arc<AppCtx>>, Path((stream_id, track_i
     ];
     Ok((headers, body))
 }
-async fn get_chunk(State(ctx): State<Arc<AppCtx>>, Path((stream_id, track_id, chunk)): Path<(String, u32, u32)>, preset: Query<PresetDescription>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerStreamError> {
-    let stream = get_stream(&ctx, stream_id, request).await?;
+async fn get_chunk(State(ctx): State<Arc<AppCtx>>, Path((item_id, track_id, chunk)): Path<(ItemId, u32, u32)>, preset: Query<PresetDescription>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerStreamError> {
+    let stream = get_stream(&ctx, item_id, request).await?;
     let track = stream.get_track(track_id).await?;
     let preset = track.get_or_create_preset(&preset).await?;
     let path = preset.get_chunk(chunk).await?;

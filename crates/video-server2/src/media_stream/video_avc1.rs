@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use crate::media_info::Framerate;
+use crate::media_info::media_info::Framerate;
 
 pub fn avc1_level_to_tag(level: u32) -> Option<Avc1Level> {
     AVC1_LEVELS.iter().find(|&x| x.level == level).cloned()

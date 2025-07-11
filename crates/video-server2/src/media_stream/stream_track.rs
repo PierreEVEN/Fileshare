@@ -1,9 +1,9 @@
 use crate::error::{ErrorKind, StreamingError};
-use crate::media_info::{CodecType, Framerate, MediaInfo};
+use crate::media_info::media_info::{CodecType, Framerate, MediaInfo};
+use crate::media_info::stream_reference::StreamReference;
 use crate::media_stream::preset_description::PresetDescription;
 use crate::media_stream::track_preset::TrackPreset;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use utils::config::VideoServerConfig;
@@ -15,7 +15,7 @@ pub struct StreamTrack {
     global_config: Arc<VideoServerConfig>,
     definition: Arc<TrackDefinition>,
     output_track: u32,
-    source_path: PathBuf
+    stream_reference: StreamReference
 }
 
 pub struct TrackDefinition {
@@ -46,13 +46,13 @@ impl TrackDefinition {
 
 impl StreamTrack {
 
-    pub fn new(global_config: Arc<VideoServerConfig>, source_path: PathBuf, input_definition: TrackDefinition, output_track: u32) -> Self {
+    pub fn new(global_config: Arc<VideoServerConfig>, stream_reference: StreamReference, input_definition: TrackDefinition, output_track: u32) -> Self {
         Self {
             presets: Default::default(),
             global_config,
             definition: Arc::new(input_definition),
             output_track,
-            source_path,
+            stream_reference,
         }
     }
 
@@ -68,7 +68,7 @@ impl StreamTrack {
             return Ok(preset.clone());
         }
 
-        let new_preset = Arc::new(TrackPreset::new(preset.clone(), self.definition.clone()));
+        let new_preset = Arc::new(TrackPreset::new(self.global_config.clone(), preset.clone(), self.definition.clone()));
         presets.insert(preset.clone(), new_preset.clone());
         Ok(new_preset)
     }
@@ -84,9 +84,9 @@ impl StreamTrack {
             {
                 w.write_attribute("duration", &self.global_config.segment_duration_sec);
                 w.write_attribute("timescale", &1);
-                w.write_attribute("media", &format!("/api/stream/{}/data/{}/$Number$?$RepresentationID$", self.source_path.file_name().unwrap().display(), self.output_track));
+                w.write_attribute("media", &format!("/api/stream/{}/data/{}/$Number$?$RepresentationID$", self.stream_reference.id(), self.output_track));
                 w.write_attribute("startNumber", &start_num);
-                w.write_attribute("initialization", &format!("/api/stream/{}/init/{}/{start_num}?$RepresentationID$", self.source_path.file_name().unwrap().display(), self.output_track));
+                w.write_attribute("initialization", &format!("/api/stream/{}/init/{}/{start_num}?$RepresentationID$", self.stream_reference.id(), self.output_track));
             }
             w.end_element();
 

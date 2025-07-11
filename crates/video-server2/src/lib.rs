@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use crate::media_stream::MediaStreamPool;
 use std::sync::Arc;
 use std::time::Duration;
@@ -7,11 +6,12 @@ use tokio::time::sleep;
 use tracing::error;
 use utils::config::VideoServerConfig;
 use crate::error::StreamingError;
+use crate::media_info::stream_reference::StreamReference;
 use crate::media_stream::media_stream::MediaStream;
 
-pub mod media_info;
 pub mod error;
 pub mod media_stream;
+pub mod media_info;
 
 pub struct StreamingContext {
     #[allow(unused)]
@@ -37,8 +37,8 @@ impl StreamingContext {
         }
     }
 
-    pub async fn get_or_create_stream(&self, file: &PathBuf) -> Result<Arc<MediaStream>, StreamingError> {
-        self.builders.get_or_create_stream(file).await
+    pub async fn get_or_create_stream(&self, stream_identifier: &StreamReference) -> Result<Arc<MediaStream>, StreamingError> {
+        self.builders.get_or_create_stream(stream_identifier).await
     }
 }
 

@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::RwLock;
@@ -6,11 +5,12 @@ use tracing::info;
 use xmlwriter::XmlWriter;
 use utils::config::VideoServerConfig;
 use crate::error::{ErrorKind, StreamingError};
-use crate::media_info::{CodecType, MediaInfo};
+use crate::media_info::media_info::{CodecType, MediaInfo};
+use crate::media_info::stream_reference::StreamReference;
 use crate::media_stream::stream_track::{StreamTrack, TrackDefinition};
 
 pub struct MediaStream {
-    source_path: PathBuf,
+    stream_reference: StreamReference,
     last_usage: RwLock<SystemTime>,
     global_config: Arc<VideoServerConfig>,
     tracks: Vec<StreamTrack>,
@@ -18,8 +18,8 @@ pub struct MediaStream {
 }
 
 impl MediaStream {
-    pub fn new(global_config: Arc<VideoServerConfig>, source_path: PathBuf) -> Result<Self, StreamingError> {
-        let media_info = MediaInfo::new(&source_path)?;
+    pub fn new(global_config: Arc<VideoServerConfig>, stream_reference: StreamReference) -> Result<Self, StreamingError> {
+        let media_info = MediaInfo::new(stream_reference.path())?;
         let mut tracks = vec![];
         
         for track in 0..media_info.get_tracks().len() {
@@ -27,8 +27,8 @@ impl MediaStream {
             match definition.codec_type {
                 CodecType::Video | CodecType::Audio => {
                     tracks.push(StreamTrack::new(
-                        global_config.clone(), 
-                        source_path.clone(),
+                        global_config.clone(),
+                        stream_reference.clone(),
                         definition,
                         tracks.len() as u32))
                 }
@@ -38,15 +38,15 @@ impl MediaStream {
         
         Ok(Self {
             media_info,
-            source_path,
+            stream_reference,
             last_usage: RwLock::new(SystemTime::now()),
             global_config,
             tracks,
         })
     }
 
-    pub fn identifier(&self) -> String {
-        self.source_path.file_name().unwrap().to_str().unwrap().to_string()
+    pub fn identifier(&self) -> &String {
+        self.stream_reference.id()
     }
     
     // Return true when we can consider this media stream is not used anymore and we can destroy it
@@ -62,7 +62,7 @@ impl MediaStream {
     }
 
     pub async fn destroy(&self) -> Result<(), StreamingError> {
-        info!("Destroy stream {}", self.source_path.file_name().unwrap().display());
+        info!("Destroy stream {}", self.stream_reference.id());
         for track in &self.tracks {
             track.destroy().await?;
         }
@@ -97,7 +97,7 @@ impl MediaStream {
 
         w.start_element("BaseURL");
         {
-            w.write_text(format!("/api/stream/{}/", self.source_path.file_name().unwrap().display()).as_str());
+            w.write_text(&format!("/api/stream/{}/", self.stream_reference.id()));
         }
         w.end_element();
 
