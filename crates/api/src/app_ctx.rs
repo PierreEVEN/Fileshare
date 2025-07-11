@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
 use utils::config::Config;
-use video_server::StreamingContext;
+use video_server2::StreamingContext;
 
 pub struct AppCtx {
     pub config: Config,

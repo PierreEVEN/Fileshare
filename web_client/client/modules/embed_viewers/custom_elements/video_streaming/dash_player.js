@@ -15,7 +15,7 @@ class DashPlayer extends HTMLElement {
     connectedCallback() {
         if (!this.item)
             return;
-        fetch_api(`stream/create`, 'POST', this.item)
+        fetch_api(`stream/create/${this.item}`, 'POST', this.item)
             .then(stream_id => {
                 this.stream_id = stream_id;
                 const url = `/api/stream/${stream_id}/manifest/0`;

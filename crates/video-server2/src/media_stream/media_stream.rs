@@ -1,16 +1,16 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::RwLock;
 use tracing::info;
 use xmlwriter::XmlWriter;
-use types::database_ids::ItemId;
 use utils::config::VideoServerConfig;
 use crate::error::{ErrorKind, StreamingError};
-use crate::media_info::MediaInfo;
-use crate::media_stream::stream_track::StreamTrack;
+use crate::media_info::{CodecType, MediaInfo};
+use crate::media_stream::stream_track::{StreamTrack, TrackDefinition};
 
 pub struct MediaStream {
-    item_id: ItemId,
+    source_path: PathBuf,
     last_usage: RwLock<SystemTime>,
     global_config: Arc<VideoServerConfig>,
     tracks: Vec<StreamTrack>,
@@ -18,15 +18,37 @@ pub struct MediaStream {
 }
 
 impl MediaStream {
-    pub fn new(global_config: Arc<VideoServerConfig>, item_id: ItemId) -> Self {
-        Self {
-            item_id,
+    pub fn new(global_config: Arc<VideoServerConfig>, source_path: PathBuf) -> Result<Self, StreamingError> {
+        let media_info = MediaInfo::new(&source_path)?;
+        let mut tracks = vec![];
+        
+        for track in 0..media_info.get_tracks().len() {
+            let definition = TrackDefinition::new(&media_info, track as u32)?;
+            match definition.codec_type {
+                CodecType::Video | CodecType::Audio => {
+                    tracks.push(StreamTrack::new(
+                        global_config.clone(), 
+                        source_path.clone(),
+                        definition,
+                        tracks.len() as u32))
+                }
+                _ => {}
+            }
+        }
+        
+        Ok(Self {
+            media_info,
+            source_path,
             last_usage: RwLock::new(SystemTime::now()),
             global_config,
-            tracks: vec![],
-        }
+            tracks,
+        })
     }
 
+    pub fn identifier(&self) -> String {
+        self.source_path.file_name().unwrap().to_str().unwrap().to_string()
+    }
+    
     // Return true when we can consider this media stream is not used anymore and we can destroy it
     pub async fn is_orphan(&self) -> Result<bool, StreamingError> {
         Ok(SystemTime::now().duration_since(*self.last_usage.read().await).or_else(|err| {
@@ -39,12 +61,15 @@ impl MediaStream {
         *self.last_usage.write().await = SystemTime::now();
     }
 
-    pub async fn destroy(&self) {
-        info!("Destroy stream {}", self.item_id);
-        todo!()
+    pub async fn destroy(&self) -> Result<(), StreamingError> {
+        info!("Destroy stream {}", self.source_path.file_name().unwrap().display());
+        for track in &self.tracks {
+            track.destroy().await?;
+        }
+        Ok(())
     }
 
-    pub fn compile_dash_manifest(&self, start_num: u32) -> Result<String, StreamingError> {
+    pub async fn compile_dash_manifest(&self, start_num: u32) -> Result<String, StreamingError> {
         fn timestamp_to_xml(t: u64) -> String {
             let h = t / 3600;
             let m = t % 3600 / 60;
@@ -72,7 +97,7 @@ impl MediaStream {
 
         w.start_element("BaseURL");
         {
-            w.write_text(format!("/api/stream/{}/", self.item_id).as_str());
+            w.write_text(format!("/api/stream/{}/", self.source_path.file_name().unwrap().display()).as_str());
         }
         w.end_element();
 
@@ -80,11 +105,16 @@ impl MediaStream {
         {
             w.write_attribute("duration", &duration);
             for track in &self.tracks {
-                track.compile_manifest(&mut w, start_num)?;
+                track.compile_manifest(&mut w, start_num).await?;
             }
         }
         w.end_element();
 
         Ok(w.end_document())
+    }
+    
+    pub async fn get_track(&self, output_track: u32) -> Result<&StreamTrack, StreamingError> {
+        self.touch().await;
+        self.tracks.get(output_track as usize).ok_or(StreamingError::new(ErrorKind::NoTrack(output_track)))
     }
 }

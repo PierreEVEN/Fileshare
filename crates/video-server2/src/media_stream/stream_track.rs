@@ -1,18 +1,21 @@
 use crate::error::{ErrorKind, StreamingError};
-use crate::media_stream::track_preset::{Framerate, TrackPreset};
-use std::collections::HashSet;
+use crate::media_info::{CodecType, Framerate, MediaInfo};
+use crate::media_stream::preset_description::PresetDescription;
+use crate::media_stream::track_preset::TrackPreset;
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use utils::config::VideoServerConfig;
+use utils::server_error::ServerError;
 use xmlwriter::XmlWriter;
-use types::database_ids::ItemId;
-use crate::media_info::CodecType;
 
 pub struct StreamTrack {
-    presets: HashSet<TrackPreset>,
+    presets: RwLock<HashMap<PresetDescription, Arc<TrackPreset>>>,
     global_config: Arc<VideoServerConfig>,
-    definition: TrackDefinition,
+    definition: Arc<TrackDefinition>,
     output_track: u32,
-    input_item: ItemId
+    source_path: PathBuf
 }
 
 pub struct TrackDefinition {
@@ -25,8 +28,52 @@ pub struct TrackDefinition {
     pub level: u32
 }
 
+impl TrackDefinition {
+    pub fn new(source_media: &MediaInfo, track_index: u32) -> Result<Self, StreamingError> {
+        let track = source_media.get_track(track_index)?;
+
+        Ok(Self {
+            input_bitrate: track.get_bitrate().unwrap_or(source_media.get_bitrate().ok_or(StreamingError::new(ErrorKind::MissingData("bitrate")))?) as u32,
+            input_duration: track.duration.as_ref().unwrap_or(&source_media.get_duration().ok_or(StreamingError::new(ErrorKind::MissingData("duration")))?.to_string()).parse::<f32>()?,
+            input_height: if let CodecType::Video = track.codec_type()? {track.height.ok_or(StreamingError::new(ErrorKind::MissingData("height")))? as u32} else {0},
+            input_width: if let CodecType::Video = track.codec_type()? {track.width.ok_or(StreamingError::new(ErrorKind::MissingData("width")))? as u32} else {0},
+            input_framerate: if let CodecType::Video = track.codec_type()? {track.get_framerate()?} else {Framerate::from(0f32)},
+            codec_type: track.codec_type()?,
+            level: if let CodecType::Video = track.codec_type()? {track.level.unwrap_or(0) as u32} else {0},
+        })
+    }
+}
+
 impl StreamTrack {
-    pub fn compile_manifest(&self, w: &mut XmlWriter, start_num: u32) -> Result<(), StreamingError> {
+
+    pub fn new(global_config: Arc<VideoServerConfig>, source_path: PathBuf, input_definition: TrackDefinition, output_track: u32) -> Self {
+        Self {
+            presets: Default::default(),
+            global_config,
+            definition: Arc::new(input_definition),
+            output_track,
+            source_path,
+        }
+    }
+
+    pub async fn get_or_create_preset(&self, preset: &PresetDescription) -> Result<Arc<TrackPreset>, ServerError> {
+        // Try get read only
+        if let Some(preset) = self.presets.read().await.get(preset) {
+            return Ok(preset.clone());
+        }
+
+        // Get or create preset
+        let mut presets = self.presets.write().await;
+        if let Some(preset) = presets.get(preset) {
+            return Ok(preset.clone());
+        }
+
+        let new_preset = Arc::new(TrackPreset::new(preset.clone(), self.definition.clone()));
+        presets.insert(preset.clone(), new_preset.clone());
+        Ok(new_preset)
+    }
+
+    pub async fn compile_manifest(&self, w: &mut XmlWriter, start_num: u32) -> Result<(), StreamingError> {
         w.start_element("AdaptationSet");
         {
             w.write_attribute("mimeType", self.definition.codec_type.mime());
@@ -37,18 +84,19 @@ impl StreamTrack {
             {
                 w.write_attribute("duration", &self.global_config.segment_duration_sec);
                 w.write_attribute("timescale", &1);
-                w.write_attribute("media", &format!("/api/stream/{}/data/{}/$RepresentationID$/$Number$", self.input_item, self.output_track));
+                w.write_attribute("media", &format!("/api/stream/{}/data/{}/$Number$?$RepresentationID$", self.source_path.file_name().unwrap().display(), self.output_track));
                 w.write_attribute("startNumber", &start_num);
-                w.write_attribute("initialization", &format!("/api/stream/{}/init/{}/$RepresentationID$/{start_num}", self.input_item, self.output_track));
+                w.write_attribute("initialization", &format!("/api/stream/{}/init/{}/{start_num}?$RepresentationID$", self.source_path.file_name().unwrap().display(), self.output_track));
             }
             w.end_element();
 
-            for preset in &self.presets {
-                let description = preset.description();
+            let mut is_first = true;
+
+            for description in PresetDescription::from_track(&self.definition) {
                 let codec = match &self.definition.codec_type {
                     CodecType::Audio => "mp4a.40.2".to_string(),
                     CodecType::Video => {
-                        let avc1_tag = preset.avc1_level().ok_or(StreamingError::new(ErrorKind::MissingData("Level")))?;
+                        let avc1_tag = description.avc1_level(self.definition.as_ref()).ok_or(StreamingError::new(ErrorKind::MissingData("Level")))?;
                         avc1_tag.to_string()
                     }
                     v => { return Err(StreamingError::new(ErrorKind::ParseError(format!("Unhandled codec type {v}", )))) }
@@ -56,11 +104,12 @@ impl StreamTrack {
 
                 w.start_element("Representation");
                 {
-                    w.write_attribute("id", &preset.to_string());
+                    w.write_attribute("id", &description.to_string());
                     w.write_attribute("codecs", &codec);
-                    w.write_attribute("bandwidth", &preset.bitrate());
+                    w.write_attribute("bandwidth", &description.bitrate(self.definition.as_ref()));
 
-                    if description.is_default {
+                    if is_first {
+                        is_first = false;
                         w.start_element("Role");
                         {
                             w.write_attribute("schemeIdUri", "urn:mpeg:dash:role:2011");
@@ -76,4 +125,7 @@ impl StreamTrack {
         Ok(())
     }
 
+    pub async fn destroy(&self) -> Result<(), StreamingError> {
+        Ok(())
+    }
 }

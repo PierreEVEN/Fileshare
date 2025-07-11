@@ -23,7 +23,6 @@ impl ServerError {
     }
 }
 
-
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
         (

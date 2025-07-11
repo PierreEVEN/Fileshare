@@ -20,5 +20,5 @@ regex = "1.11.0"
 database = { path = "../database" }
 utils = { path = "../utils" }
 thumbnailer = { path = "../thumbnailer" }
-video-server = { path = "../video-server" }
+video-server2 = { path = "../video-server2" }
 types = { path = "../types" }
