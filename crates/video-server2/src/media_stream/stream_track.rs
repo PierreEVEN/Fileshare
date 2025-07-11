@@ -25,6 +25,7 @@ pub struct TrackDefinition {
     pub input_width: u32,
     pub input_framerate: Framerate,
     pub codec_type: CodecType,
+    pub codec: Option<String>,
     pub level: u32
 }
 
@@ -39,6 +40,7 @@ impl TrackDefinition {
             input_width: if let CodecType::Video = track.codec_type()? {track.width.ok_or(StreamingError::new(ErrorKind::MissingData("width")))? as u32} else {0},
             input_framerate: if let CodecType::Video = track.codec_type()? {track.get_framerate()?} else {Framerate::from(0f32)},
             codec_type: track.codec_type()?,
+            codec: track.codec_name.clone(),
             level: if let CodecType::Video = track.codec_type()? {track.level.unwrap_or(0) as u32} else {0},
         })
     }

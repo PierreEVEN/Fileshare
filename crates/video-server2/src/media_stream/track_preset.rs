@@ -1,5 +1,5 @@
 use std::path;
-use crate::error::StreamingError;
+use crate::error::{ErrorKind, StreamingError};
 use crate::media_stream::preset_description::PresetDescription;
 use crate::media_stream::stream_track::TrackDefinition;
 use std::path::PathBuf;
@@ -8,6 +8,7 @@ use std::time::Duration;
 use tokio::time::sleep;
 use tracing::info;
 use utils::config::VideoServerConfig;
+use crate::media_info::media_info::CodecType;
 
 pub struct TrackPreset {
     global_config: Arc<VideoServerConfig>,
@@ -24,30 +25,26 @@ impl TrackPreset {
             parent_track,
         }
     }
-    
-    pub fn build_args(&self, start_num: u32, preset_ref: &PresetRef) -> Result<Vec<String>, StreamingError> {
-        let preset = self.get_preset(preset_ref)?;
 
+    pub fn build_args(&self, start_num: u32) -> Result<Vec<String>, StreamingError> {
         let mut args = vec![
             "-y".into(),
-            "-ss".into(), (start_num * self.segment_duration).to_string(),
+            "-ss".into(), (start_num * self.global_config.segment_duration_sec).to_string(),
             "-i".into(), self.owning_stream.source().to_str().unwrap().into(),
             "-map".into(), format!("0:{}", self.input_track),
         ];
 
         // Directly copy stream everytime it's possible to save CPU usage
-        if self.should_transcode(preset)? {
+        if self.should_transcode()? {
             info!("Stream {}:{} is using full video transcoding", self.owning_stream.stream_id(), self.output_track);
 
-            let track_info = self.track_info()?;
-
-            match track_info.codec_type.as_str() {
-                "audio" => {
-                    args.append(&mut vec!["-c:0".into(), "aac".into(), "-ab".into(), preset.get_bitrate(track_info).to_string()]);
+            match &self.parent_track.codec_type {
+                CodecType::Audio => {
+                    args.append(&mut vec!["-c:0".into(), "aac".into(), "-ab".into(), self.description.bitrate(&self.parent_track).to_string()]);
                 },
-                "video" => {
-                    args.append(&mut vec!["-vf".into(), format!("scale={}:{}", preset.get_height(track_info), preset.get_width(track_info))]);
-                    args.append(&mut vec!["-b:v".into(), preset.get_bitrate(track_info).to_string()]);
+                CodecType::Video => {
+                    args.append(&mut vec!["-vf".into(), format!("scale={}:{}", self.description.height(&self.parent_track), self.description.width(&self.parent_track))]);
+                    args.append(&mut vec!["-b:v".into(), self.description.bitrate(&self.parent_track).to_string()]);
                     args.append(&mut vec!["-c:0".into(), "h264".into(), "-preset".into(), "veryfast".into()]);
                 }
                 c => { return Err(StreamingError::new(ErrorKind::UnknownCodec(c.to_string()))) }
@@ -89,8 +86,8 @@ impl TrackPreset {
         // Basically on the web seeking works by reloading the entire video because of
         // discontinuity issues that browsers seem to not ignore like mpv.
         args.append(&mut vec!["-hls_fmp4_init_filename".into(), init_seg.display().to_string()]);
-        args.append(&mut vec!["-hls_time".into(), self.segment_duration.to_string()]);
-        args.append(&mut vec!["-force_key_frames".into(), format!("expr:gte(t,n_forced*{})", self.segment_duration)]);
+        args.append(&mut vec!["-hls_time".into(), self.global_config.segment_duration_sec.to_string()]);
+        args.append(&mut vec!["-force_key_frames".into(), format!("expr:gte(t,n_forced*{})", self.global_config.segment_duration_sec)]);
 
         args.append(&mut vec!["-hls_segment_type".into(), "1".into()]);
         args.append(&mut vec!["-loglevel".into(), "warning".into(), "-progress".into(), "pipe:1".into()]);
@@ -99,34 +96,32 @@ impl TrackPreset {
         Ok(args)
     }
 
-    pub fn should_transcode(&self) -> Result<bool, StreamingError> {
-        if self.force_transcoding { return Ok(true); }
-        let media_info = self.owning_stream.media_info();
-        let track_info = media_info.get_track(self.input_track)?;
+    fn is_supported_html5_codec(codec: &str) -> bool {
+        match codec {
+            "h264" | "libopenh264" | "vp8" | "vp9" | "theora" | "libtheora" => true,
+            "aac" | "libmp3lame" | "mp3" | "opus" | "libopus" | "vorbis" | "libvorbis" => true,
+            &_ => false,
+        }
+    }
 
-        match &track_info.codec_name {
-            Some(codec) => if !is_supported_html5_codec(codec.as_str()) { return Ok(true) }
+    fn should_transcode(&self) -> Result<bool, StreamingError> {
+        if self.force_transcoding { return Ok(true); }
+
+        match &self.parent_track.codec {
+            Some(codec) => if !Self::is_supported_html5_codec(codec.as_str()) { return Ok(true) }
             None => return Ok(true)
         }
 
-        if let Some(max_height) = preset.max_height {
-            if let Some(track_height) = track_info.height {
-                if (max_height as i64) < track_height { return Ok(true) }
-            } else {
-                return Ok(true)
-            }
+        if let Some(max_height) = self.description.max_height {
+            if max_height < self.parent_track.input_height { return Ok(true) }
         }
 
-        if preset.max_bitrate.is_some() {
+        if self.description.max_bitrate.is_some() {
             return Ok(true)
         }
 
-        if let Some(max_fps) = preset.max_frame_rate {
-            if let Ok(track_fps) = track_info.get_framerate() {
-                if max_fps < track_fps { return Ok(true) }
-            } else {
-                return Ok(true)
-            }
+        if let Some(max_fps) = self.description.max_frame_rate {
+            if max_fps < self.parent_track.input_framerate { return Ok(true) }
         }
 
         Ok(false)
