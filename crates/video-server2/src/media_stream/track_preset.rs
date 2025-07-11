@@ -1,43 +1,56 @@
-use std::path;
+use std::{fs, path};
 use crate::error::{ErrorKind, StreamingError};
 use crate::media_stream::preset_description::PresetDescription;
 use crate::media_stream::stream_track::TrackDefinition;
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::Duration;
+use std::sync::{Arc};
+use std::time::{Duration, SystemTime};
+use tokio::sync::RwLock;
 use tokio::time::sleep;
-use tracing::info;
+use tracing::{info, warn};
 use utils::config::VideoServerConfig;
 use crate::media_info::media_info::CodecType;
+use crate::media_info::stream_reference::StreamReference;
+use crate::media_stream::ffmpeg_process::FfmpegProcess;
 
 pub struct TrackPreset {
     global_config: Arc<VideoServerConfig>,
     description: PresetDescription,
     parent_track: Arc<TrackDefinition>,
     force_transcoding: bool,
+    stream_reference: StreamReference,
+    output_track_index: u32,
+    is_initialized: RwLock<bool>
 }
 
 impl TrackPreset {
-    pub fn new(global_config: Arc<VideoServerConfig>, description: PresetDescription, parent_track: Arc<TrackDefinition>) -> Self {
-        Self {
+    pub fn new(global_config: Arc<VideoServerConfig>, output_track_index: u32, stream_reference: StreamReference, description: PresetDescription, parent_track: Arc<TrackDefinition>) -> Result<Self, StreamingError> {
+        fs::create_dir_all(path::absolute(global_config.cache_path.join(PathBuf::from(&stream_reference.path().file_name().unwrap()).join(output_track_index.to_string()).join(description.to_string())))?)?;
+        Ok(Self {
             global_config,
             description,
             parent_track,
-        }
+            force_transcoding: false,
+            stream_reference,
+            output_track_index,
+            is_initialized: Default::default(),
+        })
     }
 
-    pub fn build_args(&self, start_num: u32) -> Result<Vec<String>, StreamingError> {
+    pub fn build_args(&self, start_num: u32, num_chunk: Option<u32>) -> Result<Vec<String>, StreamingError> {
         let mut args = vec![
             "-y".into(),
             "-ss".into(), (start_num * self.global_config.segment_duration_sec).to_string(),
-            "-i".into(), self.owning_stream.source().to_str().unwrap().into(),
-            "-map".into(), format!("0:{}", self.input_track),
+            "-i".into(), self.stream_reference.path().to_str().unwrap().into(),
+            "-map".into(), format!("0:{}", self.parent_track.index),
         ];
+
+        if let Some(num_chunk) = num_chunk {
+            args.append(&mut vec!["-t".into(), ((start_num + num_chunk) * self.global_config.segment_duration_sec).to_string()])
+        }
 
         // Directly copy stream everytime it's possible to save CPU usage
         if self.should_transcode()? {
-            info!("Stream {}:{} is using full video transcoding", self.owning_stream.stream_id(), self.output_track);
-
             match &self.parent_track.codec_type {
                 CodecType::Audio => {
                     args.append(&mut vec!["-c:0".into(), "aac".into(), "-ab".into(), self.description.bitrate(&self.parent_track).to_string()]);
@@ -77,10 +90,8 @@ impl TrackPreset {
         // in progress.
         args.append(&mut vec!["-hls_flags".into(), "temp_file".into(), "-max_delay".into(), "5000000".into()]);
 
-        let cache_path = &self.owning_stream.global_config()?.cache_path;
-
-        let init_seg = if cfg!(target_os = "windows") { path::absolute(preset_ref.init_path(cache_path, start_num))? }
-        else { PathBuf::from(preset_ref.init_path(cache_path, start_num).file_name().unwrap()) };
+        let init_seg = if cfg!(target_os = "windows") { path::absolute(self.init_path(start_num))? }
+        else { PathBuf::from(self.init_path(start_num).file_name().unwrap()) };
 
         // args needed so we can distinguish between init fragments for new streams.
         // Basically on the web seeking works by reloading the entire video because of
@@ -91,9 +102,19 @@ impl TrackPreset {
 
         args.append(&mut vec!["-hls_segment_type".into(), "1".into()]);
         args.append(&mut vec!["-loglevel".into(), "warning".into(), "-progress".into(), "pipe:1".into()]);
-        args.append(&mut vec!["-hls_segment_filename".into(), path::absolute(preset_ref.chunk_path(cache_path, "%d".to_string()))?.display().to_string()]);
-        args.append(&mut vec![path::absolute(preset_ref.playlist_path(cache_path))?.display().to_string()]);
+        args.append(&mut vec!["-hls_segment_filename".into(), path::absolute(self.chunk_path("%d".to_string()))?.display().to_string()]);
+        args.append(&mut vec![path::absolute(self.playlist_path())?.display().to_string()]);
         Ok(args)
+    }
+
+    pub fn init_path(&self, start_num: u32) -> PathBuf {
+        self.global_config.cache_path.join(PathBuf::from(&self.stream_reference.path().file_name().unwrap()).join(self.output_track_index.to_string()).join(self.description.to_string()).join(format!("{start_num}_init.mp4")))
+    }
+    pub fn chunk_path(&self, chunk: String) -> PathBuf {
+        self.global_config.cache_path.join(PathBuf::from(&self.stream_reference.path().file_name().unwrap()).join(self.output_track_index.to_string()).join(self.description.to_string()).join(format!("{chunk}.m4s")))
+    }
+    pub fn playlist_path(&self) -> PathBuf {
+        self.global_config.cache_path.join(PathBuf::from(&self.stream_reference.path().file_name().unwrap()).join(self.output_track_index.to_string()).join(self.description.to_string()).join("playlist.m3u8"))
     }
 
     fn is_supported_html5_codec(codec: &str) -> bool {
@@ -131,13 +152,47 @@ impl TrackPreset {
         &self.description
     }
 
-    pub async fn get_init(&self, _num: u32) -> Result<PathBuf, StreamingError> {
-        sleep(Duration::from_secs(10)).await;
-        todo!()
+    async fn generate_first_chunk(&self) -> Result<(), StreamingError> {
+
+        let mut avg = Duration::default();
+
+        warn!("Start create first chunk ({}). Transcoding : {}", self.description.to_string(), self.should_transcode()?);
+        let args = &self.build_args(0, Some(10))?;
+        for _ in 0..1 {
+            let start = SystemTime::now();
+            let process = FfmpegProcess::spawn(args, "Test".to_string())?;
+
+            process.join().await?;
+            let duration = SystemTime::now().duration_since(start).unwrap();
+            warn!("End create first chunk ::::: {:?}", duration);
+            avg += duration;
+        }
+        warn!("==============> END TEST PROCESS ({}) : AVG = {:?}", self.description.to_string(), avg / 100);
+
+        Ok(())
     }
 
-    pub async fn get_chunk(&self, _num: u32) -> Result<PathBuf, StreamingError> {
+
+    pub async fn get_init(&self, num: u32) -> Result<PathBuf, StreamingError> {
+
+        let mut is_initialized = self.is_initialized.write().await;
+
+        if !*is_initialized {
+            self.generate_first_chunk().await?;
+            *is_initialized = true;
+        }
+
+
+
+
+
+
         sleep(Duration::from_secs(10)).await;
-        todo!()
+        Err(StreamingError::new(ErrorKind::InitNotFound { track: self.parent_track.index, num }))
+    }
+
+    pub async fn get_chunk(&self, num: u32) -> Result<PathBuf, StreamingError> {
+        sleep(Duration::from_secs(10)).await;
+        Err(StreamingError::new(ErrorKind::ChunkNotFound { track: self.parent_track.index, num }))
     }
 }

@@ -3,6 +3,7 @@ pub mod stream_track;
 pub mod track_preset;
 pub mod video_avc1;
 pub mod preset_description;
+mod ffmpeg_process;
 
 use std::collections::HashMap;
 use std::sync::Arc;

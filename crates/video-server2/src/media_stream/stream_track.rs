@@ -7,7 +7,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use utils::config::VideoServerConfig;
-use utils::server_error::ServerError;
 use xmlwriter::XmlWriter;
 
 pub struct StreamTrack {
@@ -26,7 +25,8 @@ pub struct TrackDefinition {
     pub input_framerate: Framerate,
     pub codec_type: CodecType,
     pub codec: Option<String>,
-    pub level: u32
+    pub level: u32,
+    pub index: u32
 }
 
 impl TrackDefinition {
@@ -42,12 +42,12 @@ impl TrackDefinition {
             codec_type: track.codec_type()?,
             codec: track.codec_name.clone(),
             level: if let CodecType::Video = track.codec_type()? {track.level.unwrap_or(0) as u32} else {0},
+            index: track.index as u32,
         })
     }
 }
 
 impl StreamTrack {
-
     pub fn new(global_config: Arc<VideoServerConfig>, stream_reference: StreamReference, input_definition: TrackDefinition, output_track: u32) -> Self {
         Self {
             presets: Default::default(),
@@ -58,7 +58,7 @@ impl StreamTrack {
         }
     }
 
-    pub async fn get_or_create_preset(&self, preset: &PresetDescription) -> Result<Arc<TrackPreset>, ServerError> {
+    pub async fn get_or_create_preset(&self, preset: &PresetDescription) -> Result<Arc<TrackPreset>, StreamingError> {
         // Try get read only
         if let Some(preset) = self.presets.read().await.get(preset) {
             return Ok(preset.clone());
@@ -70,7 +70,7 @@ impl StreamTrack {
             return Ok(preset.clone());
         }
 
-        let new_preset = Arc::new(TrackPreset::new(self.global_config.clone(), preset.clone(), self.definition.clone()));
+        let new_preset = Arc::new(TrackPreset::new(self.global_config.clone(), self.output_track, self.stream_reference.clone(), preset.clone(), self.definition.clone())?);
         presets.insert(preset.clone(), new_preset.clone());
         Ok(new_preset)
     }
