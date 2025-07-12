@@ -1,4 +1,3 @@
-use std::collections::{HashMap};
 use std::process::Stdio;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -10,27 +9,27 @@ use tokio::task::JoinHandle;
 use tracing::{error};
 use utils::config::VideoServerConfig;
 use crate::error::StreamingError;
-use crate::media_stream::stream_track::TrackDefinition;
 
 #[derive(Default)]
 pub struct ProgressState {
     progress: u32,
     chunks_per_second: f64,
-    params: HashMap<String, String>
 }
 
 pub struct FfmpegProcess {
     process: RwLock<Option<Child>>,
+    #[allow(unused)]
     stdout_parser: JoinHandle<()>,
+    #[allow(unused)]
     stderr_parser: JoinHandle<()>,
     progress_state: Arc<RwLock<ProgressState>>,
-    chunk_limit: Option<u32>,
     start_chunk: u32
 }
 
 pub enum ChunkEta {
     NotInRange,
     NotStarted,
+    #[allow(unused)]
     Eta(Duration)
 }
 
@@ -54,7 +53,6 @@ impl FfmpegProcess {
                 let mut result = stdout_progress_state.write().await;
                 if let Some((key, value)) = input.split_once('=') {
                     let value = value.trim();
-                    result.params.insert(key.trim().to_string(), value.to_string());
                     match key {
                         "out_time_us" => {
                             match u64::from_str(value) {
@@ -110,11 +108,11 @@ impl FfmpegProcess {
             progress_state,
             stdout_parser,
             stderr_parser,
-            chunk_limit: None,
             start_chunk,
         })
     }
 
+    #[allow(unused)]
     pub async fn chunk_eta(&self, chunk: u32) -> ChunkEta {
         let progress = self.progress_state.read().await;
         if chunk < self.start_chunk {
@@ -131,6 +129,7 @@ impl FfmpegProcess {
         }
     }
 
+    #[allow(unused)]
     pub async fn chunk_delta_to_creation(&self, chunk: u32) -> i32 {
         let progress = self.progress_state.read().await;
         if chunk < self.start_chunk {

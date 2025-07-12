@@ -13,10 +13,10 @@ use tokio::io;
 use tokio_util::io::ReaderStream;
 use types::database_ids::ItemId;
 use utils::server_error::ServerError;
-use video_server2::error::StreamingError;
-use video_server2::media_info::stream_reference::StreamReference;
-use video_server2::media_stream::media_stream::MediaStream;
-use video_server2::media_stream::preset_description::PresetDescription;
+use video_server::error::StreamingError;
+use video_server::media_info::stream_reference::StreamReference;
+use video_server::media_stream::media_stream::MediaStream;
+use video_server::media_stream::preset_description::PresetDescription;
 
 
 pub struct ServerStreamError(ServerError);

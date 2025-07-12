@@ -4,7 +4,6 @@ use crate::media_stream::preset_description::PresetDescription;
 use crate::media_stream::stream_track::TrackDefinition;
 use std::path::PathBuf;
 use std::sync::{Arc};
-use std::time::{SystemTime};
 use utils::config::VideoServerConfig;
 use crate::media_info::media_info::CodecType;
 use crate::media_info::stream_reference::StreamReference;
@@ -41,7 +40,7 @@ impl TrackPreset {
         ];
 
         if let Some(num_chunk) = num_chunk {
-            args.append(&mut vec!["-t".into(), ((start_num + num_chunk) * self.global_config.segment_duration_sec).to_string()])
+            args.append(&mut vec!["-to".into(), ((start_num + num_chunk) * self.global_config.segment_duration_sec).to_string()])
         }
 
         // Directly copy stream everytime it's possible to save CPU usage

@@ -1,57 +1,49 @@
-use std::collections::HashMap;
+use crate::media_stream::MediaStreamPool;
 use std::sync::Arc;
-use rand::random;
-use tokio::sync::RwLock;
-use tracing::info;
-use types::database_ids::DatabaseId;
+use std::time::Duration;
+use tokio::task::JoinHandle;
+use tokio::time::sleep;
+use tracing::error;
 use utils::config::VideoServerConfig;
 use crate::error::StreamingError;
-use tracks::presets::preset_pool::PresetPool;
-use crate::stream::{Stream, StreamState};
-use crate::stream_id::StreamId;
+use crate::media_info::stream_reference::StreamReference;
+use crate::media_stream::media_stream::MediaStream;
 
-pub mod stream;
-pub mod media_info;
-pub mod stream_id;
-pub mod tracks;
 pub mod error;
+pub mod media_stream;
+pub mod media_info;
 
 pub struct StreamingContext {
-    streams: RwLock<HashMap<StreamId, Arc<Stream>>>,
-    builders: PresetPool,
+    #[allow(unused)]
+    builders: MediaStreamPool,
+    #[allow(unused)]
+    update_process: Option<JoinHandle<()>>
 }
 
 impl StreamingContext {
     pub fn new(global_config: VideoServerConfig) -> Self {
-        Self {
-            streams: Default::default(),
-            builders: PresetPool::new(global_config),
-        }
-    }
-
-    pub async fn create_stream(&self, state: StreamState) -> Result<StreamId, StreamingError> {
-        let mut streams = self.streams.write().await;
-        // Generate a new stream id
-        let id: StreamId = loop {
-            let id = StreamId::from(random::<DatabaseId>().abs());
-            if !(*streams).contains_key(&id) {
-                break id;
+        let tick_interval_ms = global_config.tick_interval_ms;
+        let pool = MediaStreamPool::new(global_config);
+        let cloned_pool = pool.clone();
+        let update_process = tokio::spawn(async move {
+            sleep(Duration::from_millis(tick_interval_ms)).await;
+            if let Err(err) = cloned_pool.tick().await {
+                error!("Streaming tick failed : {}", err);
             }
-        };
-        // Instantiate new stream
-        info!("Create stream @{} for item #{}", id, state.item_id());
-        streams.insert(id, Arc::new(Stream::new(self.builders.global_config().clone(), state, id, self.builders.clone())?));
-        Ok(id)
-    }
-
-    pub async fn get_stream(&self, id: &StreamId) -> Option<Arc<Stream>> {
-        self.streams.write().await.get(id).cloned()
-    }
-
-    pub async fn kill_stream(&self, id: &StreamId) -> Result<(), StreamingError> {
-        if let Some(stream) = self.streams.write().await.remove(id) {
-            stream.kill().await?;
+        });
+        Self {
+            builders: pool,
+            update_process: Some(update_process),
         }
-        Ok(())
+    }
+
+    pub async fn get_or_create_stream(&self, stream_identifier: &StreamReference) -> Result<Arc<MediaStream>, StreamingError> {
+        self.builders.get_or_create_stream(stream_identifier).await
+    }
+}
+
+impl Drop for StreamingContext {
+    fn drop(&mut self) {
+        self.update_process.take().unwrap().abort();
     }
 }

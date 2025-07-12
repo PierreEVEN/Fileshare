@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Display, Formatter};
+use std::num::{ParseFloatError, ParseIntError};
 use std::ops::Deref;
 use utils::server_error::ServerError;
-use crate::tracks::presets::preset_ref::PresetRef;
+use crate::media_stream::preset_description::PresetDescription;
 
 pub enum ErrorKind {
     InitNotFound { track: u32, num: u32 },
@@ -12,7 +13,7 @@ pub enum ErrorKind {
     Other(String),
     NoTrack(u32),
     UnknownCodec(String),
-    UnknownPreset(PresetRef),
+    UnknownPreset(PresetDescription),
 }
 
 pub struct StreamingError(ErrorKind);
@@ -28,6 +29,18 @@ impl Deref for StreamingError {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl From<ParseFloatError> for StreamingError {
+    fn from(err: ParseFloatError) -> Self {
+        Self::new(ErrorKind::ParseError(err.to_string()))
+    }
+}
+
+impl From<ParseIntError> for StreamingError {
+    fn from(err: ParseIntError) -> Self {
+        Self::new(ErrorKind::ParseError(err.to_string()))
     }
 }
 
