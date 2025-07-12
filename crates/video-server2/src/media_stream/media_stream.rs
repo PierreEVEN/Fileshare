@@ -25,7 +25,7 @@ impl MediaStream {
         for track in 0..media_info.get_tracks().len() {
             let definition = TrackDefinition::new(&media_info, track as u32)?;
             match definition.codec_type {
-                CodecType::Video | CodecType::Audio => {
+                CodecType::Audio | CodecType::Video => {
                     tracks.push(StreamTrack::new(
                         global_config.clone(),
                         stream_reference.clone(),

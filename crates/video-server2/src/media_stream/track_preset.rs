@@ -4,10 +4,7 @@ use crate::media_stream::preset_description::PresetDescription;
 use crate::media_stream::stream_track::TrackDefinition;
 use std::path::PathBuf;
 use std::sync::{Arc};
-use std::time::{Duration, SystemTime};
-use tokio::sync::RwLock;
-use tokio::time::sleep;
-use tracing::{info, warn};
+use std::time::{SystemTime};
 use utils::config::VideoServerConfig;
 use crate::media_info::media_info::CodecType;
 use crate::media_info::stream_reference::StreamReference;
@@ -20,7 +17,6 @@ pub struct TrackPreset {
     force_transcoding: bool,
     stream_reference: StreamReference,
     output_track_index: u32,
-    is_initialized: RwLock<bool>
 }
 
 impl TrackPreset {
@@ -33,7 +29,6 @@ impl TrackPreset {
             force_transcoding: false,
             stream_reference,
             output_track_index,
-            is_initialized: Default::default(),
         })
     }
 
@@ -152,47 +147,42 @@ impl TrackPreset {
         &self.description
     }
 
-    async fn generate_first_chunk(&self) -> Result<(), StreamingError> {
-
-        let mut avg = Duration::default();
-
-        warn!("Start create first chunk ({}). Transcoding : {}", self.description.to_string(), self.should_transcode()?);
-        let args = &self.build_args(0, Some(10))?;
-        for _ in 0..1 {
-            let start = SystemTime::now();
-            let process = FfmpegProcess::spawn(args, "Test".to_string())?;
-
-            process.join().await?;
-            let duration = SystemTime::now().duration_since(start).unwrap();
-            warn!("End create first chunk ::::: {:?}", duration);
-            avg += duration;
-        }
-        warn!("==============> END TEST PROCESS ({}) : AVG = {:?}", self.description.to_string(), avg / 100);
-
-        Ok(())
+    async fn generate_chunks_for(&self, num: u32) -> Result<Arc<FfmpegProcess>, StreamingError> {
+        let args = &self.build_args(num, Some(1))?;
+        let process = Arc::new(FfmpegProcess::spawn(num, self.global_config.clone(), args, "Test".to_string())?);
+        Ok(process)
     }
-
 
     pub async fn get_init(&self, num: u32) -> Result<PathBuf, StreamingError> {
 
-        let mut is_initialized = self.is_initialized.write().await;
-
-        if !*is_initialized {
-            self.generate_first_chunk().await?;
-            *is_initialized = true;
+        let path = self.init_path(num);
+        if path.exists() {
+            return Ok(path);
         }
 
+        let process = self.generate_chunks_for(num).await?;
+        process.join().await?;
 
-
-
-
-
-        sleep(Duration::from_secs(10)).await;
-        Err(StreamingError::new(ErrorKind::InitNotFound { track: self.parent_track.index, num }))
+        if path.exists() {
+            Ok(path)
+        } else {
+            Err(StreamingError::new(ErrorKind::InitNotFound {track: self.output_track_index, num}))
+        }
     }
 
     pub async fn get_chunk(&self, num: u32) -> Result<PathBuf, StreamingError> {
-        sleep(Duration::from_secs(10)).await;
-        Err(StreamingError::new(ErrorKind::ChunkNotFound { track: self.parent_track.index, num }))
+        let path = self.chunk_path(num.to_string());
+        if path.exists() {
+            return Ok(path);
+        }
+
+        let process = self.generate_chunks_for(num).await?;
+        process.join().await?;
+
+        if path.exists() {
+            Ok(path)
+        } else {
+            Err(StreamingError::new(ErrorKind::InitNotFound {track: self.output_track_index, num}))
+        }
     }
 }
