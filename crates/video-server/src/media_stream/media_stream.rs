@@ -110,7 +110,7 @@ impl MediaStream {
         }
         w.end_element();
 
-        Ok(w.end_document())
+        Ok(w.end_document().replace("&", "&amp;"))
     }
     
     pub async fn get_track(&self, output_track: u32) -> Result<&StreamTrack, StreamingError> {

@@ -1,4 +1,18 @@
 dash-player {
+
+    .controller-container {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
+    .video-controller {
+        min-height: 35px;
+        z-index: 2147483646;
+        position: relative;
+    }
+
     /**************************************************/
     /*Control bar*/
     /**************************************************/
@@ -81,11 +95,6 @@ dash-player {
         width: 70px;
     }
 
-    .video-controller {
-        min-height: 35px;
-        z-index: 2147483646;
-    }
-
     .video-controller-fullscreen {
         position: fixed;
         z-index: 2147483647;
@@ -96,7 +105,7 @@ dash-player {
 
     .menu,
     .video-controller {
-        background-color: black;
+        background-color: rgba(0, 0, 0, 0.6);
     }
 
     .menu-item-unselected,
@@ -215,7 +224,8 @@ dash-player {
     }
 
     input[type="range"] {
-        -webkit-appearance: none;
+        min-height: unset;
+        //-webkit-appearance: none;
         -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
         height: 14px;
         border: none;

@@ -52,7 +52,6 @@ class CarouselViewport {
             this._drag_start_x = e.clientX;
             this._drag_start_y = e.clientY;
             this._drag = true
-            e.preventDefault()
         })
         container.addEventListener('pointermove', e => {
             if (this._drag) {
