@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::io::SeekFrom;
 use std::str::FromStr;
 use crate::app_ctx::AppCtx;
 use database::item::{DbItem, ItemSearchData, Trash};
@@ -21,7 +20,6 @@ use axum::{Json, Router};
 use regex::Regex;
 use serde::Deserialize;
 use std::sync::Arc;
-use tokio::io::AsyncSeekExt;
 use tokio_util::io::ReaderStream;
 use tracing::warn;
 use database::repository::DbRepository;
@@ -302,70 +300,70 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
     permissions.view_item(&ctx.database, &item).await?.require()?;
 
     if let Some(file) = item.file {
-        let mimetype = file.mimetype.plain()?;
-
-        if mimetype.starts_with("video/") {
-            let object = Object::from_id(&ctx.database, &file.object).await?;
-
-            let headers = request.headers();
-            if let Some(range) = headers.get("range") {
-                let range = range.to_str()?.to_string();
-                warn!("Accept range for video : {:?}", range);
-
-                let mut range_type = range.split("=");
-                if let Some(range_type) = range_type.next() {
-                    if range_type != "bytes" {
-                        return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range type"));
+        /*
+                let mimetype = file.mimetype.plain()?;
+                if mimetype.starts_with("video/") {
+                    let object = Object::from_id(&ctx.database, &file.object).await?;
+        
+                    let headers = request.headers();
+                    if let Some(range) = headers.get("range") {
+                        let range = range.to_str()?.to_string();
+                        warn!("Accept range for video : {:?}", range);
+        
+                        let mut range_type = range.split("=");
+                        if let Some(range_type) = range_type.next() {
+                            if range_type != "bytes" {
+                                return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range type"));
+                            }
+                        } else {
+                            return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range header"));
+                        }
+                        let range_value = match range_type.next() {
+                            None => { return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range value")); }
+                            Some(value) => { value }
+                        };
+        
+                        let mut initial_values = range_value.split('-');
+        
+                        let start = match initial_values.next() {
+                            None => { return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "cannot read range start")); }
+                            Some(start) => { i64::from_str(start)? }
+                        };
+        
+        
+                        let mut data_file = tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?;
+        
+                        if let Err(err) = data_file.seek(SeekFrom::Start(start as u64)).await {
+                            return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, format!("Failed to seek to desired range : {err}")));
+                        }
+        
+                        let stream = ReaderStream::new(data_file);
+                        let body = Body::from_stream(stream);
+        
+                        let headers = [
+                            (header::CONTENT_TYPE, mimetype.clone()),
+                            (header::CONTENT_LENGTH, (file.size - start).to_string()),
+                            (header::CONTENT_RANGE, format!("{}-{}/{}", start, file.size, file.size)),
+                            (header::ACCEPT_RANGES, "bytes".to_string()),
+                            (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+                        ];
+                        return Ok((StatusCode::PARTIAL_CONTENT, headers, body).into_response());
                     }
-                } else {
-                    return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range header"));
+        
+                    warn!("Respond video with range");
+        
+                    let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
+                    let body = Body::from_stream(stream);
+        
+                    let headers = [
+                        (header::CONTENT_TYPE, file.mimetype.plain()?),
+                        (header::CONTENT_LENGTH, file.size.to_string()),
+                        (header::ACCEPT_RANGES, "bytes".to_string()),
+                        (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+                    ];
+                    return Ok((StatusCode::OK, headers, body).into_response());
                 }
-                let range_value = match range_type.next() {
-                    None => { return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range value")); }
-                    Some(value) => { value }
-                };
-
-                let mut initial_values = range_value.split('-');
-
-                let start = match initial_values.next() {
-                    None => { return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "cannot read range start")); }
-                    Some(start) => { i64::from_str(start)? }
-                };
-
-
-                let mut data_file = tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?;
-
-                if let Err(err) = data_file.seek(SeekFrom::Start(start as u64)).await {
-                    return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, format!("Failed to seek to desired range : {err}")));
-                }
-
-                let stream = ReaderStream::new(data_file);
-                let body = Body::from_stream(stream);
-
-                let headers = [
-                    (header::CONTENT_TYPE, mimetype.clone()),
-                    (header::CONTENT_LENGTH, (file.size - start).to_string()),
-                    (header::CONTENT_RANGE, format!("{}-{}/{}", start, file.size, file.size)),
-                    (header::ACCEPT_RANGES, "bytes".to_string()),
-                    (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
-                ];
-                return Ok((StatusCode::PARTIAL_CONTENT, headers, body).into_response());
-            }
-
-            warn!("Respond video with range");
-
-            let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
-            let body = Body::from_stream(stream);
-
-            let headers = [
-                (header::CONTENT_TYPE, file.mimetype.plain()?),
-                (header::CONTENT_LENGTH, file.size.to_string()),
-                (header::ACCEPT_RANGES, "bytes".to_string()),
-                (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
-            ];
-            return Ok((StatusCode::OK, headers, body).into_response());
-        }
-
+        */
         let object = Object::from_id(&ctx.database, &file.object).await?;
 
         let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);

@@ -135,7 +135,7 @@ const Authentication = {
                 signup: async (event) => {
                     event.preventDefault();
                     await fetch_api('user/create', 'POST', {
-                        display_name: EncString.from_client(signup_div.hb_elements.login.value),
+                        username: EncString.from_client(signup_div.hb_elements.login.value),
                         email: EncString.from_client(signup_div.hb_elements.email.value),
                         password: EncString.from_client(signup_div.hb_elements.password.value)
                     }).catch(error => {
