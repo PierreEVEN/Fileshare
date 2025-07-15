@@ -11,7 +11,7 @@ function get(item) {
         case 'video':
             return `<dash-player item="${item.id}"></dash-player>`;
         case 'audio':
-            return `<audio controls="true" src="${APP_CONFIG.origin()}/file/preview/${item.id}/"></audio>`
+            return `<dash-player item="${item.id}" class="audio-only"></dash-player>`;
         case 'application':
             switch (mimetype[1]) {
                 case 'x-pdf':

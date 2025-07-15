@@ -7,6 +7,13 @@ dash-player {
         right: 0;
     }
 
+    &.audio-only {
+        .controller-container {
+            bottom: unset;
+            top: 60%;
+        }
+    }
+
     .video-controller {
         min-height: 35px;
         z-index: 2147483646;

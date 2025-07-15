@@ -187,7 +187,7 @@ pub struct MediaFormat {
     pub nb_programs: i64,
     pub format_name: String,
     pub format_long_name: String,
-    pub start_time: String,
+    pub start_time: Option<String>,
     pub duration: String,
     pub size: String,
     pub bit_rate: String,
