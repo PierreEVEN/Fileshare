@@ -14,6 +14,7 @@ use crate::route_item::ItemRoutes;
 use crate::route_repository::RepositoryRoutes;
 use crate::route_stream::StreamRoutes;
 use crate::route_user::UserRoutes;
+use crate::statistics_route::StatisticsRoutes;
 
 mod route_repository;
 mod route_item;
@@ -22,6 +23,7 @@ pub mod permissions;
 mod upload;
 pub mod app_ctx;
 mod route_stream;
+mod statistics_route;
 
 #[macro_export]
 macro_rules! get_connected_user {
@@ -179,6 +181,7 @@ impl RootRoutes {
     pub fn create(ctx: &Arc<AppCtx>) -> Result<Router<>, Error> {
         let router = Router::new()
             .nest("/repository", RepositoryRoutes::create(ctx)?)
+            .nest("/statistics", StatisticsRoutes::router(ctx)?)
             .nest("/user", UserRoutes::router(ctx)?)
             .nest("/item", ItemRoutes::create(ctx)?)
             .nest("/stream", StreamRoutes::create(ctx)?)

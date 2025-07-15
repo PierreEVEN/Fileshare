@@ -8,10 +8,12 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use utils::config::VideoServerConfig;
 use xmlwriter::XmlWriter;
+use crate::media_stream::StreamingStats;
 
 pub struct StreamTrack {
     presets: RwLock<HashMap<PresetDescription, Arc<TrackPreset>>>,
     global_config: Arc<VideoServerConfig>,
+    stats: Arc<StreamingStats>,
     definition: Arc<TrackDefinition>,
     output_track: u32,
     stream_reference: StreamReference
@@ -49,14 +51,19 @@ impl TrackDefinition {
 }
 
 impl StreamTrack {
-    pub fn new(global_config: Arc<VideoServerConfig>, stream_reference: StreamReference, input_definition: TrackDefinition, output_track: u32) -> Self {
+    pub fn new(global_config: Arc<VideoServerConfig>, stats: Arc<StreamingStats>, stream_reference: StreamReference, input_definition: TrackDefinition, output_track: u32) -> Self {
         Self {
             presets: Default::default(),
             global_config,
+            stats,
             definition: Arc::new(input_definition),
             output_track,
             stream_reference,
         }
+    }
+
+    pub async fn get_presets(&self) -> Vec<Arc<TrackPreset>> {
+        self.presets.read().await.values().cloned().collect()
     }
 
     pub async fn get_or_create_preset(&self, preset: &PresetDescription) -> Result<Arc<TrackPreset>, StreamingError> {
@@ -71,7 +78,7 @@ impl StreamTrack {
             return Ok(preset.clone());
         }
 
-        let new_preset = Arc::new(TrackPreset::new(self.global_config.clone(), self.output_track, self.stream_reference.clone(), preset.clone(), self.definition.clone())?);
+        let new_preset = Arc::new(TrackPreset::new(self.global_config.clone(), self.stats.clone(), self.output_track, self.stream_reference.clone(), preset.clone(), self.definition.clone())?);
         presets.insert(preset.clone(), new_preset.clone());
         Ok(new_preset)
     }
@@ -128,7 +135,10 @@ impl StreamTrack {
         Ok(())
     }
 
-    pub async fn destroy(&self) -> Result<(), StreamingError> {
+    pub async fn tick(&self) -> Result<(), StreamingError> {
+        for (_, preset) in &*self.presets.read().await {
+            preset.tick().await?;
+        }
         Ok(())
     }
 }

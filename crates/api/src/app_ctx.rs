@@ -6,10 +6,12 @@ use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
 use utils::config::Config;
+use utils::stats::Statistics;
 use video_server::StreamingContext;
 
 pub struct AppCtx {
     pub config: Config,
+    pub statistics: Arc<Statistics>,
     pub database: Database,
     streaming_context: StreamingContext,
     uploads: tokio::sync::RwLock<HashMap<String, Arc<tokio::sync::RwLock<Upload>>>>,
@@ -18,13 +20,13 @@ pub struct AppCtx {
 impl AppCtx {
     pub async fn new(config: Config) -> Result<Self, Error> {
         let database = Database::new(&config.backend_config).await?;
-        // Try clear old cache
-        #[allow(unused)]
-        fs::remove_dir_all(&config.backend_config.video_server.cache_path);
+
+        let statistics = Arc::new(Statistics::default());
 
         Ok(Self {
-            streaming_context: StreamingContext::new(config.backend_config.video_server.clone()),
+            streaming_context: StreamingContext::new(config.backend_config.video_server.clone(), statistics.clone()),
             config,
+            statistics,
             database,
             uploads: Default::default(),
         })
@@ -68,8 +70,7 @@ impl AppCtx {
         Ok(upload.get_state())
     }
 
-
-    pub fn streaming_context(&self) -> &StreamingContext  {
+    pub fn streaming_context(&self) -> &StreamingContext {
         &self.streaming_context
     }
 }

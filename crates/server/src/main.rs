@@ -104,7 +104,7 @@ impl Server {
     }
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() {
     init_logger();
 

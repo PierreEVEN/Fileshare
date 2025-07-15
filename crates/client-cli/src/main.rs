@@ -19,7 +19,7 @@ use clap::Parser;
 use anyhow::Error;
 use paris::error;
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Error> {
     let args = FileshareArgs::parse();
     match match args.commands {

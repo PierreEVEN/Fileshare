@@ -12,9 +12,11 @@ use utils::config::VideoServerConfig;
 use crate::media_info::media_info::CodecType;
 use crate::media_info::stream_reference::StreamReference;
 use crate::media_stream::ffmpeg_process::FfmpegProcess;
+use crate::media_stream::StreamingStats;
 
 pub struct TrackPreset {
     global_config: Arc<VideoServerConfig>,
+    stats: Arc<StreamingStats>,
     description: PresetDescription,
     parent_track: Arc<TrackDefinition>,
     force_transcoding: bool,
@@ -24,10 +26,11 @@ pub struct TrackPreset {
 }
 
 impl TrackPreset {
-    pub fn new(global_config: Arc<VideoServerConfig>, output_track_index: u32, stream_reference: StreamReference, description: PresetDescription, parent_track: Arc<TrackDefinition>) -> Result<Self, StreamingError> {
+    pub fn new(global_config: Arc<VideoServerConfig>, stats: Arc<StreamingStats>, output_track_index: u32, stream_reference: StreamReference, description: PresetDescription, parent_track: Arc<TrackDefinition>) -> Result<Self, StreamingError> {
         fs::create_dir_all(path::absolute(global_config.cache_path.join(PathBuf::from(&stream_reference.path().file_name().unwrap()).join(output_track_index.to_string()).join(description.to_string())))?)?;
         Ok(Self {
             global_config,
+            stats,
             description,
             parent_track,
             force_transcoding: false,
@@ -54,7 +57,7 @@ impl TrackPreset {
             match &self.parent_track.codec_type {
                 CodecType::Audio => {
                     args.append(&mut vec!["-c:0".into(), "aac".into(), "-ab".into(), self.description.bitrate(&self.parent_track).to_string()]);
-                },
+                }
                 CodecType::Video => {
                     let mut vf_args = String::new();
                     vf_args += format!("scale={}:{}", self.description.height(&self.parent_track), self.description.width(&self.parent_track)).as_str();
@@ -98,8 +101,7 @@ impl TrackPreset {
         // in progress.
         args.append(&mut vec!["-hls_flags".into(), "temp_file".into(), "-max_delay".into(), "5000000".into()]);
 
-        let init_seg = if cfg!(target_os = "windows") { path::absolute(self.init_path(start_num))? }
-        else { PathBuf::from(self.init_path(start_num).file_name().unwrap()) };
+        let init_seg = if cfg!(target_os = "windows") { path::absolute(self.init_path(start_num))? } else { PathBuf::from(self.init_path(start_num).file_name().unwrap()) };
 
         // args needed so we can distinguish between init fragments for new streams.
         // Basically on the web seeking works by reloading the entire video because of
@@ -133,7 +135,23 @@ impl TrackPreset {
         }
     }
 
-    fn should_transcode(&self) -> Result<bool, StreamingError> {
+    pub async fn tick(&self) -> Result<(), StreamingError> {
+        let finished = if let Some(proc_val) = &*self.gen_proc.read().await {
+            proc_val.is_finished()
+        } else {
+            false
+        };
+        if finished {
+            *self.gen_proc.write().await = None;
+        }
+        Ok(())
+    }
+
+    pub fn parent_track(&self) -> &Arc<TrackDefinition> {
+        &self.parent_track
+    }
+
+    pub fn should_transcode(&self) -> Result<bool, StreamingError> {
         if self.force_transcoding { return Ok(true); }
 
         match &self.parent_track.codec {
@@ -142,23 +160,23 @@ impl TrackPreset {
         }
 
         if let Some(max_height) = self.description.max_height {
-            if max_height < self.parent_track.input_height { return Ok(true) }
+            if max_height < self.parent_track.input_height { return Ok(true); }
         }
 
         if self.description.max_bitrate.is_some() {
-            return Ok(true)
+            return Ok(true);
         }
 
         if let CodecType::Video = self.parent_track.codec_type {
             if let Some(pixel_format) = &self.parent_track.pixel_format {
                 if pixel_format.as_str() != "yuv420p" {
-                    return Ok(true)
+                    return Ok(true);
                 }
             }
         }
 
         if let Some(max_fps) = self.description.max_frame_rate {
-            if max_fps < self.parent_track.input_framerate { return Ok(true) }
+            if max_fps < self.parent_track.input_framerate { return Ok(true); }
         }
 
         Ok(false)
@@ -168,32 +186,43 @@ impl TrackPreset {
         &self.description
     }
 
-    async fn generate_chunks_for(&self, num: u32, count: Option<u32>) -> Result<Arc<FfmpegProcess>, StreamingError> {
-        let args = &self.build_args(num, count)?;
-        let process = Arc::new(FfmpegProcess::spawn(num, self.global_config.clone(), args, format!("{} -> {}:{}", self.stream_reference.id(), self.parent_track.codec_type, self.output_track_index))?);
-        Ok(process)
+    pub fn is_init_valid(&self, num: u32) -> Result<bool, StreamingError> {
+        let path = self.init_path(num);
+        Ok(if !path.exists() {
+            false
+        } else {
+            path.metadata()?.len() != 0
+        })
     }
 
     pub async fn get_init(&self, num: u32) -> Result<PathBuf, StreamingError> {
-
         let path = self.init_path(num);
-        if path.exists() {
+        if self.is_init_valid(num)? {
             return Ok(path);
         }
 
-        info!("Generate Dash segments for stream {} -> {}:{}", self.stream_reference.id(), self.parent_track.codec_type, self.output_track_index);
-        if self.should_transcode()? {
-            warn!("Stream {} -> {}:{} requires video transcoding", self.stream_reference.id(), self.parent_track.codec_type, self.output_track_index)
+        {
+        let proc = &mut *self.gen_proc.write().await;
+        if proc.is_none() {
+            info!("Generate Dash segments for stream {} -> {}:{}", self.stream_reference.id(), self.parent_track.codec_type, self.output_track_index);
+            if self.should_transcode()? {
+                warn!("Stream {} -> {}:{} requires video transcoding", self.stream_reference.id(), self.parent_track.codec_type, self.output_track_index)
+            }
+            *proc = Some(Arc::new(FfmpegProcess::spawn(num, self.global_config.clone(), self.stats.clone(), &self.build_args(0, None)?, format!("{} -> {}:{}", self.stream_reference.id(), self.parent_track.codec_type, self.output_track_index))?));
         }
-        let process = self.generate_chunks_for(0, Some(1)).await?;
-        process.join().await?;
-        let process = self.generate_chunks_for(1, None).await?;
-        *self.gen_proc.write().await = Some(process);
+            }
 
-        if path.exists() {
+        let start = SystemTime::now();
+        while !self.is_init_valid(num)? {
+            sleep(Duration::from_millis(self.global_config.tick_interval_ms)).await;
+            if SystemTime::now().duration_since(start)? > self.global_config.max_request_timout {
+                break;
+            }
+        }
+        if self.is_init_valid(num)? {
             Ok(path)
         } else {
-            Err(StreamingError::new(ErrorKind::InitNotFound {track: self.output_track_index, num}))
+            Err(StreamingError::new(ErrorKind::InitNotFound { track: self.output_track_index, num }))
         }
     }
 
@@ -215,7 +244,7 @@ impl TrackPreset {
         if path.exists() {
             Ok(path)
         } else {
-            Err(StreamingError::new(ErrorKind::ChunkNotFound {track: self.output_track_index, num}))
+            Err(StreamingError::new(ErrorKind::ChunkNotFound { track: self.output_track_index, num }))
         }
     }
 }

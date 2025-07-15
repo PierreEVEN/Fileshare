@@ -81,7 +81,7 @@ impl Default for Config {
                     cache_path: PathBuf::from("data").join("streaming_cache"),
                     stream_ttl: Duration::from_secs(24 * 3600), // 24h
                     max_request_timout: Duration::from_secs(10),
-                    tick_interval_ms: 100,
+                    tick_interval_ms: 10000,
                     segment_duration_sec: 5,
                 },
                 postgres: PostgresConfig {

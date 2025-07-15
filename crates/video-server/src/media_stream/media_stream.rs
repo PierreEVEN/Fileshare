@@ -1,13 +1,15 @@
+use std::fs;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{error, info};
 use xmlwriter::XmlWriter;
 use utils::config::VideoServerConfig;
 use crate::error::{ErrorKind, StreamingError};
 use crate::media_info::media_info::{CodecType, MediaInfo};
 use crate::media_info::stream_reference::StreamReference;
 use crate::media_stream::stream_track::{StreamTrack, TrackDefinition};
+use crate::media_stream::StreamingStats;
 
 pub struct MediaStream {
     stream_reference: StreamReference,
@@ -18,7 +20,7 @@ pub struct MediaStream {
 }
 
 impl MediaStream {
-    pub fn new(global_config: Arc<VideoServerConfig>, stream_reference: StreamReference) -> Result<Self, StreamingError> {
+    pub fn new(global_config: Arc<VideoServerConfig>, stats: Arc<StreamingStats>, stream_reference: StreamReference) -> Result<Self, StreamingError> {
         let media_info = MediaInfo::new(stream_reference.path())?;
         let mut tracks = vec![];
         
@@ -28,6 +30,7 @@ impl MediaStream {
                 CodecType::Audio | CodecType::Video => {
                     tracks.push(StreamTrack::new(
                         global_config.clone(),
+                        stats.clone(),
                         stream_reference.clone(),
                         definition,
                         tracks.len() as u32))
@@ -45,15 +48,25 @@ impl MediaStream {
         })
     }
 
+    pub async fn get_stats(&self) -> Result<String, StreamingError> {
+        let mut stats = String::new();
+        for track in &self.tracks {
+            for preset in track.get_presets().await {
+                let transcode = if preset.should_transcode()? { ":transcode" } else { "" };
+                let codec = if let Some(codec) = &preset.parent_track().codec { format!("{codec}") } else { String::new() };
+                stats += format!("{}({codec}{transcode} : {})", preset.parent_track().codec_type, preset.description().to_string()).as_str()
+            }
+        }
+        Ok(stats)
+    }
+
     pub fn identifier(&self) -> &String {
         self.stream_reference.id()
     }
     
     // Return true when we can consider this media stream is not used anymore and we can destroy it
     pub async fn is_orphan(&self) -> Result<bool, StreamingError> {
-        Ok(SystemTime::now().duration_since(*self.last_usage.read().await).or_else(|err| {
-            Err(StreamingError::new(ErrorKind::Other(format!("Failed to read elapsed media orphan duration : {}", err))))
-        })? > self.global_config.stream_ttl)
+        Ok(SystemTime::now().duration_since(*self.last_usage.read().await)? > self.global_config.stream_ttl)
     }
 
     // Mark this stream as alive by resetting the destroy counter
@@ -63,11 +76,21 @@ impl MediaStream {
 
     pub async fn destroy(&self) -> Result<(), StreamingError> {
         info!("Destroy stream {}", self.stream_reference.id());
-        for track in &self.tracks {
-            track.destroy().await?;
+        #[allow(unused)]
+        let cache = self.global_config.cache_path.join(self.stream_reference.path().file_name().unwrap());
+        if let Err(err) = fs::remove_dir_all(&cache) {
+            error!("Failed to remove stream cache for {} : {}", cache.display(), err);
         }
         Ok(())
     }
+
+    pub async fn tick(&self) -> Result<(), StreamingError> {
+        for track in &self.tracks {
+            track.tick().await?
+        }
+        Ok(())
+    }
+
 
     pub async fn compile_dash_manifest(&self, start_num: u32) -> Result<String, StreamingError> {
         fn timestamp_to_xml(t: u64) -> String {

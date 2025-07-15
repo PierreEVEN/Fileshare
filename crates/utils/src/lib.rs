@@ -1,5 +1,6 @@
 pub mod server_error;
 pub mod config;
+pub mod stats;
 
 #[macro_export]
 macro_rules! make_wrapped_db_type {
