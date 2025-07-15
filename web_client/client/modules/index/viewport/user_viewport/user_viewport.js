@@ -2,7 +2,7 @@ import {MemoryTracker} from "../../../../types/memory_handler";
 import {fetch_api} from "../../../../utilities/request";
 import {Message, NOTIFICATION} from "../../tools/message_box/notification";
 import {Repository} from "../../../../types/repository";
-import {User} from "../../../../types/user";
+import {User, UserRole} from "../../../../types/user";
 import {APP} from "../../../../app";
 import {edit_user} from "../../tools/edit_user/edit_user";
 import {APP_CONFIG} from "../../../../types/app_config";
@@ -43,9 +43,11 @@ class UserViewport extends MemoryTracker {
 
     async _fill_data() {
         this.container.innerHTML = '';
+        const is_admin = this.user.user_role.toString() == "Admin";
         let viewport = require('./user_viewport.hbs')({
             user: this.user.display_data(),
-            is_self: this.user === APP_CONFIG.connected_user()
+            is_self: this.user === APP_CONFIG.connected_user(),
+            is_admin
         }, {
             edit: async () => {
                 await edit_user(this.user);

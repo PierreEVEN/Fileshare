@@ -67,7 +67,9 @@ class FileshareApp {
             if (APP_CONFIG.error())
                 await this.set_display_error(APP_CONFIG.error());
             else {
-                if (await APP_CONFIG.display_item()) {
+                if (APP_CONFIG.show_stats()) {
+                    await this.set_display_stats();
+                } else if (await APP_CONFIG.display_item()) {
                     await this.set_display_item(await APP_CONFIG.display_item());
                     await this._side_bar.expand_to(APP_CONFIG.display_repository(), await APP_CONFIG.display_item(), false);
                 } else if (APP_CONFIG.display_repository()) {
@@ -155,6 +157,15 @@ class FileshareApp {
         await this.state.open_user(user);
     }
 
+    /**
+     * @return {Promise<void>}
+     */
+    async set_display_stats() {
+        if (!this._viewport)
+            this._viewport = new Viewport(this._elements.viewport);
+        await this._viewport.set_display_stats();
+        await this.state.open_stats();
+    }
     /**
      * @return {Promise<void>}
      * @param error {object}

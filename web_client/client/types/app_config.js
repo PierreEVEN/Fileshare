@@ -37,6 +37,10 @@ class AppConfig {
         /**
          * @type {boolean}
          */
+        this._show_stats = data.show_stats;
+        /**
+         * @type {boolean}
+         */
         this._repository_settings = data.repository_settings;
 
         /**
@@ -78,6 +82,9 @@ class AppConfig {
         return this._in_trash;
     }
 
+    show_stats() {
+        return this._show_stats;
+    }
     repository_settings() {
         return this._repository_settings;
     }

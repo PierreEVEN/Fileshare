@@ -21,15 +21,12 @@ function edit_user(user) {
                 name: EncString.from_client(document.getElementById('url_name').value),
                 allow_contact: !document.getElementById('mask_email').checked
             };
-
             await fetch_api(`user/update`, 'POST', new_data)
                 .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de modifier le dépôt")));
-
             user.login = new_data.login;
             user.name = new_data.name;
             user.allow_contact = new_data.allow_contact;
             await user.refresh();
-
             MODAL.close();
         },
         delete: async () => {

@@ -908,7 +908,6 @@ class ControlBar {
         try {
             let item = typeof value === 'number' ? document.getElementById(type + 'Item_' + value) : obj;
             if (item) {
-                console.log(item)
                 let nodes = item.parentElement.children;
 
                 for (let i = 0; i < nodes.length; i++) {

@@ -3,6 +3,9 @@ const utc = require("dayjs/plugin/utc");
 dayjs.extend(utc);
 
 function humanFileSize(bytes) {
+    if (isNaN(bytes)) {
+        return '-'
+    }
     const thresh = 1024;
 
     if (Math.abs(bytes) < thresh) {

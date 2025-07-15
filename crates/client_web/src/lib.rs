@@ -32,7 +32,7 @@ use types::enc_path::EncPath;
 use types::enc_string::EncString;
 use types::item::Item;
 use types::repository::Repository;
-use types::user::User;
+use types::user::{User, UserRole};
 use utils::server_error::ServerError;
 use crate::static_file_server::StaticFileServer;
 
@@ -107,6 +107,7 @@ impl WebClient {
 
         Ok(Router::new()
             .route("/", get(get_index).with_state(ctx.clone()))
+            .route("/statistics", get(get_index).with_state(ctx.clone()))
             .route("/{display_user}", get(get_index).with_state(ctx.clone()))
             .route("/{display_user}/{display_repository}", get(get_index).with_state(ctx.clone()))
             .route("/{display_user}/{display_repository}/{*path}", get(get_index).with_state(ctx.clone()))
@@ -181,6 +182,7 @@ struct ClientAppConfig {
     pub display_repository: Option<Repository>,
     pub display_item: Option<Item>,
     pub in_trash: bool,
+    pub show_stats: bool,
     pub repository_settings: bool,
 }
 
@@ -229,6 +231,14 @@ async fn get_index(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<i
     if let Some(action) = get_action!(request) {
         client_config.in_trash = action == "trash";
         client_config.repository_settings = action == "settings";
+    }
+
+    if let Some(connected_user) = &client_config.connected_user {
+        if let UserRole::Admin = connected_user.user_role {
+            if request.uri().path() == "/statistics" {
+                client_config.show_stats = true;
+            }
+        }
     }
 
     let index_path_buf = ctx.config.web_client_config.client_path.join("public").join("index.html");

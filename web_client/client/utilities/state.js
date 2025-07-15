@@ -89,6 +89,14 @@ class State {
         }, "", `${APP_CONFIG.origin()}/${user.name.encoded()}`);
     }
 
+    async open_stats() {
+        if (this._disable_state)
+            return;
+        history.pushState({
+            app_action: true,
+        }, "", `${APP_CONFIG.origin()}/statistics`);
+    }
+
     async _handle_state(state) {
         this._disable_state = true;
         if (state.item && state.repository) {

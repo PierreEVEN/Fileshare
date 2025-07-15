@@ -6,6 +6,7 @@ class CheckSlider extends HTMLElement {
         this.checked = this.hasAttribute('checked');
         this.onclick = () => {
             this._checkbox.checked = !this._checkbox.checked;
+            this.checked = this._checkbox.checked;
         }
     }
 
