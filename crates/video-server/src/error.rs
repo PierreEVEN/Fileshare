@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::num::{ParseFloatError, ParseIntError};
 use std::ops::Deref;
+use std::time::SystemTimeError;
 use utils::server_error::ServerError;
 use crate::media_stream::preset_description::PresetDescription;
 
@@ -41,6 +42,12 @@ impl From<ParseFloatError> for StreamingError {
 impl From<ParseIntError> for StreamingError {
     fn from(err: ParseIntError) -> Self {
         Self::new(ErrorKind::ParseError(err.to_string()))
+    }
+}
+
+impl From<SystemTimeError> for StreamingError {
+    fn from(err: SystemTimeError) -> Self {
+        Self::new(ErrorKind::Other(err.to_string()))
     }
 }
 

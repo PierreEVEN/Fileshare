@@ -80,7 +80,7 @@ impl Default for Config {
                 video_server: VideoServerConfig {
                     cache_path: PathBuf::from("data").join("streaming_cache"),
                     stream_ttl: Duration::from_secs(24 * 3600), // 24h
-                    max_request_timout: Duration::from_secs(2),
+                    max_request_timout: Duration::from_secs(10),
                     tick_interval_ms: 100,
                     segment_duration_sec: 5,
                 },

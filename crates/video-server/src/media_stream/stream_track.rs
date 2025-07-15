@@ -26,13 +26,13 @@ pub struct TrackDefinition {
     pub codec_type: CodecType,
     pub codec: Option<String>,
     pub level: u32,
+    pub pixel_format: Option<String>,
     pub index: u32
 }
 
 impl TrackDefinition {
     pub fn new(source_media: &MediaInfo, track_index: u32) -> Result<Self, StreamingError> {
         let track = source_media.get_track(track_index)?;
-
         Ok(Self {
             input_bitrate: track.get_bitrate().unwrap_or(source_media.get_bitrate().ok_or(StreamingError::new(ErrorKind::MissingData("bitrate")))?) as u32,
             input_duration: track.duration.as_ref().unwrap_or(&source_media.get_duration().ok_or(StreamingError::new(ErrorKind::MissingData("duration")))?.to_string()).parse::<f32>()?,
@@ -42,6 +42,7 @@ impl TrackDefinition {
             codec_type: track.codec_type()?,
             codec: track.codec_name.clone(),
             level: if let CodecType::Video = track.codec_type()? {track.level.unwrap_or(0) as u32} else {0},
+            pixel_format: track.pix_fmt.clone(),
             index: track.index as u32,
         })
     }

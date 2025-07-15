@@ -1,3 +1,5 @@
+require('./code.scss')
+
 class DocumentCode extends HTMLElement {
     constructor() {
         super();

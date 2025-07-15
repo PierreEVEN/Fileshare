@@ -4,7 +4,9 @@ use crate::media_stream::preset_description::PresetDescription;
 use crate::media_stream::stream_track::TrackDefinition;
 use std::path::PathBuf;
 use std::sync::{Arc};
+use std::time::{Duration, SystemTime};
 use tokio::sync::RwLock;
+use tokio::time::sleep;
 use tracing::{info, warn};
 use utils::config::VideoServerConfig;
 use crate::media_info::media_info::CodecType;
@@ -54,7 +56,15 @@ impl TrackPreset {
                     args.append(&mut vec!["-c:0".into(), "aac".into(), "-ab".into(), self.description.bitrate(&self.parent_track).to_string()]);
                 },
                 CodecType::Video => {
-                    args.append(&mut vec!["-vf".into(), format!("scale={}:{}", self.description.height(&self.parent_track), self.description.width(&self.parent_track))]);
+                    let mut vf_args = String::new();
+                    vf_args += format!("scale={}:{}", self.description.height(&self.parent_track), self.description.width(&self.parent_track)).as_str();
+                    if if let Some(pixel_format) = &self.parent_track.pixel_format {
+                        pixel_format.as_str() != "yuv420p"
+                    } else { true } {
+                        vf_args += " format=yuv420p";
+                    }
+                    args.append(&mut vec!["-vf".into(), vf_args.trim().replace(" ", ",")]);
+
                     args.append(&mut vec!["-b:v".into(), self.description.bitrate(&self.parent_track).to_string()]);
                     args.append(&mut vec!["-c:0".into(), "h264".into(), "-preset".into(), "veryfast".into()]);
                 }
@@ -139,6 +149,14 @@ impl TrackPreset {
             return Ok(true)
         }
 
+        if let CodecType::Video = self.parent_track.codec_type {
+            if let Some(pixel_format) = &self.parent_track.pixel_format {
+                if pixel_format.as_str() != "yuv420p" {
+                    return Ok(true)
+                }
+            }
+        }
+
         if let Some(max_fps) = self.description.max_frame_rate {
             if max_fps < self.parent_track.input_framerate { return Ok(true) }
         }
@@ -171,10 +189,6 @@ impl TrackPreset {
         process.join().await?;
         let process = self.generate_chunks_for(1, None).await?;
         *self.gen_proc.write().await = Some(process);
-        //let process = self.generate_chunks_for(1, Some(1)).await?;
-        //process.join().await?;
-        //let process = self.generate_chunks_for(2, Some(1)).await?;
-        //process.join().await?;
 
         if path.exists() {
             Ok(path)
@@ -187,6 +201,15 @@ impl TrackPreset {
         let path = self.chunk_path(num.to_string());
         if path.exists() {
             return Ok(path);
+        }
+
+        let start = SystemTime::now();
+
+        while !path.exists() {
+            sleep(Duration::from_millis(self.global_config.tick_interval_ms)).await;
+            if SystemTime::now().duration_since(start)? > self.global_config.max_request_timout {
+                break;
+            }
         }
 
         if path.exists() {

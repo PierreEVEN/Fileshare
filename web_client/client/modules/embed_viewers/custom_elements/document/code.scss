@@ -1,0 +1,13 @@
+document-code {
+  height: 100%;
+
+  .code-toolbar {
+    height: 100%;
+
+    & > pre {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  }
+}
