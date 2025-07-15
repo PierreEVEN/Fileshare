@@ -1076,7 +1076,7 @@ class ControlBar {
         this.seekbar.addEventListener('pointerout', this.onSeekBarMouseMoveOut, true);
         this.seekbar.addEventListener('touchcancel', this.onSeekBarMouseMoveOut, true);
         this.seekbar.addEventListener('touchend', this.onSeekBarMouseMoveOut, true);
-        this.volumebar.addEventListener('change', this.setVolume, true);
+        this.volumebar.addEventListener('input', this.setVolume, true);
         document.addEventListener('fullscreenchange', this.onFullScreenChange, false);
         document.addEventListener('MSFullscreenChange', this.onFullScreenChange, false);
         document.addEventListener('mozfullscreenchange', this.onFullScreenChange, false);

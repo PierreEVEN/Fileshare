@@ -215,7 +215,7 @@ impl TrackPreset {
         if path.exists() {
             Ok(path)
         } else {
-            Err(StreamingError::new(ErrorKind::InitNotFound {track: self.output_track_index, num}))
+            Err(StreamingError::new(ErrorKind::ChunkNotFound {track: self.output_track_index, num}))
         }
     }
 }
