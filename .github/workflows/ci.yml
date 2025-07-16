@@ -28,26 +28,29 @@ jobs:
 
   build-f3d-alpine:
     runs-on: ubuntu-latest
+    container: alpine:latest
+
     steps:
-      - name: Build inside Alpine Docker
-        uses: addnab/docker-run-action@v3
-        with:
-          image: alpine:latest
-          options: --workdir /workspace
-          run: |
-            apk update
-            apk add build-base cmake ninja git vtk-dev assimp-dev alembic-dev openexr-dev
-            git clone https://github.com/f3d-app/f3d.git src
-            mkdir build && cd build
-            cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DF3D_MODULE_EXR=OFF -DF3D_MODULE_UI=OFF -DF3D_MODULE_TINYFILEDIALOGS=OFF ../src
-            ninja -j$(nproc)
+      - name: Install dependencies
+        run: |
+          apk update
+          apk --no-cache add build-base cmake ninja git vtk-dev assimp-dev alembic-dev openexr-dev
+
+      - name: Clone f3d repository
+        run: git clone https://github.com/f3d-app/f3d.git src
+
+      - name: Build executable with musl
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DF3D_MODULE_EXR=OFF -DF3D_MODULE_UI=OFF -DF3D_MODULE_TINYFILEDIALOGS=OFF -DF3D_PLUGIN_BUILD_ASSIMP=ON -DF3D_PLUGIN_BUILD_ALEMBIC=ON ../src
+          ninja -j$(nproc)
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: artifact-f3d-linux_musl
           retention-days: 1
-          path: |
-            ./build/bin/f3d
+          path: /f3d/bin/f3d
 
   build_rust_linux_musl:
     name: Linux Musl - Rust app
@@ -109,7 +112,7 @@ jobs:
       - run: zip -r fileshare-dockerized.zip ./fileshare-dockerized/
 
       # Download generated f3d exec
-      - name: Retrieve artifact f3d alpine
+      - name: Retrieve artifact f3d musl
         uses: actions/download-artifact@main
         with:
           name: artifact-f3d-linux_musl
