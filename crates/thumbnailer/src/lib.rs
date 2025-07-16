@@ -1,5 +1,5 @@
 use anyhow::Error;
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::{env, fs};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -106,6 +106,50 @@ impl Thumbnail {
         Ok(())
     }
 
+    fn object3d_thumbnail(input_path: &Path, extension: &String, output_path: &PathBuf, size: u32) -> Result<(), Error> {
+
+
+        let mut temp_path = env::temp_dir().join("fileshare_3D_thumbnail").join(input_path.file_name().unwrap_or(OsStr::new("noname")));
+        temp_path.set_extension(extension);
+        fs::create_dir_all(temp_path.parent().unwrap())?;
+        if temp_path.exists() {
+            fs::remove_file(&temp_path)?;
+        }
+        println!("try create symlink from {} to {}", input_path.display(), temp_path.display());
+        std::os::unix::fs::symlink(input_path, &temp_path)?;
+        println!("temp path : {}", temp_path.display());
+
+        let cmd = match Command::new("f3d")
+            .arg("--no-background")
+            .arg("--max-size=300")
+            .arg("--grid=false")
+            .arg("--light-intensity=2")
+            .arg("--filename=false")
+            .arg("--metadata=false")
+            .arg("--axis=false")
+            .arg("--edges=false")
+            .arg("--interaction-trackball=false")
+            .arg(&format!("--resolution={size},{size}"))
+            .arg(&format!("--output={}", output_path.display()))
+            .arg(&temp_path.display().to_string())
+            .stderr(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .spawn() {
+            Ok(cmd) => { cmd }
+            Err(err) => {
+                println!("remove temp path : {}", temp_path.display());
+                fs::remove_file(&temp_path)?;
+                return Err(Error::msg(format!("This server doesn't support thumbnails because f3d is not available : {}", err)))
+            }
+        };
+        if let Err(err) = cmd.wait_with_output() {
+            println!("remove 22 temp path : {}", temp_path.display());
+            fs::remove_file(&temp_path)?;
+            Err(err)?;
+        };
+        Ok(())
+    }
+
     fn pdf_thumbnail(input_path: &PathBuf, output_path: &PathBuf, size: u32) -> Result<(), Error> {
         use pdfium_render::prelude::*;
 
@@ -158,7 +202,7 @@ impl Thumbnail {
         Ok(())
     }
 
-    pub fn create(input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, size: u32) -> Result<PathBuf, Error> {
+    pub fn create(input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, extension: &String, size: u32) -> Result<PathBuf, Error> {
         if !input_path.exists() {
             return Err(Error::msg(format!("Cannot create thumbnail : the source file {} does not exists", input_path.display())))
         }
@@ -176,19 +220,25 @@ impl Thumbnail {
                 Self::video_thumbnail(input_path, output_path, size)?;
             }
             _ => {
-                return Err(Error::msg(format!("Unsupported mimetype : {mimetype}")));
+                match extension.to_lowercase().as_str() {
+                    "obj" | "fbx" | "stl" | "dae" | "ply" | "glb" | "gltf" | "x3d" | "x3db" | "3ds" => {
+                        Self::object3d_thumbnail(input_path, extension, output_path, size)?;
+                    }
+                    &_ => { return Err(Error::msg(format!("Unsupported mimetype : {mimetype}"))) }
+                };
             }
         }
+
         Ok(output_path.clone())
     }
     pub fn mimetype<'a>() -> &'a str {
         "image/jpeg"
     }
-    pub fn find_or_create(input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, size: u32) -> Result<PathBuf, Error> {
+    pub fn find_or_create(input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, extension: &String, size: u32) -> Result<PathBuf, Error> {
         if output_path.exists() {
             Ok(output_path.clone())
         } else {
-            Self::create(input_path, output_path, mimetype, size)
+            Self::create(input_path, output_path, mimetype, extension, size)
         }
     }
 }

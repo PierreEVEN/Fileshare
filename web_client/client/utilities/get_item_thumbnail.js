@@ -20,6 +20,7 @@ function from_distant_repos(item) {
             break;
     }
 
+    return `<img class="item-small" src="${thumbnail_url}" alt="fichier: ${item.name}" onError="this.onError = null; this.src='${get_mime_icon_path(item.mimetype)}'"/>`;
     return `<img class="item-small" src="${get_mime_icon_path(item.mimetype)}" alt="document: ${item.name}"/>`;
 }
 

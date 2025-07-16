@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::str::FromStr;
 use crate::app_ctx::AppCtx;
 use database::item::{DbItem, ItemSearchData, Trash};
@@ -210,7 +211,12 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
         Some(f) => { f }
     };
 
-    let thumbnail_path = Thumbnail::find_or_create(&Object::data_path(&file.object, &ctx.database), &Object::thumbnail_path(&file.object, &ctx.database), &file.mimetype.plain()?, 100)?;
+    let extension = match PathBuf::from(item.name.plain()?.as_str()).extension() {
+        None => {String::new()}
+        Some(extension) => {extension.display().to_string()}
+    };
+
+    let thumbnail_path = Thumbnail::find_or_create(&Object::data_path(&file.object, &ctx.database), &Object::thumbnail_path(&file.object, &ctx.database), &file.mimetype.plain()?, &extension, 100)?;
 
     let stream = ReaderStream::new(tokio::fs::File::open(thumbnail_path).await?);
     let body = Body::from_stream(stream);

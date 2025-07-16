@@ -70,7 +70,7 @@ class StatsViewport extends MemoryTracker {
         this._elements.ram_bar.style.width = `${stats.ram_used / stats.ram_total * 100}%`;
         this._elements.ram_txt.innerText = `${humanFileSize(stats.ram_used)} / ${humanFileSize(stats.ram_total)}`;
 
-        this._elements.swap_bar.style.width = `${stats.swap_used / stats.swap_total * 100}%`;
+        this._elements.swap_bar.style.width = stats.swap_total === 0 ? '0' : `${stats.swap_used / stats.swap_total * 100}%`;
         this._elements.swap_txt.innerText = `${humanFileSize(stats.swap_used)} / ${humanFileSize(stats.swap_total)}`;
 
         this._elements.cpus.innerHTML = '';
@@ -131,10 +131,10 @@ class StatsViewport extends MemoryTracker {
             const network_div = require("./networks.hbs")({display_name}, {});
 
             network_div.hb_elements.up_txt.innerText = `${humanFileSize(up)} / ${humanFileSize(this.networks[name].max_net)}`;
-            network_div.hb_elements.up_bar.style.width = this.networks[name].max_net === 0 ? '0' : `${up / this.networks[name].max_net * 100}`;
+            network_div.hb_elements.up_bar.style.width = this.networks[name].max_net === 0 ? '0' : `${up / this.networks[name].max_net * 100}%`;
 
             network_div.hb_elements.down_txt.innerText = `${humanFileSize(down)} / ${humanFileSize(this.networks[name].max_net)}`;
-            network_div.hb_elements.down_bar.style.width = this.networks[name].max_net === 0 ? '0' : `${down / this.networks[name].max_net * 100}`;
+            network_div.hb_elements.down_bar.style.width = this.networks[name].max_net === 0 ? '0' : `${down / this.networks[name].max_net * 100}%`;
 
             this._elements.networks.append(network_div)
         }
