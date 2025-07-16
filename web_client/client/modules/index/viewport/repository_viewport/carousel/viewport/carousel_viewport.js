@@ -1,16 +1,14 @@
-const carousel_item_hbs = require('./carousel_viewport.hbs')
-
 function clamp(s, a, b) {
     return s < a ? a : s > b ? b : s;
 }
 
-class CarouselViewport {
-    constructor(container, item) {
-        container.innerHTML = '';
+class CarouselViewport extends HTMLElement{
+    constructor(item) {
+        super();
         /**
          * @type {HTMLElement}
          */
-        const visual = carousel_item_hbs({item: item.display_data()});
+        const visual = require('./carousel_viewport.hbs')({item: item.display_data()});
         if (item.description && item.description.plain() !== '') {
             import('../../../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
                 const directory_description = visual.getElementsByClassName('carousel-description')[0];
@@ -22,9 +20,8 @@ class CarouselViewport {
             });
         }
 
-        this._visual = visual;
-
-        container.append(visual);
+        for (const element of visual)
+            this.append(element);
 
         this.scale = 1;
         this.translationX = 0;
@@ -36,7 +33,7 @@ class CarouselViewport {
 
         this._touch_cache = new Map();
 
-        container.addEventListener('touchstart', e => {
+        this.addEventListener('touchstart', e => {
             this._update_touches(e)
         });
         document.addEventListener('touchmove', e => {
@@ -48,12 +45,12 @@ class CarouselViewport {
         document.addEventListener('touchend', touch_end);
         document.addEventListener('touchcancel', touch_end);
 
-        visual.addEventListener('pointerdown', e => {
+        this.addEventListener('pointerdown', e => {
             this._drag_start_x = e.clientX;
             this._drag_start_y = e.clientY;
             this._drag = true
         })
-        container.addEventListener('pointermove', e => {
+        this.addEventListener('pointermove', e => {
             if (this._drag) {
                 this.update_transform();
 
@@ -73,7 +70,7 @@ class CarouselViewport {
         document.addEventListener('pointerout', remove_pointer)
         document.addEventListener('pointerleave', remove_pointer)
 
-        container.addEventListener("wheel", e => {
+        this.addEventListener("wheel", e => {
             if (e.ctrlKey) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -85,7 +82,7 @@ class CarouselViewport {
     }
 
     _apply_zoom(zoom, client_x, client_y) {
-        const bounds = this._visual.getBoundingClientRect();
+        const bounds = this.getBoundingClientRect();
         if (bounds.width === 0 || bounds.height === 0)
             return;
         const pointer_x = clamp((client_x - bounds.left) / bounds.width * 2 - 1, -1, 1);
@@ -94,8 +91,8 @@ class CarouselViewport {
         const old_scale = this.scale;
         this.scale = clamp(zoom, 1, 50);
 
-        const delta_x = (this._visual.offsetWidth * old_scale - this._visual.offsetWidth * this.scale) * 0.5;
-        const delta_y = (this._visual.offsetHeight * old_scale - this._visual.offsetHeight * this.scale) * 0.5;
+        const delta_x = (this.offsetWidth * old_scale - this.offsetWidth * this.scale) * 0.5;
+        const delta_y = (this.offsetHeight * old_scale - this.offsetHeight * this.scale) * 0.5;
 
         this.translationX += delta_x * pointer_x;
         this.translationY += delta_y * pointer_y;
@@ -131,17 +128,17 @@ class CarouselViewport {
             this.translationY += ((keys[0].now.screenY - keys[0].last.screenY) + (keys[1].now.screenY - keys[1].last.screenY)) / 2;
             this.update_transform();
 
-            this._apply_zoom(this.scale + (new_scale - last_scale) / this._visual.offsetHeight * 2, (keys[0].now.screenX + keys[1].now.screenX) / 2, (keys[0].now.screenY + keys[1].now.screenY) / 2)
+            this._apply_zoom(this.scale + (new_scale - last_scale) / this.offsetHeight * 2, (keys[0].now.screenX + keys[1].now.screenX) / 2, (keys[0].now.screenY + keys[1].now.screenY) / 2)
             return true;
         }
         return false;
     }
 
     update_transform() {
-        this.translationX = clamp(this.translationX, this._visual.offsetWidth * (-this.scale + 1) * 0.5, this._visual.offsetWidth * (this.scale - 1) * 0.5)
-        this.translationY = clamp(this.translationY, this._visual.offsetHeight * (-this.scale + 1) * 0.5, this._visual.offsetHeight * (this.scale - 1) * 0.5)
-        this._visual.style.transform = `translate(${this.translationX}px, ${this.translationY}px) scale(${this.scale})`;
+        this.translationX = clamp(this.translationX, this.offsetWidth * (-this.scale + 1) * 0.5, this.offsetWidth * (this.scale - 1) * 0.5)
+        this.translationY = clamp(this.translationY, this.offsetHeight * (-this.scale + 1) * 0.5, this.offsetHeight * (this.scale - 1) * 0.5)
+        this.style.transform = `translate(${this.translationX}px, ${this.translationY}px) scale(${this.scale})`;
     }
 }
 
-export {CarouselViewport}
+customElements.define("carousel-viewport", CarouselViewport);

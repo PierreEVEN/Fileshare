@@ -4,18 +4,19 @@ import {context_menu_repository} from "../../../context_menu/contexts/context_re
 
 require("./toolbar.scss");
 
-class ViewportToolbar {
-    /**
-     * @param container {HTMLElement}
-     * @param repository {Repository}
-     */
-    constructor(container, repository) {
+class ViewportToolbar extends HTMLElement {
+    constructor() {
+        super();
+        this.current_item = null;
+    }
+
+    connectedCallback() {
         let div = require('./toolbar.hbs')({}, {
             select_root: async () => {
                 if (this.is_trash)
-                    await APP.set_display_trash(repository);
+                    await APP.set_display_trash(this.repository);
                 else
-                    await APP.set_display_repository(repository);
+                    await APP.set_display_repository(this.repository);
             },
             download: () => {
                 if (this.current_item)
@@ -30,17 +31,24 @@ class ViewportToolbar {
                     context_menu_repository(this.repository);
             }
         });
-        this.current_item = null;
-        this.repository = repository;
         this.hb_elements = div.hb_elements;
-        container.append(div);
+        for (const element of div)
+            this.append(element);
+    }
+
+    disconnectedCallback() {
+        this.innerHTML = '';
+    }
+
+    set_repository(repository) {
+        this.repository = repository;
     }
 
     /**
      * @param current_item {FilesystemItem}
      * @param is_trash {boolean}
      */
-    async set_path_to(current_item, is_trash) {
+    async set_toolbar_path(current_item, is_trash) {
         this.current_item = current_item;
         this.is_trash = is_trash && !current_item;
         this.hb_elements.root.innerText = this.repository.display_name.plain();
@@ -70,4 +78,5 @@ class ViewportToolbar {
     }
 }
 
-export {ViewportToolbar}
+
+customElements.define("viewport-toolbar", ViewportToolbar);

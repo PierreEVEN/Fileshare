@@ -1,6 +1,6 @@
-@import "../../../../../stylesheets/palette";
+@import "../../../../../../stylesheets/palette";
 
-.carousel-viewport {
+carousel-viewport {
   width: 100%;
   display: flex;
   flex-grow: 1;
@@ -44,7 +44,7 @@
 
 
 @media (orientation: portrait) {
-  .carousel-viewport {
+  carousel-viewport {
     flex-direction: column-reverse;
 
     .carousel-item-image {

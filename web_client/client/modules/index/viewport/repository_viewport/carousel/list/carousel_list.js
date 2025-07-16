@@ -1,12 +1,13 @@
 const carousel_list_hbs = require('./carousel_list.hbs');
 const carousel_list_item_hbs = require('./carousel_list_item.hbs');
 
-class CarouselList {
+class CarouselList extends HTMLElement{
     /**
      * @param viewport {RepositoryViewport}
      * @param on_select_item
      */
     constructor(viewport, on_select_item) {
+        super();
         this.viewport = viewport;
 
         this.on_select_item = on_select_item;
@@ -32,6 +33,10 @@ class CarouselList {
         this.update_left_right_buttons();
     }
 
+    bind_viewport(viewport) {
+
+    }
+
     async select_next() {
         if (!this._last_selected.nextSibling.item_id)
             return;
@@ -53,7 +58,7 @@ class CarouselList {
     /**
      @param container {HTMLElement}
      */
-    async build_visual(container) {
+    async set_items(items) {
         container.innerHTML = '';
         const carousel_list = carousel_list_hbs({}, {
             move_left: () => {
@@ -126,4 +131,5 @@ class CarouselList {
     }
 }
 
-export {CarouselList}
+
+customElements.define("carousel-list", CarouselList);

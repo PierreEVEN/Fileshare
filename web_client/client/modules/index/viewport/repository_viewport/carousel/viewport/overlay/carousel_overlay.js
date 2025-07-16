@@ -1,6 +1,6 @@
-import {humanFileSize} from "../../../../../../utilities/utils";
-import {APP_CONFIG} from "../../../../../../types/app_config";
-import {Message, NOTIFICATION} from "../../../../tools/message_box/notification";
+import {humanFileSize} from "../../../../../../../utilities/utils";
+import {APP_CONFIG} from "../../../../../../../types/app_config";
+import {Message, NOTIFICATION} from "../../../../../tools/message_box/notification";
 
 class CarouselOverlay {
     /**

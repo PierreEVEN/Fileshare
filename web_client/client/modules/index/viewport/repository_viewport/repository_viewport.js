@@ -4,23 +4,23 @@ import {
     RepositoryRootProvider,
     TrashContentProvider
 } from "../../../../types/viewport_content/providers";
-import {ItemView} from "./content/item_view";
+import "./item/item";
 import {context_menu_repository} from "../../context_menu/contexts/context_repository";
 import {Uploader} from "./upload/uploader";
 import {DropBox} from "./upload/drop_box";
 import {MemoryTracker} from "../../../../types/memory_handler";
 import {context_menu_item} from "../../context_menu/contexts/context_item";
 import {APP} from "../../../../app";
-import {ViewportToolbar} from "./toolbar/toolbar";
-import {Carousel} from "./carousel/carousel";
+import "./toolbar/toolbar";
+import {get_global_carousel} from "./carousel/global_carousel";
 import {Repository} from "../../../../types/repository";
-import {CarouselList} from "./carousel/list/carousel_list";
+import "./carousel/list/carousel_list";
+import "./carousel/viewport/carousel_viewport";
 import {humanFileSize, is_touch_screen} from "../../../../utilities/utils";
 import {Selector} from "./selector";
 import {MODAL} from "../../modal/modal";
 import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
 import {delete_item} from "../../tools/delete_item/delete_item";
-import {FilesystemStream} from "../../../../types/filesystem_stream";
 
 require('./repository_viewport.scss')
 
@@ -200,52 +200,59 @@ class RepositoryViewport extends MemoryTracker {
                 this._elements.footer_text.innerText = `${content_num_items} fichiers - ${humanFileSize(content_total_size)}`
             }
 
-            this._visible_items.set(item.id, new ItemView(item, this._elements.content, {
-                open: async () => {
-                    await APP.set_display_item(item);
-                },
-                select: async (local_edit, fill_space) => {
-                    if (is_touch_screen()) {
-                        if (this.mobile_selection) {
-                            this.selector.action_select(item.id, true, false);
-                        } else {
-                            await APP.set_display_item(item);
-                        }
+            const new_item = document.createElement('item-view');
+            new_item.set_item(item);
+            new_item.ondblclick = async () => {
+                await APP.set_display_item(item);
+            };
+            new_item.onclick = async (event) => {
+                const local_edit = event.ctrlKey;
+                const fill_space = event.shiftKey;
+                if (is_touch_screen()) {
+                    if (this.mobile_selection) {
+                        this.selector.action_select(item.id, true, false);
                     } else {
-                        this.selector.action_select(item.id, local_edit, fill_space);
+                        await APP.set_display_item(item);
                     }
-                },
-                context_menu: async () => {
-                    if (is_touch_screen()) {
-                        if (!this.mobile_selection || !this.selector.is_selected(item.id)) {
-                            this.selector.clear_selection();
-                            this.mobile_selection = true;
-                            this.selector.action_select(item.id, false, false);
-                        } else {
-                            const items = [];
-                            for (const item_id of this.selector.get_selected_items()) {
-                                items.push(await item.filesystem()?.fetch_item(item_id));
-                            }
-                            context_menu_item(items);
-                        }
-                        this.update_selection();
+                } else {
+                    this.selector.action_select(item.id, local_edit, fill_space);
+                }
+            };
+            new_item.oncontextmenu = async (e) => {
+                e.preventDefault();
+                if (is_touch_screen()) {
+                    if (!this.mobile_selection || !this.selector.is_selected(item.id)) {
+                        this.selector.clear_selection();
+                        this.mobile_selection = true;
+                        this.selector.action_select(item.id, false, false);
                     } else {
-                        if (this.selector.is_selected(item.id)) {
-                            const items = [];
-                            for (const item_id of this.selector.get_selected_items()) {
-                                items.push(await item.filesystem()?.fetch_item(item_id));
-                            }
-                            context_menu_item(items);
-                        } else {
-                            this.selector.select_item(item.id, false, false);
-                            context_menu_item(item);
+                        const items = [];
+                        for (const item_id of this.selector.get_selected_items()) {
+                            items.push(await item.filesystem()?.fetch_item(item_id));
                         }
+                        context_menu_item(items);
+                    }
+                    this.update_selection();
+                } else {
+                    if (this.selector.is_selected(item.id)) {
+                        const items = [];
+                        for (const item_id of this.selector.get_selected_items()) {
+                            items.push(await item.filesystem()?.fetch_item(item_id));
+                        }
+                        context_menu_item(items);
+                    } else {
+                        this.selector.select_item(item.id, false, false);
+                        context_menu_item(item);
                     }
                 }
-            }))
-        });
+            }
 
-        this.toolbar = new ViewportToolbar(div.hb_elements.toolbar, this.repository);
+            this._elements.content.append(new_item);
+            this._visible_items.set(item.id, new_item);
+        });
+        this.toolbar = document.createElement('viewport-toolbar');
+        this.toolbar.set_repository(this.repository)
+        div.hb_elements.toolbar.append(this.toolbar);
 
         this.content.events.add('remove', (item) => {
             const div = this._visible_items.get(item.id);
@@ -285,7 +292,7 @@ class RepositoryViewport extends MemoryTracker {
     }
 
     get_div(item_id) {
-        return this._visible_items.get(item_id).div;
+        return this._visible_items.get(item_id);
     }
 
     /**
@@ -308,7 +315,7 @@ class RepositoryViewport extends MemoryTracker {
         } else {
             await this.open_carousel(item);
         }
-        await this.toolbar.set_path_to(item, false);
+        await this.toolbar.set_toolbar_path(item, false);
     }
 
     async try_get_item_data(item_id) {
@@ -337,7 +344,7 @@ class RepositoryViewport extends MemoryTracker {
                 if (!this.uploader)
                     this._elements.current_description.style.display = 'flex';
             }
-            await this.toolbar.set_path_to(null, false);
+            await this.toolbar.set_toolbar_path(null, false);
         }
     }
 
@@ -347,7 +354,7 @@ class RepositoryViewport extends MemoryTracker {
         await this.close_carousel();
         if (this.content && (!this.content.get_content_provider() || !(this.content.get_content_provider() instanceof TrashContentProvider))) {
             await this.content.set_content_provider(new TrashContentProvider(this.repository));
-            await this.toolbar.set_path_to(null, true);
+            await this.toolbar.set_toolbar_path(null, true);
         }
     }
 
@@ -407,7 +414,7 @@ class RepositoryViewport extends MemoryTracker {
             delete this.carousel;
             if (!this.selector.is_selected(item.id) || this.selector.get_selected_items().length > 1)
                 this.selector.select_item(item.id, false, false);
-            this.carousel = new Carousel(Carousel.get_fullscreen_container().background_container, item);
+            this.carousel = new Carousel(get_global_carousel().background_container, item);
             this.carousel.on_close = async () => {
                 await this.close_carousel();
             }
@@ -415,22 +422,21 @@ class RepositoryViewport extends MemoryTracker {
             await APP.state.open_item(item);
         }
 
-        Carousel.get_fullscreen_container().root.style.display = 'flex';
-        const container = Carousel.get_fullscreen_container();
-        const item_list = new CarouselList(this, (item) => {
-            if (this.carousel && item.id !== this.carousel.base_item.id)
-                view_item(item, item_list);
-        });
-        await view_item(item, item_list);
-        await item_list.build_visual(container.list_container);
-        item_list.select_item(item, true);
+        await APP.state.open_item(item);
+
+        const viewport = document.createElement('carousel-viewport');
+        viewport.set_item(item);
+        const list = document.createElement('carousel-list');
+        list.bind_viewport(viewport);
+        await list.set_items(this.content.get_displayed_items());
+
+        get_global_carousel().open(viewport, list);
     }
 
     async close_carousel() {
         if (this.carousel) {
-            this.carousel.delete();
-            Carousel.get_fullscreen_container().background_container.innerHTML = '';
-            Carousel.get_fullscreen_container().root.style.display = 'none';
+            this.carousel.remove();
+            get_global_carousel().close();
 
             if (this.content.get_content_provider() instanceof DirectoryContentProvider)
                 await APP.state.open_item(this.content.get_content_provider().directory);
