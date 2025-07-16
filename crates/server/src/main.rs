@@ -182,6 +182,9 @@ async fn main() {
         }
     }
 
+    #[allow(unused)]
+    fs::remove_dir_all(env::temp_dir().join("fileshare_3D_thumbnail"));
+
     // Start web client
     start_web_client(config.web_client_config.clone()).await;
 

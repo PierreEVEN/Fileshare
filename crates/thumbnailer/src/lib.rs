@@ -4,6 +4,7 @@ use std::{env, fs};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
+use tracing::info;
 
 pub struct Thumbnail {}
 
@@ -107,17 +108,43 @@ impl Thumbnail {
     }
 
     fn object3d_thumbnail(input_path: &Path, extension: &String, output_path: &PathBuf, size: u32) -> Result<(), Error> {
-
-
         let mut temp_path = env::temp_dir().join("fileshare_3D_thumbnail").join(input_path.file_name().unwrap_or(OsStr::new("noname")));
         temp_path.set_extension(extension);
         fs::create_dir_all(temp_path.parent().unwrap())?;
         if temp_path.exists() {
             fs::remove_file(&temp_path)?;
         }
-        println!("try create symlink from {} to {}", input_path.display(), temp_path.display());
-        std::os::unix::fs::symlink(input_path, &temp_path)?;
-        println!("temp path : {}", temp_path.display());
+
+        if extension == "blend" {
+            temp_path.set_extension("glb");
+            let script = format!(r"import bpy; bpy.ops.wm.open_mainfile(filepath='{}'); bpy.ops.export_scene.gltf(filepath='{}', export_format='GLB', export_apply=True)", input_path.display(), temp_path.display());
+            let cmd = match Command::new("blender")
+                .arg("--background")
+                .arg("--python-expr")
+                .arg(script)
+                .arg(&temp_path.display().to_string())
+                .stderr(Stdio::inherit())
+                .stdout(Stdio::inherit())
+                .spawn() {
+                Ok(cmd) => { cmd }
+                Err(err) => {
+                    fs::remove_file(&temp_path)?;
+                    return Err(Error::msg(format!("This server doesn't support thumbnails because f3d is not available : {}", err)))
+                }
+            };
+            if let Err(err) = cmd.wait_with_output() {
+                fs::remove_file(&temp_path)?;
+                Err(err)?;
+            };
+            if temp_path.exists() {
+                info!("Successfully exported blend file to glb : {}", temp_path.display());
+            }
+            else {
+                return Err(Error::msg("Unable to export blend file to glb"));
+            }
+        } else {
+            std::os::unix::fs::symlink(input_path, &temp_path)?;
+        }
 
         let cmd = match Command::new("f3d")
             .arg("--no-background")
@@ -137,13 +164,11 @@ impl Thumbnail {
             .spawn() {
             Ok(cmd) => { cmd }
             Err(err) => {
-                println!("remove temp path : {}", temp_path.display());
                 fs::remove_file(&temp_path)?;
                 return Err(Error::msg(format!("This server doesn't support thumbnails because f3d is not available : {}", err)))
             }
         };
         if let Err(err) = cmd.wait_with_output() {
-            println!("remove 22 temp path : {}", temp_path.display());
             fs::remove_file(&temp_path)?;
             Err(err)?;
         };
@@ -221,7 +246,7 @@ impl Thumbnail {
             }
             _ => {
                 match extension.to_lowercase().as_str() {
-                    "obj" | "fbx" | "stl" | "dae" | "ply" | "glb" | "gltf" | "x3d" | "x3db" | "3ds" => {
+                    "obj" | "fbx" | "stl" | "dae" | "ply" | "glb" | "gltf" | "x3d" | "x3db" | "3ds" | "blend" => {
                         Self::object3d_thumbnail(input_path, extension, output_path, size)?;
                     }
                     &_ => { return Err(Error::msg(format!("Unsupported mimetype : {mimetype}"))) }
