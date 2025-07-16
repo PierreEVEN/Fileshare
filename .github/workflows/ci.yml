@@ -47,7 +47,7 @@ jobs:
           name: artifact-f3d-linux_musl
           retention-days: 1
           path: |
-            ./bin/f3d
+            ./build/bin/f3d
 
   build_rust_linux_musl:
     name: Linux Musl - Rust app
