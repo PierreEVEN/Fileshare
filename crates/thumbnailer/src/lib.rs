@@ -111,27 +111,28 @@ impl Thumbnail {
         let mut temp_path = env::temp_dir().join("fileshare_3D_thumbnail").join(input_path.file_name().unwrap_or(OsStr::new("noname")));
         temp_path.set_extension(extension);
         fs::create_dir_all(temp_path.parent().unwrap())?;
-        if temp_path.exists() {
-            fs::remove_file(&temp_path)?;
-        }
 
         if extension == "blend" {
             temp_path.set_extension("glb");
-            let script = format!(r"import bpy; bpy.ops.wm.open_mainfile(filepath='{}'); bpy.ops.export_scene.gltf(filepath='{}', export_format='GLB', export_apply=True)", input_path.display(), temp_path.display());
+            if temp_path.exists() {
+                fs::remove_file(&temp_path)?;
+            }
+            let script = format!(r"import bpy;bpy.ops.wm.open_mainfile(filepath=r'{}');bpy.ops.export_scene.gltf(filepath=r'{}',export_format='GLB',export_apply=True)", input_path.display().to_string(), temp_path.display());
             let cmd = match Command::new("blender")
                 .arg("--background")
                 .arg("--python-expr")
                 .arg(script)
-                .arg(&temp_path.display().to_string())
                 .stderr(Stdio::inherit())
                 .stdout(Stdio::inherit())
                 .spawn() {
                 Ok(cmd) => { cmd }
                 Err(err) => {
-                    fs::remove_file(&temp_path)?;
-                    return Err(Error::msg(format!("This server doesn't support thumbnails because f3d is not available : {}", err)))
+                    #[allow(unused)]
+                    fs::remove_file(&temp_path);
+                    return Err(Error::msg(format!("This server doesn't support thumbnails because blender is not available : {}", err)))
                 }
             };
+
             if let Err(err) = cmd.wait_with_output() {
                 fs::remove_file(&temp_path)?;
                 Err(err)?;
@@ -143,10 +144,22 @@ impl Thumbnail {
                 return Err(Error::msg("Unable to export blend file to glb"));
             }
         } else {
-            std::os::unix::fs::symlink(input_path, &temp_path)?;
+            if temp_path.exists() {
+                fs::remove_file(&temp_path)?;
+            }
+            #[cfg(unix)]
+            if let Err(err) = std::os::unix::fs::symlink(input_path, &temp_path) {
+                return Err(Error::msg(format!("Failed to create symlink : {}", err)));
+            }
+            #[cfg(windows)]
+            fs::copy(input_path, &temp_path)?;
         }
 
-        let cmd = match Command::new("f3d")
+        if !temp_path.exists() {
+            return Err(Error::msg(format!("Cannot find object3d file : {}", temp_path.display())));
+        }
+
+        let cmd = match Command::new("f3d.exe")
             .arg("--no-background")
             .arg("--max-size=300")
             .arg("--grid=false")
@@ -156,9 +169,9 @@ impl Thumbnail {
             .arg("--axis=false")
             .arg("--edges=false")
             .arg("--interaction-trackball=false")
-            .arg(&format!("--resolution={size},{size}"))
-            .arg(&format!("--output={}", output_path.display()))
-            .arg(&temp_path.display().to_string())
+            .arg(format!("--resolution={size},{size}"))
+            .arg(format!("--output={}", output_path.display()))
+            .arg(temp_path.display().to_string())
             .stderr(Stdio::inherit())
             .stdout(Stdio::inherit())
             .spawn() {
@@ -172,6 +185,9 @@ impl Thumbnail {
             fs::remove_file(&temp_path)?;
             Err(err)?;
         };
+        if temp_path.exists() {
+            fs::remove_file(&temp_path)?;
+        }
         Ok(())
     }
 

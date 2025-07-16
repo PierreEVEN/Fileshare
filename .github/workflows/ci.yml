@@ -1,4 +1,4 @@
-  name: Build app
+name: Build app
 
 on:
   push:
@@ -36,20 +36,18 @@ jobs:
           options: --workdir /workspace
           run: |
             apk update
-            apk add build-base cmake ninja git vtk-dev glew-dev glfw-dev assimp-dev libpng-dev libjpeg-turbo-dev gcompat
+            apk add build-base cmake ninja git vtk-dev assimp-dev alembic-dev openexr-dev
             git clone https://github.com/f3d-app/f3d.git src
             mkdir build && cd build
-            cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ../src
+            cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DF3D_MODULE_EXR=OFF -DF3D_MODULE_UI=OFF -DF3D_MODULE_TINYFILEDIALOGS=OFF ../src
             ninja -j$(nproc)
-
-      - name: Upload built binary
-        if: success()
-        uses: actions/upload-artifact@v3
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: f3d-alpine
+          name: artifact-f3d-linux_musl
+          retention-days: 1
           path: |
-            # This assumes f3d prints its binary to build/bin/f3d
-            build/bin/f3d
+            ./bin/f3d
 
   build_rust_linux_musl:
     name: Linux Musl - Rust app
@@ -102,15 +100,25 @@ jobs:
   package:
     name: Upload release
     runs-on: ubuntu-22.04
-    needs: [build_rust_windows, build_rust_linux, build_rust_linux_musl, build_web_app]
+    needs: [build_rust_windows, build_rust_linux, build_rust_linux_musl, build_web_app, build-f3d-alpine]
     steps:
       - uses: actions/checkout@v4
         
       # Create Docker setup zip
       - run: mv docker fileshare-dockerized
       - run: zip -r fileshare-dockerized.zip ./fileshare-dockerized/
-                  
-      # Download generated artifacts
+
+      # Download generated f3d exec
+      - name: Retrieve artifact f3d alpine
+        uses: actions/download-artifact@main
+        with:
+          name: artifact-f3d-linux_musl
+          path: ./artifact_f3d_linux
+
+      - run: ls -lah ./artifact_f3d_linux
+
+
+      # Download generated webapp data
       - name: Retrieve artifact Web app
         uses: actions/download-artifact@main
         with:
@@ -147,6 +155,7 @@ jobs:
       - run: mkdir fileshare
       - run: mkdir fileshare/migrations
       - run: cp ./lib/libpdfium.so ./fileshare/
+      - run: cp ./artifact_f3d_linux/f3d ./fileshare/
       - run: mv ./artifact_rust_linux_musl/migrations/* ./fileshare/migrations
       - run: mv ./artifact_rust_linux_musl/target/x86_64-unknown-linux-musl/release/fileshare-server ./fileshare/
       - run: cp -r ./artifact_web_app/* ./fileshare/

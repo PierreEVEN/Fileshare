@@ -5,7 +5,7 @@ FROM alpine:latest
 ARG VERSION=latest
 
 RUN apk update
-RUN apk add wget unzip dos2unix ffmpeg imagemagick libraw
+RUN apk add wget unzip dos2unix ffmpeg imagemagick libraw blender
 RUN mkdir /opt/fileshare
 RUN mkdir /opt/fileshare/migrations
 
