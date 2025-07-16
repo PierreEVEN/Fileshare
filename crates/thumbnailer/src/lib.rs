@@ -159,7 +159,7 @@ impl Thumbnail {
             return Err(Error::msg(format!("Cannot find object3d file : {}", temp_path.display())));
         }
 
-        let cmd = match Command::new("f3d.exe")
+        let cmd = match Command::new("f3d")
             .arg("--no-background")
             .arg("--max-size=300")
             .arg("--grid=false")

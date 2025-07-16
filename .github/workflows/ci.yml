@@ -28,13 +28,13 @@ jobs:
 
   build-f3d-alpine:
     runs-on: ubuntu-latest
-    container: alpine:latest
+    container: alpine:3.21
 
     steps:
       - name: Install dependencies
         run: |
           apk update
-          apk --no-cache add build-base cmake ninja git vtk-dev assimp-dev alembic-dev openexr-dev
+          apk --no-cache add build-base cmake ninja git vtk-dev assimp-dev alembic-dev openexr-dev mesa mesa-dri-gallium mesa-osmesa mesa-egl
 
       - name: Clone f3d repository
         run: git clone https://github.com/f3d-app/f3d.git src
