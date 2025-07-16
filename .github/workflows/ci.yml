@@ -50,7 +50,9 @@ jobs:
         with:
           name: artifact-f3d-linux_musl
           retention-days: 1
-          path: ./build/bin/f3d
+          path: |
+            ./build/bin
+            ./build/lib
 
   build_rust_linux_musl:
     name: Linux Musl - Rust app
@@ -157,8 +159,9 @@ jobs:
 
       - run: mkdir fileshare
       - run: mkdir fileshare/migrations
+      - run: mkdir fileshare/f3d
       - run: cp ./lib/libpdfium.so ./fileshare/
-      - run: cp ./artifact_f3d_linux/f3d ./fileshare/
+      - run: cp -r ./artifact_f3d_linux/* ./fileshare/f3d
       - run: mv ./artifact_rust_linux_musl/migrations/* ./fileshare/migrations
       - run: mv ./artifact_rust_linux_musl/target/x86_64-unknown-linux-musl/release/fileshare-server ./fileshare/
       - run: cp -r ./artifact_web_app/* ./fileshare/
