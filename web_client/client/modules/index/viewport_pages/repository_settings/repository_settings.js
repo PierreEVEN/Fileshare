@@ -1,4 +1,3 @@
-import {MemoryTracker} from "../../../../types/memory_handler";
 import {edit_repository} from "../../tools/edit_repository/edit_repository";
 import {EncString} from "../../../../types/encstring";
 import {fetch_api} from "../../../../utilities/request";
@@ -9,18 +8,25 @@ import {humanFileSize} from "../../../../utilities/utils";
 
 require('./repository_settings.scss')
 
-class RepositorySettings extends MemoryTracker {
-    /**
-     * @param repository {Repository}
-     * @param container {HTMLElement}
-     */
-    constructor(repository, container) {
-        super(RepositorySettings);
+class RepositorySettings extends HTMLElement {
+    constructor() {
+        super();
+    }
+
+    connectedCallback() {
+        this.set_repository(this.repository);
+    }
+
+    set_repository(repository) {
         this.repository = repository;
-        this.container = container;
 
+        if (!this.isConnected)
+            return this;
 
-        this.container.innerHTML = '';
+        this.innerHTML = '';
+        if (!repository)
+            return this;
+
 
         fetch_api(`repository/stats`, 'POST', repository.id)
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de lire les informations du dépôt")))
@@ -48,7 +54,7 @@ class RepositorySettings extends MemoryTracker {
                         count: contributor.count
                     });
 
-                this.div = require('./repository_settings.hbs')(merged_data, {
+                const div = require('./repository_settings.hbs')(merged_data, {
                     edit: async () => {
                         edit_repository(repository);
                     },
@@ -57,20 +63,22 @@ class RepositorySettings extends MemoryTracker {
                             add: async (e) => {
                                 e.preventDefault();
 
-                                let user = await User.search_from_name(EncString.from_client(document.getElementById('username').value), true);
+                                let user = await User.search_from_name(EncString.from_client(widget.hb_elements.username.value), true);
                                 if (user.length === 0) {
-                                    NOTIFICATION.error(new Message(`Impossible de trouver l'utilisateur '${document.getElementById('username').value}'`));
+                                    NOTIFICATION.error(new Message(`Impossible de trouver l'utilisateur '${widget.hb_elements.username.value}'`));
                                     return;
                                 }
-                                await this._register_subscription(repository.id, user[0].id, document.getElementById('access_type').value);
+                                await this._register_subscription(repository.id, user[0].id, widget.hb_elements.access_type.value);
                                 MODAL.close();
                             }
                         });
                         MODAL.open(widget, {custom_width: '600px', custom_height: '350px'})
                     }
                 });
+                this.hb_elements = div.hb_elements;
 
-                this.container.append(this.div);
+                for (const element of div)
+                    this.append(element);
 
                 fetch_api(`repository/subscriptions`, 'POST', repository.id).then(async subscriptions => {
                     for (const subscription of subscriptions) {
@@ -78,6 +86,7 @@ class RepositorySettings extends MemoryTracker {
                     }
                 }).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible d'ajouter l'utilisateur")));
             });
+        return this;
     }
 
     async _add_subscription(data) {
@@ -99,7 +108,7 @@ class RepositorySettings extends MemoryTracker {
                 auth_widget.remove();
             }
         });
-        this.div.hb_elements.subscriptions.append(auth_widget);
+        this.hb_elements.subscriptions.append(auth_widget);
     }
 
     async _register_subscription(repository, owner, access_type) {
@@ -129,5 +138,4 @@ class RepositorySettings extends MemoryTracker {
     }
 }
 
-
-export {RepositorySettings}
+customElements.define("page-repository-settings", RepositorySettings);

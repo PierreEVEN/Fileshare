@@ -49,6 +49,7 @@ class ViewportToolbar extends HTMLElement {
      * @param is_trash {boolean}
      */
     async set_toolbar_path(current_item, is_trash) {
+        return;
         this.current_item = current_item;
         this.is_trash = is_trash && !current_item;
         this.hb_elements.root.innerText = this.repository.display_name.plain();

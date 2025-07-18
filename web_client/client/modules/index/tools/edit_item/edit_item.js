@@ -15,12 +15,12 @@ async function edit_item(item) {
         submit: async (e) => {
             e.preventDefault();
 
-            const description = document.getElementById('description').value;
+            const description = widget.hb_elements.description.value;
             let new_data = {
                 id: item.id,
-                name: EncString.from_client(document.getElementById('display_name').value),
+                name: EncString.from_client(widget.hb_elements.display_name.value),
                 description: description.length === 0 ? null : EncString.from_client(description),
-                open_upload: item.is_regular_file ? null : document.getElementById('allow_visitor_upload').checked,
+                open_upload: item.is_regular_file ? null : widget.hb_elements.allow_visitor_upload.checked,
             };
 
             const items = await fetch_api(`item/update`, 'POST', [new_data])

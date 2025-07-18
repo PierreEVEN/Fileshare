@@ -6,9 +6,8 @@ import {
 } from "../../../../types/viewport_content/providers";
 import "./item/item";
 import {context_menu_repository} from "../../context_menu/contexts/context_repository";
-import {Uploader} from "./upload/uploader";
-import {DropBox} from "./upload/drop_box";
-import {MemoryTracker} from "../../../../types/memory_handler";
+import "./upload/uploader";
+import "./upload/drop_box";
 import {context_menu_item} from "../../context_menu/contexts/context_item";
 import {APP} from "../../../../app";
 import "./toolbar/toolbar";
@@ -139,48 +138,11 @@ document.addEventListener('keydown', async function (event) {
     }
 }, false);
 
-class RepositoryViewport extends MemoryTracker {
-    /**
-     * @param repository {Repository}
-     * @param container {HTMLElement}
-     */
-    constructor(repository, container) {
-        super(RepositoryViewport);
-        const div = require('./repository_viewport.hbs')({}, {
-            background_context: (event) => {
-                event.preventDefault();
-                if (!event.target.classList.contains('file-list'))
-                    return;
-                if (this.content.get_content_provider() instanceof DirectoryContentProvider)
-                    context_menu_item(this.content.get_content_provider().directory)
-                else
-                    context_menu_repository(repository);
-            },
-            open_upload: () => {
-                this.open_upload_container()
-                div.hb_elements.upload_button.style.display = 'none';
-            },
-            ctx_selection: async () => {
-                const items = [];
-                for (const item_id of this.selector.get_selected_items()) {
-                    items.push(await this.content.get_filesystem().fetch_item(item_id));
-                }
-                context_menu_item(items);
-            },
-            unselect_all: () => {
-                this.selector.clear_selection();
-            }
-        });
-
+class RepositoryViewport extends HTMLElement {
+    constructor() {
+        super();
         CURRENT_VIEWPORT = this;
 
-        /**
-         * @type {Repository}
-         */
-        this.repository = repository;
-        this._elements = div.hb_elements;
-
-        this.content = new ViewportContent();
         /**
          * @type {Map<number, ItemView>}
          * @private
@@ -189,6 +151,11 @@ class RepositoryViewport extends MemoryTracker {
 
         let content_num_items = 0;
         let content_total_size = 0;
+
+        /**
+         * @type {ViewportContent}
+         */
+        this.content = new ViewportContent();
 
         this.content.events.add('add', async (item) => {
 
@@ -250,9 +217,6 @@ class RepositoryViewport extends MemoryTracker {
             this._elements.content.append(new_item);
             this._visible_items.set(item.id, new_item);
         });
-        this.toolbar = document.createElement('viewport-toolbar');
-        this.toolbar.set_repository(this.repository)
-        div.hb_elements.toolbar.append(this.toolbar);
 
         this.content.events.add('remove', (item) => {
             const div = this._visible_items.get(item.id);
@@ -266,19 +230,9 @@ class RepositoryViewport extends MemoryTracker {
             }
         })
 
-        container.append(div);
-
         /**
-         * @type {HTMLElement}
+         * @type {Selector}
          */
-        this.container = container;
-
-        this.drop_box = new DropBox(this._elements.drop_box, () => {
-            if (!this.uploader)
-                this.open_upload_container();
-            return this.uploader;
-        });
-
         this.selector = new Selector(this);
         this.selector.events.add('update_selection', () => {
             if (this.mobile_selection && this.selector.get_selected_items().length > 0) {
@@ -289,33 +243,84 @@ class RepositoryViewport extends MemoryTracker {
                 this._elements.mobile_selection.classList.remove('visible');
             }
         })
+
+    }
+
+    connectedCallback() {
+        this.innerHTML = '';
+
+        const div = require('./repository_viewport.hbs')({}, {
+            background_context: (event) => {
+                event.preventDefault();
+                if (!event.target.classList.contains('file-list'))
+                    return;
+                if (this.content.get_content_provider() instanceof DirectoryContentProvider)
+                    context_menu_item(this.content.get_content_provider().directory)
+                else
+                    context_menu_repository(repository);
+            },
+            open_upload: () => {
+                this.open_upload_container()
+                div.hb_elements.upload_button.style.display = 'none';
+            },
+            ctx_selection: async () => {
+                const items = [];
+                for (const item_id of this.selector.get_selected_items()) {
+                    items.push(await this.content.get_filesystem().fetch_item(item_id));
+                }
+                context_menu_item(items);
+            },
+            unselect_all: () => {
+                this.selector.clear_selection();
+            },
+        });
+        for (const item of div)
+            this.append(item);
+
+        this._elements = div.hb_elements;
+        this._elements.drop_box.get_uploader = () => {
+            if (!this.uploader)
+                this.open_upload_container();
+            return this.uploader;
+        }
+    }
+
+    /**
+     * @param object {FilesystemItem | Repository}
+     * @returns {Promise<void>}
+     * @private
+     */
+    async _update_description(object) {
+        this._elements.current_description.style.display = 'none';
+        this._elements.current_description.innerText = '';
+
+        if (object.description && object.description.plain().length !== 0 && object.description.plain() !== 'undefined') {
+            import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown_loader => {
+                this._elements.current_description.innerHTML = showdown_loader.convert_text(object.description.plain())
+            })
+            if (!this.uploader)
+                this._elements.current_description.style.display = 'flex';
+        }
+    }
+
+    set_repository(repository) {
+        /**
+         * @type {Repository}
+         */
+        this.repository = repository;
+        if (!this.isConnected)
+            return this;
+        this.innerHTML = '';
+        if (!repository)
+            return this;
+
+        this._elements.toolbar.set_repository(this.repository)
+
+        return this;
     }
 
     get_div(item_id) {
         return this._visible_items.get(item_id);
-    }
-
-    /**
-     * @param item {FilesystemItem}
-     * @return {Promise<void>}
-     */
-    async open_item(item) {
-        this._elements.current_description.style.display = 'none';
-        this._elements.current_description.innerText = '';
-        if (!item.is_regular_file) {
-            await this.close_carousel();
-            await this.content.set_content_provider(new DirectoryContentProvider(item));
-            if (item.description && item.description.plain().length !== 0 && item.description.plain() !== 'undefined') {
-                import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown_loader => {
-                    this._elements.current_description.innerHTML = showdown_loader.convert_text(item.description.plain())
-                })
-                if (!this.uploader)
-                    this._elements.current_description.style.display = 'flex';
-            }
-        } else {
-            await this.open_carousel(item);
-        }
-        await this.toolbar.set_toolbar_path(item, false);
     }
 
     async try_get_item_data(item_id) {
@@ -331,38 +336,39 @@ class RepositoryViewport extends MemoryTracker {
         }
     }
 
-    async open_root() {
-        this._elements.current_description.style.display = 'none';
-        this._elements.current_description.innerText = '';
-        await this.close_carousel();
-        if (this.content && (!this.content.get_content_provider() || !(this.content.get_content_provider() instanceof RepositoryRootProvider))) {
-            await this.content.set_content_provider(new RepositoryRootProvider(this.repository));
-            if (this.repository.description && this.repository.description.plain().length !== 0) {
-                import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown_loader => {
-                    this._elements.current_description.innerHTML = showdown_loader.convert_text(this.repository.description.plain())
-                })
-                if (!this.uploader)
-                    this._elements.current_description.style.display = 'flex';
-            }
-            await this.toolbar.set_toolbar_path(null, false);
+    /**
+     * @param item {FilesystemItem}
+     * @return {Promise<RepositoryViewport>}
+     */
+    async open_item(item) {
+        if (item.is_regular_file)
+            await this.open_carousel(item);
+        else {
+            await this.close_carousel();
+            await this.content.set_content_provider(new DirectoryContentProvider(item));
         }
+        await this._update_description(item);
+        //await this._elements.toolbar.set_toolbar_path(item, false);
+        return this;
     }
 
-    async open_trash() {
-        this._elements.current_description.style.display = 'none';
-        this._elements.current_description.innerText = '';
-        await this.close_carousel();
-        if (this.content && (!this.content.get_content_provider() || !(this.content.get_content_provider() instanceof TrashContentProvider))) {
-            await this.content.set_content_provider(new TrashContentProvider(this.repository));
-            await this.toolbar.set_toolbar_path(null, true);
-        }
+    async open_root(repository) {
+        await this.content.set_content_provider(new RepositoryRootProvider(repository));
+        await this._update_description(repository);
+        return this;
+    }
+
+    async open_trash(repository) {
+        await this.content.set_content_provider(new TrashContentProvider(repository));
+        await this._update_description(null);
+        return this;
     }
 
     close_upload_container() {
         this._elements.upload_button.style.display = 'flex';
         this._elements.upload_container.innerHTML = '';
         if (this.uploader)
-            this.uploader.delete();
+            this.uploader.remove();
         this.uploader = null;
         if (this._elements.current_description.innerText.length !== 0) {
             this._elements.current_description.style.display = 'flex';
@@ -372,8 +378,11 @@ class RepositoryViewport extends MemoryTracker {
     open_upload_container() {
         this._elements.upload_container.innerHTML = '';
         if (this.uploader)
-            this.uploader.delete();
-        this.uploader = new Uploader(this._elements.upload_container, this)
+            this.uploader.remove();
+
+        this.uploader = document.createElement('upload-widget').set_viewport(this);
+        this._elements.upload_container.append(this.uploader);
+
         this.uploader.expand(true);
         this._elements.current_description.style.display = 'none';
     }
@@ -433,4 +442,4 @@ class RepositoryViewport extends MemoryTracker {
     }
 }
 
-export {RepositoryViewport}
+customElements.define("page-repository", RepositoryViewport);

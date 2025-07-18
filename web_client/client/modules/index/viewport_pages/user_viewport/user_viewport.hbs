@@ -1,0 +1,29 @@
+<div id="info-section">
+    <div id="user-infos">
+        <div id="profile">
+            <img class="profile-picture" alt="" src="">
+            <div id="user">
+                <p class="username">{{user.login}}</p>
+                {{#if is_admin}}
+                    <a class="role" href="/statistics">{{user.user_role}}</a>
+                {{else}}
+                    <p class="role">{{user.user_role}}</p>
+                {{/if}}
+            </div>
+            {{#if is_self}}
+                <button class="edit" onclick="{{ctx "edit()"}}"><img alt="edit"
+                                                                     src="/public/images/icons/icons8-edit-96.png">
+                </button>
+            {{/if}}
+        </div>
+        {{#if user.email}}
+            <a href="mailto:{{user.email}}">{{user.email}}</a>
+        {{/if}}
+    </div>
+    <div id="repository-list">
+        <h1>Dépôts :</h1>
+        <div class="list" {{object "repository_list"}}>
+        </div>
+    </div>
+</div>
+<div {{object "tokens"}} id="tokens"></div>

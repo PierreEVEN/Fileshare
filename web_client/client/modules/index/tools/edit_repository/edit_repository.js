@@ -19,15 +19,15 @@ function edit_repository(repository) {
         submit: async (e) => {
             e.preventDefault();
 
-            const description = document.getElementById('description').value;
+            const description = widget.hb_elements.description.value;
             let new_data = {
                 id: repository.id,
-                display_name: EncString.from_client(document.getElementById('display_name').value),
-                url_name: EncString.from_client(document.getElementById('url_name').value),
-                max_file_size: Number(document.getElementById('max_file_size').value),
-                visitor_file_lifetime: Number(document.getElementById('visitor_file_lifetime').value),
-                allow_visitor_upload: document.getElementById('allow_visitor_upload').checked,
-                status: document.getElementById('status').value,
+                display_name: EncString.from_client(widget.hb_elements.display_name.value),
+                url_name: EncString.from_client(widget.hb_elements.url_name.value),
+                max_file_size: Number(widget.hb_elements.max_file_size.value),
+                visitor_file_lifetime: Number(widget.hb_elements.visitor_file_lifetime.value),
+                allow_visitor_upload: widget.hb_elements.allow_visitor_upload.checked,
+                status: widget.hb_elements.status.value,
                 description: EncString.from_client(description.length === 0 ? null : description)
             };
 

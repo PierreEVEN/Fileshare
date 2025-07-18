@@ -2,7 +2,6 @@ import {UploadItem} from "./upload_item";
 import {DirectoryContentProvider} from "../../../../../types/viewport_content/providers";
 import {UploadProcessor} from "./upload_processor";
 import {EventManager} from "../../../../../types/event_manager";
-import {MemoryTracker} from "../../../../../types/memory_handler";
 import {humanFileSize, seconds_to_str} from "../../../../../utilities/utils";
 
 require("./uploader.scss")
@@ -69,13 +68,23 @@ async function open_file_picker(directory) {
     })
 }
 
-class Uploader extends MemoryTracker {
-    /**
-     * @param container {HTMLElement}
-     * @param viewport {RepositoryViewport}
-     */
-    constructor(container, viewport) {
-        super(Uploader);
+class Uploader extends HTMLElement {
+    constructor() {
+        super();
+    }
+
+    connectedCallback() {
+        this.set_viewport(this._viewport);
+    }
+
+    set_viewport(viewport) {
+        this._viewport = viewport;
+        if (!this.isConnected)
+            return this;
+        this.innerHTML = '';
+        if (!this._viewport)
+            return this;
+
         this.expanded = false;
         this.viewport = viewport;
         let div = require("./uploader.hbs")({}, {
@@ -102,11 +111,11 @@ class Uploader extends MemoryTracker {
         this._elements = div.hb_elements;
         this.total_items = 0;
         this.total_size = 0;
-        container.append(div);
+        this.append(div);
         /**
          * @type {Map<string, UploadItem>}
          */
-        this.children = new Map();
+        this.child_items = new Map();
         this.handled_directories = new Map();
 
         this.uploading = false;
@@ -138,6 +147,8 @@ class Uploader extends MemoryTracker {
                 this._time_records.shift();
             }
         }, 100);
+
+        return this;
     }
 
     expand(expanded) {
@@ -148,7 +159,7 @@ class Uploader extends MemoryTracker {
             this._elements.uploader.classList.add("expanded")
         else {
             this._elements.uploader.classList.remove("expanded")
-            if (this.children.size === 0)
+            if (this.child_items.size === 0)
                 this.viewport.close_upload_container();
         }
     }
@@ -174,7 +185,7 @@ class Uploader extends MemoryTracker {
             this.start_upload().catch(err => console.error("upload failed :", err));
         } else {
             this._elements.upload_in_progress.style.display = 'none';
-            if (this.children.size > 0)
+            if (this.child_items.size > 0)
                 this._elements.upload_button.style.display = 'flex';
         }
     }
@@ -205,7 +216,7 @@ class Uploader extends MemoryTracker {
              * @type {UploadItem}
              */
             let found_item = null;
-            for (const root of this.children.values()) {
+            for (const root of this.child_items.values()) {
                 const found = search_in_roots(root);
                 if (found) {
                     found_item = found;
@@ -275,15 +286,15 @@ class Uploader extends MemoryTracker {
             const directory = await this._add_existing_directory(directory_item);
             directory.add_child(item);
         } else {
-            if (this.children.has(item.name))
+            if (this.child_items.has(item.name))
                 return;
             item.parent = this;
-            this.children.set(item.name, item);
+            this.child_items.set(item.name, item);
             item.instantiate(this._elements.file_list);
             this.parent_add_stats(item.total_size, item.total_items);
         }
 
-        if (this.children.size > 0 && !this.uploading)
+        if (this.child_items.size > 0 && !this.uploading)
             this._elements.upload_button.style.display = 'flex';
     }
 
@@ -308,7 +319,7 @@ class Uploader extends MemoryTracker {
                 const parent = await this._add_existing_directory(await directory.filesystem().fetch_item(directory.parent_item));
                 parent.add_child(entry);
             } else {
-                this.children.set(entry.name, entry);
+                this.child_items.set(entry.name, entry);
                 entry.parent = this;
                 entry.instantiate(this._elements.file_list);
             }
@@ -319,10 +330,10 @@ class Uploader extends MemoryTracker {
     }
 
     _remove_child(name) {
-        this.children.delete(name);
-        if (this.children.size <= 0)
+        this.child_items.delete(name);
+        if (this.child_items.size <= 0)
             this._elements.upload_button.style.display = 'none';
     }
 }
 
-export {Uploader}
+customElements.define("upload-widget", Uploader);

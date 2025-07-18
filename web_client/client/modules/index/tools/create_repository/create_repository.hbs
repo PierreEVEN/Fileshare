@@ -2,11 +2,11 @@
     <h1>Nouveau dépôt</h1>
     <div class="field">
         <label for="repository-name"></label>
-        <input type="text" name="name" placeholder="Nom" id="repository-name" required>
+        <input type="text" name="name" placeholder="Nom" {{object "repository_name"}} required>
     </div>
     <div class="field">
         <label for="repository-type">Visibilité</label>
-        <select name="type" id="repository-type">
+        <select name="type" {{object "repository_type"}}>
             <option value="private">Privé</option>
             <option value="hidden">Invisible</option>
             <option value="public">Publique</option>

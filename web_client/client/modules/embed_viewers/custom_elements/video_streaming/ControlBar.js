@@ -36,8 +36,9 @@
  */
 // eslint-disable-next-line no-unused-vars
 class ControlBar {
-    constructor(dashjsMediaPlayer, displayUTCTimeCodes) {
+    constructor(dashjsMediaPlayer, displayUTCTimeCodes, elements) {
 
+        this._elements = elements;
         this.displayUTCTimeCodes = displayUTCTimeCodes;
         this.player = this.player = dashjsMediaPlayer;
 
@@ -90,22 +91,22 @@ class ControlBar {
 
     initControls(suffix) {
         this.idSuffix = suffix;
-        this.videoController = document.getElementById(this.getControlId('videoController'));
-        this.playPauseBtn = document.getElementById(this.getControlId('playPauseBtn'));
-        this.bitrateListBtn = document.getElementById(this.getControlId('bitrateListBtn'));
-        this.captionBtn = document.getElementById(this.getControlId('captionBtn'));
-        this.trackSwitchBtn = document.getElementById(this.getControlId('trackSwitchBtn'));
-        this.seekbar = document.getElementById(this.getControlId('seekbar'));
-        this.seekbarPlay = document.getElementById(this.getControlId('seekbar-play'));
-        this.seekbarBuffer = document.getElementById(this.getControlId('seekbar-buffer'));
-        this.muteBtn = document.getElementById(this.getControlId('muteBtn'));
-        this.volumebar = document.getElementById(this.getControlId('volumebar'));
-        this.fullscreenBtn = document.getElementById(this.getControlId('fullscreenBtn'));
-        this.timeDisplay = document.getElementById(this.getControlId('videoTime'));
-        this.durationDisplay = document.getElementById(this.getControlId('videoDuration'));
-        this.thumbnailContainer = document.getElementById(this.getControlId('thumbnail-container'));
-        this.thumbnailElem = document.getElementById(this.getControlId('thumbnail-elem'));
-        this.thumbnailTimeLabel = document.getElementById(this.getControlId('thumbnail-time-label'));
+        this.videoController = this._elements.videoController;
+        this.playPauseBtn = this._elements.playPauseBtn;
+        this.bitrateListBtn = this._elements.bitrateListBtn;
+        this.captionBtn = this._elements.captionBtn;
+        this.trackSwitchBtn = this._elements.trackSwitchBtn;
+        this.seekbar = this._elements.seekbar;
+        this.seekbarPlay = this._elements.seekbar_play;
+        this.seekbarBuffer = this._elements.seekbar_buffer;
+        this.muteBtn = this._elements.muteBtn;
+        this.volumebar = this._elements.volumebar;
+        this.fullscreenBtn = this._elements.fullscreenBtn;
+        this.timeDisplay = this._elements.videoTime;
+        this.durationDisplay = this._elements.videoDuration;
+        this.thumbnailContainer = this._elements.thumbnail_container;
+        this.thumbnailElem = this._elements.thumbnail_elem;
+        this.thumbnailTimeLabel = this._elements.thumbnail_time_label;
     };
 
     addPlayerEventsListeners() {
@@ -159,7 +160,7 @@ class ControlBar {
     };
 
     setPlayBtn() {
-        let span = document.getElementById(this.getControlId('iconPlayPause'));
+        let span = this._elements.iconPlayPause;
         if (span !== null) {
             span.classList.remove('icon-pause');
             span.classList.add('icon-play');
@@ -167,7 +168,7 @@ class ControlBar {
     };
 
     setPauseBtn() {
-        let span = document.getElementById(this.getControlId('iconPlayPause'));
+        let span = this._elements.iconPlayPause;
         if (span !== null) {
             span.classList.remove('icon-play');
             span.classList.add('icon-pause');
@@ -226,7 +227,7 @@ class ControlBar {
     //************************************************************************************
 
     toggleMuteBtnState() {
-        let span = document.getElementById(this.getControlId('iconMute'));
+        let span = this._elements.iconMute;
         if (this.player.isMuted()) {
             span.classList.remove('icon-mute-off');
             span.classList.add('icon-mute-on');

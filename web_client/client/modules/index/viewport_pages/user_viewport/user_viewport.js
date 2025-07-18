@@ -1,4 +1,3 @@
-import {MemoryTracker} from "../../../../types/memory_handler";
 import {fetch_api} from "../../../../utilities/request";
 import {Message, NOTIFICATION} from "../../tools/message_box/notification";
 import {Repository} from "../../../../types/repository";
@@ -12,15 +11,28 @@ import {human_readable_timestamp} from "../../../../utilities/utils";
 
 require('./user_settings.scss')
 
-class UserViewport extends MemoryTracker {
+class UserViewport extends HTMLElement {
+    constructor() {
+        super();
+    }
+
+    connectedCallback() {
+        this.set_user(this.user);
+    }
+
     /**
      * @param user {User}
-     * @param container {HTMLElement}
+     * @returns {UserViewport}
      */
-    constructor(user, container) {
-        super(UserViewport);
+    set_user(user) {
         this.user = user;
-        this.container = container;
+        if (!this.isConnected)
+            return this;
+        this.innerHTML = '';
+        if (!user)
+            return this;
+
+        this.user = user;
         this._fill_data();
         this._refresh_event = this.user.events.add('refresh', async () => {
             await this._fill_data();
@@ -31,6 +43,7 @@ class UserViewport extends MemoryTracker {
                 await this._fill_data();
             }
         })
+        return this;
     }
 
     delete() {
@@ -42,8 +55,8 @@ class UserViewport extends MemoryTracker {
     }
 
     async _fill_data() {
-        this.container.innerHTML = '';
-        const is_admin = this.user.user_role.toString() == "Admin";
+        this.innerHTML = '';
+        const is_admin = this.user.user_role.toString() === "Admin";
         let viewport = require('./user_viewport.hbs')({
             user: this.user.display_data(),
             is_self: this.user === APP_CONFIG.connected_user(),
@@ -53,7 +66,8 @@ class UserViewport extends MemoryTracker {
                 await edit_user(this.user);
             }
         });
-        this.container.append(viewport);
+        for (const element of viewport)
+            this.append(element);
         this._elements = viewport.hb_elements;
 
         let repositories = await fetch_api(`user/repositories/${this.user.id}`)
@@ -100,4 +114,4 @@ class UserViewport extends MemoryTracker {
     }
 }
 
-export {UserViewport}
+customElements.define("page-user", UserViewport);

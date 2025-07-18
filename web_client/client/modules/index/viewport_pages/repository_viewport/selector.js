@@ -1,12 +1,10 @@
-import {EventManager, GLOBAL_EVENTS} from "../../../../types/event_manager";
-import {MemoryTracker} from "../../../../types/memory_handler";
+import {EventManager} from "../../../../types/event_manager";
 
-class Selector extends MemoryTracker {
+class Selector {
     /**
      * @param viewport {RepositoryViewport}
      */
     constructor(viewport) {
-        super(Selector);
         this._selected_items = new Set();
         this.viewport = viewport;
 

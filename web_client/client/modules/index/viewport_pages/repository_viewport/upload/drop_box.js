@@ -1,5 +1,4 @@
 import {UploadItem} from "./upload_item";
-import {MemoryTracker} from "../../../../../types/memory_handler";
 
 require("./drop-box.scss")
 
@@ -26,11 +25,10 @@ async function drop(event) {
 }
 
 
-class DropBox extends MemoryTracker {
-    constructor(box, get_uploader) {
-        super(DropBox);
-        this.box = box;
-        this.get_uploader = get_uploader;
+class DropBox extends HTMLElement {
+    constructor() {
+        super();
+
         this.WILL_DROP = null;
         CURRENT_INSTANCE = this;
         document.body.addEventListener('dragenter', drag_enter, )
@@ -50,11 +48,11 @@ class DropBox extends MemoryTracker {
         event.preventDefault();
 
         if (!this.WILL_DROP || !await this.WILL_DROP) {
-            this.box.classList.add('forbidden');
+            this.classList.add('forbidden');
             return;
         }
 
-        this.box.classList.add('hover');
+        this.classList.add('hover');
     }
 
     async mouse_out(event) {
@@ -119,9 +117,9 @@ class DropBox extends MemoryTracker {
     }
 
     reset_style() {
-        this.box.classList.remove('hover');
-        this.box.classList.remove('forbidden');
+        this.classList.remove('hover');
+        this.classList.remove('forbidden');
     }
 }
 
-export {DropBox}
+customElements.define("upload-drop-box", DropBox);

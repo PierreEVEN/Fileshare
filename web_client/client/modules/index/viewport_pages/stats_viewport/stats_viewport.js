@@ -1,19 +1,22 @@
-import {MemoryTracker} from "../../../../types/memory_handler";
 import {fetch_api} from "../../../../utilities/request";
 import {humanFileSize} from "../../../../utilities/utils";
 
 require('./stats_viewport.scss')
 
-class StatsViewport extends MemoryTracker {
+class StatsViewport extends HTMLElement {
 
-    constructor(container) {
-        super(StatsViewport);
+    constructor() {
+        super();
+    }
+
+    connectedCallback() {
+
 
         let content = require('./stats_viewport.hbs')({}, {});
         this._elements = content.hb_elements;
 
-
-        container.append(content);
+        for (const element of content)
+            this.append(element);
 
         this.refresh_data();
         this._refresh_interval = setInterval(() => this.refresh_data(), 1000, {});
@@ -140,8 +143,6 @@ class StatsViewport extends MemoryTracker {
         }
     }
 
-
-
     delete() {
         super.delete();
         clearInterval(this._refresh_interval)
@@ -149,4 +150,5 @@ class StatsViewport extends MemoryTracker {
     }
 }
 
-export {StatsViewport}
+customElements.define("page-stats", StatsViewport);
+

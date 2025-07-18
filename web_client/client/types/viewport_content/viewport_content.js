@@ -1,11 +1,9 @@
 import {EventManager, GLOBAL_EVENTS} from "../event_manager";
-import {MemoryTracker} from "../memory_handler";
 import {DirectoryContentProvider, RepositoryRootProvider} from "./providers";
 import {Repository} from "../repository";
 
-class ContentFilter extends MemoryTracker {
+class ContentFilter  {
     constructor() {
-        super(ContentFilter)
         this._inner = null;
     }
 
@@ -38,9 +36,8 @@ class ContentFilter extends MemoryTracker {
     }
 }
 
-class ContentProvider extends MemoryTracker {
+class ContentProvider {
     constructor() {
-        super(ContentProvider)
 
         this.events = new EventManager();
         this._add_event = GLOBAL_EVENTS.add('add_item', async (item) => {
@@ -60,14 +57,12 @@ class ContentProvider extends MemoryTracker {
     }
 
     delete() {
-        super.delete();
         this._add_event.remove();
     }
 }
 
-class ContentSorter extends MemoryTracker {
+class ContentSorter {
     constructor() {
-        super(ContentSorter)
     }
 
     /**
@@ -123,10 +118,9 @@ class LexicographicSorter extends ContentSorter {
     }
 }
 
-class ViewportContent extends MemoryTracker {
+class ViewportContent {
 
     constructor() {
-        super(ViewportContent);
 
         /**
          * @type {Map<number, FilesystemItem>}

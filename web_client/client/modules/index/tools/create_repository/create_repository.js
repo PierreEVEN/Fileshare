@@ -10,8 +10,8 @@ async function create_repository() {
             e.preventDefault();
             const repositories = await fetch_api('repository/create', 'POST',
                 [{
-                    name: EncString.from_client(document.getElementById('repository-name').value),
-                    status: document.getElementById('repository-type').value
+                    name: EncString.from_client(widget.hb_elements.repository_name.value),
+                    status: widget.hb_elements.repository_type.value
                 }]
             ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de créer le dépôt")));
             for (const repository of repositories) {

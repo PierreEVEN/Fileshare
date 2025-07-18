@@ -15,7 +15,7 @@ function create_directory(repository, parent_item = null) {
     const widget = require('./create_directory.hbs')({}, {
         mkdir: async (e) => {
             e.preventDefault();
-            const new_name = document.getElementById('name').value;
+            const new_name = widget.hb_elements.name.value;
             const fs = FilesystemStream.find(repository);
             const child = await fs.find_child(new_name, parent_item ? await fs.fetch_item(parent_item) : null);
             if (child) {

@@ -28,29 +28,29 @@ fileshare-app {
   width: 100%;
   height: 100dvh;
 
-  #global-header {
+  .global-header-container {
     background-color: $primary;
     width: 100%;
   }
 
-  #body-container {
+  .body-container {
     display: flex;
     flex: 1;
     position: relative;
 
-    #main-body {
+    .main-body {
       display: flex;
       width: 100%;
       position: absolute;
       bottom: 0;
       top: 0;
 
-      #mobile-background {
+      .mobile-background {
         display: none;
       }
 
       @media (orientation: portrait) {
-        #mobile-background {
+        .mobile-background {
           display: flex;
           opacity: 0;
           transition-duration: 0.2s;
@@ -69,7 +69,7 @@ fileshare-app {
         }
       }
 
-      #side-bar {
+      .side-bar-container {
         display: flex;
         flex-direction: column;
         background-color: $secondary;
@@ -106,7 +106,7 @@ fileshare-app {
         }
       }
 
-      #viewport {
+      .viewport-container {
         display: flex;
         height: 100%;
         width: 100%;

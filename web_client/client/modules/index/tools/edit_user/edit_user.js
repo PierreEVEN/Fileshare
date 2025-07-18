@@ -17,9 +17,9 @@ function edit_user(user) {
             e.preventDefault();
             let new_data = {
                 id: user.id,
-                login: EncString.from_client(document.getElementById('display_name').value),
-                name: EncString.from_client(document.getElementById('url_name').value),
-                allow_contact: !document.getElementById('mask_email').checked
+                login: EncString.from_client(widget.hb_elements.display_name.value),
+                name: EncString.from_client(widget.hb_elements.url_name.value),
+                allow_contact: !widget.hb_elements.mask_email.checked
             };
             await fetch_api(`user/update`, 'POST', new_data)
                 .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de modifier le dépôt")));

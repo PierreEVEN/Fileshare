@@ -2,7 +2,6 @@ import {Message, NOTIFICATION} from "../../../tools/message_box/notification";
 import {FilesystemItem} from "../../../../../types/filesystem_stream";
 import {UploadItem} from "./upload_item";
 import {EncString} from "../../../../../types/encstring";
-import {MemoryTracker} from "../../../../../types/memory_handler";
 
 class UploadState {
     constructor(data) {
@@ -13,14 +12,13 @@ class UploadState {
     }
 }
 
-class UploadProcessor extends MemoryTracker {
+class UploadProcessor {
 
     /**
      * @param item {UploadItem}
      * @param uploader {Uploader}
      */
     constructor(item, uploader) {
-        super(UploadProcessor);
         /**
          * @type {UploadItem}
          */
