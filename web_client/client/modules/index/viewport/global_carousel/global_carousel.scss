@@ -1,4 +1,4 @@
-carousel {
+global-carousel {
   position: absolute;
   display: flex;
   top: 0;
@@ -9,7 +9,7 @@ carousel {
   background-color: rgba(2, 2, 2, 0.91);
 }
 
-#carousel-fullscreen {
+.global-carousel-viewport {
   position: absolute;
   top: 0;
   bottom: 110px;
@@ -22,7 +22,7 @@ carousel {
   align-items: center;
 }
 
-#carousel-fullscreen-list {
+.global-carousel-list {
   display: flex;
   position: absolute;
   bottom: 10px;

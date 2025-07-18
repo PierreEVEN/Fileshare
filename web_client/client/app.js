@@ -6,8 +6,8 @@ require('./modules/embed_viewers/custom_elements/document/markdown');
 require('./modules/embed_viewers/custom_elements/pdf_viewer/pdf-viewer');
 require('./app.scss');
 
-import {GlobalHeader} from "./modules/index/global_header/global_header";
-import {SideBar} from "./modules/index/side_bar/side_bar";
+import "./modules/index/global_header/global_header";
+import {SIDE_BAR} from "./modules/index/side_bar/side_bar";
 
 import "./modules/index/viewport/repository_viewport/upload/uploader";
 import {State} from "./utilities/state";
@@ -17,18 +17,26 @@ import {APP_CONFIG} from "./types/app_config";
 import {FilesystemItem} from "./types/filesystem_stream";
 import {ErrorPage} from "./modules/index/viewport/error_page";
 
-class FileshareApp {
+let APP = null;
+
+class FileshareApp extends HTMLElement{
     constructor() {
+        super();
+        APP = this;
+    }
+
+    connectedCallback() {
         /**
          * @type {HTMLElement}
          * @private
          */
         const layout = require('./app.hbs')({}, {
             close_mobile: () => {
-                this._side_bar.show_mobile();
+                SIDE_BAR.show_mobile();
             }
         });
-        document.body.append(layout);
+        for (const element of layout)
+            this.append(element);
 
         /**
          * @type {object}
@@ -42,19 +50,7 @@ class FileshareApp {
          */
         this._viewport = null;
 
-        /**
-         * @type {SideBar}
-         * @private
-         */
-        this._side_bar = new SideBar(this, this._elements.side_bar);
-
-        /**
-         * @type {GlobalHeader}
-         * @private
-         */
-        this._global_header = new GlobalHeader(this._elements.global_header);
-
-        this._side_bar.events.add('show_mobile', (show) => {
+        SIDE_BAR.events.add('show_mobile', (show) => {
             if (show)
                 layout.hb_elements.mobile_bg.classList.add('selected')
             else
@@ -71,9 +67,9 @@ class FileshareApp {
                     await this.set_display_stats();
                 } else if (await APP_CONFIG.display_item()) {
                     await this.set_display_item(await APP_CONFIG.display_item());
-                    await this._side_bar.expand_to(APP_CONFIG.display_repository(), await APP_CONFIG.display_item(), false);
+                    await SIDE_BAR.expand_to(APP_CONFIG.display_repository(), await APP_CONFIG.display_item(), false);
                 } else if (APP_CONFIG.display_repository()) {
-                    await this._side_bar.expand_to(APP_CONFIG.display_repository(), null, APP_CONFIG.in_trash());
+                    await SIDE_BAR.expand_to(APP_CONFIG.display_repository(), null, APP_CONFIG.in_trash());
                     if (APP_CONFIG.in_trash())
                         await this.set_display_trash(APP_CONFIG.display_repository());
                     else if (APP_CONFIG.repository_settings())
@@ -84,11 +80,11 @@ class FileshareApp {
                     await this.set_display_user(APP_CONFIG.display_user());
                 } else {
                     if (screen.availHeight > screen.availWidth)
-                        await this._side_bar.show_mobile();
+                        await SIDE_BAR.show_mobile();
                     if (APP_CONFIG.connected_user())
-                        await this._side_bar.expand_my_repositories(true);
+                        await SIDE_BAR.expand_my_repositories(true);
                     else
-                        await this._side_bar.expand_recent(true);
+                        await SIDE_BAR.expand_recent(true);
                 }
             }
         })().catch(error => console.error(`initialization failed :`, error));
@@ -176,6 +172,7 @@ class FileshareApp {
     }
 }
 
-const APP = new FileshareApp();
+customElements.define("fileshare-app", FileshareApp);
+
 
 export {APP}

@@ -12,10 +12,10 @@ import {MemoryTracker} from "../../../../types/memory_handler";
 import {context_menu_item} from "../../context_menu/contexts/context_item";
 import {APP} from "../../../../app";
 import "./toolbar/toolbar";
-import {get_global_carousel} from "./carousel/global_carousel";
+import {get_global_carousel} from "../global_carousel/global_carousel";
 import {Repository} from "../../../../types/repository";
-import "./carousel/list/carousel_list";
-import "./carousel/viewport/carousel_viewport";
+import "../../tools/carousel/list/carousel_list";
+import "../../tools/carousel/viewport/carousel_viewport";
 import {humanFileSize, is_touch_screen} from "../../../../utilities/utils";
 import {Selector} from "./selector";
 import {MODAL} from "../../modal/modal";
@@ -39,7 +39,7 @@ document.addEventListener('keydown', async function (event) {
         return;
     }
     if ((event.key === 'Backspace' || event.key === 'Escape')) {
-        if (CURRENT_VIEWPORT.carousel) {
+        if (CURRENT_VIEWPORT.carousel_list) {
             await CURRENT_VIEWPORT.close_carousel();
         } else {
             if (event.key === 'Escape' && CURRENT_VIEWPORT.selector.get_selected_items().length > 1)
@@ -57,30 +57,30 @@ document.addEventListener('keydown', async function (event) {
         }
     }
     if (event.key === 'ArrowRight') {
-        if (CURRENT_VIEWPORT.carousel) {
-            await CURRENT_VIEWPORT.carousel.list.select_next();
+        if (CURRENT_VIEWPORT.carousel_list) {
+            await CURRENT_VIEWPORT.carousel_list._select_next();
             return;
         } else if (MODAL.is_open())
             return;
         await CURRENT_VIEWPORT.selector.select_next(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'ArrowLeft') {
-        if (CURRENT_VIEWPORT.carousel) {
-            await CURRENT_VIEWPORT.carousel.list.select_previous();
+        if (CURRENT_VIEWPORT.carousel_list) {
+            await CURRENT_VIEWPORT.carousel_list._select_previous();
             return;
         } else if (MODAL.is_open())
             return;
         await CURRENT_VIEWPORT.selector.select_previous(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'ArrowUp') {
-        if (MODAL.is_open() || CURRENT_VIEWPORT.carousel)
+        if (MODAL.is_open() || CURRENT_VIEWPORT.carousel_list)
             return;
         const item_per_row = CURRENT_VIEWPORT.container.offsetWidth / 120;
         for (let i = 1; i < item_per_row; ++i)
             await CURRENT_VIEWPORT.selector.select_previous(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'ArrowDown') {
-        if (MODAL.is_open() || CURRENT_VIEWPORT.carousel)
+        if (MODAL.is_open() || CURRENT_VIEWPORT.carousel_list)
             return;
         const item_per_row = CURRENT_VIEWPORT.container.offsetWidth / 120;
         for (let i = 1; i < item_per_row; ++i)
@@ -99,7 +99,7 @@ document.addEventListener('keydown', async function (event) {
                 await CURRENT_VIEWPORT.open_item(data);
         }
     }
-    if (!MODAL.is_open() && !CURRENT_VIEWPORT.carousel) {
+    if (!MODAL.is_open() && !CURRENT_VIEWPORT.carousel_list) {
         if ((event.key === 'a' || event.key === 'A') && event.ctrlKey) {
             for (const elem of CURRENT_VIEWPORT._visible_items.keys())
                 CURRENT_VIEWPORT.selector.select_item(elem, true, false);
@@ -407,35 +407,22 @@ class RepositoryViewport extends MemoryTracker {
             await this.content.set_content_provider(new RepositoryRootProvider(await Repository.find(item.repository)));
         }
 
-        const view_item = async (item, carousel_list) => {
-            if (this.carousel)
-                this.carousel.delete();
-
-            delete this.carousel;
-            if (!this.selector.is_selected(item.id) || this.selector.get_selected_items().length > 1)
-                this.selector.select_item(item.id, false, false);
-            this.carousel = new Carousel(get_global_carousel().background_container, item);
-            this.carousel.on_close = async () => {
-                await this.close_carousel();
-            }
-            this.carousel.list = carousel_list;
-            await APP.state.open_item(item);
-        }
-
         await APP.state.open_item(item);
 
         const viewport = document.createElement('carousel-viewport');
-        viewport.set_item(item);
-        const list = document.createElement('carousel-list');
-        list.bind_viewport(viewport);
-        await list.set_items(this.content.get_displayed_items());
-
-        get_global_carousel().open(viewport, list);
+        this.carousel_list = document.createElement('carousel-list');
+        this.carousel_list.events.add('select', (item) => {
+            viewport.set_item(item);
+            this.selector.select_item(item.id, false, false);
+        })
+        await this.carousel_list.set_items(this.content.get_displayed_items());
+        get_global_carousel().open(viewport, this.carousel_list);
+        this.carousel_list.select_item(item, true);
     }
 
     async close_carousel() {
-        if (this.carousel) {
-            this.carousel.remove();
+        if (get_global_carousel().is_open()) {
+            this.carousel_list = null;
             get_global_carousel().close();
 
             if (this.content.get_content_provider() instanceof DirectoryContentProvider)
@@ -443,7 +430,6 @@ class RepositoryViewport extends MemoryTracker {
             else if (this.content.get_content_provider() instanceof RepositoryRootProvider)
                 await APP.state.open_repository(this.content.get_content_provider().repository);
         }
-        this.carousel = null;
     }
 }
 

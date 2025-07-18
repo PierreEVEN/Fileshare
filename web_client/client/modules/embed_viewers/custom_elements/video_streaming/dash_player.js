@@ -7,7 +7,6 @@ require('./controlbar.scss')
 class DashPlayer extends HTMLElement {
     constructor() {
         super();
-
         if (this.hasAttribute('item'))
             this.item = this.getAttribute('item');
     }

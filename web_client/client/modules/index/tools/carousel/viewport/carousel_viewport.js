@@ -1,28 +1,16 @@
+const {is_mimetype_valid, get_mime_icon_path} = require("../../../../../utilities/mime_utils");
+const {get} = require("../../../../embed_viewers/distant_repos");
+require("../../../../embed_viewers/index")
+
+require('./carousel_viewport.scss')
+
 function clamp(s, a, b) {
     return s < a ? a : s > b ? b : s;
 }
 
 class CarouselViewport extends HTMLElement{
-    constructor(item) {
+    constructor() {
         super();
-        /**
-         * @type {HTMLElement}
-         */
-        const visual = require('./carousel_viewport.hbs')({item: item.display_data()});
-        if (item.description && item.description.plain() !== '') {
-            import('../../../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
-                const directory_description = visual.getElementsByClassName('carousel-description')[0];
-                if (directory_description) {
-                    directory_description.innerHTML = showdown.convert_text(item.description.plain())
-                    directory_description.style.padding = '20px';
-                    directory_description.style.display = 'unset';
-                }
-            });
-        }
-
-        for (const element of visual)
-            this.append(element);
-
         this.scale = 1;
         this.translationX = 0;
         this.translationY = 0;
@@ -79,6 +67,59 @@ class CarouselViewport extends HTMLElement{
                 this._apply_zoom(this.scale * zoom, e.clientX, e.clientY);
             }
         });
+    }
+
+    connectedCallback() {
+        this.innerHTML = '';
+        const visual = require('./carousel_viewport.hbs')();
+        this._elements = visual.hb_elements;
+        for (const element of visual)
+            this.append(element);
+        this.set_item(this.item());
+    }
+
+    set_item(item) {
+        this._item = item;
+        if (!this.isConnected)
+            return;
+        if (!this._item)
+            return;
+
+        /**
+         * @type {HTMLElement}
+         */
+        if (item.description && item.description.plain() !== '') {
+            import('../../../../embed_viewers/custom_elements/document/showdown_loader').then(showdown => {
+                this._elements.description.innerHTML = showdown.convert_text(item.description.plain())
+                this._elements.description.style.padding = '20px';
+                this._elements.description.style.display = 'unset';
+            });
+        }
+
+        const viewer = this._elements.item_viewer;
+        viewer.innerHTML = '';
+
+        // CASE : IS DIRECTORY
+        if (!item.is_regular_file) {
+            viewer.innerHTML = `<img src="/public/images/icons/icons8-folder-96.png" alt="dossier: ${item.name}">`
+        }
+        // CASE : IS STANDARD FILE
+        else {
+            if (!is_mimetype_valid(item.mimetype.plain()))
+                viewer.innerHTML = `<img class="item-small" src="${get_mime_icon_path(item.mimetype.plain())}" alt="document: ${item.name}"/>`;
+            // Distant repos
+            if (item.id) {
+                viewer.innerHTML = get(item.display_data());
+            }
+            // Filesystem file
+            else if (item.lastModified) {
+                viewer.innerHTML = `<img class="item-small" src="${get_mime_icon_path(item.mimetype.plain())}" alt="document: ${item.name}"/>`;
+            }
+        }
+    }
+
+    item() {
+        return this._item;
     }
 
     _apply_zoom(zoom, client_x, client_y) {

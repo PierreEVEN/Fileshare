@@ -13,9 +13,9 @@ require('./side_bar.scss')
  */
 let SIDE_BAR = null;
 
-class SideBar {
-    constructor(app, container) {
-
+class SideBar extends HTMLElement {
+    constructor() {
+        super();
         SIDE_BAR = this;
 
         /**
@@ -23,8 +23,6 @@ class SideBar {
          * @private
          */
         this._connected_user = undefined;
-
-        this.app = app;
 
         const div = require('./side_bar.hbs')({}, {
             expand_my_repositories: async () => {
@@ -41,9 +39,9 @@ class SideBar {
                 e.preventDefault();
             }
         });
-        this.div = div;
         this._elements = div['hb_elements'];
-        container.append(div);
+        for (const element of div)
+            this.append(element);
 
         GLOBAL_EVENTS.add('on_connected_user_changed', async (data) => {
             this.refresh(data.new);
@@ -153,9 +151,9 @@ class SideBar {
     show_mobile() {
         this.show_menu_mobile = !this.show_menu_mobile;
         if (this.show_menu_mobile)
-            this.div.parentElement.classList.add('show');
+            this.parentElement.classList.add('show');
         else
-            this.div.parentElement.classList.remove('show');
+            this.parentElement.classList.remove('show');
         this.events.broadcast('show_mobile', this.show_menu_mobile);
     }
 
@@ -208,4 +206,6 @@ class SideBar {
     }
 }
 
-export {SideBar, SIDE_BAR}
+customElements.define("side-bar", SideBar);
+
+export {SIDE_BAR}

@@ -87,7 +87,7 @@ impl Server {
                     axum::serve(match tokio::net::TcpListener::bind(addr).await {
                         Ok(listener) => { listener }
                         Err(error) => {
-                            error!("Cannot start unsecured web server : {error}");
+                            error!("Cannot start unsecured web server on {} : {error}", addr);
                             return;
                         }
                     }, router).await.unwrap();
