@@ -1,8 +1,7 @@
-import {fetch_api} from "../../../../utilities/request";
 import {Repository} from "../../../../types/repository";
-import {MODAL} from "../../modal/modal";
 import {EncString} from "../../../../types/encstring";
 import {Message, NOTIFICATION} from "../message_box/notification";
+import {get_app} from "../../../../app";
 
 /**
  * @param repository
@@ -16,7 +15,7 @@ async function delete_repository(repository) {
             if (widget.hb_elements.repository.value !== repository.display_name.plain())
                 return;
 
-            const repositories = await fetch_api(`repository/delete`, 'POST',
+            const repositories = await get_app(widget).fetch_api(`repository/delete`, 'POST',
                 {
                     credentials: {
                         login: EncString.from_client(widget.hb_elements.login.value),
@@ -26,13 +25,13 @@ async function delete_repository(repository) {
                 }
             ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de supprimer le dépôt")));
             for (const repository_id of repositories) {
-                (await Repository.find(repository_id)).remove();
+                (await Repository.find(this, repository_id)).remove();
             }
 
-            MODAL.close();
+            get_app(widget).get_modal().close();
         }
     });
-    MODAL.open(widget, {custom_width: '500px', custom_height: '450px'})
+    get_app(widget).get_modal().open(widget, {custom_width: '500px', custom_height: '450px'})
 }
 
 export {delete_repository}

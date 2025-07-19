@@ -1,9 +1,9 @@
 import {EncString} from "./encstring";
 import {FilesystemStream} from "./filesystem_stream";
-import {fetch_api} from "../utilities/request";
 import {GLOBAL_EVENTS} from "./event_manager";
 import {Message, NOTIFICATION} from "../modules/index/tools/message_box/notification";
 import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
+import {get_app} from "../app";
 
 class RepositoryStatus {
     constructor(data) {
@@ -35,7 +35,7 @@ class Repository {
      */
     static _LOCAL_CACHE = new Map();
 
-    constructor(data) {
+    constructor(app, data) {
         /**
          * @type {number}
          */
@@ -76,7 +76,7 @@ class Repository {
         /**
          * @type {FilesystemStream}
          */
-        this.content = new FilesystemStream(this)
+        this.content = new FilesystemStream(app, this)
 
         if (Repository._LOCAL_CACHE.has(this.id))
             console.error("Don't use new constructor on repository")
@@ -86,12 +86,12 @@ class Repository {
         GLOBAL_EVENTS.broadcast('add_repository', this);
     }
 
-    static new(data) {
+    static new(app, data) {
         const existing = Repository._LOCAL_CACHE.get(data.id);
         if (existing)
             return existing;
         APP_COOKIES.push_last_repositories(data.id);
-        return new Repository(data)
+        return new Repository(app, data)
     }
 
     /**
@@ -118,10 +118,11 @@ class Repository {
     }
 
     /**
+     * @param context {HTMLElement}
      * @param repos {number|number[]}
      * @returns {Promise<Repository|Repository[]>}
      */
-    static async find(repos) {
+    static async find(context, repos) {
         const is_array = repos.constructor.name === 'Array';
         const ids = is_array ? repos : [repos];
 
@@ -135,13 +136,13 @@ class Repository {
             else
                 not_found.push(id);
         }
-        let repositories = await fetch_api('repository/find', 'POST', not_found)
+        let repositories = await get_app(context).fetch_api('repository/find', 'POST', not_found)
             .catch(error => {
                 NOTIFICATION.warn(new Message(`Impossible de récupérer les dépots ${not_found} : ${error.message}`))
                 throw error;
             });
         for (const repository of repositories)
-            found.push(Repository.new(repository));
+            found.push(Repository.new(get_app(context), repository));
 
         return is_array ? found : repos.length > 0 ? found[0] : null;
     }
@@ -161,30 +162,32 @@ class Repository {
     }
 
     /**
+     * @param context {HTMLElement}
      * @return {Promise<Repository[]>}
      */
-    static async my_repositories() {
-        const my_repositories = await fetch_api('repository/owned')
+    static async my_repositories(context) {
+        const my_repositories = await get_app(context).fetch_api('repository/owned')
             .catch(error => {
                 NOTIFICATION.error(new Message(error).title(`Impossible de télécharger la liste des dépôts possédés`));
                 return [];
             });
         const repositories = [];
         for (const repository of my_repositories) {
-            repositories.push(Repository.new(repository));
+            repositories.push(Repository.new(get_app(context), repository));
         }
         return repositories;
     }
 
     /**
+     * @param context {HTMLElement}
      * @return {Promise<Repository[]>}
      */
-    static async shared_repositories() {
-        const shared_repositories = await fetch_api('repository/shared')
+    static async shared_repositories(context) {
+        const shared_repositories = await get_app(context).fetch_api('repository/shared')
             .catch(error => {NOTIFICATION.warn(new Message(error).title("Impossible de récupérer les dépôts partagés")); return;});
         const repositories = [];
         for (const repository of shared_repositories) {
-            repositories.push(Repository.new(repository));
+            repositories.push(Repository.new(get_app(context), repository));
         }
         return repositories;
     }

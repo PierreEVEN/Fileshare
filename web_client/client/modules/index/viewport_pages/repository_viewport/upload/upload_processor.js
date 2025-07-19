@@ -45,7 +45,6 @@ class UploadProcessor {
     }
 
     delete() {
-        super.delete();
         this.pause_event.remove();
     }
 

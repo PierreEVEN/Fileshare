@@ -3,14 +3,16 @@ import {DirectoryContentProvider} from "../../../../../types/viewport_content/pr
 import {UploadProcessor} from "./upload_processor";
 import {EventManager} from "../../../../../types/event_manager";
 import {humanFileSize, seconds_to_str} from "../../../../../utilities/utils";
+import {get_app} from "../../../../../app";
 
 require("./uploader.scss")
 
 /**
  * @param directory {boolean}
+ * @param app {FileshareApp}
  * @return {Promise<UploadItem[]>}
  */
-async function open_file_picker(directory) {
+async function open_file_picker(directory, app) {
     const inputElement = document.createElement("input");
     inputElement.type = "file";
     if (directory) {
@@ -39,7 +41,7 @@ async function open_file_picker(directory) {
                 let dir_name = remaining_path.pop();
                 let available = parent ? parent.children : roots;
                 if (!available.has(dir_name)) {
-                    let directory = UploadItem.FromUploadModal(dir_name);
+                    let directory = UploadItem.FromUploadModal(app, dir_name);
                     if (!parent)
                         files.push(directory);
                     else
@@ -56,7 +58,7 @@ async function open_file_picker(directory) {
                 const directory_path = (file.webkitRelativePath ? file.webkitRelativePath : '').split('/').filter(Boolean);
                 directory_path.pop();
                 let directory = find_or_create_directory(directory_path.reverse(), null);
-                let item = UploadItem.FromUploadModal(file.name, file);
+                let item = UploadItem.FromUploadModal(app, file.name, file);
                 if (directory) {
                     directory.add_child(item);
                 } else
@@ -97,12 +99,12 @@ class Uploader extends HTMLElement {
                 this.set_pause(!this.pause);
             },
             add_files: async () => {
-                for (const item of await open_file_picker(false)) {
+                for (const item of await open_file_picker(false, get_app(this))) {
                     await this.add_item(item)
                 }
             },
             add_directory: async () => {
-                for (const item of await open_file_picker(true)) {
+                for (const item of await open_file_picker(true, get_app(this))) {
                     await this.add_item(item)
                 }
             }
@@ -314,7 +316,7 @@ class Uploader extends HTMLElement {
         if (existing) {
             return existing;
         } else {
-            const entry = UploadItem.FromRepositoryDirectory(directory)
+            const entry = UploadItem.FromRepositoryDirectory(get_app(this), directory)
             if (directory.parent_item) {
                 const parent = await this._add_existing_directory(await directory.filesystem().fetch_item(directory.parent_item));
                 parent.add_child(entry);

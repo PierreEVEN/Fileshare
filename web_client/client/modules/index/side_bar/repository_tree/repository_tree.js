@@ -1,7 +1,7 @@
 import {GLOBAL_EVENTS} from "../../../../types/event_manager";
 import {context_menu_item} from "../../context_menu/contexts/context_item";
 import {context_menu_repository} from "../../context_menu/contexts/context_repository";
-import {APP} from "../../../../app";
+import {get_app} from "../../../../app";
 
 class RepositoryNode {
     /**
@@ -25,13 +25,13 @@ class RepositoryNode {
                 if (this.side_bar.selected_div === div) {
                     await this.expand_node(!this._expanded);
                 } else {
-                    await APP.set_display_item(this.data);
+                    await get_app(this.side_bar).set_display_item(this.data);
                     this.side_bar.select_div(div);
                     await this.expand_node(true);
                 }
             },
             context: (e) => {
-                context_menu_item(data);
+                context_menu_item(data, div);
                 e.preventDefault();
             }
         });
@@ -78,7 +78,7 @@ class RepositoryNode {
                     }
                 })
 
-            const content = await this._repository.content.directory_content(this._id);
+            const content = await this._repository.content.directory_content(this, this._id);
             let size = 0;
             for (const id of content) {
                 const item = await this._repository.content.fetch_item(id);
@@ -138,17 +138,17 @@ class RepositoryTree {
                 if (this.side_bar.selected_div === root_div) {
                     await this.expand_node(!this._expanded);
                 } else {
-                    await APP.set_display_repository(this.repository);
+                    await get_app(this.side_bar).set_display_repository(this.repository);
                     this.side_bar.select_div(root_div);
                     await this.expand_node(true);
                 }
             },
             trash: async () => {
-                await APP.set_display_trash(this.repository);
+                await get_app(this.side_bar).set_display_trash(this.repository);
                 this.side_bar.select_div(root_div.hb_elements.trash);
             },
             context: (e) => {
-                context_menu_repository(repository);
+                context_menu_repository(root_div, repository);
                 e.preventDefault();
             }
         });

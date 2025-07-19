@@ -1,5 +1,3 @@
-let GLOBAL_CAROUSEL = null;
-
 require('./global_carousel.scss')
 require('./overlay/carousel_overlay')
 
@@ -47,13 +45,3 @@ class GlobalCarousel extends HTMLElement {
 }
 
 customElements.define("global-carousel", GlobalCarousel);
-
-function get_global_carousel() {
-    if (!GLOBAL_CAROUSEL) {
-        GLOBAL_CAROUSEL = document.createElement('global-carousel');
-        document.body.append(GLOBAL_CAROUSEL)
-    }
-    return GLOBAL_CAROUSEL;
-}
-
-export {get_global_carousel}

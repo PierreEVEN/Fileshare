@@ -1,7 +1,7 @@
 
 @import "../../../../stylesheets/palette";
 
-.repos-settings {
+page-repository-settings {
   width: 100%;
   overflow: scroll;
 
@@ -74,7 +74,7 @@
     }
   }
 
-  #repos-settings-information {
+  .repos-settings-information {
     p {
       font-weight: lighter;
       margin-top: 5px;
@@ -85,7 +85,7 @@
 
 
 @media (orientation: portrait) {
-  .repos-settings {
+  page-repository-settings {
     margin-top: 40px;
 
     .section-title {

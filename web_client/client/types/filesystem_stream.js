@@ -1,6 +1,5 @@
 const {EncString} = require("./encstring");
 const {User} = require("./user");
-const {fetch_api} = require("../utilities/request");
 const {GLOBAL_EVENTS} = require("./event_manager");
 const {NOTIFICATION, Message} = require("../modules/index/tools/message_box/notification");
 
@@ -178,9 +177,10 @@ class FilesystemItem {
 class FilesystemStream {
 
     /**
+     * @param app {FileshareApp}
      * @param repository {Repository}
      */
-    constructor(repository) {
+    constructor(app, repository) {
         /**
          * @type {Repository}
          * @private
@@ -189,12 +189,14 @@ class FilesystemStream {
 
         _LOCAL_STORAGE.set(this._repository.id, this);
 
+        this.app = app;
+
         /**
          * @type {Promise<User>}
          * @private
          */
         this._user = new Promise(async (ok) => {
-            ok(await User.find(this._repository.id));
+            ok(await User.find(this._repository.id, this.app));
         });
 
         /**
@@ -221,13 +223,15 @@ class FilesystemStream {
      * @returns {Promise<FilesystemItem>}
      */
     async fetch_item(item_id) {
+        if (item_id === undefined)
+            console.error("Undefined item id")
         if (item_id === null)
             return null;
         const existing = this._items.get(item_id);
         if (existing) {
             return existing;
         }
-        for (const item of await fetch_api(`item/find`, 'POST', [item_id])
+        for (const item of await this.app.fetch_api(`item/find`, 'POST', [item_id])
             .catch(error => {
                 NOTIFICATION.warn(new Message(error).title(`L'object ${item_id} n'existe pas`));
                 return [];
@@ -246,10 +250,11 @@ class FilesystemStream {
     }
 
     /**
+     * @param context {HTMLElement}
      * @param item_id {number}
      * @return {Promise<Set<number>>}
      */
-    async directory_content(item_id) {
+    async directory_content(context, item_id) {
         const existing = await this.fetch_item(item_id);
         if (!existing)
             return new Set();
@@ -257,7 +262,7 @@ class FilesystemStream {
             return existing.children;
         }
         existing.children = new Set();
-        for (const item of await fetch_api(`item/directory-content`, 'POST', [item_id])
+        for (const item of await this.app.fetch_api(`item/directory-content`, 'POST', [item_id])
             .catch(error => {
                 NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de l'objet ${item_id}`))
                 return [];
@@ -272,7 +277,7 @@ class FilesystemStream {
      * @return {Promise<>}
      */
     async preload_to(item_id) {
-        const items = await fetch_api(`item/content-to`, 'POST', [item_id])
+        const items = await this.app.fetch_api(`item/content-to`, 'POST', [item_id])
             .catch(error => {
                 NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de l'objet ${item_id}`))
                 return [];
@@ -308,12 +313,13 @@ class FilesystemStream {
     }
 
     /**
+     * @param context {HTMLElement}
      * @return {Promise<Set<number>>}
      */
-    async root_content() {
+    async root_content(context) {
         if (!this._roots) {
             this._roots = new Set();
-            for (const item of await fetch_api(`repository/root-content`, 'POST', [this._repository.id])
+            for (const item of await this.app.fetch_api(`repository/root-content`, 'POST', [this._repository.id])
                 .catch(error => {
                     NOTIFICATION.warn(new Message(error).title(`Impossible de lire la racion du dépot ${this._repository.url_name.plain()}`));
                     return [];
@@ -330,7 +336,7 @@ class FilesystemStream {
     async trash_content() {
         if (!this._trash_roots) {
             this._trash_roots = new Set();
-            for (const item of await fetch_api(`repository/trash-content`, 'POST', [this._repository.id])
+            for (const item of await this.app.fetch_api(`repository/trash-content`, 'POST', [this._repository.id])
                 .catch(error => {
                     NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de la corbeille de ${this._repository.url_name.plain()}`));
                     return [];
@@ -355,7 +361,7 @@ class FilesystemStream {
             // Fetch parents and parent's children
             const parent = await this.fetch_item(item.parent_item);
             if (!parent.children)
-                await parent.filesystem().directory_content(parent.id);
+                await parent.filesystem().directory_content(this.app, parent.id);
         }
         this._register_item(item);
     }
@@ -412,7 +418,7 @@ class FilesystemStream {
      * @return {Promise<*|null>}
      */
     async find_child(child_name, parent_item) {
-        const children = parent_item ? await this.directory_content(parent_item.id) : await this.root_content();
+        const children = parent_item ? await this.directory_content(this.app, parent_item.id) : await this.root_content();
         for (const child of children) {
             const child_data = this.find(child);
             if (child_data.name.plain() === child_name)

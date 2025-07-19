@@ -10,7 +10,7 @@ upload-widget {
   bottom: 5px;
   pointer-events: none;
 
-  #uploader {
+  .uploader {
     pointer-events: auto;
     margin-top: auto;
     margin-left: auto;
@@ -208,7 +208,7 @@ upload-widget {
     left: 0;
     top: 0;
     margin: 0;
-    #uploader {
+    .uploader {
       min-width: unset;
       width: 100%;
       transition-duration: 0.2s;

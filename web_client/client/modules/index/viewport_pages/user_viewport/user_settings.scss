@@ -6,7 +6,7 @@ page-user {
   flex-grow: 1;
   width: 100%;
 
-  #info-section {
+  .info-section {
     display: flex;
     flex-direction: row;
     border-bottom: dotted 1px $text-secondary;
@@ -17,11 +17,11 @@ page-user {
       flex-direction: column;
     }
 
-    #user-infos {
+    .user-infos {
       display: flex;
       flex-direction: column;
 
-      #profile {
+      .profile {
         margin: 10px 0 0 10px;
         display: flex;
         flex-direction: row;
@@ -41,7 +41,7 @@ page-user {
         }
 
 
-        #user {
+        .user {
           display: flex;
           flex-direction: column;
           margin-left: 20px;
@@ -87,7 +87,7 @@ page-user {
       }
     }
 
-    #repository-list {
+    .repository-list {
       padding-top: 10px;
       padding-bottom: 10px;
       margin-left: 20px;
@@ -125,7 +125,7 @@ page-user {
     }
   }
 
-  #tokens {
+  .tokens {
     display: flex;
     flex-direction: column;
     overflow: scroll;

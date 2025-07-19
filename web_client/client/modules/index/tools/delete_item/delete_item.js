@@ -1,14 +1,14 @@
-import {fetch_api} from "../../../../utilities/request";
 import {FilesystemItem} from "../../../../types/filesystem_stream";
 import {Message, NOTIFICATION} from "../message_box/notification";
-import {MODAL} from "../../modal/modal";
+import {get_app} from "../../../../app";
 
 /**
  * @param item {FilesystemItem|FilesystemItem[]}
  * @param move_to_trash {boolean}
+ * @param context {HTMLElement}
  * @return {Promise<void>}
  */
-async function delete_item(item, move_to_trash) {
+async function delete_item(item, move_to_trash, context) {
     let ids = null;
     let fs_map = new Map();
     if (item instanceof Array) {
@@ -26,7 +26,7 @@ async function delete_item(item, move_to_trash) {
 
     if (!move_to_trash) {
         if (!await new Promise((resolve, reject) => {
-            MODAL.open(require('./ask_delete_item.hbs')({}, {
+            get_app(context).get_modal().open(require('./ask_delete_item.hbs')({}, {
                 delete: () => {
                     resolve(true)
                 },
@@ -40,14 +40,14 @@ async function delete_item(item, move_to_trash) {
             })
         })) {
             NOTIFICATION.warn(new Message("Opération annulée"));
-            MODAL.close();
+            get_app(context).get_modal().close();
             return;
         }
-        MODAL.close();
+        get_app(context).get_modal().close();
     }
 
 
-    const items = await fetch_api(`item/${move_to_trash ? 'move-to-trash' : 'delete'}`, 'POST',
+    const items = await get_app(context).fetch_api(`item/${move_to_trash ? 'move-to-trash' : 'delete'}`, 'POST',
         ids
     ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de supprimer le(s) fichier(s)")));
     if (move_to_trash)
@@ -67,9 +67,10 @@ async function delete_item(item, move_to_trash) {
 
 /**
  * @param item {FilesystemItem}
+ * @param context {HTMLElement}
  * @return {Promise<void>}
  */
-async function restore_item(item) {
+async function restore_item(item, context) {
     let ids = null;
     let fs_map = new Map();
     if (item instanceof Array) {
@@ -84,7 +85,7 @@ async function restore_item(item) {
         ids = [item.id];
         fs_map.set(item.id, item.filesystem());
     }
-    const items = await fetch_api(`item/restore`, 'POST',
+    const items = await get_app(context).fetch_api(`item/restore`, 'POST',
         ids
     ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de restorer le fichier")));
     for (const item_id of items) {

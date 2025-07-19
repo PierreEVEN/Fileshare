@@ -1,7 +1,6 @@
 import {Authentication} from "../tools/authentication/authentication";
-import {APP_CONFIG} from "../../../types/app_config";
 import {SIDE_BAR} from "../side_bar/side_bar";
-import {APP} from "../../../app";
+import {get_app} from "../../../app";
 import {GLOBAL_EVENTS} from "../../../types/event_manager";
 
 require('./global_header.scss')
@@ -19,34 +18,21 @@ class AppHeader extends HTMLElement{
     connectedCallback() {
         const div = require('./global_header.hbs')({}, {
             login: () => {
-                Authentication.login();
+                Authentication.login(this);
             },
             signup: () => {
-                Authentication.signup();
+                Authentication.signup(this);
             },
             logout: () => {
-                Authentication.logout();
+                Authentication.logout(this);
             },
             menu: () => {
                 SIDE_BAR.show_mobile()
             },
             user: async () => {
-                await APP.set_display_user(this._connected_user);
+                await get_app(this).set_display_user(this._connected_user);
             }
         });
-
-        // @TODO
-        /*
-        SIDE_BAR.events.add('show_mobile', (show) => {
-            if (show) {
-                div.hb_elements.menu_img.src = "/public/images/icons/icons8-expand-50.png";
-                div.hb_elements.menu_img.style.transform = 'rotate(90deg)';
-            }
-            else {
-                div.hb_elements.menu_img.src = "/public/images/icons/icons8-menu-96.png";
-                div.hb_elements.menu_img.style.transform = 'unset';
-            }
-        })*/
 
         GLOBAL_EVENTS.add('on_connected_user_changed', async (data) => {
             this.refresh(data.new);
@@ -56,7 +42,18 @@ class AppHeader extends HTMLElement{
         for (const element of div)
             this.append(element);
 
-        this.refresh(APP_CONFIG.connected_user())
+        this.refresh(get_app(this).app_config.connected_user())
+    }
+
+    update_burger_icon(show) {
+        if (show) {
+            this._elements.menu_img.src = "/public/images/icons/icons8-expand-50.png";
+            this._elements.menu_img.style.transform = 'rotate(90deg)';
+        }
+        else {
+            this._elements.menu_img.src = "/public/images/icons/icons8-menu-96.png";
+            this._elements.menu_img.style.transform = 'unset';
+        }
     }
 
     refresh(connected_user) {

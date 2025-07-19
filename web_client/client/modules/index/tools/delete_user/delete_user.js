@@ -1,7 +1,6 @@
-import {fetch_api} from "../../../../utilities/request";
-import {MODAL} from "../../modal/modal";
 import {EncString} from "../../../../types/encstring";
 import {Message, NOTIFICATION} from "../message_box/notification";
+import {get_app} from "../../../../app";
 
 /**
  * @param user {User}
@@ -15,7 +14,7 @@ async function delete_user(user) {
             if (widget.hb_elements.login.value !== user.login.plain())
                 return;
 
-            await fetch_api(`user/delete`, 'POST',
+            await get_app(widget).fetch_api(`user/delete`, 'POST',
                 {
                     login: EncString.from_client(widget.hb_elements.login.value),
                     password: EncString.from_client(widget.hb_elements.password.value)
@@ -24,10 +23,10 @@ async function delete_user(user) {
 
             user.remove();
 
-            MODAL.close();
+            get_app(widget).get_modal().close();
         }
     });
-    MODAL.open(widget, {custom_width: '500px', custom_height: '450px'})
+    get_app(widget).get_modal().open(widget, {custom_width: '500px', custom_height: '450px'})
 }
 
 export {delete_user}

@@ -1,10 +1,8 @@
-import {fetch_api} from "../../../../utilities/request";
 import {Message, NOTIFICATION} from "../../tools/message_box/notification";
 import {Repository} from "../../../../types/repository";
-import {User, UserRole} from "../../../../types/user";
-import {APP} from "../../../../app";
+import {User} from "../../../../types/user";
+import {get_app} from "../../../../app";
 import {edit_user} from "../../tools/edit_user/edit_user";
-import {APP_CONFIG} from "../../../../types/app_config";
 import {APP_COOKIES} from "../../tools/cookies/cookies";
 import {GLOBAL_EVENTS} from "../../../../types/event_manager";
 import {human_readable_timestamp} from "../../../../utilities/utils";
@@ -59,35 +57,35 @@ class UserViewport extends HTMLElement {
         const is_admin = this.user.user_role.toString() === "Admin";
         let viewport = require('./user_viewport.hbs')({
             user: this.user.display_data(),
-            is_self: this.user === APP_CONFIG.connected_user(),
+            is_self: this.user === get_app(this).app_config.connected_user(),
             is_admin
         }, {
             edit: async () => {
-                await edit_user(this.user);
+                await edit_user(this.user, this);
             }
         });
         for (const element of viewport)
             this.append(element);
         this._elements = viewport.hb_elements;
 
-        let repositories = await fetch_api(`user/repositories/${this.user.id}`)
+        let repositories = await get_app(this).fetch_api(`user/repositories/${this.user.id}`)
             .catch(err => {
                 NOTIFICATION.warn(new Message(err).title("Failed to retrieve user repositories"));
                 return [];
             });
 
         for (const repository_id of repositories) {
-            let repository = await Repository.find(repository_id);
+            let repository = await Repository.find(this, repository_id);
             let widget = require('./user_repository.hbs')({text: repository.display_name.plain()}, {
                 visit: async () => {
-                    APP.set_display_repository(repository);
+                    await get_app(this).set_display_repository(repository);
                 }
             });
             this._elements.repository_list.append(widget);
         }
 
-        if (this.user === APP_CONFIG.connected_user()) {
-            let tokens = await fetch_api('user/tokens')
+        if (this.user === get_app(this).app_config.connected_user()) {
+            let tokens = await get_app(this).fetch_api('user/tokens')
                 .catch(err => {
                     NOTIFICATION.warn(new Message(err).title("Failed to retrieve user tokens"));
                     return [];
@@ -100,7 +98,7 @@ class UserViewport extends HTMLElement {
                     expdate: human_readable_timestamp(token.expdate),
                 }, {
                     delete: async () => {
-                        await fetch_api('user/logout', 'POST', null, token.token)
+                        await get_app(this).fetch_api('user/logout', 'POST', null, token.token)
                             .catch(err => {
                                 NOTIFICATION.warn(new Message(err).title("Failed to delete token"));
                                 return [];

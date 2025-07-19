@@ -1,7 +1,7 @@
 <form onsubmit="{{ctx 'code(event)'}}" class="calendar-modal login-modal">
     <h1>Code de réinitialisation</h1>
     <label for='code'>
-        <input {{object "code"}} type="text" name="code" placeholder="Code de réinitialisation" id="code" required>
+        <input {{object "code"}} type="text" name="code" placeholder="Code de réinitialisation" required>
     </label>
     <p class="authentication-error" {{object "error"}}></p>
     <input type="submit" value="Envoyer le code">

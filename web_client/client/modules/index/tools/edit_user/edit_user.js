@@ -1,15 +1,15 @@
-import {MODAL} from "../../modal/modal";
-import {fetch_api} from "../../../../utilities/request";
 import {EncString} from "../../../../types/encstring";
 import {Message, NOTIFICATION} from "../message_box/notification";
 import {delete_user} from "../delete_user/delete_user";
+import {get_app} from "../../../../app";
 
 require('./edit_user.scss')
 
 /**
  * @param user {User}
+ * @param context {HTMLElement}
  */
-function edit_user(user) {
+function edit_user(user, context) {
     let data = user.display_data();
     data.mask_email = !data.allow_contact;
     const widget = require('./edit_user.hbs')(data, {
@@ -21,19 +21,19 @@ function edit_user(user) {
                 name: EncString.from_client(widget.hb_elements.url_name.value),
                 allow_contact: !widget.hb_elements.mask_email.checked
             };
-            await fetch_api(`user/update`, 'POST', new_data)
+            await get_app(widget).fetch_api(`user/update`, 'POST', new_data)
                 .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de modifier le dépôt")));
             user.login = new_data.login;
             user.name = new_data.name;
             user.allow_contact = new_data.allow_contact;
-            await user.refresh();
-            MODAL.close();
+            await user.refresh(context);
+            get_app(widget).get_modal().close();
         },
         delete: async () => {
             await delete_user(user);
         }
     });
-    MODAL.open(widget, {custom_width: '800px', custom_height: '550px'})
+    get_app(context).get_modal().open(widget, {custom_width: '800px', custom_height: '550px'})
 }
 
 export {edit_user}

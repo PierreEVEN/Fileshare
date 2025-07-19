@@ -1,14 +1,12 @@
 <form onsubmit="{{ctx 'delete_repository(event)'}}">
     <h1>Supprimer le dépôt {{name}}</h1>
     <label for='username'></label>
-    <input {{object "login"}} type="text" name="username" placeholder="Nom d'utilisateur / email" id="username"
-                              required>
+    <input {{object "login"}} type="text" name="username" placeholder="Nom d'utilisateur / email" required>
 
     <label for='password'></label>
-    <input {{object "password"}} type="password" name="password" placeholder="Mot de passe" id="password" required>
+    <input {{object "password"}} type="password" name="password" placeholder="Mot de passe" required>
 
     <label for='repository'></label>
-    <input {{object "repository"}} type="text" name="repository" placeholder="Pour confirmer, écrire '{{name}}'"
-                                   id="username" required>
+    <input {{object "repository"}} type="text" name="repository" placeholder="Pour confirmer, écrire '{{name}}'" required>
     <input type="submit" value="Supprimer">
 </form>

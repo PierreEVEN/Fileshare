@@ -1,8 +1,7 @@
 import {EncString} from "./encstring";
-import {fetch_api} from "../utilities/request";
 import {Message, NOTIFICATION} from "../modules/index/tools/message_box/notification";
 import {EventManager} from "./event_manager";
-import {APP_CONFIG} from "./app_config";
+import {get_app} from "../app";
 
 class UserRole {
     constructor(data) {
@@ -101,12 +100,12 @@ class User {
     remove() {
         this._build_from_data({id: 0});
         this.events.broadcast('refresh', this);
-        if (APP_CONFIG.connected_user() === this)
-            APP_CONFIG.set_connected_user(null);
+        if (get_app(this).app_config.connected_user() === this)
+            get_app(this).app_config.set_connected_user(null);
     }
 
-    async refresh() {
-        let data = await fetch_api("user/find", "POST", [this.id])
+    async refresh(context) {
+        let data = await get_app(context).fetch_api("user/find", "POST", [this.id])
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Impossible de trouver l'utilisateur ${this.id}`)));
         if (data.length !== 0) {
             this._build_from_data(data[0]);
@@ -125,10 +124,11 @@ class User {
     /**
      * @param name {EncString}
      * @param exact {boolean}
+     * @param context {HTMLElement}
      * @returns {Promise<User[]>}
      */
-    static async search_from_name(name, exact) {
-        let users = await fetch_api("user/search", "POST", {name: name, exact: exact})
+    static async search_from_name(name, exact, context) {
+        let users = await get_app(context).fetch_api("user/search", "POST", {name: name, exact: exact})
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Recherche échouée`)));
         const found_users = [];
         for (const user_id of users) {
@@ -139,13 +139,14 @@ class User {
 
     /**
      * @param id {number}
+     * @param context {HTMLElement}
      * @returns {Promise<User>}
      */
-    static async fetch(id) {
+    static async fetch(id, context) {
         const current = User._LOCAL_CACHE.get(id);
         if (current)
             return current;
-        let user = await fetch_api("user/find", "POST", [id])
+        let user = await get_app(context).fetch_api("user/find", "POST", [id])
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Impossible de trouver l'utilisateur ${id}`)));
         if (user.length !== 0)
             return User.new(user[0]);

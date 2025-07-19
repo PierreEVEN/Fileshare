@@ -1,8 +1,7 @@
 import {get_mime_icon_path} from "../../utilities/mime_utils";
-import {APP_CONFIG} from "../../types/app_config";
 
-function get(item) {
-    const url = `${APP_CONFIG.origin()}/api/item/preview/${item.id}`;
+function get(app, item) {
+    const url = `${app.app_config.origin()}/api/item/preview/${item.id}`;
     const thumbnail_url = `/api/item/thumbnail/${item.id}`;
     const mimetype = item.mimetype.split('/');
     switch (mimetype[0]) {

@@ -13,6 +13,6 @@
     <button onclick="{{ctx 'login()'}}">Connexion</button>
 </div>
 <div class="user" {{object "user"}}>
-    <button onclick="{{ctx 'logout()'}}">Déconnexion</button>
+    <button onclick="{{ctx 'logout(event.target)'}}">Déconnexion</button>
     <button class="user-button" {{object "username"}} onclick="{{ctx 'user()'}}">username</button>
 </div>

@@ -7,8 +7,9 @@ import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
 
 /**
  * @param item {FilesystemItem|FilesystemItem[]}
+ * @param context {HTMLElement}
  */
-function context_menu_item(item) {
+function context_menu_item(item, context) {
     const ctx = new ContextMenu();
 
     let multi = item instanceof Array;
@@ -18,11 +19,11 @@ function context_menu_item(item) {
     }
     if (!multi) {
         ctx.add_action(new MenuAction("Modifier", "/public/images/icons/icons8-edit-96.png", async () => {
-            await edit_item(item);
+            await edit_item(item, context);
         }, false));
         if (!item.is_regular_file) {
             ctx.add_action(new MenuAction("Nouveau Dossier", "/public/images/icons/icons8-add-folder-48.png", async () => {
-                create_directory(item.repository, item.id);
+                create_directory(item.repository, item.id, context);
             }, false))
         }
     }
@@ -57,16 +58,16 @@ function context_menu_item(item) {
 
     if (CLIPBOARD.has_items())
         ctx.add_action(new MenuAction("Coller ici", "/public/images/icons/icons8-paste-48.png", async () => {
-            await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), item.repository, item.id);
+            await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), item.repository, item.id, context);
         }, false));
 
     const in_trash = (!multi && item.in_trash) || (multi && item.length !== 0 && item[0].in_trash);
     if (in_trash)
         ctx.add_action(new MenuAction("Restorer", "/public/images/icons/icons8-restore-96.png", async () => {
-            await restore_item(item);
+            await restore_item(item, context);
         }, false));
     ctx.add_action(new MenuAction("Supprimer", "/public/images/icons/icons8-trash-96.png", async () => {
-        await delete_item(item, !in_trash);
+        await delete_item(item, !in_trash, context);
     }, false));
 }
 

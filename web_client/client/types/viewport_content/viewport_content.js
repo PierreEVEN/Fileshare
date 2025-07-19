@@ -120,7 +120,7 @@ class LexicographicSorter extends ContentSorter {
 
 class ViewportContent {
 
-    constructor() {
+    constructor(context) {
 
         /**
          * @type {Map<number, FilesystemItem>}
@@ -158,7 +158,7 @@ class ViewportContent {
 
             if (this._provider instanceof DirectoryContentProvider && this._provider.directory) {
                 if (await this._provider.directory.is_in_parents(item.id) || this._provider.directory.id === item.id)
-                    await this.set_content_provider(new RepositoryRootProvider(await Repository.find(this._provider.directory.repository)))
+                    await this.set_content_provider(new RepositoryRootProvider(await Repository.find(context, this._provider.directory.repository)))
             }
         })
     }

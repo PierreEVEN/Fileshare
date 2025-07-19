@@ -1,10 +1,10 @@
-import {User} from "./user";
-import {FilesystemItem} from "./filesystem_stream";
-import {Repository} from "./repository";
-import {GLOBAL_EVENTS} from "./event_manager";
+import {User} from "../types/user";
+import {FilesystemItem} from "../types/filesystem_stream";
+import {Repository} from "../types/repository";
+import {GLOBAL_EVENTS} from "../types/event_manager";
 
 class AppConfig {
-    constructor() {
+    constructor(app) {
         const data = JSON.parse(document.body.dataset['app_config']);
         console.assert(data, "Invalid application configuration data")
 
@@ -19,7 +19,7 @@ class AppConfig {
         /**
          * @type {Repository}
          */
-        this._display_repository = data['display_repository'] ? Repository.new(data['display_repository']) : null;
+        this._display_repository = data['display_repository'] ? Repository.new(app, data['display_repository']) : null;
         /**
          * @type {Promise<FilesystemItem>}
          */
@@ -114,9 +114,4 @@ class AppConfig {
     }
 }
 
-/**
- * @type {AppConfig}
- */
-let APP_CONFIG = new AppConfig();
-
-export {APP_CONFIG}
+export {AppConfig}

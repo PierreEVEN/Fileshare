@@ -1,5 +1,5 @@
 import {Authentication} from "../tools/authentication/authentication";
-import {APP_CONFIG} from "../../../types/app_config";
+import {get_app} from "../../../app";
 
 class ErrorPage extends HTMLElement {
     constructor() {
@@ -14,9 +14,9 @@ class ErrorPage extends HTMLElement {
     set_error(error) {
         this._error = error;
         if (!this.isConnected)
-            return;
+            return this;
         if (!error)
-            return;
+            return this;
 
         let code = error.code.split(" ");
         if (code.length > 0)
@@ -29,8 +29,8 @@ class ErrorPage extends HTMLElement {
 
         this.innerHTML = `<h1>⚠️ Error ${code} ⚠️</h1><h2>${message}</h2>`
 
-        if (error.code === '403 Forbidden' && !APP_CONFIG.connected_user()) {
-            Authentication.login();
+        if (error.code === '403 Forbidden' && !get_app(this).app_config.connected_user()) {
+            Authentication.login(this);
         }
         return this;
     }

@@ -1,4 +1,5 @@
 import {UploadItem} from "./upload_item";
+import {get_app} from "../../../../../app";
 
 require("./drop-box.scss")
 
@@ -73,10 +74,11 @@ class DropBox extends HTMLElement {
             return;
         }
 
+        const app = get_app(this);
         if (event.dataTransfer.items) {
             const process_entry = async (entry, parent) => {
                 if (entry.isDirectory) {
-                    const directory = await UploadItem.FromFilesystemDrop(entry);
+                    const directory = await UploadItem.FromFilesystemDrop(entry, app);
                     if (parent)
                         parent.add_child(directory);
                     else
@@ -87,9 +89,9 @@ class DropBox extends HTMLElement {
                     })
                 } else if (entry.isFile) {
                     if (parent)
-                        parent.add_child(await UploadItem.FromFilesystemDrop(entry))
+                        parent.add_child(await UploadItem.FromFilesystemDrop(entry, app))
                     else
-                        await this.get_uploader().add_item(await UploadItem.FromFilesystemDrop(entry))
+                        await this.get_uploader().add_item(await UploadItem.FromFilesystemDrop(entry, app))
                 }
             }
 
@@ -101,7 +103,7 @@ class DropBox extends HTMLElement {
             });
         } else {
             [...event.dataTransfer.files].forEach(async (file, _) => {
-                this.get_uploader().add_item(await UploadItem.FromFilesystemDrop(file))
+                this.get_uploader().add_item(await UploadItem.FromFilesystemDrop(file, app))
             });
         }
     }

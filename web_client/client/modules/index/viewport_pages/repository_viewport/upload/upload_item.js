@@ -1,13 +1,15 @@
 import {Repository} from "../../../../../types/repository";
-import {fetch_api} from "../../../../../utilities/request";
 import {EncString} from "../../../../../types/encstring";
 import {FilesystemItem} from "../../../../../types/filesystem_stream";
 import {overwrite_or_restore} from "../../../tools/item_conflict/item_conflict";
 import {Message, NOTIFICATION} from "../../../tools/message_box/notification";
 import mime from 'mime';
+import {get_app} from "../../../../../app";
 
 class UploadItem {
-    constructor(data) {
+    constructor(data, app) {
+        this.app = app;
+
         this.is_regular_file = data.is_regular_file;
         /**
          * @type {String}
@@ -70,10 +72,11 @@ class UploadItem {
 
     /**
      * @param fs_drop {FileSystemEntry}
+     * @param app {FileshareApp}
      * @return {Promise<UploadItem>}
      * @constructor
      */
-    static async FromFilesystemDrop(fs_drop) {
+    static async FromFilesystemDrop(fs_drop, app) {
         let file = null;
         if (fs_drop.isFile) {
             file = await new Promise((resolve) => {
@@ -92,17 +95,18 @@ class UploadItem {
             file: file,
             mimetype: file ? file.mimetype : '',
             directory: null
-        });
+        }, app);
     }
 
 
     /**
+     * @param app {FileshareApp}
      * @param file {File|null}
      * @param name {string}
      * @return {UploadItem}
      * @constructor
      */
-    static FromUploadModal(name, file = null) {
+    static FromUploadModal(app, name, file = null) {
         if (file && !file.type)
             file.mimetype = mime.getType(file.name);
         else if (file)
@@ -113,21 +117,22 @@ class UploadItem {
             file: file,
             mimetype: file ? file.mimetype : '',
             directory: null
-        });
+        }, app);
     }
 
     /**
+     * @param app {FileshareApp}
      * @param directory {FilesystemItem}
      * @return {UploadItem}
      * @constructor
      */
-    static FromRepositoryDirectory(directory) {
+    static FromRepositoryDirectory(app, directory) {
         return new UploadItem({
             is_regular_file: false,
             name: directory.name.plain(),
             file: null,
             directory: directory
-        });
+        }, app);
     }
 
     /**
@@ -193,12 +198,12 @@ class UploadItem {
      * @private
      */
     async _get_or_create_dir(name, repository_id, parent) {
-        const repository = await Repository.find(repository_id);
+        const repository = await Repository.find(this.app, repository_id);
         let parent_entry = parent ? await repository.content.fetch_item(parent) : null;
         const existing = await repository.content.find_child(name, parent_entry);
         if (existing) {
             if (existing.in_trash) {
-                const res = (await overwrite_or_restore(existing.name.plain(), existing));
+                const res = (await overwrite_or_restore(existing.name.plain(), existing, this.app));
                 if (res.canceled) {
                     throw "Annulé : le dossier parent n'existe pas"
                 }
@@ -206,7 +211,7 @@ class UploadItem {
             return existing;
         }
 
-        const directories = await fetch_api('item/new-directory', 'POST',
+        const directories = await get_app(this.app).fetch_api('item/new-directory', 'POST',
             [{
                 name: EncString.from_client(name),
                 repository: repository_id,

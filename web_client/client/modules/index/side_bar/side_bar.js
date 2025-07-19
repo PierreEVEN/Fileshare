@@ -1,10 +1,10 @@
-import {APP_CONFIG} from "../../../types/app_config";
 import {Repository} from "../../../types/repository";
 import {User} from "../../../types/user";
 import {RepositoryTree} from "./repository_tree/repository_tree";
 import {context_menu_my_repositories} from "../context_menu/contexts/context_my_repositories";
 import {EventManager, GLOBAL_EVENTS} from "../../../types/event_manager";
 import {APP_COOKIES} from "../tools/cookies/cookies";
+import {get_app} from "../../../app";
 
 require('./side_bar.scss')
 
@@ -35,7 +35,7 @@ class SideBar extends HTMLElement {
                 await this.expand_recent(!this._recent_expanded);
             },
             context_my_repositories: (e) => {
-                context_menu_my_repositories();
+                context_menu_my_repositories(this);
                 e.preventDefault();
             }
         });
@@ -46,7 +46,7 @@ class SideBar extends HTMLElement {
         GLOBAL_EVENTS.add('on_connected_user_changed', async (data) => {
             this.refresh(data.new);
         });
-        this.refresh(APP_CONFIG.connected_user());
+        this.refresh(get_app(this).app_config.connected_user());
 
         /**
          * @type {Map<number, RepositoryTree>}
@@ -67,7 +67,7 @@ class SideBar extends HTMLElement {
         this._recent_repositories_loaded = new Map();
 
         this._add_repository = GLOBAL_EVENTS.add('add_repository', async (repository) => {
-            if (this._my_repos_expanded && !this._my_repositories_loaded.has(repository.id) && APP_CONFIG.connected_user() && repository.owner === APP_CONFIG.connected_user().id) {
+            if (this._my_repos_expanded && !this._my_repositories_loaded.has(repository.id) && get_app(this).app_config.connected_user() && repository.owner === get_app(this).app_config.connected_user().id) {
                 this._my_repositories_loaded.set(repository.id, new RepositoryTree(this, this._elements.my_repositories, repository));
             }
         });
@@ -93,7 +93,7 @@ class SideBar extends HTMLElement {
         this._my_repositories_loaded = new Map()
         if (expanded) {
             this._elements.div_my_repositories.classList.add('expand');
-            const my_repos_sorted = (await Repository.my_repositories()).sort(((a, b) => {
+            const my_repos_sorted = (await Repository.my_repositories(this)).sort(((a, b) => {
                 return a.display_name.plain().localeCompare(b.display_name.plain())
             }));
             for (const repository of my_repos_sorted) {
@@ -113,7 +113,7 @@ class SideBar extends HTMLElement {
         this._shared_expanded = expanded;
         if (expanded) {
             this._elements.div_shared.classList.add('expand');
-            const repositories_sorted = (await Repository.shared_repositories()).sort(((a, b) => {
+            const repositories_sorted = (await Repository.shared_repositories(this)).sort(((a, b) => {
                 return a.display_name.plain().localeCompare(b.display_name.plain())
             }));
 
@@ -135,7 +135,7 @@ class SideBar extends HTMLElement {
         if (expanded) {
             this._elements.div_recent.classList.add('expand');
 
-            const repositories_sorted = (await Repository.find(APP_COOKIES.get_last_repositories())).sort(((a, b) => {
+            const repositories_sorted = (await Repository.find(this, APP_COOKIES.get_last_repositories())).sort(((a, b) => {
                 return a.display_name.plain().localeCompare(b.display_name.plain())
             }));
 

@@ -1,7 +1,6 @@
 import {User} from "../types/user";
 import {Repository} from "../types/repository";
 import {FilesystemItem} from "../types/filesystem_stream";
-import {APP_CONFIG} from "../types/app_config";
 import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
 
 class State {
@@ -30,7 +29,7 @@ class State {
         history.pushState({
             app_action: true,
             repository: repository.id,
-        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}`);
+        }, "", `${this.app.app_config.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}`);
     }
 
     /**
@@ -46,7 +45,7 @@ class State {
             app_action: true,
             repository: repository.id,
             settings: true
-        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/settings`);
+        }, "", `${this.app.app_config.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/settings`);
     }
 
     /**
@@ -59,12 +58,12 @@ class State {
 
         APP_COOKIES.push_last_repositories(item.repository);
 
-        let repository = await Repository.find(item.repository);
+        let repository = await Repository.find(this.app, item.repository);
         history.pushState({
             app_action: true,
             item: item.id,
             repository: item.repository
-        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/tree${item.absolute_path.encoded()}${item.is_regular_file ? "" : ""}`);
+        }, "", `${this.app.app_config.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/tree${item.absolute_path.encoded()}${item.is_regular_file ? "" : ""}`);
     }
 
     /**
@@ -77,7 +76,7 @@ class State {
             app_action: true,
             repository: repository.id,
             trash: true
-        }, "", `${APP_CONFIG.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/trash`);
+        }, "", `${this.app.app_config.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/trash`);
     }
 
     async open_user(user) {
@@ -86,7 +85,7 @@ class State {
         history.pushState({
             app_action: true,
             user: user.id
-        }, "", `${APP_CONFIG.origin()}/${user.name.encoded()}`);
+        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}`);
     }
 
     async open_stats() {
@@ -94,16 +93,16 @@ class State {
             return;
         history.pushState({
             app_action: true,
-        }, "", `${APP_CONFIG.origin()}/statistics`);
+        }, "", `${this.app.app_config.origin()}/statistics`);
     }
 
     async _handle_state(state) {
         this._disable_state = true;
         if (state.item && state.repository) {
-            let repository = await Repository.find(state.repository);
+            let repository = await Repository.find(this.app, state.repository);
             await this.app.set_display_item(await repository.content.fetch_item(state.item));
         } else if (state.repository) {
-            let repository = await Repository.find(state.repository);
+            let repository = await Repository.find(this.app, state.repository);
             if (state.trash)
                 await this.app.set_display_trash(repository);
             else if (state.settings)

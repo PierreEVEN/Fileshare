@@ -1,10 +1,9 @@
 import {edit_repository} from "../../tools/edit_repository/edit_repository";
 import {EncString} from "../../../../types/encstring";
-import {fetch_api} from "../../../../utilities/request";
 import {Message, NOTIFICATION} from "../../tools/message_box/notification";
-import {MODAL} from "../../modal/modal";
 import {User} from "../../../../types/user";
 import {humanFileSize} from "../../../../utilities/utils";
+import {get_app} from "../../../../app";
 
 require('./repository_settings.scss')
 
@@ -28,7 +27,7 @@ class RepositorySettings extends HTMLElement {
             return this;
 
 
-        fetch_api(`repository/stats`, 'POST', repository.id)
+        get_app(this).fetch_api(`repository/stats`, 'POST', repository.id)
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de lire les informations du dépôt")))
             .then(async (data) => {
                 let merged_data = repository.display_data();
@@ -56,23 +55,23 @@ class RepositorySettings extends HTMLElement {
 
                 const div = require('./repository_settings.hbs')(merged_data, {
                     edit: async () => {
-                        edit_repository(repository);
+                        edit_repository(repository, this);
                     },
                     add_user: () => {
                         const widget = require('./add_authorization.hbs')({}, {
                             add: async (e) => {
                                 e.preventDefault();
 
-                                let user = await User.search_from_name(EncString.from_client(widget.hb_elements.username.value), true);
+                                let user = await User.search_from_name(EncString.from_client(widget.hb_elements.username.value, widget), true, widget);
                                 if (user.length === 0) {
                                     NOTIFICATION.error(new Message(`Impossible de trouver l'utilisateur '${widget.hb_elements.username.value}'`));
                                     return;
                                 }
                                 await this._register_subscription(repository.id, user[0].id, widget.hb_elements.access_type.value);
-                                MODAL.close();
+                                get_app(this).get_modal().close();
                             }
                         });
-                        MODAL.open(widget, {custom_width: '600px', custom_height: '350px'})
+                        get_app(this).get_modal().open(widget, {custom_width: '600px', custom_height: '350px'})
                     }
                 });
                 this.hb_elements = div.hb_elements;
@@ -80,7 +79,7 @@ class RepositorySettings extends HTMLElement {
                 for (const element of div)
                     this.append(element);
 
-                fetch_api(`repository/subscriptions`, 'POST', repository.id).then(async subscriptions => {
+                get_app(this).fetch_api(`repository/subscriptions`, 'POST', repository.id).then(async subscriptions => {
                     for (const subscription of subscriptions) {
                         await this._add_subscription(subscription);
                     }
@@ -119,7 +118,7 @@ class RepositorySettings extends HTMLElement {
                 access_type: access_type
             }]
         };
-        let subscriptions = await fetch_api(`repository/subscribe`, 'POST', data)
+        let subscriptions = await get_app(this).fetch_api(`repository/subscribe`, 'POST', data)
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible d'ajouter l'utilisateur")));
         for (const subscription of subscriptions) {
             await this._add_subscription(subscription);
@@ -127,7 +126,7 @@ class RepositorySettings extends HTMLElement {
     }
 
     async _remove_subscription(repository, owner) {
-        await fetch_api(`repository/unsubscribe`, 'POST', {
+        await get_app(this).fetch_api(`repository/unsubscribe`, 'POST', {
             repository: repository,
             users: [owner]
         }).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible d'ajouter l'utilisateur")));

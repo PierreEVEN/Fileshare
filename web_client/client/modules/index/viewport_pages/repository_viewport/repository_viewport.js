@@ -9,7 +9,7 @@ import {context_menu_repository} from "../../context_menu/contexts/context_repos
 import "./upload/uploader";
 import "./upload/drop_box";
 import {context_menu_item} from "../../context_menu/contexts/context_item";
-import {APP} from "../../../../app";
+import {get_app} from "../../../../app";
 import "./toolbar/toolbar";
 import {get_global_carousel} from "../global_carousel/global_carousel";
 import {Repository} from "../../../../types/repository";
@@ -17,7 +17,6 @@ import "../../tools/carousel/list/carousel_list";
 import "../../tools/carousel/viewport/carousel_viewport";
 import {humanFileSize, is_touch_screen} from "../../../../utilities/utils";
 import {Selector} from "./selector";
-import {MODAL} from "../../modal/modal";
 import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
 import {delete_item} from "../../tools/delete_item/delete_item";
 
@@ -28,13 +27,13 @@ require('./repository_viewport.scss')
  */
 let CURRENT_VIEWPORT = null;
 document.addEventListener('keydown', async function (event) {
-    if (!CURRENT_VIEWPORT)
+    if (!CURRENT_VIEWPORT || !CURRENT_VIEWPORT.closest('fileshare-app'))
         return;
     if (event.target.type === 'text')
         return;
-    if (MODAL.is_open()) {
+    if (get_app(CURRENT_VIEWPORT).get_modal().is_open()) {
         if ((event.key === 'Backspace' || event.key === 'Escape'))
-            MODAL.close();
+            get_app(CURRENT_VIEWPORT).get_modal().close();
         return;
     }
     if ((event.key === 'Backspace' || event.key === 'Escape')) {
@@ -47,9 +46,9 @@ document.addEventListener('keydown', async function (event) {
                 if (CURRENT_VIEWPORT.content.get_content_provider() instanceof DirectoryContentProvider) {
                     let item = CURRENT_VIEWPORT.content.get_content_provider().directory;
                     if (item.parent_item)
-                        await APP.set_display_item(await item.filesystem().fetch_item(item.parent_item));
+                        await get_app(this).set_display_item(await item.filesystem().fetch_item(item.parent_item));
                     else
-                        await APP.set_display_repository(await Repository.find(item.repository));
+                        await get_app(CURRENT_VIEWPORT).set_display_repository(await Repository.find(this, item.repository));
                     CURRENT_VIEWPORT.selector.select_item(item.id, false, false);
                 }
             }
@@ -59,7 +58,7 @@ document.addEventListener('keydown', async function (event) {
         if (CURRENT_VIEWPORT.carousel_list) {
             await CURRENT_VIEWPORT.carousel_list._select_next();
             return;
-        } else if (MODAL.is_open())
+        } else if (get_app(CURRENT_VIEWPORT).get_modal().is_open())
             return;
         await CURRENT_VIEWPORT.selector.select_next(event.ctrlKey, event.shiftKey);
     }
@@ -67,26 +66,26 @@ document.addEventListener('keydown', async function (event) {
         if (CURRENT_VIEWPORT.carousel_list) {
             await CURRENT_VIEWPORT.carousel_list._select_previous();
             return;
-        } else if (MODAL.is_open())
+        } else if (get_app(CURRENT_VIEWPORT).get_modal().is_open())
             return;
         await CURRENT_VIEWPORT.selector.select_previous(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'ArrowUp') {
-        if (MODAL.is_open() || CURRENT_VIEWPORT.carousel_list)
+        if (get_app(CURRENT_VIEWPORT).get_modal().is_open() || CURRENT_VIEWPORT.carousel_list)
             return;
         const item_per_row = CURRENT_VIEWPORT.container.offsetWidth / 120;
         for (let i = 1; i < item_per_row; ++i)
             await CURRENT_VIEWPORT.selector.select_previous(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'ArrowDown') {
-        if (MODAL.is_open() || CURRENT_VIEWPORT.carousel_list)
+        if (get_app(CURRENT_VIEWPORT).get_modal().is_open() || CURRENT_VIEWPORT.carousel_list)
             return;
         const item_per_row = CURRENT_VIEWPORT.container.offsetWidth / 120;
         for (let i = 1; i < item_per_row; ++i)
             await CURRENT_VIEWPORT.selector.select_next(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'Enter') {
-        if (MODAL.is_open())
+        if (get_app(CURRENT_VIEWPORT).get_modal().is_open())
             return;
 
         if (CURRENT_VIEWPORT.selector.get_last_selected_item()) {
@@ -98,7 +97,7 @@ document.addEventListener('keydown', async function (event) {
                 await CURRENT_VIEWPORT.open_item(data);
         }
     }
-    if (!MODAL.is_open() && !CURRENT_VIEWPORT.carousel_list) {
+    if (!get_app(CURRENT_VIEWPORT).get_modal().is_open() && !CURRENT_VIEWPORT.carousel_list) {
         if ((event.key === 'a' || event.key === 'A') && event.ctrlKey) {
             for (const elem of CURRENT_VIEWPORT._visible_items.keys())
                 CURRENT_VIEWPORT.selector.select_item(elem, true, false);
@@ -120,10 +119,10 @@ document.addEventListener('keydown', async function (event) {
 
             if (CURRENT_VIEWPORT.content.get_content_provider() instanceof DirectoryContentProvider) {
                 let directory = CURRENT_VIEWPORT.content.get_content_provider().directory;
-                await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), directory.repository, directory.id);
+                await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), directory.repository, directory.id, this);
             } else if (CURRENT_VIEWPORT.content.get_content_provider() instanceof RepositoryRootProvider) {
                 let repository = CURRENT_VIEWPORT.content.get_content_provider().repository;
-                await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), repository.id, null);
+                await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), repository.id, null, this);
             }
         }
         if (event.key === 'Delete') {
@@ -131,9 +130,9 @@ document.addEventListener('keydown', async function (event) {
             for (const it of CURRENT_VIEWPORT.selector.get_selected_items())
                 items.push(await CURRENT_VIEWPORT.try_get_item_data(it));
             if (CURRENT_VIEWPORT.content.get_content_provider() instanceof TrashContentProvider || event.shiftKey)
-                await delete_item(items, false);
+                await delete_item(items, false, CURRENT_VIEWPORT);
             else
-                await delete_item(items, true);
+                await delete_item(items, true, CURRENT_VIEWPORT);
         }
     }
 }, false);
@@ -155,7 +154,7 @@ class RepositoryViewport extends HTMLElement {
         /**
          * @type {ViewportContent}
          */
-        this.content = new ViewportContent();
+        this.content = new ViewportContent(this);
 
         this.content.events.add('add', async (item) => {
 
@@ -170,7 +169,7 @@ class RepositoryViewport extends HTMLElement {
             const new_item = document.createElement('item-view');
             new_item.set_item(item);
             new_item.ondblclick = async () => {
-                await APP.set_display_item(item);
+                await get_app(this).set_display_item(item);
             };
             new_item.onclick = async (event) => {
                 const local_edit = event.ctrlKey;
@@ -179,7 +178,7 @@ class RepositoryViewport extends HTMLElement {
                     if (this.mobile_selection) {
                         this.selector.action_select(item.id, true, false);
                     } else {
-                        await APP.set_display_item(item);
+                        await get_app(this).set_display_item(item);
                     }
                 } else {
                     this.selector.action_select(item.id, local_edit, fill_space);
@@ -197,7 +196,7 @@ class RepositoryViewport extends HTMLElement {
                         for (const item_id of this.selector.get_selected_items()) {
                             items.push(await item.filesystem()?.fetch_item(item_id));
                         }
-                        context_menu_item(items);
+                        context_menu_item(items, this);
                     }
                     this.update_selection();
                 } else {
@@ -206,10 +205,10 @@ class RepositoryViewport extends HTMLElement {
                         for (const item_id of this.selector.get_selected_items()) {
                             items.push(await item.filesystem()?.fetch_item(item_id));
                         }
-                        context_menu_item(items);
+                        context_menu_item(items, this);
                     } else {
                         this.selector.select_item(item.id, false, false);
-                        context_menu_item(item);
+                        context_menu_item(item, this);
                     }
                 }
             }
@@ -255,9 +254,9 @@ class RepositoryViewport extends HTMLElement {
                 if (!event.target.classList.contains('file-list'))
                     return;
                 if (this.content.get_content_provider() instanceof DirectoryContentProvider)
-                    context_menu_item(this.content.get_content_provider().directory)
+                    context_menu_item(this.content.get_content_provider().directory, this)
                 else
-                    context_menu_repository(repository);
+                    context_menu_repository(this, this.repository);
             },
             open_upload: () => {
                 this.open_upload_container()
@@ -268,7 +267,7 @@ class RepositoryViewport extends HTMLElement {
                 for (const item_id of this.selector.get_selected_items()) {
                     items.push(await this.content.get_filesystem().fetch_item(item_id));
                 }
-                context_menu_item(items);
+                context_menu_item(items, this);
             },
             unselect_all: () => {
                 this.selector.clear_selection();
@@ -294,7 +293,7 @@ class RepositoryViewport extends HTMLElement {
         this._elements.current_description.style.display = 'none';
         this._elements.current_description.innerText = '';
 
-        if (object.description && object.description.plain().length !== 0 && object.description.plain() !== 'undefined') {
+        if (object && object.description && object.description.plain().length !== 0 && object.description.plain() !== 'undefined') {
             import('../../../embed_viewers/custom_elements/document/showdown_loader.js').then(showdown_loader => {
                 this._elements.current_description.innerHTML = showdown_loader.convert_text(object.description.plain())
             })
@@ -303,20 +302,9 @@ class RepositoryViewport extends HTMLElement {
         }
     }
 
-    set_repository(repository) {
-        /**
-         * @type {Repository}
-         */
+    _set_repository(repository) {
         this.repository = repository;
-        if (!this.isConnected)
-            return this;
-        this.innerHTML = '';
-        if (!repository)
-            return this;
-
         this._elements.toolbar.set_repository(this.repository)
-
-        return this;
     }
 
     get_div(item_id) {
@@ -341,6 +329,7 @@ class RepositoryViewport extends HTMLElement {
      * @return {Promise<RepositoryViewport>}
      */
     async open_item(item) {
+        this._set_repository(await Repository.find(this, item.repository))
         if (item.is_regular_file)
             await this.open_carousel(item);
         else {
@@ -348,17 +337,21 @@ class RepositoryViewport extends HTMLElement {
             await this.content.set_content_provider(new DirectoryContentProvider(item));
         }
         await this._update_description(item);
-        //await this._elements.toolbar.set_toolbar_path(item, false);
+        await this._elements.toolbar.set_toolbar_path(item, false);
         return this;
     }
 
     async open_root(repository) {
+        this._set_repository(repository);
+        await this._elements.toolbar.set_toolbar_path(null, false);
         await this.content.set_content_provider(new RepositoryRootProvider(repository));
         await this._update_description(repository);
         return this;
     }
 
     async open_trash(repository) {
+        this._set_repository(repository);
+        await this._elements.toolbar.set_toolbar_path(null, true);
         await this.content.set_content_provider(new TrashContentProvider(repository));
         await this._update_description(null);
         return this;
@@ -413,10 +406,10 @@ class RepositoryViewport extends HTMLElement {
         if (item.parent_item) {
             await this.content.set_content_provider(new DirectoryContentProvider(await item.filesystem().fetch_item(item.parent_item)));
         } else {
-            await this.content.set_content_provider(new RepositoryRootProvider(await Repository.find(item.repository)));
+            await this.content.set_content_provider(new RepositoryRootProvider(await Repository.find(this, item.repository)));
         }
 
-        await APP.state.open_item(item);
+        await get_app(this).state.open_item(item);
 
         const viewport = document.createElement('carousel-viewport');
         this.carousel_list = document.createElement('carousel-list');
@@ -425,19 +418,19 @@ class RepositoryViewport extends HTMLElement {
             this.selector.select_item(item.id, false, false);
         })
         await this.carousel_list.set_items(this.content.get_displayed_items());
-        get_global_carousel().open(viewport, this.carousel_list);
+        get_app(this).get_carousel().open(viewport, this.carousel_list);
         this.carousel_list.select_item(item, true);
     }
 
     async close_carousel() {
-        if (get_global_carousel().is_open()) {
+        if (get_app(this).get_carousel().is_open()) {
             this.carousel_list = null;
-            get_global_carousel().close();
+            get_app(this).get_carousel().close();
 
             if (this.content.get_content_provider() instanceof DirectoryContentProvider)
-                await APP.state.open_item(this.content.get_content_provider().directory);
+                await get_app(this).state.open_item(this.content.get_content_provider().directory);
             else if (this.content.get_content_provider() instanceof RepositoryRootProvider)
-                await APP.state.open_repository(this.content.get_content_provider().repository);
+                await get_app(this).state.open_repository(this.content.get_content_provider().repository);
         }
     }
 }

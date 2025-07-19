@@ -1,4 +1,4 @@
-import {APP} from "../../../../../app";
+import {get_app} from "../../../../../app";
 import {context_menu_item} from "../../../context_menu/contexts/context_item";
 import {context_menu_repository} from "../../../context_menu/contexts/context_repository";
 
@@ -14,9 +14,9 @@ class ViewportToolbar extends HTMLElement {
         let div = require('./toolbar.hbs')({}, {
             select_root: async () => {
                 if (this.is_trash)
-                    await APP.set_display_trash(this.repository);
+                    await get_app(this).set_display_trash(this.repository);
                 else
-                    await APP.set_display_repository(this.repository);
+                    await get_app(this).set_display_repository(this.repository);
             },
             download: () => {
                 if (this.current_item)
@@ -26,9 +26,9 @@ class ViewportToolbar extends HTMLElement {
             },
             context: () => {
                 if (this.current_item)
-                    context_menu_item(this.current_item);
+                    context_menu_item(this.current_item, div);
                 else
-                    context_menu_repository(this.repository);
+                    context_menu_repository(this, this.repository);
             }
         });
         this.hb_elements = div.hb_elements;
@@ -49,7 +49,6 @@ class ViewportToolbar extends HTMLElement {
      * @param is_trash {boolean}
      */
     async set_toolbar_path(current_item, is_trash) {
-        return;
         this.current_item = current_item;
         this.is_trash = is_trash && !current_item;
         this.hb_elements.root.innerText = this.repository.display_name.plain();
@@ -64,7 +63,7 @@ class ViewportToolbar extends HTMLElement {
                     const current_item = item;
                     const div = require('./toolbar_path_btn.hbs')(item.display_data(), {
                         select: async () => {
-                            await APP.set_display_item(current_item);
+                            await get_app(this).set_display_item(current_item);
                         }
                     });
                     if (first) {

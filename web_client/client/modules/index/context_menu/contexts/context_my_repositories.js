@@ -3,9 +3,9 @@ import {create_repository} from "../../tools/create_repository/create_repository
 
 export {context_menu_my_repositories}
 
-function context_menu_my_repositories() {
+function context_menu_my_repositories(context) {
     const ctx = new ContextMenu();
     ctx.add_action(new MenuAction("Nouveau Dépôt", "/public/images/icons/icons8-storage-96.png", async () => {
-        await create_repository();
+        await create_repository(context);
     }, false));
 }

@@ -75,31 +75,3 @@ class ModalClose extends HTMLElement {
 }
 
 customElements.define("modal-close", ModalClose);
-
-let MODAL_SINGLETON = null;
-
-const MODAL = {
-    /**
-     * @return {boolean}
-     */
-    is_open: function () {
-        return MODAL_SINGLETON && MODAL_SINGLETON.is_open();
-    },
-    /**
-     * @param content {HTMLElement}
-     * @param create_infos {CreateInfos}
-     * @return {HTMLElement}
-     */
-    open: function (content, create_infos = {}) {
-        if (!MODAL_SINGLETON) {
-            MODAL_SINGLETON = document.createElement("modal-container");
-            document.body.append(MODAL_SINGLETON);
-        }
-        return MODAL_SINGLETON.open(content, create_infos);
-    },
-    close: function () {
-        MODAL_SINGLETON.close();
-    }
-}
-
-export {MODAL}
