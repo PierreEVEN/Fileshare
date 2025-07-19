@@ -5,6 +5,7 @@ use rand::random;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
+use thumbnailer::Thumbnailer;
 use utils::config::Config;
 use utils::stats::Statistics;
 use video_server::StreamingContext;
@@ -15,6 +16,7 @@ pub struct AppCtx {
     pub database: Database,
     streaming_context: StreamingContext,
     uploads: tokio::sync::RwLock<HashMap<String, Arc<tokio::sync::RwLock<Upload>>>>,
+    pub thumbnailer: Thumbnailer
 }
 
 impl AppCtx {
@@ -29,6 +31,7 @@ impl AppCtx {
             statistics,
             database,
             uploads: Default::default(),
+            thumbnailer: Thumbnailer::new(3),
         })
     }
 

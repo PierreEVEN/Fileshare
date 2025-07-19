@@ -1,14 +1,104 @@
 use anyhow::Error;
 use std::ffi::{OsStr, OsString};
 use std::{env, fs};
+use std::collections::{HashMap};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
-use tracing::info;
+use std::sync::{Arc};
+use tokio::sync::RwLock;
+use tokio::task::JoinHandle;
+use tokio_task_pool::{Pool, SpawnResult};
+use tracing::{info};
 
-pub struct Thumbnail {}
+pub enum ThumbnailResult {
+    Ok(PathBuf),
+    NoSourceFile,
+    UnsupportedMime(String),
+    InQueue,
+    InGeneration
+}
 
-impl Thumbnail {
+struct ThumbnailerTask {
+    input: PathBuf,
+    output: PathBuf,
+    mimetype: String,
+    extension: String,
+    size: u32
+}
+
+struct TaskStatus {
+
+}
+
+pub struct Thumbnailer {
+    tasks: Arc<RwLock<HashMap<PathBuf, JoinHandle<Result<Result<ThumbnailResult, Error>, tokio_task_pool::Error>>>>>,
+    task_pool: Pool
+}
+
+impl Thumbnailer {
+    pub fn new(worker_count: usize) -> Self {
+        Self {
+            tasks: Arc::new(Default::default()),
+            task_pool: Pool::bounded(worker_count),
+        }
+    }
+
+    fn run_task(task: ThumbnailerTask) -> Result<ThumbnailResult, Error> {
+        if task.mimetype.contains("pdf") {
+            Self::pdf_thumbnail(&task.input, &task.output, task.size)?;
+            return Ok(ThumbnailResult::Ok(task.output.clone()));
+        }
+
+        let mut mime_start = task.mimetype.split("/");
+        match mime_start.next().ok_or(Error::msg("Invalid mimetype"))? {
+            "image" => {
+                Self::image_thumbnail(&task.input, &task.output, &task.mimetype, task.size)?;
+            }
+            "video" => {
+                Self::video_thumbnail(&task.input, &task.output, task.size)?;
+            }
+            _ => {
+                match task.extension.to_lowercase().as_str() {
+                    "obj" | "fbx" | "stl" | "dae" | "ply" | "glb" | "gltf" | "x3d" | "x3db" | "3ds" | "blend" => {
+                        Self::object3d_thumbnail(&task.input, &task.extension, &task.output, task.size)?;
+                    }
+                    &_ => { return Ok(ThumbnailResult::UnsupportedMime(task.mimetype.clone())); }
+                };
+            }
+        }
+
+        Ok(ThumbnailResult::Ok(task.output.clone()))
+    }
+
+    async fn create(&self, input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, extension: &String, size: u32) -> Result<ThumbnailResult, Error> {
+        if !input_path.exists() {
+            return Ok(ThumbnailResult::NoSourceFile)
+        }
+
+        let task = ThumbnailerTask {
+            input: input_path.clone(),
+            output: output_path.clone(),
+            mimetype: mimetype.clone(),
+            extension: extension.clone(),
+            size,
+        };
+
+        let task = self.task_pool.spawn(async move {
+            Self::run_task(task)
+        }).await?;
+        self.tasks.write().await.insert(input_path.clone(), task);
+        Ok(ThumbnailResult::InGeneration)
+    }
+
+    pub async fn find_or_create(&self, input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, extension: &String, size: u32) -> Result<ThumbnailResult, Error> {
+        if output_path.exists() {
+            Ok(ThumbnailResult::Ok(output_path.clone()))
+        } else {
+            self.create(input_path, output_path, mimetype, extension, size).await
+        }
+    }
+
     fn video_thumbnail(input_path: &PathBuf, output_path: &PathBuf, size: u32) -> Result<(), Error> {
         let get_duration_cmd = match Command::new("ffprobe")
             .arg("-v")
@@ -241,45 +331,5 @@ impl Thumbnail {
             )
             .map_err(|err| {Error::msg(format!("Failed to render PDF thumbnail : {err} (source file path : '{}' to '{}')", input_path.display(), output_path.display()))})?;
         Ok(())
-    }
-
-    pub fn create(input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, extension: &String, size: u32) -> Result<PathBuf, Error> {
-        if !input_path.exists() {
-            return Err(Error::msg(format!("Cannot create thumbnail : the source file {} does not exists", input_path.display())))
-        }
-        if mimetype.contains("pdf") {
-            Self::pdf_thumbnail(input_path, output_path, size)?;
-            return Ok(output_path.clone());
-        }
-
-        let mut mime_start = mimetype.split("/");
-        match mime_start.next().ok_or(Error::msg("Invalid mimetype"))? {
-            "image" => {
-                Self::image_thumbnail(input_path, output_path, mimetype, size)?;
-            }
-            "video" => {
-                Self::video_thumbnail(input_path, output_path, size)?;
-            }
-            _ => {
-                match extension.to_lowercase().as_str() {
-                    "obj" | "fbx" | "stl" | "dae" | "ply" | "glb" | "gltf" | "x3d" | "x3db" | "3ds" | "blend" => {
-                        Self::object3d_thumbnail(input_path, extension, output_path, size)?;
-                    }
-                    &_ => { return Err(Error::msg(format!("Unsupported mimetype : {mimetype}"))) }
-                };
-            }
-        }
-
-        Ok(output_path.clone())
-    }
-    pub fn mimetype<'a>() -> &'a str {
-        "image/jpeg"
-    }
-    pub fn find_or_create(input_path: &PathBuf, output_path: &PathBuf, mimetype: &String, extension: &String, size: u32) -> Result<PathBuf, Error> {
-        if output_path.exists() {
-            Ok(output_path.clone())
-        } else {
-            Self::create(input_path, output_path, mimetype, extension, size)
-        }
     }
 }

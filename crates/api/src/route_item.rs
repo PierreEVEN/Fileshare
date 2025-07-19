@@ -9,7 +9,7 @@ use database::async_zip::AsyncDirectoryZip;
 use types::enc_string::EncString;
 use crate::permissions::Permissions;
 use utils::server_error::ServerError;
-use thumbnailer::Thumbnail;
+use thumbnailer::{ThumbnailResult, Thumbnailer};
 use crate::upload::Upload;
 use anyhow::Error;
 use axum::body::Body;
@@ -19,7 +19,7 @@ use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use regex::Regex;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio_util::io::ReaderStream;
 use tracing::warn;
@@ -216,16 +216,45 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
         Some(extension) => {extension.display().to_string()}
     };
 
-    let thumbnail_path = Thumbnail::find_or_create(&Object::data_path(&file.object, &ctx.database), &Object::thumbnail_path(&file.object, &ctx.database), &file.mimetype.plain()?, &extension, 100)?;
+    let thumbnail_path = ctx.thumbnailer.find_or_create(&Object::data_path(&file.object, &ctx.database), &Object::thumbnail_path(&file.object, &ctx.database), &file.mimetype.plain()?, &extension, 100).await?;
 
-    let stream = ReaderStream::new(tokio::fs::File::open(thumbnail_path).await?);
-    let body = Body::from_stream(stream);
+    #[derive(Serialize)]
+    struct Result {
+        status: String
+    }
 
-    let headers = [
-        (header::CONTENT_TYPE, "image/webp".to_string()),
-        (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
-    ];
-    Ok((headers, body))
+    match thumbnail_path {
+        ThumbnailResult::Ok(path) => {
+            let stream = ReaderStream::new(tokio::fs::File::open(path).await?);
+            let body = Body::from_stream(stream);
+
+            let headers = [
+                (header::CONTENT_TYPE, "image/webp".to_string()),
+                (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+            ];
+            Ok((headers, body))
+        }
+        ThumbnailResult::NoSourceFile => {
+            Ok(Json(Result {
+                status: String::from("no_source")
+            }))
+        }
+        ThumbnailResult::UnsupportedMime(_) => {
+            Ok(Json(Result {
+                status: String::from("unsupported")
+            }))
+        }
+        ThumbnailResult::InQueue => {
+            Ok(Json(Result {
+                status: String::from("in_queue")
+            }))
+        }
+        ThumbnailResult::InGeneration => {
+            Ok(Json(Result {
+                status: String::from("in_generation")
+            }))
+        }
+    }
 }
 
 
