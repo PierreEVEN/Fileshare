@@ -4,7 +4,6 @@ import {FilesystemItem} from "../../../../../types/filesystem_stream";
 import {overwrite_or_restore} from "../../../tools/item_conflict/item_conflict";
 import {Message, NOTIFICATION} from "../../../tools/message_box/notification";
 import mime from 'mime';
-import {get_app} from "../../../../../app";
 
 class UploadItem {
     constructor(data, app) {
@@ -203,7 +202,7 @@ class UploadItem {
         const existing = await repository.content.find_child(name, parent_entry);
         if (existing) {
             if (existing.in_trash) {
-                const res = (await overwrite_or_restore(existing.name.plain(), existing, this.app));
+                const res = (await overwrite_or_restore(this.app, existing.name.plain(), existing));
                 if (res.canceled) {
                     throw "Annulé : le dossier parent n'existe pas"
                 }
@@ -211,7 +210,7 @@ class UploadItem {
             return existing;
         }
 
-        const directories = await get_app(this.app).fetch_api('item/new-directory', 'POST',
+        const directories = await this.app.fetch_api('item/new-directory', 'POST',
             [{
                 name: EncString.from_client(name),
                 repository: repository_id,

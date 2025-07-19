@@ -6,10 +6,10 @@ import {FilesystemItem} from "../../../../types/filesystem_stream";
 import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
 
 /**
+ * @param app {FileshareApp}
  * @param item {FilesystemItem|FilesystemItem[]}
- * @param context {HTMLElement}
  */
-function context_menu_item(item, context) {
+function context_menu_item(app, item) {
     const ctx = new ContextMenu();
 
     let multi = item instanceof Array;
@@ -19,11 +19,11 @@ function context_menu_item(item, context) {
     }
     if (!multi) {
         ctx.add_action(new MenuAction("Modifier", "/public/images/icons/icons8-edit-96.png", async () => {
-            await edit_item(item, context);
+            await edit_item(app, item);
         }, false));
         if (!item.is_regular_file) {
             ctx.add_action(new MenuAction("Nouveau Dossier", "/public/images/icons/icons8-add-folder-48.png", async () => {
-                create_directory(item.repository, item.id, context);
+                create_directory(app, item.repository, item.id);
             }, false))
         }
     }
@@ -58,16 +58,16 @@ function context_menu_item(item, context) {
 
     if (CLIPBOARD.has_items())
         ctx.add_action(new MenuAction("Coller ici", "/public/images/icons/icons8-paste-48.png", async () => {
-            await copy_items(CLIPBOARD.consume(), CLIPBOARD.move_mode(), item.repository, item.id, context);
+            await copy_items(app, CLIPBOARD.consume(), CLIPBOARD.move_mode(), item.repository, item.id);
         }, false));
 
     const in_trash = (!multi && item.in_trash) || (multi && item.length !== 0 && item[0].in_trash);
     if (in_trash)
         ctx.add_action(new MenuAction("Restorer", "/public/images/icons/icons8-restore-96.png", async () => {
-            await restore_item(item, context);
+            await restore_item(app, item);
         }, false));
     ctx.add_action(new MenuAction("Supprimer", "/public/images/icons/icons8-trash-96.png", async () => {
-        await delete_item(item, !in_trash, context);
+        await delete_item(app, item, !in_trash);
     }, false));
 }
 

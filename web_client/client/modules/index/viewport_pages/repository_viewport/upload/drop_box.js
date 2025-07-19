@@ -1,5 +1,5 @@
 import {UploadItem} from "./upload_item";
-import {get_app} from "../../../../../app";
+import {AppWidget} from "../../../../../app_widget";
 
 require("./drop-box.scss")
 
@@ -26,7 +26,7 @@ async function drop(event) {
 }
 
 
-class DropBox extends HTMLElement {
+class DropBox extends AppWidget {
     constructor() {
         super();
 
@@ -74,7 +74,7 @@ class DropBox extends HTMLElement {
             return;
         }
 
-        const app = get_app(this);
+        const app = this.get_app();
         if (event.dataTransfer.items) {
             const process_entry = async (entry, parent) => {
                 if (entry.isDirectory) {

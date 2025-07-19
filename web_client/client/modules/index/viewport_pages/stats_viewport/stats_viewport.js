@@ -1,9 +1,9 @@
 import {humanFileSize} from "../../../../utilities/utils";
-import {get_app} from "../../../../app";
+import {AppWidget} from "../../../../app_widget";
 
 require('./stats_viewport.scss')
 
-class StatsViewport extends HTMLElement {
+class StatsViewport extends AppWidget {
 
     constructor() {
         super();
@@ -33,7 +33,7 @@ class StatsViewport extends HTMLElement {
     }
 
     async refresh_data() {
-        let stats = await get_app(this).fetch_api("statistics");
+        let stats = await this.get_app().fetch_api("statistics");
 
         this._elements.categories.innerHTML = ''
         for (const [cat_name, category] of Object.entries(stats.values)) {

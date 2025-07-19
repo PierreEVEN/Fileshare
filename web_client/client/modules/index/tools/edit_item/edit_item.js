@@ -1,14 +1,13 @@
 import {EncString} from "../../../../types/encstring";
 import {FilesystemItem} from "../../../../types/filesystem_stream";
 import {Message, NOTIFICATION} from "../message_box/notification";
-import {get_app} from "../../../../app";
 
 /**
+ * @param app {FileshareApp}
  * @param item {FilesystemItem}
- * @param context {HTMLElement}
  * @return {Promise<void>}
  */
-async function edit_item(item, context) {
+async function edit_item(app, item) {
     let data = item.display_data();
     data.is_directory = !data.is_regular_file;
     const widget = require('./edit_item.hbs')(data, {
@@ -23,7 +22,7 @@ async function edit_item(item, context) {
                 open_upload: item.is_regular_file ? null : widget.hb_elements.allow_visitor_upload.checked,
             };
 
-            const items = await get_app(widget).fetch_api(`item/update`, 'POST', [new_data])
+            const items = await app.fetch_api(`item/update`, 'POST', [new_data])
                 .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de modifier l'object")));
             if (items.length !== 0) {
                 item.name = new_data.name;
@@ -34,10 +33,10 @@ async function edit_item(item, context) {
                 await item.refresh();
             }
 
-            get_app(widget).get_modal().close();
+            app.get_modal().close();
         }
     });
-    get_app(context).get_modal().open(widget, {custom_width: '600px', custom_height: '480px'})
+    app.get_modal().open(widget, {custom_width: '600px', custom_height: '480px'})
 }
 
 export {edit_item}

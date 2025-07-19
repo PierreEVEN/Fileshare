@@ -1,7 +1,6 @@
 import {GLOBAL_EVENTS} from "../../../../types/event_manager";
 import {context_menu_item} from "../../context_menu/contexts/context_item";
 import {context_menu_repository} from "../../context_menu/contexts/context_repository";
-import {get_app} from "../../../../app";
 
 class RepositoryNode {
     /**
@@ -25,13 +24,13 @@ class RepositoryNode {
                 if (this.side_bar.selected_div === div) {
                     await this.expand_node(!this._expanded);
                 } else {
-                    await get_app(this.side_bar).set_display_item(this.data);
+                    await this.side_bar.get_app().set_display_item(this.data);
                     this.side_bar.select_div(div);
                     await this.expand_node(true);
                 }
             },
             context: (e) => {
-                context_menu_item(data, div);
+                context_menu_item(this.side_bar.get_app(), data);
                 e.preventDefault();
             }
         });
@@ -138,17 +137,17 @@ class RepositoryTree {
                 if (this.side_bar.selected_div === root_div) {
                     await this.expand_node(!this._expanded);
                 } else {
-                    await get_app(this.side_bar).set_display_repository(this.repository);
+                    await this.side_bar.get_app().set_display_repository(this.repository);
                     this.side_bar.select_div(root_div);
                     await this.expand_node(true);
                 }
             },
             trash: async () => {
-                await get_app(this.side_bar).set_display_trash(this.repository);
+                await this.side_bar.get_app().set_display_trash(this.repository);
                 this.side_bar.select_div(root_div.hb_elements.trash);
             },
             context: (e) => {
-                context_menu_repository(root_div, repository);
+                context_menu_repository(side_bar.get_app(), repository);
                 e.preventDefault();
             }
         });

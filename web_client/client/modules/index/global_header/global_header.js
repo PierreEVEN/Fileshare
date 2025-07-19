@@ -1,11 +1,10 @@
 import {Authentication} from "../tools/authentication/authentication";
-import {SIDE_BAR} from "../side_bar/side_bar";
-import {get_app} from "../../../app";
 import {GLOBAL_EVENTS} from "../../../types/event_manager";
+import {AppWidget} from "../../../app_widget";
 
 require('./global_header.scss')
 
-class AppHeader extends HTMLElement{
+class AppHeader extends AppWidget {
     constructor() {
         super();
         /**
@@ -18,19 +17,19 @@ class AppHeader extends HTMLElement{
     connectedCallback() {
         const div = require('./global_header.hbs')({}, {
             login: () => {
-                Authentication.login(this);
+                Authentication.login(this.get_app());
             },
             signup: () => {
-                Authentication.signup(this);
+                Authentication.signup(this.get_app());
             },
             logout: () => {
-                Authentication.logout(this);
+                Authentication.logout(this.get_app());
             },
             menu: () => {
-                SIDE_BAR.show_mobile()
+                this.get_app().side_bar.show_mobile()
             },
             user: async () => {
-                await get_app(this).set_display_user(this._connected_user);
+                await this.get_app().set_display_user(this._connected_user);
             }
         });
 
@@ -42,7 +41,7 @@ class AppHeader extends HTMLElement{
         for (const element of div)
             this.append(element);
 
-        this.refresh(get_app(this).app_config.connected_user())
+        this.refresh(this.get_app().app_config.connected_user())
     }
 
     update_burger_icon(show) {

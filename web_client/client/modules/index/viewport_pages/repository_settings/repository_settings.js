@@ -3,11 +3,11 @@ import {EncString} from "../../../../types/encstring";
 import {Message, NOTIFICATION} from "../../tools/message_box/notification";
 import {User} from "../../../../types/user";
 import {humanFileSize} from "../../../../utilities/utils";
-import {get_app} from "../../../../app";
+import {AppWidget} from "../../../../app_widget";
 
 require('./repository_settings.scss')
 
-class RepositorySettings extends HTMLElement {
+class RepositorySettings extends AppWidget {
     constructor() {
         super();
     }
@@ -27,7 +27,7 @@ class RepositorySettings extends HTMLElement {
             return this;
 
 
-        get_app(this).fetch_api(`repository/stats`, 'POST', repository.id)
+        this.get_app().fetch_api(`repository/stats`, 'POST', repository.id)
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de lire les informations du dépôt")))
             .then(async (data) => {
                 let merged_data = repository.display_data();
@@ -49,29 +49,29 @@ class RepositorySettings extends HTMLElement {
                 merged_data.contributors = [];
                 for (const contributor of data.contributors)
                     merged_data.contributors.push({
-                        name: (await User.fetch(contributor.id)).login.plain(),
+                        name: (await User.fetch(this.get_app(), contributor.id)).login.plain(),
                         count: contributor.count
                     });
 
                 const div = require('./repository_settings.hbs')(merged_data, {
                     edit: async () => {
-                        edit_repository(repository, this);
+                        edit_repository(this.get_app(), repository);
                     },
                     add_user: () => {
                         const widget = require('./add_authorization.hbs')({}, {
                             add: async (e) => {
                                 e.preventDefault();
 
-                                let user = await User.search_from_name(EncString.from_client(widget.hb_elements.username.value, widget), true, widget);
+                                let user = await User.search_from_name(this.get_app(), EncString.from_client(widget.hb_elements.username.value), true);
                                 if (user.length === 0) {
                                     NOTIFICATION.error(new Message(`Impossible de trouver l'utilisateur '${widget.hb_elements.username.value}'`));
                                     return;
                                 }
                                 await this._register_subscription(repository.id, user[0].id, widget.hb_elements.access_type.value);
-                                get_app(this).get_modal().close();
+                                this.get_app().get_modal().close();
                             }
                         });
-                        get_app(this).get_modal().open(widget, {custom_width: '600px', custom_height: '350px'})
+                        this.get_app().get_modal().open(widget, {custom_width: '600px', custom_height: '350px'})
                     }
                 });
                 this.hb_elements = div.hb_elements;
@@ -79,7 +79,7 @@ class RepositorySettings extends HTMLElement {
                 for (const element of div)
                     this.append(element);
 
-                get_app(this).fetch_api(`repository/subscriptions`, 'POST', repository.id).then(async subscriptions => {
+                this.get_app().fetch_api(`repository/subscriptions`, 'POST', repository.id).then(async subscriptions => {
                     for (const subscription of subscriptions) {
                         await this._add_subscription(subscription);
                     }
@@ -89,7 +89,7 @@ class RepositorySettings extends HTMLElement {
     }
 
     async _add_subscription(data) {
-        let user = await User.fetch(data.owner);
+        let user = await User.fetch(this.get_app(), data.owner);
         const auth_widget = require('./authorization.hbs')({
             name: user.login.plain(),
             access_type: data.access_type,
@@ -118,7 +118,7 @@ class RepositorySettings extends HTMLElement {
                 access_type: access_type
             }]
         };
-        let subscriptions = await get_app(this).fetch_api(`repository/subscribe`, 'POST', data)
+        let subscriptions = await this.get_app().fetch_api(`repository/subscribe`, 'POST', data)
             .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible d'ajouter l'utilisateur")));
         for (const subscription of subscriptions) {
             await this._add_subscription(subscription);
@@ -126,7 +126,7 @@ class RepositorySettings extends HTMLElement {
     }
 
     async _remove_subscription(repository, owner) {
-        await get_app(this).fetch_api(`repository/unsubscribe`, 'POST', {
+        await this.get_app().fetch_api(`repository/unsubscribe`, 'POST', {
             repository: repository,
             users: [owner]
         }).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible d'ajouter l'utilisateur")));

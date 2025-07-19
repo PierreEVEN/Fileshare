@@ -1,10 +1,10 @@
-import {get_app} from "../../../../../app";
 import {context_menu_item} from "../../../context_menu/contexts/context_item";
 import {context_menu_repository} from "../../../context_menu/contexts/context_repository";
+import {AppWidget} from "../../../../../app_widget";
 
 require("./toolbar.scss");
 
-class ViewportToolbar extends HTMLElement {
+class ViewportToolbar extends AppWidget {
     constructor() {
         super();
         this.current_item = null;
@@ -14,9 +14,9 @@ class ViewportToolbar extends HTMLElement {
         let div = require('./toolbar.hbs')({}, {
             select_root: async () => {
                 if (this.is_trash)
-                    await get_app(this).set_display_trash(this.repository);
+                    await this.get_app().set_display_trash(this.repository);
                 else
-                    await get_app(this).set_display_repository(this.repository);
+                    await this.get_app().set_display_repository(this.repository);
             },
             download: () => {
                 if (this.current_item)
@@ -26,9 +26,9 @@ class ViewportToolbar extends HTMLElement {
             },
             context: () => {
                 if (this.current_item)
-                    context_menu_item(this.current_item, div);
+                    context_menu_item(this.get_app(), this.current_item);
                 else
-                    context_menu_repository(this, this.repository);
+                    context_menu_repository(this.get_app(), this.repository);
             }
         });
         this.hb_elements = div.hb_elements;
@@ -63,7 +63,7 @@ class ViewportToolbar extends HTMLElement {
                     const current_item = item;
                     const div = require('./toolbar_path_btn.hbs')(item.display_data(), {
                         select: async () => {
-                            await get_app(this).set_display_item(current_item);
+                            await this.get_app().set_display_item(current_item);
                         }
                     });
                     if (first) {

@@ -1,7 +1,7 @@
 import {Authentication} from "../tools/authentication/authentication";
-import {get_app} from "../../../app";
+import {AppWidget} from "../../../app_widget";
 
-class ErrorPage extends HTMLElement {
+class ErrorPage extends AppWidget {
     constructor() {
         super();
     }
@@ -29,8 +29,8 @@ class ErrorPage extends HTMLElement {
 
         this.innerHTML = `<h1>⚠️ Error ${code} ⚠️</h1><h2>${message}</h2>`
 
-        if (error.code === '403 Forbidden' && !get_app(this).app_config.connected_user()) {
-            Authentication.login(this);
+        if (error.code === '403 Forbidden' && !this.get_app().app_config.connected_user()) {
+            Authentication.login(this.get_app());
         }
         return this;
     }

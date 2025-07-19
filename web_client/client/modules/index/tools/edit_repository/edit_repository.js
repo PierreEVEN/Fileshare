@@ -2,15 +2,14 @@
 import {delete_repository} from "../delete_repository/delete_repository";
 import {EncString} from "../../../../types/encstring";
 import {Message, NOTIFICATION} from "../message_box/notification";
-import {get_app} from "../../../../app";
 
 require('./edit-repository.scss')
 
 /**
+ * @param app {FileshareApp}
  * @param repository {Repository}
- * @param context {HTMLElement}
  */
-function edit_repository(repository, context) {
+function edit_repository(app, repository) {
     let data = repository.display_data();
     data.prop_public = repository.status.toString() === 'Public';
     data.prop_hidden = repository.status.toString() === 'Hidden';
@@ -31,7 +30,7 @@ function edit_repository(repository, context) {
                 description: EncString.from_client(description.length === 0 ? null : description)
             };
 
-            const repositories = await get_app(widget).fetch_api(`repository/update`, 'POST', [new_data])
+            const repositories = await app.fetch_api(`repository/update`, 'POST', [new_data])
                 .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de modifier le dépôt")));
             if (repositories.length !== 0) {
                 repository.display_name = new_data.display_name;
@@ -44,13 +43,13 @@ function edit_repository(repository, context) {
                 repository.refresh();
             }
 
-            get_app(widget).get_modal().close();
+            app.get_modal().close();
         },
         delete: async () => {
-            await delete_repository(repository);
+            await delete_repository(app, repository);
         }
     });
-    get_app(context).get_modal().open(widget, {custom_width: '800px', custom_height: '85%'})
+    app.get_modal().open(widget, {custom_width: '800px', custom_height: '85%'})
 }
 
 export {edit_repository}

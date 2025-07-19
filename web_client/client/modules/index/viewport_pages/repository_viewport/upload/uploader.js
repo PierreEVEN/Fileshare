@@ -3,7 +3,7 @@ import {DirectoryContentProvider} from "../../../../../types/viewport_content/pr
 import {UploadProcessor} from "./upload_processor";
 import {EventManager} from "../../../../../types/event_manager";
 import {humanFileSize, seconds_to_str} from "../../../../../utilities/utils";
-import {get_app} from "../../../../../app";
+import {AppWidget} from "../../../../../app_widget";
 
 require("./uploader.scss")
 
@@ -70,7 +70,7 @@ async function open_file_picker(directory, app) {
     })
 }
 
-class Uploader extends HTMLElement {
+class Uploader extends AppWidget {
     constructor() {
         super();
     }
@@ -99,12 +99,12 @@ class Uploader extends HTMLElement {
                 this.set_pause(!this.pause);
             },
             add_files: async () => {
-                for (const item of await open_file_picker(false, get_app(this))) {
+                for (const item of await open_file_picker(false, this.get_app())) {
                     await this.add_item(item)
                 }
             },
             add_directory: async () => {
-                for (const item of await open_file_picker(true, get_app(this))) {
+                for (const item of await open_file_picker(true, this.get_app())) {
                     await this.add_item(item)
                 }
             }

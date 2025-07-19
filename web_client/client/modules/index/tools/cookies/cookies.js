@@ -1,5 +1,4 @@
 import {Message, NOTIFICATION} from "../message_box/notification";
-import {get_app} from "../../../../app";
 
 const dayjs = require('dayjs')
 const utc = require("dayjs/plugin/utc");
@@ -126,15 +125,15 @@ class AppCookies {
     }
 
     /**
+     * @param app {FileshareApp}
      * @param authentication_token {Object}
      * @param stay_connected {boolean}
-     * @param context {context}
      */
-    async login(authentication_token, stay_connected, context) {
+    async login(app, authentication_token, stay_connected) {
         if (authentication_token && authentication_token.token) {
             if (!this._allow_cookies && stay_connected) {
                 this._allow_cookies = await new Promise((resolve) => {
-                    get_app(context).get_modal().open(require('./ask_for_cookies.hbs')({}, {
+                    app.get_modal().open(require('./ask_for_cookies.hbs')({}, {
                         validate: () => {
                             if (this._cookies_div)
                                 this._cookies_div.remove();

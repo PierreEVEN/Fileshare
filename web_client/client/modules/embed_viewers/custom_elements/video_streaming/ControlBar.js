@@ -270,7 +270,6 @@ class ControlBar {
     };
 
     onSeeking = (event) => {
-        //TODO Add call to seek in trick-mode once implemented. Preview Frames.
         this.seeking = true;
         let mouseTime = this.calculateTimeByEvent(event);
         if (this.seekbarPlay) {
@@ -1023,7 +1022,7 @@ class ControlBar {
                 inputEvent.initEvent('input', true, true);
                 e.target.dispatchEvent(inputEvent);
                 if (addChange) {
-                    e.target.removeEventListener('mouseup', fireChange);//TODO can not clean up this event on destroy. refactor needed!
+                    e.target.removeEventListener('mouseup', fireChange);
                     e.target.addEventListener('mouseup', fireChange);
                 }
             }

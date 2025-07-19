@@ -1,8 +1,8 @@
 import {humanFileSize} from "../../../../../utilities/utils";
 import {Message, NOTIFICATION} from "../../../tools/message_box/notification";
-import {get_app} from "../../../../../app";
+import {AppWidget} from "../../../../../app_widget";
 
-class CarouselOverlay extends HTMLElement {
+class CarouselOverlay extends AppWidget {
     constructor() {
         super();
     }
@@ -28,7 +28,7 @@ class CarouselOverlay extends HTMLElement {
                 item.download();
             },
             share: async () => {
-                let url = `${get_app(this).app_config.origin()}/api/item/get/${item.id}`;
+                let url = `${this.get_app().app_config.origin()}/api/item/get/${item.id}`;
                 await navigator.clipboard.writeText(url);
                 NOTIFICATION.success(new Message(url).title("Lien copié dans le presse-papier"))
             }

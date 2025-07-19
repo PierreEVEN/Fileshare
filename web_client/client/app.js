@@ -22,7 +22,7 @@ import "./modules/index/viewport_pages/error_page";
 import "./modules/index/viewport_pages/repository_viewport/repository_viewport";
 import {APP_COOKIES} from "./modules/index/tools/cookies/cookies";
 import {Authentication} from "./modules/index/tools/authentication/authentication";
-import {SIDE_BAR} from "./modules/index/side_bar/side_bar";
+import "./modules/index/side_bar/side_bar";
 
 class FileshareApp extends HTMLElement {
     constructor() {
@@ -34,7 +34,6 @@ class FileshareApp extends HTMLElement {
          * @type {AppConfig}
          */
         this.app_config = new AppConfig(this);
-
     }
 
     connectedCallback() {
@@ -53,6 +52,8 @@ class FileshareApp extends HTMLElement {
             else
                 layout.hb_elements.mobile_bg.classList.remove('selected')
         });
+
+        this.side_bar = this._elements.side_bar;
 
         this._elements.side_bar.events.add('show_mobile', (show) => {
             this._elements.app_header.update_burger_icon(show);
@@ -161,7 +162,7 @@ class FileshareApp extends HTMLElement {
             headers.append('Content-Type', 'application/json');
         headers.append('Accept', 'application/json');
         headers.append('content-authtoken', custom_token ? custom_token : APP_COOKIES.get_token());
-        const result = await fetch(`${get_app(this).app_config.origin()}/api/${path}`, {
+        const result = await fetch(`${this.app_config.origin()}/api/${path}`, {
             method: method,
             body: body ? JSON.stringify(body) : null,
             headers: headers
@@ -212,19 +213,3 @@ class FileshareApp extends HTMLElement {
 }
 
 customElements.define("fileshare-app", FileshareApp);
-
-/**
- * @param context {HTMLElement}
- * @return {FileshareApp}
- */
-function get_app(context) {
-    if (!context)
-        console.error("Cannot get app : invalid context");
-    let app = context.closest && context.closest('fileshare-app')
-    if (!app)
-        console.error("Cannot get app : Cannot find app from context");
-    return app;
-}
-
-
-export {get_app}

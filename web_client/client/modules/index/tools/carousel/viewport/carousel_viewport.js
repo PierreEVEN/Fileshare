@@ -3,13 +3,13 @@ const {get} = require("../../../../embed_viewers/distant_repos");
 require("../../../../embed_viewers/index")
 
 require('./carousel_viewport.scss')
-const {get_app} = require("../../../../../app");
+const {AppWidget} = require("../../../../../app_widget");
 
 function clamp(s, a, b) {
     return s < a ? a : s > b ? b : s;
 }
 
-class CarouselViewport extends HTMLElement{
+class CarouselViewport extends AppWidget{
     constructor() {
         super();
         this.scale = 1;
@@ -110,7 +110,7 @@ class CarouselViewport extends HTMLElement{
                 viewer.innerHTML = `<img class="item-small" src="${get_mime_icon_path(item.mimetype.plain())}" alt="document: ${item.name}"/>`;
             // Distant repos
             if (item.id) {
-                viewer.innerHTML = get(get_app(this), item.display_data());
+                viewer.innerHTML = get(this.get_app(), item.display_data());
             }
             // Filesystem file
             else if (item.lastModified) {

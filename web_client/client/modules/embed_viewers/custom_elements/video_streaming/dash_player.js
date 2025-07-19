@@ -1,9 +1,9 @@
 import * as dashjs from 'dashjs';
 import {ControlBar} from "./ControlBar";
-import {get_app} from "../../../../app";
+import {AppWidget} from "../../../../app_widget";
 require('./controlbar.scss')
 
-class DashPlayer extends HTMLElement {
+class DashPlayer extends AppWidget {
     constructor() {
         super();
         if (this.hasAttribute('item'))
@@ -13,7 +13,7 @@ class DashPlayer extends HTMLElement {
     connectedCallback() {
         if (!this.item)
             return;
-        get_app(this).fetch_api(`stream/create/${this.item}`, 'POST', this.item)
+        this.get_app().fetch_api(`stream/create/${this.item}`, 'POST', this.item)
             .then(async stream_id => { await this._init(stream_id); })
     }
 
@@ -58,7 +58,7 @@ class DashPlayer extends HTMLElement {
 
     disconnectedCallback() {
         if (this.stream_id)
-            get_app(this).fetch_api(`stream/${this.stream_id}/kill`, 'POST')
+            this.get_app().fetch_api(`stream/${this.stream_id}/kill`, 'POST')
                 .catch(console.error);
         if (this.control_bar)
             this.control_bar.destroy();

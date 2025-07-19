@@ -1,7 +1,6 @@
 import {EncString} from "./encstring";
 import {Message, NOTIFICATION} from "../modules/index/tools/message_box/notification";
 import {EventManager} from "./event_manager";
-import {get_app} from "../app";
 
 class UserRole {
     constructor(data) {
@@ -96,16 +95,22 @@ class User {
         return new User(data);
     }
 
-
-    remove() {
+    /**
+     * @param app {FileshareApp}
+     */
+    remove(app) {
         this._build_from_data({id: 0});
         this.events.broadcast('refresh', this);
-        if (get_app(this).app_config.connected_user() === this)
-            get_app(this).app_config.set_connected_user(null);
+        if (app.app_config.connected_user() === this)
+            app.app_config.set_connected_user(null);
     }
 
-    async refresh(context) {
-        let data = await get_app(context).fetch_api("user/find", "POST", [this.id])
+    /**
+     * @param app {FileshareApp}
+     * @returns {Promise<void>}
+     */
+    async refresh(app) {
+        let data = await app.fetch_api("user/find", "POST", [this.id])
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Impossible de trouver l'utilisateur ${this.id}`)));
         if (data.length !== 0) {
             this._build_from_data(data[0]);
@@ -122,31 +127,31 @@ class User {
     }
 
     /**
+     * @param app {FileshareApp}
      * @param name {EncString}
      * @param exact {boolean}
-     * @param context {HTMLElement}
      * @returns {Promise<User[]>}
      */
-    static async search_from_name(name, exact, context) {
-        let users = await get_app(context).fetch_api("user/search", "POST", {name: name, exact: exact})
+    static async search_from_name(app, name, exact) {
+        let users = await app.fetch_api("user/search", "POST", {name: name, exact: exact})
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Recherche échouée`)));
         const found_users = [];
         for (const user_id of users) {
-            found_users.push(await User.fetch(user_id));
+            found_users.push(await User.fetch(app, user_id));
         }
         return found_users;
     }
 
     /**
+     * @param app {FileshareApp}
      * @param id {number}
-     * @param context {HTMLElement}
      * @returns {Promise<User>}
      */
-    static async fetch(id, context) {
+    static async fetch(app, id) {
         const current = User._LOCAL_CACHE.get(id);
         if (current)
             return current;
-        let user = await get_app(context).fetch_api("user/find", "POST", [id])
+        let user = await app.fetch_api("user/find", "POST", [id])
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Impossible de trouver l'utilisateur ${id}`)));
         if (user.length !== 0)
             return User.new(user[0]);

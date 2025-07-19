@@ -110,14 +110,14 @@ class State {
             else
                 await this.app.set_display_repository(repository);
         } else if (state.user) {
-            let user = await User.fetch(state.user);
+            let user = await User.fetch(this.app, state.user);
             await this.app.set_display_user(user);
         }
         this._disable_state = false;
     }
 
     async _get_user_name(id) {
-        return (await User.fetch(id)).name.encoded()
+        return (await User.fetch(this.app, id)).name.encoded()
     }
 }
 

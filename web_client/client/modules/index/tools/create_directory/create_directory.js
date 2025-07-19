@@ -2,15 +2,14 @@ import {EncString} from "../../../../types/encstring";
 import {FilesystemItem, FilesystemStream} from "../../../../types/filesystem_stream";
 import {overwrite_or_restore} from "../item_conflict/item_conflict";
 import {Message, NOTIFICATION} from "../message_box/notification";
-import {get_app} from "../../../../app";
 
 
 /**
+ * @param app {FileshareApp}
  * @param repository {number}
  * @param parent_item {number|null}
- * @param context {HTMLElement}
  */
-function create_directory(repository, parent_item = null, context) {
+function create_directory(app, repository, parent_item = null) {
     const widget = require('./create_directory.hbs')({}, {
         mkdir: async (e) => {
             e.preventDefault();
@@ -23,7 +22,7 @@ function create_directory(repository, parent_item = null, context) {
                 }
             }
 
-            const directories = await get_app(context).fetch_api('item/new-directory', 'POST',
+            const directories = await app.fetch_api('item/new-directory', 'POST',
                 [{
                     name: EncString.from_client(new_name),
                     repository: repository,
@@ -35,10 +34,10 @@ function create_directory(repository, parent_item = null, context) {
                 await FilesystemItem.new(item);
             }
 
-            get_app(widget).get_modal().close();
+            app.get_modal().close();
         }
     });
-    get_app(context).get_modal().open(widget, {custom_width: '500px', custom_height: '250px'})
+    app.get_modal().open(widget, {custom_width: '500px', custom_height: '250px'})
 }
 
 export {create_directory}

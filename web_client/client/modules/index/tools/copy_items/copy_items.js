@@ -1,6 +1,5 @@
 import {Message, NOTIFICATION} from "../message_box/notification";
 import {FilesystemItem} from "../../../../types/filesystem_stream";
-import {get_app} from "../../../../app";
 
 class Clipboard {
     constructor() {
@@ -51,14 +50,14 @@ class Clipboard {
 let CLIPBOARD = new Clipboard();
 
 /**
+ * @param app {FileshareApp}
  * @param items {FilesystemItem[]}
  * @param remove_sources {boolean}
  * @param destination_repository {number}
  * @param destination_directory {number|null}
- * @param context {HTMLElement}
  * @return {Promise<void>}
  */
-async function copy_items(items, remove_sources, destination_repository, destination_directory = null, context) {
+async function copy_items(app, items, remove_sources, destination_repository, destination_directory = null) {
     /**
      * @type {Map<number, FilesystemItem>}
      */
@@ -73,7 +72,7 @@ async function copy_items(items, remove_sources, destination_repository, destina
     /**
      * @type {FilesystemItem[]}
      */
-    const new_items = await get_app(context).fetch_api(`item/copy`, 'POST',
+    const new_items = await app.fetch_api(`item/copy`, 'POST',
         {
             destination_repository: destination_repository,
             destination_directory: destination_directory,
