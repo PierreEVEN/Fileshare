@@ -65,7 +65,7 @@ class FileshareApp extends HTMLElement {
                 this.set_viewport_content(document.createElement('page-error').set_error(this.app_config.error()));
             else {
                 if (this.app_config.show_stats()) {
-                    this.set_viewport_content(document.createElement('page-stats'));
+                    await this.set_display_stats();
                 } else if (await this.app_config.display_item()) {
                     await this.set_display_item(await this.app_config.display_item());
                     await this._elements.side_bar.expand_to(this.app_config.display_repository(), await this.app_config.display_item(), false);
@@ -75,13 +75,13 @@ class FileshareApp extends HTMLElement {
                         await this.set_display_trash(this.app_config.display_repository());
                     else if (this.app_config.repository_settings()) {
                         await this.state.open_repository_settings(this.app_config.display_repository());
-                        this.set_display_repository_settings(this.app_config.display_repository());
+                        await this.set_display_repository_settings(this.app_config.display_repository());
                     }
                     else
                         await this.set_display_repository(this.app_config.display_repository());
                 }
                 else if (this.app_config.display_user()) {
-                    this.set_display_user(this.app_config.display_user());
+                    await this.set_display_user(this.app_config.display_user());
                 } else {
                     if (screen.availHeight > screen.availWidth)
                         await this._elements.side_bar.show_mobile();
@@ -115,6 +115,14 @@ class FileshareApp extends HTMLElement {
     }
 
     /**
+     * @return {Promise<void>}
+     */
+    async set_display_stats() {
+        this.set_viewport_content(document.createElement('page-stats'));
+        await this.state.open_stats();
+    }
+
+    /**
      * @param repository {Repository}
      * @return {Promise<void>}
      */
@@ -130,12 +138,15 @@ class FileshareApp extends HTMLElement {
             return this.set_viewport_content(document.createElement('page-repository'));
         }
     }
-    set_display_user(new_user) {
+
+    async set_display_user(new_user) {
         this.set_viewport_content(document.createElement('page-user').set_user(new_user));
+        await this.state.open_user(new_user);
     }
 
-    set_display_repository_settings(repository) {
+    async set_display_repository_settings(repository) {
         this.set_viewport_content(document.createElement('page-repository-settings').set_repository(repository));
+        await this.state.open_repository_settings(repository);
     }
 
     set_viewport_content(page_content) {
