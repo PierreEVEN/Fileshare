@@ -1,44 +1,11 @@
-use std::env;
-use anyhow::{Error};
-use pdfium_render::prelude::{Pdfium, PdfiumLibraryBindings};
 use crate::processors::Processor;
-use crate::{ThumbnailerTask};
+use crate::ThumbnailerTask;
+use anyhow::Error;
+use std::ffi::OsString;
+use std::fs;
+use std::process::{Command, Stdio};
 
 pub struct PdfProcessor;
-
-impl PdfProcessor {
-    fn get_library() -> Result<Box<dyn PdfiumLibraryBindings>, Error> {
-        // binaries available at https://github.com/bblanchon/pdfium-binaries/releases
-        let path = if cfg!(target_pointer_width = "64") {
-            if cfg!(target_os = "windows") {
-                Some(env::current_exe()?.parent().unwrap().join("pdfium.dll"))
-            } else if cfg!(target_os = "linux") {
-                Some(env::current_exe()?.parent().unwrap().join("libpdfium.so"))
-            } else { None }
-        } else { None };
-
-
-        let path = if let Some(path) = path {
-            path
-        } else {
-            return Err(Error::msg("Failed to find pdfium binary"));
-        };
-
-        if !path.exists() {
-            return Err(Error::msg(format!("Invalid pdfium dll path : {}", path.display())));
-        }
-
-
-        match Pdfium::bind_to_library(path) {
-            Ok(bindings) => {
-                Ok(bindings)
-            }
-            Err(err) => {
-                Err(Error::msg(format!("Failed to link pdfium : {err}")))
-            }
-        }
-    }
-}
 
 impl Processor for PdfProcessor {
     fn name(&self) -> String {
@@ -46,33 +13,57 @@ impl Processor for PdfProcessor {
     }
 
     fn available(&self) -> Result<(), Error> {
-        Self::get_library()?;
-        Ok(())
+        match Command::new("magick")
+            .arg("-list")
+            .arg("delegate")
+            .output() {
+            Ok(output) => {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                if stdout.lines().any(|line| line.trim().starts_with("pdf")) {
+                    Ok(())
+                } else {
+                    Err(Error::msg("Imagemagick does not support pdf format : check if ghostscript is installed"))
+                }
+            }
+            Err(err) => {
+                Err(Error::msg(format!("Imagemagick is required : {err}")))
+            }
+        }
     }
 
     fn run(&self, task: &ThumbnailerTask) -> Result<bool, Error> {
         if task.mimetype.contains("pdf") {
-            use pdfium_render::prelude::*;
-            
-            let pdfium = Pdfium::new(Self::get_library()?);
-            let document = pdfium.load_pdf_from_file(&task.input, None)?;
+            fs::create_dir_all(task.output.parent().unwrap())?;
+            let cmd = match Command::new("mogrify")
+                .arg("-format")
+                .arg("webp")
+                .arg("-interlace")
+                .arg("plane")
+                .arg("-quality")
+                .arg("70%")
+                .arg("-alpha")
+                .arg("off")
+                .arg("-path")
+                .arg(task.output.parent().unwrap())
+                .arg("-thumbnail")
+                .arg(format!("{}x{}", task.size, task.size))
+                .arg("-auto-orient")
+                .arg(&format!("{}[0]", task.input.display()))
+                .stderr(Stdio::inherit())
+                .stdout(Stdio::inherit())
+                .spawn() {
+                Ok(cmd) => { cmd }
+                Err(err) => {
+                    return Err(Error::msg(format!("This server doesn't support thumbnails because imagemagick is not available : {}", err)))
+                }
+            };
+            cmd.wait_with_output()?;
 
-            let render_config = PdfRenderConfig::new()
-                .set_target_width(task.size as Pixels)
-                .set_maximum_height(task.size as Pixels)
-                .rotate_if_landscape(PdfPageRenderRotation::Degrees90, true);
-
-            document.pages().first()?.render_with_config(&render_config)?
-                .as_image()
-                .into_rgb8()
-                .save_with_format(
-                    &task.output,
-                    image::ImageFormat::WebP,
-                )
-                .map_err(|err| {Error::msg(format!("Failed to render PDF thumbnail : {err} (source file path : '{}' to '{}')", task.input.display(), task.output.display()))})?;
+            let mut generated_file_name = OsString::from(task.output.file_name().unwrap());
+            generated_file_name.push(".webp");
+            fs::rename(task.output.parent().unwrap().join(generated_file_name), &task.output)?;
             Ok(true)
-        }
-        else {
+        } else {
             Ok(false)
         }
     }

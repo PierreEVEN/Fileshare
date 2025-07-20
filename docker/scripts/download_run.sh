@@ -4,7 +4,6 @@ VERSION=${1:-latest}
 
 # Remove old binary
 rm -rf /opt/fileshare/fileshare-server
-rm -rf /opt/fileshare/libpdfium.so
 rm -rf /opt/fileshare/public
 rm -rf /opt/fileshare/migrations
 rm -rf /opt/fileshare/f3d

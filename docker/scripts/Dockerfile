@@ -5,7 +5,7 @@ FROM alpine:latest
 ARG VERSION=latest
 
 RUN apk update
-RUN apk add wget unzip dos2unix ffmpeg imagemagick libraw blender vtk assimp alembic xvfb mesa-gles mesa-osmesa mesa-dri-gallium py3-numpy
+RUN apk add wget unzip dos2unix ffmpeg imagemagick libraw blender vtk assimp alembic xvfb mesa-gles mesa-osmesa mesa-dri-gallium py3-numpy ghostscript
 RUN mkdir /opt/fileshare
 RUN mkdir /opt/fileshare/migrations
 

@@ -130,10 +130,6 @@ jobs:
           name: webapp-artifact
           path: ./artifact_web_app/public
 
-      # Download Pdfium binaries
-      - run: wget https://github.com/bblanchon/pdfium-binaries/releases/latest/download/pdfium-linux-x64.tgz
-      - run: tar zxvf pdfium-linux-x64.tgz
-
       # Create Linux server zip
       - name: Retrieve artifact Rust/Linux
         uses: actions/download-artifact@main
@@ -143,7 +139,6 @@ jobs:
 
       - run: mkdir fileshare
       - run: mkdir fileshare/migrations
-      - run: cp ./lib/libpdfium.so ./fileshare/
       - run: mv ./artifact_rust_linux/migrations/* ./fileshare/migrations
       - run: mv ./artifact_rust_linux/target/release/fileshare-server ./fileshare/
       - run: cp -r ./artifact_web_app/* ./fileshare/
@@ -160,7 +155,6 @@ jobs:
       - run: mkdir fileshare
       - run: mkdir fileshare/migrations
       - run: mkdir fileshare/f3d
-      - run: cp ./lib/libpdfium.so ./fileshare/
       - run: cp -r ./artifact_f3d_linux/* ./fileshare/f3d
       - run: mv ./artifact_rust_linux_musl/migrations/* ./fileshare/migrations
       - run: mv ./artifact_rust_linux_musl/target/x86_64-unknown-linux-musl/release/fileshare-server ./fileshare/
