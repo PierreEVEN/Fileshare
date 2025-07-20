@@ -46,9 +46,9 @@ document.addEventListener('keydown', async function (event) {
                 if (CURRENT_VIEWPORT.content.get_content_provider() instanceof DirectoryContentProvider) {
                     let item = CURRENT_VIEWPORT.content.get_content_provider().directory;
                     if (item.parent_item)
-                        await this.get_app().set_display_item(await item.filesystem().fetch_item(item.parent_item));
+                        await CURRENT_VIEWPORT.get_app().set_display_item(await item.filesystem().fetch_item(item.parent_item));
                     else
-                        await CURRENT_VIEWPORT.get_app().set_display_repository(await Repository.find(this.get_app(), item.repository));
+                        await CURRENT_VIEWPORT.get_app().set_display_repository(await Repository.find(CURRENT_VIEWPORT.get_app(), item.repository));
                     CURRENT_VIEWPORT.selector.select_item(item.id, false, false);
                 }
             }
@@ -73,14 +73,14 @@ document.addEventListener('keydown', async function (event) {
     if (event.key === 'ArrowUp') {
         if (CURRENT_VIEWPORT.get_app().get_modal().is_open() || CURRENT_VIEWPORT.carousel_list)
             return;
-        const item_per_row = CURRENT_VIEWPORT.container.offsetWidth / 120;
+        const item_per_row = CURRENT_VIEWPORT.offsetWidth / 120;
         for (let i = 1; i < item_per_row; ++i)
             await CURRENT_VIEWPORT.selector.select_previous(event.ctrlKey, event.shiftKey);
     }
     if (event.key === 'ArrowDown') {
         if (CURRENT_VIEWPORT.get_app().get_modal().is_open() || CURRENT_VIEWPORT.carousel_list)
             return;
-        const item_per_row = CURRENT_VIEWPORT.container.offsetWidth / 120;
+        const item_per_row = CURRENT_VIEWPORT.offsetWidth / 120;
         for (let i = 1; i < item_per_row; ++i)
             await CURRENT_VIEWPORT.selector.select_next(event.ctrlKey, event.shiftKey);
     }
@@ -91,10 +91,7 @@ document.addEventListener('keydown', async function (event) {
         if (CURRENT_VIEWPORT.selector.get_last_selected_item()) {
             let data = await CURRENT_VIEWPORT.try_get_item_data(CURRENT_VIEWPORT.selector.get_last_selected_item());
             if (!data || data.in_trash) return;
-            if (data.is_regular_file) {
-                await CURRENT_VIEWPORT.open_carousel(data)
-            } else
-                await CURRENT_VIEWPORT.open_item(data);
+            await CURRENT_VIEWPORT.get_app().set_display_item(data);
         }
     }
     if (!CURRENT_VIEWPORT.get_app().get_modal().is_open() && !CURRENT_VIEWPORT.carousel_list) {

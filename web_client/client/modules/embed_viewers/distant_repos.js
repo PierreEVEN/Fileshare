@@ -52,7 +52,7 @@ function get(app, item) {
             return `<document-code src="${url}" class="language-plain"></document-code>`
     }
 
-    return `<img class="item-small" src="${thumbnail_url}" alt="fichier: ${item.name}" onError="this.onError = null; this.src='${get_mime_icon_path(item.mimetype)}'"/>`;
+    return `<lazy-img class="item-large" src="${thumbnail_url}" alternate-src="${get_mime_icon_path(item.mimetype)}""/>`
 }
 
 export {get}

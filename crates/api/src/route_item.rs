@@ -9,7 +9,7 @@ use database::async_zip::AsyncDirectoryZip;
 use types::enc_string::EncString;
 use crate::permissions::Permissions;
 use utils::server_error::ServerError;
-use thumbnailer::{ThumbnailResult, Thumbnailer};
+use thumbnailer::{ThumbnailResult};
 use crate::upload::Upload;
 use anyhow::Error;
 use axum::body::Body;
@@ -22,7 +22,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio_util::io::ReaderStream;
-use tracing::warn;
+use tracing::{error, warn};
 use database::repository::DbRepository;
 use types::database_ids::{DatabaseId, ItemId, RepositoryId};
 use types::item::{CreateDirectoryParams, DirectoryData, Item};
@@ -202,10 +202,13 @@ async fn delete(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl
 
 /// Get item thumbnail if available
 async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, request: Request) -> Result<impl IntoResponse, ServerError> {
+
     let item = DbItem::from_id(&ctx.database, &ItemId::from(id), Trash::Both).await?;
     let permissions = Permissions::new(&request)?;
-    permissions.view_item(&ctx.database, &item).await?.require()?;
-
+    if let Err(err) = permissions.view_item(&ctx.database, &item).await?.require() {
+        error!("Cannot get thumbnail : {}", err);
+        return Err(err)
+    }
     let file = match &item.file {
         None => { return Err(ServerError::msg(StatusCode::NOT_ACCEPTABLE, "Cannot generate thumbnail for a directory")) }
         Some(f) => { f }
@@ -229,30 +232,36 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
             let body = Body::from_stream(stream);
 
             let headers = [
+                (header::CACHE_CONTROL, "max-age=604800".to_string()),
                 (header::CONTENT_TYPE, "image/webp".to_string()),
                 (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
             ];
-            Ok((headers, body))
+            Ok((headers, body).into_response())
         }
         ThumbnailResult::NoSourceFile => {
-            Ok(Json(Result {
+            Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())],Json(Result {
                 status: String::from("no_source")
-            }))
+            })).into_response())
         }
         ThumbnailResult::UnsupportedMime(_) => {
-            Ok(Json(Result {
+            Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())],Json(Result {
                 status: String::from("unsupported")
-            }))
+            })).into_response())
         }
         ThumbnailResult::InQueue => {
-            Ok(Json(Result {
+            Ok(([(header::CACHE_CONTROL, "no-store".to_string())],Json(Result {
                 status: String::from("in_queue")
-            }))
+            })).into_response())
         }
         ThumbnailResult::InGeneration => {
-            Ok(Json(Result {
+            Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
                 status: String::from("in_generation")
-            }))
+            })).into_response())
+        }
+        ThumbnailResult::UnknownStatus => {
+            Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                status: String::from("unknown_status")
+            })).into_response())
         }
     }
 }
@@ -335,70 +344,6 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
     permissions.view_item(&ctx.database, &item).await?.require()?;
 
     if let Some(file) = item.file {
-        /*
-                let mimetype = file.mimetype.plain()?;
-                if mimetype.starts_with("video/") {
-                    let object = Object::from_id(&ctx.database, &file.object).await?;
-        
-                    let headers = request.headers();
-                    if let Some(range) = headers.get("range") {
-                        let range = range.to_str()?.to_string();
-                        warn!("Accept range for video : {:?}", range);
-        
-                        let mut range_type = range.split("=");
-                        if let Some(range_type) = range_type.next() {
-                            if range_type != "bytes" {
-                                return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range type"));
-                            }
-                        } else {
-                            return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range header"));
-                        }
-                        let range_value = match range_type.next() {
-                            None => { return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "invalid range value")); }
-                            Some(value) => { value }
-                        };
-        
-                        let mut initial_values = range_value.split('-');
-        
-                        let start = match initial_values.next() {
-                            None => { return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, "cannot read range start")); }
-                            Some(start) => { i64::from_str(start)? }
-                        };
-        
-        
-                        let mut data_file = tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?;
-        
-                        if let Err(err) = data_file.seek(SeekFrom::Start(start as u64)).await {
-                            return Err(ServerError::msg(StatusCode::RANGE_NOT_SATISFIABLE, format!("Failed to seek to desired range : {err}")));
-                        }
-        
-                        let stream = ReaderStream::new(data_file);
-                        let body = Body::from_stream(stream);
-        
-                        let headers = [
-                            (header::CONTENT_TYPE, mimetype.clone()),
-                            (header::CONTENT_LENGTH, (file.size - start).to_string()),
-                            (header::CONTENT_RANGE, format!("{}-{}/{}", start, file.size, file.size)),
-                            (header::ACCEPT_RANGES, "bytes".to_string()),
-                            (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
-                        ];
-                        return Ok((StatusCode::PARTIAL_CONTENT, headers, body).into_response());
-                    }
-        
-                    warn!("Respond video with range");
-        
-                    let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
-                    let body = Body::from_stream(stream);
-        
-                    let headers = [
-                        (header::CONTENT_TYPE, file.mimetype.plain()?),
-                        (header::CONTENT_LENGTH, file.size.to_string()),
-                        (header::ACCEPT_RANGES, "bytes".to_string()),
-                        (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
-                    ];
-                    return Ok((StatusCode::OK, headers, body).into_response());
-                }
-        */
         let object = Object::from_id(&ctx.database, &file.object).await?;
 
         let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);

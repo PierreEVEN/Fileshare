@@ -6,21 +6,21 @@ function from_distant_repos(item) {
     switch (mime[0]) {
         case 'video':
             return `<div class="item-small">
-                            <img class="item-background" src="${thumbnail_url}" alt="fichier: '${item.name}" onError="this.onError = undefined; src='/public/images/icons/mime-icons/video.png'"/>
+                            <lazy-img class="item-small" src="${thumbnail_url}" alt="fichier: ${item.name}" alternate-src="/public/images/icons/mime-icons/video.png"/>
                             <img class="item-overlay" src="/public/images/icons/icons8-play-64.png" alt="play button">
                         </div>`
         case 'image':
-            return `<img class="item-small" src="${thumbnail_url}" alt="fichier: ${item.name}" onError="this.onError = null; this.src='/public/images/icons/mime-icons/image.png'"/>`
+            return `<lazy-img class="item-small" src="${thumbnail_url}" alt="fichier: ${item.name}" alternate-src='/public/images/icons/mime-icons/image.png'/>`;
         case 'application':
             switch (mime[1]) {
                 case 'x-pdf':
                 case 'pdf':
-                    return `<img class="item-small" src="${thumbnail_url}" alt="fichier: ${item.name}" onError="this.onError = null; this.src='/public/images/icons/mime-icons/image.png'"/>`
+                    return `<lazy-img class="item-small" src="${thumbnail_url}" alt="fichier: ${item.name}" alternate-src='/public/images/icons/mime-icons/image.png'/>`;
             }
             break;
     }
 
-    return `<img class="item-small" src="${thumbnail_url}" alt="fichier: ${item.name}" onError="this.onError = null; this.src='${get_mime_icon_path(item.mimetype)}'"/>`;
+    return `<lazy-img class="item-small" src="${thumbnail_url}" alt="fichier: ${item.name}" alternate-src="${get_mime_icon_path(item.mimetype)}"/>`;
 }
 
 function from_local_path(item) {

@@ -3,117 +3,141 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::time::Duration;
+use serde_inline_default::serde_inline_default;
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PostgresConfig {
+    #[serde_inline_default("postgres".to_string())]
     pub username: String,
+
+    #[serde_inline_default("password".to_string())]
     pub secret: String,
+
+    #[serde_inline_default("127.0.0.1".to_string())]
     pub url: String,
+
+    #[serde_inline_default(5432)]
     pub port: u16,
+
+    #[serde_inline_default("postgres".to_string())]
     pub database: String,
+
+    #[serde_inline_default(false)]
     pub ssl_mode: bool,
+
+    #[serde_inline_default("fileshare_v3".to_string())]
     pub scheme_name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EMailerConfig {
+    #[serde_inline_default("noreply@fileshare.com".to_string())]
     pub source_address: String,
+    #[serde_inline_default("mail.fileshare.com".to_string())]
     pub smtp_server: String,
+    #[serde_inline_default(None)]
     pub smtp_auth: Option<(String, String)>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct VideoServerConfig {
+    #[serde_inline_default(PathBuf::from("data").join("streaming_cache"))]
     pub cache_path: PathBuf,
+
+    #[serde_inline_default(Duration::from_secs(24 * 3600))] // 24h
     pub stream_ttl: Duration,
+
+    #[serde_inline_default(Duration::from_secs(10))]
     pub max_request_timout: Duration,
+
+    #[serde_inline_default(10000)]
     pub tick_interval_ms: u64,
+
+    #[serde_inline_default(5)]
     pub segment_duration_sec: u32,
-    
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct WebClientConfig {
+    #[serde_inline_default(PathBuf::from("./web_client"))]
     pub client_path: PathBuf,
+
+    #[serde_inline_default(false)]
     pub debug: bool,
+
+    #[serde_inline_default(true)]
     pub check_for_packages_updates: bool,
+
+    #[serde_inline_default(true)]
     pub build_webpack: bool,
+
+    #[serde_inline_default(false)]
     pub force_secure_requests: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TlsConfig {
+    #[serde_inline_default(PathBuf::from("/Path/To/certificate.pem"))]
     pub certificate: PathBuf,
+
+    #[serde_inline_default(PathBuf::from("/Path/To/private_key.pem"))]
     pub private_key: PathBuf,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BackendConfig {
+    #[serde_inline_default(PathBuf::from("data").join("files"))]
     pub file_storage_path: PathBuf,
+
+    #[serde_inline_default(PathBuf::from("data").join("thumbnails"))]
     pub thumbnail_storage_path: PathBuf,
+
+    #[serde_inline_default(100)]
     pub thumbnail_size: usize,
-    pub max_parallel_task: usize,
+
+    #[serde_inline_default(5)]
+    pub thumbnail_processes: usize,
+
+    #[serde_inline_default(make_default_config::<VideoServerConfig>())]
     pub video_server: VideoServerConfig,
+
+    #[serde_inline_default(make_default_config::<PostgresConfig>())]
     pub postgres: PostgresConfig,
+
+    #[serde_inline_default(make_default_config::<EMailerConfig>())]
     pub emailer: EMailerConfig,
 }
 
+#[serde_inline_default]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
+    #[serde_inline_default(vec!["127.0.0.1:3000".to_string()])]
     pub addresses: Vec<String>,
+
+    #[serde_inline_default(make_default_config::<BackendConfig>())]
     pub backend_config: BackendConfig,
+
+    #[serde_inline_default(make_default_config::<WebClientConfig>())]
     pub web_client_config: WebClientConfig,
+
+    #[serde_inline_default(make_default_config::<TlsConfig>())]
     pub tls_config: TlsConfig,
+
+    #[serde_inline_default(true)]
     pub use_tls: bool,
+
+    #[serde_inline_default(Some(String::from("admin")))]
     pub admin_user_name: Option<String>,
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            addresses: vec!["127.0.0.1:3000".to_string()],
-            backend_config: BackendConfig {
-                file_storage_path: PathBuf::from("data").join("files"),
-                thumbnail_storage_path: PathBuf::from("data").join("thumbnails"),
-                thumbnail_size: 100,
-                max_parallel_task: 0,
-                video_server: VideoServerConfig {
-                    cache_path: PathBuf::from("data").join("streaming_cache"),
-                    stream_ttl: Duration::from_secs(24 * 3600), // 24h
-                    max_request_timout: Duration::from_secs(10),
-                    tick_interval_ms: 10000,
-                    segment_duration_sec: 5,
-                },
-                postgres: PostgresConfig {
-                    username: "postgres".to_string(),
-                    secret: "password".to_string(),
-                    url: "127.0.0.1".to_string(),
-                    port: 5432,
-                    database: "postgres".to_string(),
-                    ssl_mode: false,
-                    scheme_name: "fileshare_v3".to_string(),
-                },
-                emailer: EMailerConfig {
-                    source_address: "noreply@fileshare.com".to_string(),
-                    smtp_server: "mail.fileshare.com".to_string(),
-                    smtp_auth: None,
-                },
-            },
-            web_client_config: WebClientConfig {
-                client_path: PathBuf::from("./web_client"),
-                debug: false,
-                check_for_packages_updates: true,
-                build_webpack: true,
-                force_secure_requests: false,
-            },
-            tls_config: TlsConfig {
-                certificate: PathBuf::from("/Path/To/certificate.pem"),
-                private_key: PathBuf::from("/Path/To/private_key.pem"),
-            },
-            use_tls: true,
-            admin_user_name: Some(String::from("admin")),
-        }
-    }
+fn make_default_config<'a, T: 'static + Deserialize<'a>>() -> T {
+    serde_json::from_str::<T>("{}").unwrap()
 }
 
 impl Config {
@@ -123,7 +147,7 @@ impl Config {
         } else {
             fs::write(
                 path.clone(),
-                serde_json::to_string_pretty(&Config::default())?,
+                serde_json::to_string_pretty(&make_default_config::<Config>())?,
             )?;
             Err(Error::msg(
                 "Created a new config file. Please fill in information first",

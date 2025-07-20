@@ -135,13 +135,15 @@ class Repository {
             else
                 not_found.push(id);
         }
-        let repositories = await app.fetch_api('repository/find', 'POST', not_found)
-            .catch(error => {
-                NOTIFICATION.warn(new Message(`Impossible de récupérer les dépots ${not_found} : ${error.message}`))
-                throw error;
-            });
-        for (const repository of repositories)
-            found.push(Repository.new(app, repository));
+        if (not_found.length !== 0) {
+            let repositories = await app.fetch_api('repository/find', 'POST', not_found)
+                .catch(error => {
+                    NOTIFICATION.warn(new Message(`Impossible de récupérer les dépots ${not_found} : ${error.message}`))
+                    throw error;
+                });
+            for (const repository of repositories)
+                found.push(Repository.new(app, repository));
+        }
 
         return is_array ? found : repos.length > 0 ? found[0] : null;
     }

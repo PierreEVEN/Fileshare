@@ -13,7 +13,8 @@ class DashPlayer extends AppWidget {
     connectedCallback() {
         if (!this.item)
             return;
-        this.get_app().fetch_api(`stream/create/${this.item}`, 'POST', this.item)
+        this.app = this.get_app();
+        this.app.fetch_api(`stream/create/${this.item}`, 'POST', this.item)
             .then(async stream_id => { await this._init(stream_id); })
     }
 
@@ -57,8 +58,8 @@ class DashPlayer extends AppWidget {
     }
 
     disconnectedCallback() {
-        if (this.stream_id)
-            this.get_app().fetch_api(`stream/${this.stream_id}/kill`, 'POST')
+        if (this.stream_id && this.app)
+            this.app.fetch_api(`stream/${this.stream_id}/kill`, 'POST')
                 .catch(console.error);
         if (this.control_bar)
             this.control_bar.destroy();

@@ -6,7 +6,6 @@
     "file_storage_path": "/opt/data/storage/files",
     "thumbnail_storage_path": "opt/data/storage/thumbnails",
     "thumbnail_size": 100,
-    "max_parallel_task": 0,
     "video_server": {
       "cache_path": "data/streaming_cache",
       "stream_ttl": {

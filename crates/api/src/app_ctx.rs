@@ -26,12 +26,12 @@ impl AppCtx {
         let statistics = Arc::new(Statistics::default());
 
         Ok(Self {
+            thumbnailer: Thumbnailer::new(config.backend_config.thumbnail_processes),
             streaming_context: StreamingContext::new(config.backend_config.video_server.clone(), statistics.clone()),
             config,
             statistics,
             database,
             uploads: Default::default(),
-            thumbnailer: Thumbnailer::new(3),
         })
     }
 

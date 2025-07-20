@@ -1,4 +1,5 @@
-use axum::http::StatusCode;
+use std::fmt::Formatter;
+use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
 
 pub struct ServerError((StatusCode, anyhow::Error));
@@ -23,12 +24,18 @@ impl ServerError {
     }
 }
 
+impl std::fmt::Display for ServerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{} : {}", self.0.0, self.0.1))
+    }
+}
+
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
-        (
+        ([(header::CACHE_CONTROL, "no-store".to_string())], (
             self.0.0,
             format!("{}: {}", self.0.0.as_str(), self.0.1),
-        ).into_response()
+        )).into_response()
     }
 }
 
