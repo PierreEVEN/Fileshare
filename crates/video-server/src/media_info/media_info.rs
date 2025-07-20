@@ -215,7 +215,7 @@ impl MediaInfo {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Framerate(f32);
 
 struct FramerateVisitor;

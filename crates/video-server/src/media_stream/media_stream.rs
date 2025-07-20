@@ -10,20 +10,21 @@ use crate::media_info::media_info::{CodecType, MediaInfo};
 use crate::media_info::stream_reference::StreamReference;
 use crate::media_stream::stream_track::{StreamTrack, TrackDefinition};
 use crate::media_stream::StreamingStats;
+use crate::media_stream::track_preset::TranscodingMode;
 
 pub struct MediaStream {
     stream_reference: StreamReference,
     last_usage: RwLock<SystemTime>,
     global_config: Arc<VideoServerConfig>,
     tracks: Vec<StreamTrack>,
-    media_info: MediaInfo
+    media_info: MediaInfo,
 }
 
 impl MediaStream {
     pub fn new(global_config: Arc<VideoServerConfig>, stats: Arc<StreamingStats>, stream_reference: StreamReference) -> Result<Self, StreamingError> {
         let media_info = MediaInfo::new(stream_reference.path())?;
         let mut tracks = vec![];
-        
+
         for track in 0..media_info.get_tracks().len() {
             let definition = TrackDefinition::new(&media_info, track as u32)?;
             match definition.codec_type {
@@ -38,7 +39,7 @@ impl MediaStream {
                 _ => {}
             }
         }
-        
+
         Ok(Self {
             media_info,
             stream_reference,
@@ -52,7 +53,10 @@ impl MediaStream {
         let mut stats = String::new();
         for track in &self.tracks {
             for preset in track.get_presets().await {
-                let transcode = if preset.should_transcode()? { ":transcode" } else { "" };
+                let transcode = match preset.should_transcode()? {
+                    TranscodingMode::Raw => { "" }
+                    _ => { ":transcode" }
+                };
                 let codec = if let Some(codec) = &preset.parent_track().codec { format!("{codec}") } else { String::new() };
                 stats += format!("{}({codec}{transcode} : {})", preset.parent_track().codec_type, preset.description().to_string()).as_str()
             }
@@ -63,7 +67,7 @@ impl MediaStream {
     pub fn identifier(&self) -> &String {
         self.stream_reference.id()
     }
-    
+
     // Return true when we can consider this media stream is not used anymore and we can destroy it
     pub async fn is_orphan(&self) -> Result<bool, StreamingError> {
         Ok(SystemTime::now().duration_since(*self.last_usage.read().await)? > self.global_config.stream_ttl)
@@ -135,7 +139,7 @@ impl MediaStream {
 
         Ok(w.end_document().replace("&", "&amp;"))
     }
-    
+
     pub async fn get_track(&self, output_track: u32) -> Result<&StreamTrack, StreamingError> {
         self.touch().await;
         self.tracks.get(output_track as usize).ok_or(StreamingError::new(ErrorKind::NoTrack(output_track)))
