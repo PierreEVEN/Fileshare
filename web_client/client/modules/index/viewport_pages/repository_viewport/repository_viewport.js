@@ -412,6 +412,7 @@ class RepositoryViewport extends AppWidget {
         this.carousel_list = document.createElement('carousel-list');
         this.carousel_list.events.add('select', (item) => {
             viewport.set_item(item);
+            this.get_app().state.open_item(item);
             this.selector.select_item(item.id, false, false);
         })
         await this.carousel_list.set_items(this.content.get_displayed_items());

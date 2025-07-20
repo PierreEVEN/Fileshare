@@ -9,7 +9,7 @@ use std::{env, fs};
 pub struct Object3DProcessor;
 
 impl Object3DProcessor {
-    
+
     pub fn available() -> Result<(), Error> {
         match Command::new("f3d").arg("--version").output() {
             Ok(_) => {Ok(())}
@@ -18,7 +18,7 @@ impl Object3DProcessor {
             }
         }
     }
-    
+
     pub fn process_3d_object(task: &ThumbnailerTask, temp_path: PathBuf) -> Result<(), Error> {
         if !temp_path.exists() {
             return Err(Error::msg(format!("Cannot find object3d file : {}", temp_path.display())));
@@ -81,7 +81,7 @@ impl Processor for Object3DProcessor {
                     return Err(Error::msg(format!("Failed to create symlink : {}", err)));
                 }
                 #[cfg(windows)]
-                fs::copy(input_path, &temp_path)?;
+                fs::copy(&task.input, &temp_path)?;
 
                 Self::process_3d_object(task, temp_path)?;
                 Ok(true)
