@@ -14,7 +14,7 @@ pub fn find_avc1_level(width: u32, height: u32, bitrate: u32, framerate: Framera
             && (macro_blocks as u32) < x.max_frame_size
             && blocks_per_sec < x.macro_blocks_rate as f64
     });
-    avc1_levels.next().cloned().unwrap().level as u32
+    avc1_levels.next().cloned().unwrap_or(AVC1_LEVELS.last().unwrap().clone()).level as u32
 }
 
 #[derive(Clone)]
@@ -31,7 +31,7 @@ impl Display for Avc1Level {
     }
 }
 
-const AVC1_LEVELS: [Avc1Level; 19] = [
+const AVC1_LEVELS: [Avc1Level; 20] = [
     Avc1Level {
         level: 9,
         macro_blocks_rate: 1_485,
@@ -49,6 +49,12 @@ const AVC1_LEVELS: [Avc1Level; 19] = [
         macro_blocks_rate: 3_000,
         max_frame_size: 396,
         max_bitrate: 192_000,
+    },
+    Avc1Level {
+        level: 12,
+        macro_blocks_rate: 6_000,
+        max_frame_size: 396,
+        max_bitrate: 384_000,
     },
     Avc1Level {
         level: 12,
