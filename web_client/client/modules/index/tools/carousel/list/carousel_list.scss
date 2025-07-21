@@ -11,7 +11,7 @@ carousel-list {
   .carousel-list-scroller {
     display: flex;
     width: 100%;
-    overflow: scroll;
+    overflow: auto;
     -ms-overflow-style: none; /* Internet Explorer 10+ */
     scrollbar-width: none; /* Firefox */
 

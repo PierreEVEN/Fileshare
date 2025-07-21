@@ -3,7 +3,7 @@
 
 page-repository-settings {
   width: 100%;
-  overflow: scroll;
+  overflow: auto;
 
   .smaller {
     font-size: smaller;
@@ -27,7 +27,7 @@ page-repository-settings {
 
 
   .item_list {
-    overflow: scroll;
+    overflow: auto;
     max-height: 120px;
     width: fit-content;
     background-color: $toolbar;

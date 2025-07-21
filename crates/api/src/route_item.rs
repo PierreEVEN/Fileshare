@@ -234,7 +234,7 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
             let headers = [
                 (header::CACHE_CONTROL, "max-age=604800".to_string()),
                 (header::CONTENT_TYPE, "image/webp".to_string()),
-                (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+                (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
             ];
             Ok((headers, body).into_response())
         }
@@ -312,7 +312,7 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
         let headers = [
             (header::CONTENT_TYPE, file.mimetype.plain()?),
             (header::CONTENT_LENGTH, file.size.to_string()),
-            (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+            (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
         ];
         Ok((headers, body))
     } else {
@@ -330,7 +330,7 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
         let headers = [
             (header::CONTENT_TYPE, "application/zip".to_string()),
             (header::CONTENT_LENGTH, size.to_string()),
-            (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+            (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
         ];
         Ok((headers, body))
     }
@@ -352,7 +352,7 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
         let headers = [
             (header::CONTENT_TYPE, file.mimetype.plain()?),
             (header::CONTENT_LENGTH, file.size.to_string()),
-            (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
+            (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
         ];
         return Ok((StatusCode::OK, headers, body).into_response());
     }
@@ -386,7 +386,7 @@ async fn download_multi(State(ctx): State<Arc<AppCtx>>, Path(ids): Path<String>,
     let headers = [
         (header::CONTENT_TYPE, "application/zip".to_string()),
         (header::CONTENT_LENGTH, size.to_string()),
-        (header::CONTENT_DISPOSITION, "attachment; filename=\"Archive.zip\"".to_string())
+        (header::CONTENT_DISPOSITION, "inline; filename=\"Archive.zip\"".to_string())
     ];
     Ok((headers, body))
 }

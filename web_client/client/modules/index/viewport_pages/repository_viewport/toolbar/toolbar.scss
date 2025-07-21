@@ -21,7 +21,7 @@ viewport-toolbar {
   .path {
     display: flex;
     flex-direction: row-reverse;
-    overflow-x: scroll;
+    overflow-x: auto;
     flex-grow: 1;
     background-color: $secondary;
 

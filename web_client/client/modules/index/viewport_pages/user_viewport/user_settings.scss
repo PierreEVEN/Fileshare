@@ -92,7 +92,7 @@ page-user {
       padding-bottom: 10px;
       margin-left: 20px;
       min-height: 100%;
-      overflow: scroll;
+      overflow: auto;
       display: flex;
       flex-direction: column;
       border-left: dotted 1px $text-secondary;
@@ -128,7 +128,7 @@ page-user {
   .tokens {
     display: flex;
     flex-direction: column;
-    overflow: scroll;
+    overflow: auto;
 
     .token {
       border-bottom: 1px dotted $text-secondary;

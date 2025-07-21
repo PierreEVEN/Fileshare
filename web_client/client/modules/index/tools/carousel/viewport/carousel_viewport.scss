@@ -38,7 +38,7 @@ carousel-viewport {
     max-width: 30%;
     border-left: dashed 1px #5b6574;
     display: none;
-    overflow: scroll;
+    overflow: auto;
   }
 }
 
@@ -80,7 +80,7 @@ carousel-overlay {
 
     .title {
       margin: 0 auto;
-      overflow: scroll;
+      overflow: auto;
       max-height: 30vh;
 
       h1 {

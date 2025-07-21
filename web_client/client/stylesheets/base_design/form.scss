@@ -1,7 +1,7 @@
 form {
   display: flex;
   flex-direction: column;
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
   align-items: center;
   max-width: 100%;
