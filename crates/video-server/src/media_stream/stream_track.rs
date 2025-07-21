@@ -3,12 +3,12 @@ use crate::media_info::media_info::{CodecType, Framerate, MediaInfo};
 use crate::media_info::stream_reference::StreamReference;
 use crate::media_stream::preset_description::PresetDescription;
 use crate::media_stream::track_preset::TrackPreset;
+use crate::media_stream::StreamingStats;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use utils::config::VideoServerConfig;
-use xmlwriter::XmlWriter;
-use crate::media_stream::StreamingStats;
+use xmlwriter::XmlWriter;t -
 
 pub struct StreamTrack {
     presets: RwLock<HashMap<PresetDescription, Arc<TrackPreset>>>,
@@ -19,6 +19,7 @@ pub struct StreamTrack {
     stream_reference: StreamReference
 }
 
+#[derive(Debug)]
 pub struct TrackDefinition {
     pub input_bitrate: u32,
     pub input_duration: f32,

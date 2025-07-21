@@ -19,12 +19,21 @@ pub struct PresetDescription {
     pub channels: Option<u32>,
     #[serde(rename = "lang")]
     pub language: Option<String>,
+    #[serde(rename = "type")]
+    pub codec_type: Option<String>,
 }
 
 impl PresetDescription {
     pub fn from_track(track: &TrackDefinition) -> Vec<Self> {
         let mut presets = vec![];
-        presets.push(Self::default());
+        let mut source = Self::default();
+        source.codec_type = Some(match track.codec_type {
+            CodecType::Video => {"video"}
+            CodecType::Audio => {"audio"}
+            CodecType::Subtitle => {"sub"}
+            CodecType::Data => {"data"}
+        }.to_string());
+        presets.push(source);
 
         match track.codec_type {
             CodecType::Video => {
@@ -32,31 +41,31 @@ impl PresetDescription {
                 let height = track.input_height;
 
                 if height >= 4320 {
-                    presets.push(PresetDescription {max_height: Some(4320), max_bitrate: Some(80_000_000), max_frame_rate: low_fps, channels: None, language: None });
+                    presets.push(PresetDescription {max_height: Some(4320), max_bitrate: Some(80_000_000), max_frame_rate: low_fps, channels: None, language: None, codec_type: Some("video".to_string()) });
                 }
                 if height >= 2160 {
-                    presets.push(PresetDescription {max_height: Some(2160), max_bitrate: Some(35_000_000), max_frame_rate: low_fps, channels: None, language: None });
+                    presets.push(PresetDescription {max_height: Some(2160), max_bitrate: Some(35_000_000), max_frame_rate: low_fps, channels: None, language: None, codec_type: Some("video".to_string()) });
                 }
                 if height >= 1440 {
-                    presets.push(PresetDescription {max_height: Some(1440), max_bitrate: Some(16_000_000), max_frame_rate: low_fps, channels: None, language: None });
+                    presets.push(PresetDescription {max_height: Some(1440), max_bitrate: Some(16_000_000), max_frame_rate: low_fps, channels: None, language: None, codec_type: Some("video".to_string()) });
                 }
                 if height >= 1080 {
-                    presets.push(PresetDescription {max_height: Some(1080), max_bitrate: Some(8_000_000), max_frame_rate: low_fps, channels: None, language: None });
+                    presets.push(PresetDescription {max_height: Some(1080), max_bitrate: Some(8_000_000), max_frame_rate: low_fps, channels: None, language: None, codec_type: Some("video".to_string()) });
                 }
                 if height >= 720 {
-                    presets.push(PresetDescription {max_height: Some(720), max_bitrate: Some(2_000_000), max_frame_rate: low_fps, channels: None, language: None });
+                    presets.push(PresetDescription {max_height: Some(720), max_bitrate: Some(2_000_000), max_frame_rate: low_fps, channels: None, language: None, codec_type: Some("video".to_string()) });
                 }
                 if height >= 468 {
-                    presets.push(PresetDescription {max_height: Some(468), max_bitrate: Some(1_000_000), max_frame_rate: low_fps, channels: None, language: None }); 
+                    presets.push(PresetDescription {max_height: Some(468), max_bitrate: Some(1_000_000), max_frame_rate: low_fps, channels: None, language: None, codec_type: Some("video".to_string()) }); 
                 }
                 if height >= 360 {
-                    presets.push(PresetDescription {max_height: Some(360), max_bitrate: Some(600_000), max_frame_rate: low_fps, channels: None, language: None });
+                    presets.push(PresetDescription {max_height: Some(360), max_bitrate: Some(600_000), max_frame_rate: low_fps, channels: None, language: None, codec_type: Some("video".to_string()) });
                 }
                 if height >= 240 {
-                    presets.push(PresetDescription {max_height: Some(240), max_bitrate: Some(400_000), max_frame_rate: low_fps, channels: None, language: None });
+                    presets.push(PresetDescription {max_height: Some(240), max_bitrate: Some(400_000), max_frame_rate: low_fps, channels: None, language: None, codec_type: Some("video".to_string()) });
                 }
                 if height >= 144 {
-                    presets.push(PresetDescription {max_height: Some(144), max_bitrate: Some(200_000), max_frame_rate: low_fps, channels: None, language: None });
+                    presets.push(PresetDescription {max_height: Some(144), max_bitrate: Some(200_000), max_frame_rate: low_fps, channels: None, language: None, codec_type: Some("video".to_string()) });
                 }
             }
             _ => {}
@@ -113,6 +122,9 @@ impl PresetDescription {
 impl Display for PresetDescription {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut str = String::new();
+        if let Some(codec) = &self.codec_type {
+            str += format!("type={codec} ").as_str()
+        }
         if let Some(max_bitrate) = self.max_bitrate {
             str += format!("bitrate={max_bitrate} ").as_str()
         }

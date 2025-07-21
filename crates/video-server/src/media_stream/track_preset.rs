@@ -29,7 +29,7 @@ pub struct TrackPreset {
 pub enum TranscodingMode  {
     Raw,
     Forced,
-    ForceHeight(u32),
+    ForceHeight {old: u32, new: u32},
     ForceBitrate(u32),
     ChangePixelFormat{old: String, new: String},
     ForceFramerate(Framerate),
@@ -75,14 +75,15 @@ impl TrackPreset {
                     }
                     CodecType::Video => {
                         let mut vf_args = String::new();
-                        vf_args += format!("scale={}:{}", self.description.height(&self.parent_track), self.description.width(&self.parent_track)).as_str();
+                        vf_args += format!("scale=-2:{}", self.description.height(&self.parent_track)).as_str();
                         if if let Some(pixel_format) = &self.parent_track.pixel_format {
                             pixel_format.as_str() != "yuv420p"
                         } else { true } {
                             vf_args += " format=yuv420p";
                         }
-                        args.append(&mut vec!["-vf".into(), vf_args.trim().replace(" ", ",")]);
-
+                        if !vf_args.is_empty() {
+                            args.append(&mut vec!["-vf".into(), vf_args.trim().replace(" ", ",")]);
+                        }
                         args.append(&mut vec!["-b:v".into(), self.description.bitrate(&self.parent_track).to_string()]);
                         args.append(&mut vec!["-c:0".into(), "h264".into(), "-preset".into(), "veryfast".into()]);
                     }
@@ -174,7 +175,7 @@ impl TrackPreset {
         }
 
         if let Some(max_height) = self.description.max_height {
-            if max_height < self.parent_track.input_height { return Ok(TranscodingMode::ForceHeight(max_height)); }
+            if max_height < self.parent_track.input_height { return Ok(TranscodingMode::ForceHeight{old: self.parent_track.input_height, new: max_height}); }
         }
 
         if let Some(max_bitrate) = self.description.max_bitrate {

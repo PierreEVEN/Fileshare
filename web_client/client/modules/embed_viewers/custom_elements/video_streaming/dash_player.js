@@ -58,9 +58,6 @@ class DashPlayer extends AppWidget {
     }
 
     disconnectedCallback() {
-        if (this.stream_id && this.app)
-            this.app.fetch_api(`stream/${this.stream_id}/kill`, 'POST')
-                .catch(console.error);
         if (this.control_bar)
             this.control_bar.destroy();
         if (this.player)

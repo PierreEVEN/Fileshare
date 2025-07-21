@@ -31,7 +31,7 @@ impl Display for Avc1Level {
     }
 }
 
-const AVC1_LEVELS: [Avc1Level; 20] = [
+const AVC1_LEVELS: [Avc1Level; 19] = [
     Avc1Level {
         level: 9,
         macro_blocks_rate: 1_485,
@@ -55,12 +55,6 @@ const AVC1_LEVELS: [Avc1Level; 20] = [
         macro_blocks_rate: 6_000,
         max_frame_size: 396,
         max_bitrate: 384_000,
-    },
-    Avc1Level {
-        level: 13,
-        macro_blocks_rate: 11_880,
-        max_frame_size: 396,
-        max_bitrate: 768_000,
     },
     Avc1Level {
         level: 20,

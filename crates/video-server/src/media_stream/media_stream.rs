@@ -24,7 +24,6 @@ impl MediaStream {
     pub fn new(global_config: Arc<VideoServerConfig>, stats: Arc<StreamingStats>, stream_reference: StreamReference) -> Result<Self, StreamingError> {
         let media_info = MediaInfo::new(stream_reference.path())?;
         let mut tracks = vec![];
-
         for track in 0..media_info.get_tracks().len() {
             let definition = TrackDefinition::new(&media_info, track as u32)?;
             match definition.codec_type {
@@ -119,8 +118,8 @@ impl MediaStream {
         w.write_attribute("profiles", "urn:mpeg:dash:profile:full:2011");
         w.write_attribute("type", "static");
         w.write_attribute("mediaPresentationDuration", &duration);
-        w.write_attribute("minBufferTime", "PT20S");
-        w.write_attribute("maxSegmentDuration", "PT20S");
+        w.write_attribute("minBufferTime", "PT1S");
+        w.write_attribute("maxSegmentDuration", "PT5S");
 
         w.start_element("BaseURL");
         {
