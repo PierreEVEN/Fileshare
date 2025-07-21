@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use utils::config::VideoServerConfig;
-use xmlwriter::XmlWriter;t -
+use xmlwriter::XmlWriter;
 
 pub struct StreamTrack {
     presets: RwLock<HashMap<PresetDescription, Arc<TrackPreset>>>,
