@@ -230,9 +230,7 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
 
     let (w, r) = tokio::io::duplex(4096);
     tokio::spawn(async move {
-        println!("pre finalize");
         let res = zip.finalize(&ctx.database, w).await;
-        println!("finalized");
         return res;
     });
     info!("Prepared zip file for repository {} in {}s", id, SystemTime::now().duration_since(start)?.as_secs_f64());

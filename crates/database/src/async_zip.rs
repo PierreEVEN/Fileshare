@@ -3,9 +3,10 @@ use crate::item::{DbItem, Trash};
 use crate::object::Object;
 use anyhow::Error;
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
+use std::io:, SeekFrom};
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 use tokio_util::bytes::BufMut;
+use tracing::info;
 use types::database_ids::ItemId;
 use types::item::Item;
 use crate::Database;
@@ -285,9 +286,9 @@ impl AsyncDirectoryZip {
             // Write file
             let mut crc32 = Crc32::new();
             if let Some(file) = &item.file {
+                info!("Prepare zip archive of {} bytes for {}", file.size, item.name.plain()?);
                 let object = Object::from_id(db, &file.object).await?;
                 let mut file = File::open(Object::data_path(object.id(), db))?;
-                file.seek(SeekFrom::Start(0))?;
                 let mut buf = [0u8; 4096];
                 while let Ok(size) = file.read(&mut buf) {
                     if size == 0 { break; }
@@ -296,7 +297,6 @@ impl AsyncDirectoryZip {
                     for byte in &buf[..size] {
                         crc32.write_byte(*byte);
                     }
-
                     sink.write_all(&buf[..size]).await?;
                 }
             }

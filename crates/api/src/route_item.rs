@@ -313,21 +313,25 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
         let headers = [
             (header::CONTENT_TYPE, file.mimetype.plain()?),
             (header::CONTENT_LENGTH, file.size.to_string()),
-            (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
+            (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
         ];
         Ok((headers, body))
     } else {
-        let start = SystemTime::now();
         let mut zip = AsyncDirectoryZip::new();
         zip.push_item(&ctx.database, item.clone()).await?;
 
         let size = zip.size()?;
+        info!("Download archive of precalculed size : {}", size);
 
         let (w, r) = tokio::io::duplex(4096);
         tokio::spawn(async move {
-            zip.finalize(&ctx.database, w).await
+            info!("Start archive");
+            if let Err(res) = zip.finalize(&ctx.database, w).await {
+                error!("Failed to finalize zip archive : {}", res);
+            } else {
+                info!("Finished archive");
+            }
         });
-        info!("Prepared zip file for {} in {}s", item.id(), SystemTime::now().duration_since(start)?.as_secs_f64());
 
         let body = Body::from_stream(ReaderStream::new(r));
         let headers = [
