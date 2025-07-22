@@ -1,6 +1,7 @@
 import {Authentication} from "../tools/authentication/authentication";
 import {GLOBAL_EVENTS} from "../../../types/event_manager";
 import {AppWidget} from "../../../app_widget";
+import {Filter} from "../../../types/filter/filter";
 
 require('./global_header.scss')
 
@@ -30,6 +31,13 @@ class AppHeader extends AppWidget {
             },
             user: async () => {
                 await this.get_app().set_display_user(this._connected_user);
+            },
+            search_changed: async (event) => {
+                if (event.target.value === "") {
+                    this.get_app().set_global_search(null);
+                } else {
+                    this.get_app().set_global_search(new Filter().name(event.target.value));
+                }
             }
         });
 

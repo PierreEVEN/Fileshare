@@ -1,6 +1,6 @@
-import {ViewportContent} from "../../../../types/viewport_content/viewport_content";
+import {ContentProvider, ViewportContent} from "../../../../types/viewport_content/viewport_content";
 import {
-    DirectoryContentProvider,
+    DirectoryContentProvider, FilterContentProvider,
     RepositoryRootProvider,
     TrashContentProvider
 } from "../../../../types/viewport_content/providers";
@@ -377,7 +377,23 @@ class RepositoryViewport extends AppWidget {
         this._elements.current_description.style.display = 'none';
     }
 
-    delete() {
+    async set_search_filter(filter) {
+        if (!filter) {
+            if (this.content.get_content_provider()) {
+                if (this.content.get_content_provider().directory) {
+                    await this.content.set_content_provider(new DirectoryContentProvider(this.content.get_content_provider().directory));
+                } else if (this.content.get_content_provider().repository) {
+                    await this.content.set_content_provider(new RepositoryRootProvider(this.content.get_content_provider().repository));
+                }
+            }
+        } else {
+            const previous = this.content.get_content_provider();
+            await this.content.set_content_provider(new ContentProvider());
+            await this.content.set_content_provider(new FilterContentProvider(this.repository, previous ? previous.directory : null, filter))
+        }
+    }
+
+    disconnectedCallback() {
         super.delete();
         if (this.uploader)
             this.uploader.delete();

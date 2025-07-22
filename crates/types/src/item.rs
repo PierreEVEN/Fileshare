@@ -11,6 +11,7 @@ use crate::enc_string::EncString;
 use postgres_from_row::FromRow;
 #[cfg(feature = "tokio-postgres")]
 use tokio_postgres::Row;
+use tracing::error;
 
 #[cfg_attr(feature = "tokio-postgres", derive(FromRow))]
 #[derive(Debug, Serialize, Clone, Default)]
@@ -156,7 +157,12 @@ impl Serialize for Item {
         } else {
             match &self.file {
                 None => {
-                    return Err(serde::ser::Error::custom("Missing file data : this item is neither a file or a directory."))
+                    error!("Missing file data : this item {:?} is neither a file or a directory.", self);
+                    state.serialize_field("is_regular_file", &true)?;
+                    state.serialize_field("mimetype", "null")?;
+                    state.serialize_field("size", &0)?;
+                    state.serialize_field("timestamp", &0)?;
+                    state.serialize_field("corrupted", &true)?;
                 }
                 Some(file) => {
                     state.serialize_field("is_regular_file", &true)?;

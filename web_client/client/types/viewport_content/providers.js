@@ -91,4 +91,38 @@ class TrashContentProvider extends ContentProvider {
     }
 }
 
-export {DirectoryContentProvider, RepositoryRootProvider, TrashContentProvider}
+class FilterContentProvider extends ContentProvider {
+    /**
+     * @param repository {Repository}
+     * @param directory {FilesystemItem}
+     * @param filter {Filter}
+     */
+    constructor(repository, directory, filter) {
+        super();
+        this.repository = repository;
+        this.directory = directory;
+        this.filter = filter;
+    }
+
+    async get_content() {
+        if (!this._cache) {
+            this._cache = [];
+            const items = await this.repository.content.fetch_filtered(this.filter, this.directory);
+            for (const item of items)
+                this._cache.push(item);
+        }
+        return this._cache;
+    }
+
+    async _internal_add_item(item) {
+        await super._internal_add_item(item);
+        if (this.filter.test(item))
+            await this.events.broadcast('add', item);
+    }
+
+    delete() {
+        super.delete();
+    }
+}
+
+export {DirectoryContentProvider, RepositoryRootProvider, TrashContentProvider, FilterContentProvider}

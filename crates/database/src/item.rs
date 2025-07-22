@@ -7,6 +7,8 @@ use anyhow::Error;
 use postgres_from_row::FromRow;
 use serde::{Deserialize};
 use std::fmt::{Display, Formatter};
+use std::time::SystemTime;
+use tracing::{info, warn};
 use types::database_ids::{DatabaseIdTrait, ItemId, ObjectId, RepositoryId, UserId};
 use types::item::Item;
 
@@ -35,11 +37,11 @@ pub struct ItemSearchRepositoryField {
 #[derive(Deserialize, Debug)]
 pub struct ItemSearchData {
     pub repositories: Vec<ItemSearchRepositoryField>,
-    pub name_filter: Option<EncString>,
+    pub name: Option<EncString>,
     pub before: Option<i64>,
     pub after: Option<i64>,
     pub max_size: Option<i64>,
-    pub  min_size: Option<i64>,
+    pub min_size: Option<i64>,
     pub mime_type: Option<EncString>,
     pub owners: Option<Vec<UserId>>,
 }
@@ -83,7 +85,6 @@ impl DbItem {
     }
     
     pub async fn search(db: &Database, filter: ItemSearchData) -> Result<Vec<Item>, Error> {
-
         if filter.repositories.is_empty() {
             Err(Error::msg("No repository specified"))?;
         }
@@ -93,13 +94,15 @@ impl DbItem {
             repository_req += format!("repository = {} AND ", repository.repository).as_str();
             let mut item_req = String::new();
             for (i, item) in repository.root_items.iter().enumerate() {
-                item_req += format!("STARTS_WITH(absolute_path, SELECT(absolute_path FROM item WHERE id = {item}))").as_str();
+                item_req += format!("STARTS_WITH(absolute_path, (SELECT absolute_path FROM SCHEMA_NAME.items WHERE id = {item}))").as_str();
                 if i != repository.root_items.len() - 1 { item_req += " OR " }
             }
-            repository_req += format!("({item_req}) AND").as_str();
+            if !item_req.is_empty() {
+                repository_req += format!("({item_req}) AND").as_str();
+            }
         }
 
-        let name = if let Some(name) = filter.name_filter {
+        let name = if let Some(name) = filter.name {
             format!("LOWER(name) LIKE '%' || LOWER('{name}') || '%' AND")
         } else { String::new() };
 
@@ -129,7 +132,16 @@ impl DbItem {
             owner_req
         } else { String::new() };
 
-        Ok(query_objects!(&db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE {repository_req} {name} {before} {after} {max_size} {min_size} {mimetype} {owners} is_regular_file")))
+        let start = SystemTime::now();
+        info!("Filtered query : \"{repository_req} {name} {before} {after} {max_size} {min_size} {mimetype} {owners} TRUE\"");
+
+        let result = query_objects!(&db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE {repository_req} {name} {before} {after} {max_size} {min_size} {mimetype} {owners} TRUE"));
+        let elapsed = SystemTime::now().duration_since(start)?.as_secs_f64();
+        if elapsed > 0.5 {
+            warn!("Long query : \"{repository_req} {name} {before} {after} {max_size} {min_size} {mimetype} {owners} is_regular_file\" in {}s", elapsed);
+        }
+
+        Ok(result)
     }
 
     pub async fn delete(item: &Item, db: &Database) -> Result<(), Error> {

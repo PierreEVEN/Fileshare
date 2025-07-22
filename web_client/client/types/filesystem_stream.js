@@ -219,26 +219,47 @@ class FilesystemStream {
     }
 
     /**
-     * @param item_id {number}
-     * @returns {Promise<FilesystemItem>}
+     * @param item_id {number | number[]}
+     * @param force_update
+     * @returns {Promise<FilesystemItem | FilesystemItem[]>}
      */
-    async fetch_item(item_id) {
+    async fetch_item(item_id, force_update = true) {
         if (item_id === undefined)
             console.error("Undefined item id")
         if (item_id === null)
             return null;
-        const existing = this._items.get(item_id);
-        if (existing) {
-            return existing;
+
+        const is_array = item_id.constructor.name === 'Array';
+        const ids = is_array ? item_id : [item_id];
+
+        const found = [];
+        const not_found = [];
+        for (const id of ids) {
+            console.assert(id, "Invalid item ID !");
+            const local = this.find(id);
+            if (local)
+                found.push(local);
+            else
+                not_found.push(id);
         }
-        for (const item of await this.app.fetch_api(`item/find`, 'POST', [item_id])
-            .catch(error => {
-                NOTIFICATION.warn(new Message(error).title(`L'object ${item_id} n'existe pas`));
-                return [];
-            })) {
-            await this.set_or_update_item(new FilesystemItem(item));
+        if (not_found.length !== 0) {
+            let items = await this.app.fetch_api('item/find', 'POST', not_found)
+                .catch(error => {
+                    NOTIFICATION.warn(new Message(`Impossible de récupérer les objets ${not_found} : ${error.message}`))
+                    throw error;
+                });
+            for (const item of items) {
+                const new_item = new FilesystemItem(item);
+                if (force_update)
+                    await this.set_or_update_item(new_item);
+                else if (!this.find(new_item.id))
+                    await this.set_or_update_item(new_item);
+                found.push(new_item);
+
+            }
         }
-        return this._items.get(item_id);
+
+        return is_array ? found : found.length > 0 ? found[0] : null;
     }
 
     /**
@@ -313,21 +334,40 @@ class FilesystemStream {
     }
 
     /**
-     * @param context {HTMLElement}
      * @return {Promise<Set<number>>}
      */
-    async root_content(context) {
+    async root_content() {
         if (!this._roots) {
             this._roots = new Set();
             for (const item of await this.app.fetch_api(`repository/root-content`, 'POST', [this._repository.id])
                 .catch(error => {
-                    NOTIFICATION.warn(new Message(error).title(`Impossible de lire la racion du dépot ${this._repository.url_name.plain()}`));
+                    NOTIFICATION.warn(new Message(error).title(`Impossible de lire la racine du dépot ${this._repository.url_name.plain()}`));
                     return [];
                 })) {
                 await this.set_or_update_item(new FilesystemItem(item));
             }
         }
         return this._roots
+    }
+
+    /**
+     * @param filter {Filter}
+     * @param directory {FilesystemItem}
+     * @returns {Promise<FilesystemItem[]>}
+     */
+    async fetch_filtered(filter, directory) {
+        const data = filter.data();
+        data.repositories = [
+            {
+                repository: this._repository.id.toString(),
+                root_items: directory ? [directory.id] : []
+            }
+        ]
+        const item_ids = await this.app.fetch_api(`item/search`, 'POST', data).catch(error => {
+            NOTIFICATION.warn(new Message(error).title(`Impossible de chercher des éléments dan sle dépot ${this._repository.url_name.plain()}`));
+            return [];
+        });
+        return await this.fetch_item(item_ids, false);
     }
 
     /**

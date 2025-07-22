@@ -433,8 +433,7 @@ async fn search(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl
     let result = DbItem::search(&ctx.database, data).await?;
     let mut items = vec![];
     for data in result {
-        let item = DbItem::from_id(&ctx.database, data.id(), Trash::Both).await?;
-        if permissions.view_item(&ctx.database, &item).await?.granted() {
+        if permissions.view_item(&ctx.database, &data).await?.granted() {
             items.push(data.id().clone());
         }
     }

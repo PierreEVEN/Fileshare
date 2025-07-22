@@ -23,6 +23,7 @@ import "./modules/index/viewport_pages/repository_viewport/repository_viewport";
 import {APP_COOKIES} from "./modules/index/tools/cookies/cookies";
 import {Authentication} from "./modules/index/tools/authentication/authentication";
 import "./modules/index/side_bar/side_bar";
+import {Message, NOTIFICATION} from "./modules/index/tools/message_box/notification";
 
 class FileshareApp extends HTMLElement {
     constructor() {
@@ -210,6 +211,14 @@ class FileshareApp extends HTMLElement {
             this.append(this._carousel);
         }
         return this._carousel;
+    }
+
+    set_global_search(filter) {
+        if (this._viewport_content && this._viewport_content.tagName.toLowerCase() === 'page-repository') {
+            this._viewport_content.set_search_filter(filter);
+        } else {
+            NOTIFICATION.error(new Message("Filter for repositories is not implemented yet").title("Please select a repository first"))
+        }
     }
 
     /**

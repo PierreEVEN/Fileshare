@@ -1,8 +1,7 @@
-use database::item::{DbItem, Trash};
+use crate::app_ctx::AppCtx;
+use crate::permissions::Permissions;
 use crate::require_connected_user;
 use crate::route_user::UserCredentials;
-use crate::permissions::Permissions;
-use utils::server_error::ServerError;
 use anyhow::Error;
 use axum::body::Body;
 use axum::extract::{FromRequest, Path, Request, State};
@@ -10,17 +9,18 @@ use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use serde::{Deserialize};
+use database::async_zip::AsyncDirectoryZip;
+use database::item::{DbItem, ItemSearchData, Trash};
+use database::repository::{DbRepository};
+use database::subscription::{Subscription, SubscriptionAccessType};
+use database::user::DbUser;
+use serde::Deserialize;
 use std::sync::Arc;
 use tokio_util::io::ReaderStream;
-use database::subscription::{Subscription, SubscriptionAccessType};
-use database::async_zip::AsyncDirectoryZip;
-use database::repository::DbRepository;
-use database::user::DbUser;
 use types::database_ids::{DatabaseId, RepositoryId, UserId};
 use types::enc_string::EncString;
 use types::repository::{Repository, RepositoryStatus};
-use crate::app_ctx::AppCtx;
+use utils::server_error::ServerError;
 
 pub struct RepositoryRoutes {}
 
@@ -41,6 +41,7 @@ impl RepositoryRoutes {
             .route("/unsubscribe", post(unsubscribe).with_state(ctx.clone()))
             .route("/stats", post(stats).with_state(ctx.clone()))
             .route("/subscriptions", post(subscriptions).with_state(ctx.clone()))
+            .route("/search", post(search).with_state(ctx.clone()))
             .route("/trash-content", post(trash_content).with_state(ctx.clone()));
         Ok(router)
     }
@@ -302,4 +303,14 @@ async fn stats(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
     let data = Json::<RepositoryId>::from_request(request, &ctx).await?.0;
     permissions.edit_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &data).await?).await?.require()?;
     Ok(Json(DbRepository::stats(&DbRepository::from_id(&ctx.database, &data).await?, &ctx.database).await?))
+}
+
+/// Search element in repository
+async fn search(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
+    let permissions = Permissions::new(&request)?;
+    let data = Json::<ItemSearchData>::from_request(request, &ctx).await?.0;
+    for repos in &data.repositories {
+        permissions.view_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repos.repository).await?).await?.require()?;
+    }
+    Ok(Json(DbItem::search(&ctx.database, data).await?))
 }
