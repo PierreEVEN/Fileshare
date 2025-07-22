@@ -97,7 +97,7 @@ class Repository {
      * @return {void}
      */
     download() {
-        window.open(`/api/repository/download/${this.id}/`);
+        window.open(`/api/repository/download/${this.id}`);
     }
 
     refresh() {

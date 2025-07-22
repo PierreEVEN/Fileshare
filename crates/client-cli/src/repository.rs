@@ -227,7 +227,7 @@ impl Repository {
     }
 
     async fn download_file(&mut self, item: &RemoteItem, target_container: &mut File) -> Result<(), Error> {
-        let mut stream = self.connection.get(format!("/item/get/{}/", item.id())).await?
+        let mut stream = self.connection.get(format!("/item/get/{}", item.id())).await?
             .send().await?
             .error_for_status()?
             .bytes_stream();

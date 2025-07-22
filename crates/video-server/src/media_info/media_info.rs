@@ -224,7 +224,7 @@ impl<'de> Visitor<'de> for FramerateVisitor {
     type Value = Framerate;
 
     fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
-        formatter.write_str("an floating-point number")
+        formatter.write_str("a floating-point number")
     }
 
     fn visit_f32<E>(self, value: f32) -> Result<Self::Value, E>

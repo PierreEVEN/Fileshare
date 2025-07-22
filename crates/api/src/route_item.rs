@@ -21,8 +21,9 @@ use axum::{Json, Router};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::time::SystemTime;
 use tokio_util::io::ReaderStream;
-use tracing::{error, warn};
+use tracing::{error, info, warn};
 use database::repository::DbRepository;
 use types::database_ids::{DatabaseId, ItemId, RepositoryId};
 use types::item::{CreateDirectoryParams, DirectoryData, Item};
@@ -316,6 +317,7 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
         ];
         Ok((headers, body))
     } else {
+        let start = SystemTime::now();
         let mut zip = AsyncDirectoryZip::new();
         zip.push_item(&ctx.database, item.clone()).await?;
 
@@ -325,17 +327,17 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
         tokio::spawn(async move {
             zip.finalize(&ctx.database, w).await
         });
+        info!("Prepared zip file for {} in {}s", item.id(), SystemTime::now().duration_since(start)?.as_secs_f64());
 
         let body = Body::from_stream(ReaderStream::new(r));
         let headers = [
             (header::CONTENT_TYPE, "application/zip".to_string()),
             (header::CONTENT_LENGTH, size.to_string()),
-            (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
+            (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
         ];
         Ok((headers, body))
     }
 }
-
 
 /// Download item or directory
 async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, request: Request) -> Result<impl IntoResponse, ServerError> {
@@ -369,6 +371,7 @@ async fn download_multi(State(ctx): State<Arc<AppCtx>>, Path(ids): Path<String>,
     }
     let permissions = Permissions::new(&request)?;
 
+    let start = SystemTime::now();
     let mut zip = AsyncDirectoryZip::new();
     for item in items {
         let item = DbItem::from_id(&ctx.database, &item, Trash::Both).await?;
@@ -381,12 +384,13 @@ async fn download_multi(State(ctx): State<Arc<AppCtx>>, Path(ids): Path<String>,
     tokio::spawn(async move {
         zip.finalize(&ctx.database, w).await
     });
+    info!("Prepared zip file for {} in {}s", ids, SystemTime::now().duration_since(start)?.as_secs_f64());
 
     let body = Body::from_stream(ReaderStream::new(r));
     let headers = [
         (header::CONTENT_TYPE, "application/zip".to_string()),
         (header::CONTENT_LENGTH, size.to_string()),
-        (header::CONTENT_DISPOSITION, "inline; filename=\"Archive.zip\"".to_string())
+        (header::CONTENT_DISPOSITION, "attachment; filename=\"Archive.zip\"".to_string())
     ];
     Ok((headers, body))
 }

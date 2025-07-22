@@ -159,7 +159,7 @@ class FilesystemItem {
      * @return {Promise<void>}
      */
     async download() {
-        window.open(`/api/item/get/${this.id}/`);
+        window.open(`/api/item/get/${this.id}`);
     }
 
     /**
@@ -170,7 +170,7 @@ class FilesystemItem {
         let str = '';
         for (const id of ids)
             str += `${id}-`;
-        window.open(`/api/item/download/${str}/`);
+        window.open(`/api/item/download/${str}`);
     }
 }
 

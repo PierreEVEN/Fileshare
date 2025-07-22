@@ -16,7 +16,9 @@ use database::subscription::{Subscription, SubscriptionAccessType};
 use database::user::DbUser;
 use serde::Deserialize;
 use std::sync::Arc;
+use std::time::SystemTime;
 use tokio_util::io::ReaderStream;
+use tracing::info;
 use types::database_ids::{DatabaseId, RepositoryId, UserId};
 use types::enc_string::EncString;
 use types::repository::{Repository, RepositoryStatus};
@@ -218,6 +220,7 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
     let permissions = Permissions::new(&request)?;
     permissions.view_repository(&ctx.database, &repository).await?.require()?;
 
+    let start = SystemTime::now();
     let mut zip = AsyncDirectoryZip::new();
     for item in DbItem::from_repository(&ctx.database, &RepositoryId::from(id), Trash::No).await? {
         zip.push_item(&ctx.database, item).await?;
@@ -227,8 +230,12 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
 
     let (w, r) = tokio::io::duplex(4096);
     tokio::spawn(async move {
-        zip.finalize(&ctx.database, w).await
+        println!("pre finalize");
+        let res = zip.finalize(&ctx.database, w).await;
+        println!("finalized");
+        return res;
     });
+    info!("Prepared zip file for repository {} in {}s", id, SystemTime::now().duration_since(start)?.as_secs_f64());
 
     let body = Body::from_stream(ReaderStream::new(r));
     let headers = [
