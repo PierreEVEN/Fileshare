@@ -107,7 +107,7 @@ impl WebClient {
 
         Ok(Router::new()
             .route("/", get(get_index).with_state(ctx.clone()))
-            .route("/statistics", get(get_index).with_state(ctx.clone()))
+            .route("/administration", get(get_index).with_state(ctx.clone()))
             .route("/{display_user}", get(get_index).with_state(ctx.clone()))
             .route("/{display_user}/{display_repository}", get(get_index).with_state(ctx.clone()))
             .route("/{display_user}/{display_repository}/{*path}", get(get_index).with_state(ctx.clone()))
@@ -235,7 +235,7 @@ async fn get_index(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<i
 
     if let Some(connected_user) = &client_config.connected_user {
         if let UserRole::Admin = connected_user.user_role {
-            if request.uri().path() == "/statistics" {
+            if request.uri().path() == "/administration" {
                 client_config.show_stats = true;
             }
         }

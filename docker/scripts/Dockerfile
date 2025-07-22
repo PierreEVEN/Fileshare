@@ -1,6 +1,6 @@
 #!Dockerfile
 
-FROM alpine:latest
+FROM alpine:3.21
 
 ARG VERSION=latest
 

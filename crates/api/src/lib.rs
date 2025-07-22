@@ -181,7 +181,7 @@ impl RootRoutes {
     pub fn create(ctx: &Arc<AppCtx>) -> Result<Router<>, Error> {
         let router = Router::new()
             .nest("/repository", RepositoryRoutes::create(ctx)?)
-            .nest("/statistics", StatisticsRoutes::router(ctx)?)
+            .nest("/administration", StatisticsRoutes::router(ctx)?)
             .nest("/user", UserRoutes::router(ctx)?)
             .nest("/item", ItemRoutes::create(ctx)?)
             .nest("/stream", StreamRoutes::create(ctx)?)

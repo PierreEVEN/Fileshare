@@ -1,5 +1,6 @@
 import {humanFileSize} from "../../../../utilities/utils";
 import {AppWidget} from "../../../../app_widget";
+import {Message, NOTIFICATION} from "../../tools/message_box/notification";
 
 require('./stats_viewport.scss')
 
@@ -12,14 +13,22 @@ class StatsViewport extends AppWidget {
     connectedCallback() {
 
 
-        let content = require('./stats_viewport.hbs')({}, {});
+        let content = require('./stats_viewport.hbs')({}, {
+            calc_object_sizes: async () => {
+                this.pause();
+                const result = await this.get_app().fetch_api("administration/recalculate-db-sizes");
+                console.log(result)
+                NOTIFICATION.info(new Message(JSON.stringify(result)).title("Finished cleanup pass"))
+                this.start();
+            }
+        });
         this._elements = content.hb_elements;
 
         for (const element of content)
             this.append(element);
 
+        this.start();
         this.refresh_data();
-        this._refresh_interval = setInterval(() => this.refresh_data(), 1000, {});
 
         this.max_workload = 1;
 
@@ -32,8 +41,20 @@ class StatsViewport extends AppWidget {
         }
     }
 
+    start() {
+        this.pause();
+        this._refresh_interval = setInterval(() => this.refresh_data(), 1000, {});
+    }
+
+    pause() {
+        if (this._refresh_interval) {
+            clearInterval(this._refresh_interval)
+            delete this._refresh_interval;
+        }
+    }
+
     async refresh_data() {
-        let stats = await this.get_app().fetch_api("statistics");
+        let stats = await this.get_app().fetch_api("administration");
 
         this._elements.categories.innerHTML = ''
         for (const [cat_name, category] of Object.entries(stats.values)) {

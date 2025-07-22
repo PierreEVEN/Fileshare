@@ -93,7 +93,7 @@ class State {
             return;
         history.pushState({
             app_action: true,
-        }, "", `${this.app.app_config.origin()}/statistics`);
+        }, "", `${this.app.app_config.origin()}/administration`);
     }
 
     async _handle_state(state) {

@@ -306,7 +306,6 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
 
     if let Some(file) = item.file {
         let object = Object::from_id(&ctx.database, &file.object).await?;
-
         let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
         let body = Body::from_stream(stream);
 
@@ -315,7 +314,7 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
             (header::CONTENT_LENGTH, file.size.to_string()),
             (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
         ];
-        Ok((headers, body))
+        Ok((headers, body).into_response())
     } else {
         let mut zip = AsyncDirectoryZip::new();
         zip.push_item(&ctx.database, item.clone()).await?;
@@ -339,7 +338,7 @@ async fn download(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, re
             (header::CONTENT_LENGTH, size.to_string()),
             (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", item.name.encoded()))
         ];
-        Ok((headers, body))
+        Ok((headers, body).into_response())
     }
 }
 
