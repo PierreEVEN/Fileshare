@@ -3,7 +3,7 @@ use crate::item::{DbItem, Trash};
 use crate::object::Object;
 use anyhow::Error;
 use std::fs::File;
-use std::io:, SeekFrom};
+use std::io::{R};
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 use tokio_util::bytes::BufMut;
 use tracing::info;
