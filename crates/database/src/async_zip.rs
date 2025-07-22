@@ -286,7 +286,7 @@ impl AsyncDirectoryZip {
             // Write file
             let mut crc32 = Crc32::new();
             if let Some(file) = &item.file {
-                info!("Prepare zip archive of {} bytes for {}", file.size, item.name.plain()?);
+                info!("Archive file of {} bytes ({})", file.size, item.name.plain()?);
                 let object = Object::from_id(db, &file.object).await?;
                 let mut file = File::open(Object::data_path(object.id(), db))?;
                 let mut buf = [0u8; 4096];
@@ -318,7 +318,7 @@ impl AsyncDirectoryZip {
 
         let end_of_directory = self.end_of_directory(central_directory_start, location);
         sink.write_all(end_of_directory.as_slice()).await?;
-
+        sink.flush().await?;
         Ok(())
     }
 }

@@ -5,7 +5,7 @@
     <button><img src="/public/images/icons/icons8-menu-96.png" alt="menu" {{object "menu_img"}}></button>
 </div>
 <div class="search-box">
-    <input type="text" placeholder="search" onchange="{{ctx "search_changed(event)"}}" {{object "search_bar"}}>
+    <input type="text" placeholder="search" onchange="{{ctx "search_changed(event)"}}" onkeydown="{{ctx "search_changed(event)"}}" {{object "search_bar"}}>
     <img src="/public/images/icons/icons8-search-100.png">
 </div>
 <div class="signin" {{object "signin"}}>

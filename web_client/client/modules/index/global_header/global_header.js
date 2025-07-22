@@ -33,10 +33,12 @@ class AppHeader extends AppWidget {
                 await this.get_app().set_display_user(this._connected_user);
             },
             search_changed: async (event) => {
-                if (event.target.value === "") {
-                    this.get_app().set_global_search(null);
-                } else {
-                    this.get_app().set_global_search(new Filter().name(event.target.value));
+                if (!event.key || event.key === 'Enter') {
+                    if (event.target.value === "") {
+                        this.get_app().set_global_search(null);
+                    } else {
+                        this.get_app().set_global_search(new Filter().name(event.target.value));
+                    }
                 }
             }
         });
