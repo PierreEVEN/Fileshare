@@ -316,7 +316,7 @@ class Uploader extends AppWidget {
         if (existing) {
             return existing;
         } else {
-            const entry = UploadItem.FromRepositoryDirectory(get_app(this), directory)
+            const entry = UploadItem.FromRepositoryDirectory(this.get_app(), directory)
             if (directory.parent_item) {
                 const parent = await this._add_existing_directory(await directory.filesystem().fetch_item(directory.parent_item));
                 parent.add_child(entry);

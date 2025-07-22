@@ -112,6 +112,7 @@ class FileshareApp extends HTMLElement {
         await this.get_repository_page().open_item(item);
         await this.state.open_item(item);
         this.get_repository_page(repository);
+        await this.side_bar.expand_to(repository, item, false);
     }
 
     /**

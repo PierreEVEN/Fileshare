@@ -1,5 +1,3 @@
 # TODO
 - implémenter les filtres
 - supporter plus de 1000 items par dossiers
-- améliorer le design du lecteur de pdf mobile
-- améliorer le design de la controllbar dash
