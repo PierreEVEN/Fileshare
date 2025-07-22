@@ -20,10 +20,13 @@
             <a href="mailto:{{user.email}}">{{user.email}}</a>
         {{/if}}
     </div>
-    <div class="repository-list">
-        <h1>Dépôts :</h1>
-        <div class="list" {{object "repository_list"}}>
-        </div>
+</div>
+<div class="repository-list">
+    <h2>Mes dépôts :</h2>
+    <div class="list" {{object "repository_list"}}>
     </div>
 </div>
-<div {{object "tokens"}} class="tokens"></div>
+<div class="section-tokens">
+    <h2>Appareils connectés</h2>
+    <div {{object "tokens"}} class="tokens"></div>
+</div>
