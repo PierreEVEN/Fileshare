@@ -1,0 +1,11 @@
+<button onclick="{{ctx "open(event)"}}" oncontextmenu="{{ctx "context(event)"}}">
+    {{#if expandable}}
+        <span {{object "arrow"}}>▸</span>
+    {{/if}}
+    <img src={{icon}} alt="icon">
+    <p>{{name}}</p>
+</button>
+{{#if expandable}}
+    <div class="expandable-content" {{object "content"}}>
+    </div>
+{{/if}}

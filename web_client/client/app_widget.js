@@ -13,6 +13,28 @@ class AppWidget extends HTMLElement {
         }
         return this.__cache_app;
     }
+
+    /**
+     * @param div {Object|function}
+     * @param context {Object}
+     * @param callbacks {Object}
+     * @return {Object}
+     */
+    set_content(div, context = {}, callbacks = {}) {
+        this.innerHTML = '';
+        const elements = div(context, callbacks);
+        this._elements = elements.hb_elements
+        if (elements.constructor.name === 'Array')
+            for (const element of elements)
+                this.append(element);
+        else
+            this.append(elements);
+        return this._elements
+    }
+
+    elements() {
+        return this._elements;
+    }
 }
 
 export {AppWidget}

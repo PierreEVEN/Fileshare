@@ -133,7 +133,7 @@ class Repository {
             if (local)
                 found.push(local);
             else
-                not_found.push(id);
+                not_found.push(id.toString());
         }
         if (not_found.length !== 0) {
             let repositories = await app.fetch_api('repository/find', 'POST', not_found)
@@ -145,7 +145,7 @@ class Repository {
                 found.push(Repository.new(app, repository));
         }
 
-        return is_array ? found : repos.length > 0 ? found[0] : null;
+        return is_array ? found : found.length > 0 ? found[0] : null;
     }
 
     remove() {

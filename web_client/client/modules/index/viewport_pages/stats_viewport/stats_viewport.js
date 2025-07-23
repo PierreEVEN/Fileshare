@@ -17,7 +17,6 @@ class StatsViewport extends AppWidget {
             calc_object_sizes: async () => {
                 this.pause();
                 const result = await this.get_app().fetch_api("administration/recalculate-db-sizes");
-                console.log(result)
                 NOTIFICATION.info(new Message(JSON.stringify(result)).title("Finished cleanup pass"))
                 this.start();
             }

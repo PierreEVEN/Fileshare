@@ -68,20 +68,14 @@ class UserViewport extends AppWidget {
             this.append(element);
         this._elements = viewport.hb_elements;
 
-        let repositories = await this.get_app().fetch_api(`user/repositories/${this.user.id}`)
+        let repositories = await Repository.find(this.get_app(), await this.get_app().fetch_api(`user/repositories/${this.user.id}`)
             .catch(err => {
                 NOTIFICATION.warn(new Message(err).title("Failed to retrieve user repositories"));
                 return [];
-            });
+            }));
 
-        for (const repository_id of repositories) {
-            let repository = await Repository.find(this.get_app(), repository_id);
-            let widget = require('./user_repository.hbs')({text: repository.display_name.plain()}, {
-                visit: async () => {
-                    await this.get_app().set_display_repository(repository);
-                }
-            });
-            this._elements.repository_list.append(widget);
+        for (const repository of repositories) {
+            this._elements.repository_list.append(document.createElement('repository-tree-button').set_repository(repository));
         }
 
         if (this.user === this.get_app().app_config.connected_user()) {

@@ -188,7 +188,7 @@ class SideBar extends AppWidget {
         if (!recent_tree) {
             return;
         }
-        await recent_tree.expand_to_item(item, trash);
+        await recent_tree.expand_to_item(item ? item : target_repository, trash);
     }
 
     select_div(div) {

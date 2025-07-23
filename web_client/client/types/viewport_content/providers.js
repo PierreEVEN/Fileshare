@@ -41,7 +41,7 @@ class DirectoryContentProvider extends ContentProvider {
     async get_content() {
         const items = [];
         const fs = this.directory.filesystem();
-        for (const item_id of await fs.directory_content(fs.app, this.directory.id)) {
+        for (const item_id of await fs.directory_content(this.directory.id)) {
             const item = await fs.fetch_item(item_id);
             if (!item.in_trash)
                 items.push(item);

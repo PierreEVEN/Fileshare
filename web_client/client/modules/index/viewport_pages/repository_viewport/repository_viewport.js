@@ -394,7 +394,6 @@ class RepositoryViewport extends AppWidget {
     }
 
     disconnectedCallback() {
-        super.delete();
         if (this.uploader)
             this.uploader.delete();
         this.uploader = null;

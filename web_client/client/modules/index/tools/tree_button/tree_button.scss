@@ -1,0 +1,51 @@
+.tree-button {
+  display: flex;
+  flex-direction: column;
+
+  &.selected {
+    > button {
+      background-color: rgba(0, 0, 0, 0.15);
+      border-color: rgba(85, 85, 85, 1);
+    }
+  }
+
+  button {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+
+    span {
+      margin-left: 20px;
+      margin-right: 5px;
+      transition-duration: 0.2s;
+      visibility: hidden;
+
+      &.expanded {
+        rotate: 90deg;
+      }
+    }
+
+    img {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+      margin-left: 20px;
+    }
+
+    p {
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      font-size: 14px;
+      margin-right: 20px;
+    }
+  }
+
+  .expandable-content {
+    display: flex;
+    flex-direction: column;
+    margin-left: 15px;
+  }
+}
