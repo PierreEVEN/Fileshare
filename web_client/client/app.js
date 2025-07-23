@@ -9,8 +9,8 @@ require('./app.scss');
 import "./modules/index/global_header/global_header";
 import "./modules/index/viewport_pages/stats_viewport/stats_viewport";
 import "./modules/index/viewport_pages/user_viewport/user_viewport";
-import "./modules/index/tools/tree_button/item_tree_button/item_tree_button";
-import "./modules/index/tools/tree_button/repository_tree_button/repository_tree_button";
+import "./modules/index/tools/tree_button/item_tree_button";
+import "./modules/index/tools/tree_button/repository_tree_button";
 import "./modules/index/viewport_pages/repository_settings/repository_settings";
 import "./modules/index/side_bar/side_bar";
 

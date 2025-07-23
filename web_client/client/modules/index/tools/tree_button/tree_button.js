@@ -76,10 +76,11 @@ class TreeButton extends AppWidget {
                     this.context_menu();
                 },
                 open: async (event) => {
-                    await this.open();
+                    if (!this.is_selected())
+                        await this.open();
                     if (this._expandable)
                         await this.set_expanded(!this._expanded);
-                    if (this.onclick)
+                    if (this.onclick && !this.is_selected())
                         this.onclick(event)
                 }
             });
@@ -121,20 +122,23 @@ class TreeButton extends AppWidget {
     set_expandable(expandable) {
         if (this._expandable === expandable)
             return this;
+
         this._expandable = expandable;
         this.generate_content();
         return this;
     }
 
     /**
-     * @param item
+     * @param item {FilesystemItem | Repository}
+     * @param expand {boolean}
      */
-    focus_item(item) {
+    focus_item(item, expand = false) {
         if (!this.this_item())
             return console.error("Cannot focus : item is not initialized yet on {}", this);
         if (item.id === this.this_item().id) {
-            this.classList.add('selected');
-            this.set_expanded(true);
+            this._select(true);
+            if (expand)
+                this.set_expanded(true);
             return;
         }
         if (this._expandable) {
@@ -144,17 +148,15 @@ class TreeButton extends AppWidget {
             while (hierarchy[hierarchy.length - 1].parent_item) {
                 hierarchy.push(item.filesystem().find(hierarchy[hierarchy.length - 1].parent_item))
             }
-            this._focus_item(hierarchy);
+            this._focus_item(hierarchy, expand);
         }
-        else
-            this.classList.remove('selected');
     }
 
-    _focus_item(hierarchy) {
-
+    _focus_item(hierarchy, expand = false) {
         if (hierarchy.length === 0) {
-            this.classList.add('selected');
-            this.set_expanded(true);
+            this._select(true);
+            if (expand)
+                this.set_expanded(true);
             return;
         }
 
@@ -163,11 +165,35 @@ class TreeButton extends AppWidget {
         this.set_expanded(true).then(() => {
             const found_child = this._items.get(item.id);
             if (found_child)
-                found_child._focus_item(hierarchy);
+                found_child._focus_item(hierarchy, expand);
             else {
-                this._focus_item([]);
+                this._focus_item([], expand);
             }
         })
+    }
+
+    _select(select) {
+        const root = this.get_tree_root();
+        if ((root._selected === this) === select)
+            return;
+
+        if (select && root._selected)
+            root._selected._select(false);
+
+        if (select) {
+            root._selected = this;
+            this.classList.add('selected');
+        }
+        else
+            this.classList.remove('selected');
+    }
+
+    is_selected() {
+        return this.get_tree_root()._selected === this;
+    }
+
+    get_tree_root() {
+        return this._root || this;
     }
 
     async set_expanded(expand) {
@@ -179,45 +205,43 @@ class TreeButton extends AppWidget {
         if (this._expansion_promise)
             await this._expansion_promise;
 
-        if (!this._expansion_promise)
-            this._expansion_promise = new Promise(async resolve => {
-                this._expanded = expand;
-                if (expand) {
-                    if (!this._initialized_content) {
-                        this._initialized_content = true;
-                        this._items = new Map();
+        this._expansion_promise = new Promise(async resolve => {
+            this._expanded = expand;
+            if (expand) {
+                if (!this._initialized_content) {
+                    this._initialized_content = true;
+                    this._items = new Map();
 
-                        const content = (await this.get_filesystem().fetch_item(Array.from(await this.get_content()))).sort(((a, b) => {
-                            if (a.is_regular_file && !b.is_regular_file)
-                                return 1;
-                            else if (b.is_regular_file && !a.is_regular_file)
-                                return -1;
-                            return a.name.plain().localeCompare(b.name.plain())
-                        }));
+                    const content = (await this.get_filesystem().fetch_item(Array.from(await this.get_content()))).sort(((a, b) => {
+                        if (a.is_regular_file && !b.is_regular_file)
+                            return 1;
+                        else if (b.is_regular_file && !a.is_regular_file)
+                            return -1;
+                        return a.name.plain().localeCompare(b.name.plain())
+                    }));
 
-                        for (const item of content) {
-                            this._add_item(item);
-                        }
-                        this._on_add_item = GLOBAL_EVENTS.add('add_item', (item) => {
-                            if (this.is_a_child(item))
-                                this._add_item(item);
-                        })
-                        this._on_remove_item = GLOBAL_EVENTS.add('remove_item', (item) => {
-                            this._remove_item(item);
-                        })
+                    for (const item of content) {
+                        this._add_item(item);
                     }
-                    this.elements().content.style.display = 'flex';
-                    this.elements().arrow.classList.add('expanded');
+                    this._on_add_item = GLOBAL_EVENTS.add('add_item', (item) => {
+                        if (this.is_a_child(item))
+                            this._add_item(item);
+                    })
+                    this._on_remove_item = GLOBAL_EVENTS.add('remove_item', (item) => {
+                        this._remove_item(item);
+                    })
                 }
-                else {
-                    this.elements().content.style.display = 'none';
-                    this.elements().arrow.classList.remove('expanded');
-                }
-                resolve();
-            })
+                this.elements().content.style.display = 'flex';
+                this.elements().arrow.classList.add('expanded');
+            }
+            else {
+                this.elements().content.style.display = 'none';
+                this.elements().arrow.classList.remove('expanded');
+            }
+            resolve();
+        })
 
         await this._expansion_promise;
-        delete this._expansion_promise;
     }
 
     _add_item(item) {
@@ -230,6 +254,7 @@ class TreeButton extends AppWidget {
         const div = document.createElement('item-tree-button')
             .set_directory(item)
             .set_expandable(true);
+        div._root = this.get_tree_root();
         this.elements().content.append(div);
         this._items.set(item.id, div);
     }

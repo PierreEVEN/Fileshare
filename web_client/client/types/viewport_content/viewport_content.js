@@ -155,7 +155,6 @@ class ViewportContent {
 
         this._listener_remove = GLOBAL_EVENTS.add('remove_item', async (item) => {
             await this._remove_entry(item);
-
             if (this._provider instanceof DirectoryContentProvider && this._provider.directory) {
                 if (await this._provider.directory.is_in_parents(item.id) || this._provider.directory.id === item.id)
                     await this.set_content_provider(new RepositoryRootProvider(await Repository.find(viewport.get_app(), this._provider.directory.repository)))

@@ -1,6 +1,6 @@
-import {TreeButton} from "../tree_button";
-import {context_menu_item} from "../../../context_menu/contexts/context_item";
-import {get_mime_icon_path} from "../../../../../utilities/mime_utils";
+import {TreeButton} from "./tree_button";
+import {context_menu_item} from "../../context_menu/contexts/context_item";
+import {get_mime_icon_path} from "../../../../utilities/mime_utils";
 
 class ItemTreeButton extends TreeButton {
     /**

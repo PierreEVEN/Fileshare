@@ -278,25 +278,26 @@ class FilesystemStream {
         const existing = await this.fetch_item(item_id);
         if (!existing)
             return new Set();
-        if (existing.children) {
-            if (existing._set_children_promise)
-                await existing._set_children_promise;
-            return existing.children;
-        }
-        existing.children = new Set();
-        if (!existing._set_children_promise)
-            existing._set_children_promise = new Promise(async resolve => {
+
+        if (existing._get_directory_content_promise)
+            return await existing._get_directory_content_promise;
+
+        if (!existing._get_directory_content_promise)
+            existing._get_directory_content_promise = new Promise(async resolve => {
+                existing.children = new Set();
                 for (const item of await this.app.fetch_api(`item/directory-content`, 'POST', [item_id])
                     .catch(error => {
                         NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de l'objet ${item_id}`))
-                        resolve()})) {
-                    await this.set_or_update_item(new FilesystemItem(item));
+                        resolve(new Set())
+                    })) {
+                    if (this._items.has(item.id))
+                        existing.children.add(item.id);
+                    else
+                        await this.set_or_update_item(new FilesystemItem(item));
                 }
-                resolve();
+                resolve(existing.children);
             })
-        await existing._set_children_promise;
-        delete existing._set_children_promise;
-        return existing.children;
+        return await existing._get_directory_content_promise;
     }
 
     /**
@@ -343,6 +344,8 @@ class FilesystemStream {
      * @return {Promise<Set<number>>}
      */
     async root_content() {
+        if (this._init_get_roots)
+            return await this._init_get_roots;
         if (!this._init_get_roots)
             this._init_get_roots = new Promise(async (resolve) => {
                 this._roots = new Set();
@@ -351,7 +354,10 @@ class FilesystemStream {
                         NOTIFICATION.warn(new Message(error).title(`Impossible de lire la racine du dépot ${this._repository.url_name.plain()}`));
                         resolve(new Set());
                     })) {
-                    await this.set_or_update_item(new FilesystemItem(item));
+                    if (this._items.has(item.id))
+                        this._roots.add(item.id);
+                    else
+                        await this.set_or_update_item(new FilesystemItem(item));
                 }
                 resolve(this._roots);
             })
@@ -447,6 +453,7 @@ class FilesystemStream {
      * @return {Promise<void>}
      */
     async remove_item(item) {
+        console.trace("remove item")
         if (this._trash_roots)
             this._trash_roots.delete(item.id);
         if (item.parent_item) {
@@ -456,7 +463,7 @@ class FilesystemStream {
         } else if (this._roots) {
             this._roots.delete(item.id);
         }
-        GLOBAL_EVENTS.broadcast('remove_item', item);
+        await GLOBAL_EVENTS.broadcast('remove_item', item);
     }
 
     /**
