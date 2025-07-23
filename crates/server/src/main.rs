@@ -5,7 +5,7 @@ use std::net::{SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::Ordering::SeqCst;
-use std::time::Instant;
+use std::time::{Instant};
 use axum::{middleware, Router};
 use axum::body::{Body, Bytes};
 use axum::extract::State;
@@ -212,16 +212,15 @@ async fn main() {
 pub async fn middleware_get_request_context(jar: CookieJar, State(ctx): State<Arc<AppCtx>>, mut request: Request<Body>, next: Next) -> Result<Response, ServerError> {
     let mut context = RequestContext::default();
 
+    //tokio::time::sleep(std::time::Duration::from_millis(800)).await;
+
     let token = match jar.get("authtoken") {
         None => { request.headers().get("content-authtoken").map(EncString::try_from) }
         Some(token) => { Some(EncString::from_url_path(token.value().to_string())) }
     };
 
     if let Some(token) = token {
-        context.connected_user = tokio::sync::RwLock::new(match DbUser::from_auth_token(&ctx.database, &token?).await {
-            Ok(connected_user) => { Some(connected_user) }
-            Err(_) => { None }
-        })
+        context.connected_user = tokio::sync::RwLock::new((DbUser::from_auth_token(&ctx.database, &token?).await).ok())
     }
 
     let uri = request.uri().clone();

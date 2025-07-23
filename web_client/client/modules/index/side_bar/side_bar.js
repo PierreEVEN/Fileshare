@@ -183,12 +183,16 @@ class SideBar extends AppWidget {
      * @return {Promise<void>}
      */
     async expand_to(target_repository, item, trash) {
-        await this.expand_recent(true);
-        let recent_tree = this._recent_repositories_loaded.get(target_repository.id);
-        if (!recent_tree) {
+        await this.expand_my_repositories(true);
+        let my_repositories = this._my_repositories_loaded.get(target_repository.id);
+        if (my_repositories) {
+            await my_repositories.expand_to_item(item ? item : target_repository, trash);
             return;
         }
-        await recent_tree.expand_to_item(item ? item : target_repository, trash);
+        await this.expand_recent(true);
+        let recent_repositories = this._my_repositories_loaded.get(target_repository.id);
+        if (recent_repositories)
+            await recent_repositories.expand_to_item(item ? item : target_repository, trash);
     }
 
     select_div(div) {
