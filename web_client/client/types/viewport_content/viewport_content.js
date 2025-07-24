@@ -2,40 +2,6 @@ import {EventManager, GLOBAL_EVENTS} from "../event_manager";
 import {DirectoryContentProvider, RepositoryRootProvider} from "./providers";
 import {Repository} from "../repository";
 
-class ContentFilter  {
-    constructor() {
-        this._inner = null;
-    }
-
-    /**
-     * @param item {FilesystemItem}
-     * @returns {boolean}
-     */
-    test(item) {
-        if (this._inner)
-            if (!this._inner.test(item))
-                return false;
-        return this.filter(item);
-    }
-
-    /**
-     * @param item {FilesystemItem}
-     * @returns {boolean}
-     */
-    filter(item) {
-        return true;
-    }
-
-    /**
-     * @param filter {ContentFilter}
-     * @return ContentFilter
-     */
-    join(filter) {
-        this._inner = filter;
-        return this._inner;
-    }
-}
-
 class ContentProvider {
     constructor() {
 
@@ -134,12 +100,6 @@ class ViewportContent {
         this.events = new EventManager();
 
         /**
-         * @type {ContentFilter|null}
-         * @private
-         */
-        this._filter = null;
-
-        /**
          * @type {ContentSorter|null}
          * @private
          */
@@ -163,12 +123,6 @@ class ViewportContent {
     }
 
     delete() {
-        super.delete();
-        if (this._filter)
-            this._filter.delete();
-        this._filter = null;
-        if (this._sorter)
-            this._sorter.delete();
         this._sorter = null;
         if (this._provider)
             this._provider.delete();
@@ -179,21 +133,9 @@ class ViewportContent {
     }
 
     /**
-     * @param filter {ContentFilter|null}
-     */
-    async set_filter(filter) {
-        if (this._filter)
-            this._filter.delete();
-        this._filter = filter;
-        await this._regen_content();
-    }
-
-    /**
      * @param sorter {ContentSorter|null}
      */
     async set_sorter(sorter) {
-        if (this._sorter)
-            this._sorter.delete();
         this._sorter = sorter;
         await this._regen_content();
     }
@@ -210,11 +152,7 @@ class ViewportContent {
         this.add_event = this._provider.events.add('add', (item) => {
             if (this._pending_regeneration)
                 return;
-            if (this._filter) {
-                if (this._filter.test(item))
-                    this._add(item)
-            } else
-                this._add(item)
+            this._add(item)
         })
         await this._regen_content();
     }
@@ -264,22 +202,15 @@ class ViewportContent {
         this._pending_regeneration = true;
         const sources = await this._provider.get_content();
         this._pending_regeneration = false;
-        let filtered_sources = [];
-
-        if (this._filter) {
-            for (const item of sources)
-                if (this._filter.test(item))
-                    filtered_sources.push(item);
-        } else
-            filtered_sources = sources;
+        let sorted_sources = sources;
 
         if (this._sorter)
-            filtered_sources = this._sorter.sort_content(filtered_sources);
+            sorted_sources = this._sorter.sort_content(sorted_sources);
 
-        for (const source of filtered_sources) {
+        for (const source of sorted_sources) {
             await this._add(source);
         }
     }
 }
 
-export {ViewportContent, ContentFilter, ContentSorter, ContentProvider}
+export {ViewportContent, ContentSorter, ContentProvider}

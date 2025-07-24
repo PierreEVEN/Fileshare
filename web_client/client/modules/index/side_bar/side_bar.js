@@ -1,6 +1,5 @@
 import {Repository} from "../../../types/repository";
 import {User} from "../../../types/user";
-import {RepositoryTree} from "./repository_tree/repository_tree";
 import {context_menu_my_repositories} from "../context_menu/contexts/context_my_repositories";
 import {EventManager, GLOBAL_EVENTS} from "../../../types/event_manager";
 import {APP_COOKIES} from "../tools/cookies/cookies";
@@ -16,6 +15,7 @@ class SideBar extends AppWidget {
          * @private
          */
         this._connected_user = undefined;
+        this._first_time = true;
 
         const div = require('./side_bar.hbs')({}, {
             expand_my_repositories: async () => {
@@ -42,26 +42,28 @@ class SideBar extends AppWidget {
         this.refresh(this.get_app().app_config.connected_user());
 
         /**
-         * @type {Map<number, RepositoryTree>}
+         * @type {Map<number, TreeButton>}
          * @private
          */
         this._my_repositories_loaded = new Map();
 
         /**
-         * @type {Map<number, RepositoryTree>}
+         * @type {Map<number, TreeButton>}
          * @private
          */
         this._shared_repositories_loaded = new Map();
 
         /**
-         * @type {Map<number, RepositoryTree>}
+         * @type {Map<number, TreeButton>}
          * @private
          */
         this._recent_repositories_loaded = new Map();
 
         this._add_repository = GLOBAL_EVENTS.add('add_repository', async (repository) => {
             if (this._my_repos_expanded && !this._my_repositories_loaded.has(repository.id) && this.get_app().app_config.connected_user() && repository.owner === this.get_app().app_config.connected_user().id) {
-                this._my_repositories_loaded.set(repository.id, new RepositoryTree(this, this._elements.my_repositories, repository));
+                const div = document.createElement('repository-tree-button').set_repository(repository).set_expandable(true);
+                this._elements.my_repositories.append(div);
+                this._my_repositories_loaded.set(repository.id, div);
             }
         });
 
@@ -90,8 +92,11 @@ class SideBar extends AppWidget {
                 return a.display_name.plain().localeCompare(b.display_name.plain())
             }));
             for (const repository of my_repos_sorted) {
-                if (!this._my_repositories_loaded.has(repository.id))
-                    this._my_repositories_loaded.set(repository.id, new RepositoryTree(this, this._elements.my_repositories, repository));
+                if (!this._my_repositories_loaded.has(repository.id)) {
+                    const div = document.createElement('repository-tree-button').set_repository(repository).set_expandable(true);
+                    this._elements.my_repositories.append(div);
+                    this._my_repositories_loaded.set(repository.id, div);
+                }
             }
         } else {
             this._elements.div_my_repositories.classList.remove('expand');
@@ -111,7 +116,9 @@ class SideBar extends AppWidget {
             }));
 
             for (const repository of repositories_sorted) {
-                this._shared_repositories_loaded.set(repository.id, new RepositoryTree(this, this._elements.shared, repository));
+                const div = document.createElement('repository-tree-button').set_repository(repository).set_expandable(true);
+                this._elements.shared.append(div);
+                this._shared_repositories_loaded.set(repository.id, div);
             }
         } else {
             this._elements.div_shared.classList.remove('expand');
@@ -133,8 +140,11 @@ class SideBar extends AppWidget {
             }));
 
             for (const repository of repositories_sorted) {
-                if (repository && !this._recent_repositories_loaded.has(repository.id))
-                    this._recent_repositories_loaded.set(repository.id, new RepositoryTree(this, this._elements.recent, repository));
+                if (repository && !this._recent_repositories_loaded.has(repository.id)) {
+                    const div = document.createElement('repository-tree-button').set_repository(repository).set_expandable(true);
+                    this._elements.recent.append(div);
+                    this._recent_repositories_loaded.set(repository.id, div);
+                }
             }
         } else {
             this._elements.div_recent.classList.remove('expand');
@@ -186,13 +196,16 @@ class SideBar extends AppWidget {
         await this.expand_my_repositories(true);
         let my_repositories = this._my_repositories_loaded.get(target_repository.id);
         if (my_repositories) {
-            await my_repositories.expand_to_item(item ? item : target_repository, trash);
+            await my_repositories.focus_item(item ? item : target_repository, this._first_time);
+            this._first_time = false;
             return;
         }
         await this.expand_recent(true);
         let recent_repositories = this._my_repositories_loaded.get(target_repository.id);
-        if (recent_repositories)
-            await recent_repositories.expand_to_item(item ? item : target_repository, trash);
+        if (recent_repositories) {
+            await recent_repositories.focus_item(item ? item : target_repository, this._first_time);
+            this._first_time = false;
+        }
     }
 
     select_div(div) {

@@ -51,8 +51,7 @@ class ViewportToolbar extends AppWidget {
     async set_toolbar_path(current_item, is_trash) {
         this.current_item = current_item;
         this.is_trash = is_trash && !current_item;
-        this.hb_elements.root.innerText = this.repository.display_name.plain();
-        this.hb_elements.repos_icon.src = is_trash ? '/public/images/icons/icons8-full-trash-96.png' : '/public/images/icons/icons8-storage-96.png'
+        this.hb_elements.repository.set_repository(this.repository).display_trash(this.is_trash);
 
         this.hb_elements.path.innerHTML = '';
         if (current_item) {
@@ -60,12 +59,7 @@ class ViewportToolbar extends AppWidget {
             let item = current_item;
             while (item) {
                 if (!item.is_regular_file) {
-                    const current_item = item;
-                    const div = require('./toolbar_path_btn.hbs')(item.display_data(), {
-                        select: async () => {
-                            await this.get_app().set_display_item(current_item);
-                        }
-                    });
+                    const div = document.createElement('item-tree-button').set_directory(item);
                     if (first) {
                         first = false;
                         div.style['margin-right'] = 'auto';

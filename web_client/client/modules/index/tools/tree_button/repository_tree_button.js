@@ -1,11 +1,12 @@
 import {Repository} from "../../../../types/repository";
 import {TreeButton} from "./tree_button";
 import {context_menu_repository} from "../../context_menu/contexts/context_repository";
+import {RepositoryRootProvider, TrashContentProvider} from "../../../../types/viewport_content/providers";
 
 class RepositoryTreeButton extends TreeButton {
     connectedCallback() {
-        if (this.hasAttribute('id')) {
-            Repository.find(this.get_app(), Number(this.getAttribute('id'))).then(result => {
+        if (this.hasAttribute('repository')) {
+            Repository.find(this.get_app(), Number(this.getAttribute('repository'))).then(result => {
                 this._repository = result;
                 super.connectedCallback();
             })
@@ -35,31 +36,52 @@ class RepositoryTreeButton extends TreeButton {
     }
 
     get_name() {
-        return this._repository ? this._repository.display_name.plain() : "";
+        return this.is_in_trash() ? 'Corbeille' : this._repository ? this._repository.display_name.plain() : "";
     }
 
     get_icon() {
-        return '/public/images/icons/icons8-storage-96.png';
+        return this.is_in_trash() ? '/public/images/icons/icons8-full-trash-96.png' : '/public/images/icons/icons8-storage-96.png';
     }
 
     context_menu() {
-        if (this._repository)
-            context_menu_repository(this.get_app(), this._repository);
+        if (!this.is_in_trash())
+            if (this._repository)
+                context_menu_repository(this.get_app(), this._repository);
     }
 
-    async open() {
-        if (this._repository)
-            await this.get_app().set_display_repository(this._repository);
+    async open(new_tab) {
+        if (this._repository) {
+            if (new_tab)
+                window.open(this.is_in_trash() ? await this._repository.trash_url(this.get_app()) : await this._repository.url(this.get_app()));
+            else if (this.is_in_trash())
+                await this.get_app().set_display_trash(this._repository);
+            else
+                await this.get_app().set_display_repository(this._repository);
+        }
     }
 
-    is_a_child(item) {
+    async is_a_child(item) {
         if (!this._repository)
             return false;
-        return item.repository === this._repository.id && item.parent_item === null;
+        if (this.is_in_trash()) {
+            if (item.in_trash && item.repository === this._repository.id)
+                if (!item.parent_item || !(await item.filesystem().fetch_item(item.parent_item)).in_trash)
+                    return true;
+            return false;
+        }
+        else
+            return item.repository === this._repository.id && !item.parent_item && !item.in_trash;
+
     }
 
-    async get_content() {
-        return this._repository ? await this._repository.content.root_content() : new Set();
+    get_content() {
+        if (this.is_in_trash()) {
+            return new TrashContentProvider(this._repository);
+            //return this._repository ? await this._repository.content.trash_content() : new Set();
+        } else {
+            return new RepositoryRootProvider(this._repository);
+            //return this._repository ? await this._repository.content.root_content() : new Set();
+        }
     }
 
     get_filesystem() {
@@ -68,3 +90,5 @@ class RepositoryTreeButton extends TreeButton {
 }
 
 customElements.define('repository-tree-button', RepositoryTreeButton);
+
+export {RepositoryTreeButton}

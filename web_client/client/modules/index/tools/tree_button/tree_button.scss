@@ -1,6 +1,7 @@
 .tree-button {
   display: flex;
   flex-direction: column;
+  justify-content: center;
 
   &.selected {
     > button {

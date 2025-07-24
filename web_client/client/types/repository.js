@@ -3,6 +3,7 @@ import {FilesystemStream} from "./filesystem_stream";
 import {GLOBAL_EVENTS} from "./event_manager";
 import {Message, NOTIFICATION} from "../modules/index/tools/message_box/notification";
 import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
+import {User} from "./user";
 
 class RepositoryStatus {
     constructor(data) {
@@ -114,6 +115,22 @@ class Repository {
         result.description = this.description.plain()
         result.display_name = this.display_name.plain()
         return result
+    }
+
+    /**
+     * @param app {FileshareApp}
+     * @return {Promise<String>}
+     */
+    async url(app) {
+        return `${app.app_config.origin()}/${(await User.fetch(app, this.owner)).name.plain()}/${this.url_name.plain()}`
+    }
+
+    /**
+     * @param app {FileshareApp}
+     * @return {Promise<String>}
+     */
+    async trash_url(app) {
+        return `${app.app_config.origin()}/${(await User.fetch(app, this.owner)).name.plain()}/${this.url_name.plain()}/trash`
     }
 
     /**

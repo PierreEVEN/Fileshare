@@ -1,4 +1,4 @@
-<button onclick="{{ctx "open(event)"}}" oncontextmenu="{{ctx "context(event)"}}">
+<button onclick="{{ctx "open(event)"}}" oncontextmenu="{{ctx "context(event)"}}" onauxclick="{{ctx "open_aux(event)"}}">
     {{#if expandable}}
         <span {{object "arrow"}}>▸</span>
     {{/if}}

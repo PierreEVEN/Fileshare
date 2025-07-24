@@ -156,6 +156,17 @@ class FilesystemItem {
     }
 
     /**
+     * @param app {FileshareApp}
+     * @returns {Promise<string>}
+     */
+    async url(app) {
+        const {Repository} = require("./repository");
+        const repository = await Repository.find(app, this.repository);
+        const base = await repository.url(app);
+        return `${base}/tree${this.absolute_path.plain()}`
+    }
+
+    /**
      * @return {Promise<void>}
      */
     async download() {
@@ -388,17 +399,21 @@ class FilesystemStream {
      * @return {Promise<Set<number>>}
      */
     async trash_content() {
-        if (!this._trash_roots) {
-            this._trash_roots = new Set();
-            for (const item of await this.app.fetch_api(`repository/trash-content`, 'POST', [this._repository.id])
-                .catch(error => {
-                    NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de la corbeille de ${this._repository.url_name.plain()}`));
-                    return [];
-                })) {
-                await this.set_or_update_item(new FilesystemItem(item));
-            }
-        }
-        return this._trash_roots
+        if (this._init_trash_roots)
+            return await this._init_trash_roots;
+        if (!this._init_trash_roots)
+            this._init_trash_roots = new Promise(async (resolve) => {
+                this._trash_roots = new Set();
+                for (const item of await this.app.fetch_api(`repository/trash-content`, 'POST', [this._repository.id])
+                    .catch(error => {
+                        NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de la corbeille de ${this._repository.url_name.plain()}`));
+                        return resolve(new Set());
+                    })) {
+                    await this.set_or_update_item(new FilesystemItem(item));
+                }
+                resolve(this._trash_roots);
+            });
+        return await this._init_trash_roots;
     }
 
     /**
@@ -453,7 +468,6 @@ class FilesystemStream {
      * @return {Promise<void>}
      */
     async remove_item(item) {
-        console.trace("remove item")
         if (this._trash_roots)
             this._trash_roots.delete(item.id);
         if (item.parent_item) {

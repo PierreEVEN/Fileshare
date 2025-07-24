@@ -1,7 +1,4 @@
-<button class="root-button" onclick="{{ctx "select_root()"}}">
-    <img {{object "repos_icon"}} alt="icon" src="/public/images/icons/icons8-storage-96.png">
-    <p {{object "root"}}></p>
-</button>
+<repository-tree-button {{object "repository"}}></repository-tree-button>
 <div class="path" {{object "path"}}></div>
 <div class="actions">
     <button><img alt="Download" src="/public/images/icons/icons8-download-96.png" onclick="{{ctx "download()"}}"></button>
