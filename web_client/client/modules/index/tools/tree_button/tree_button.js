@@ -172,6 +172,7 @@ class TreeButton extends AppWidget {
      * @param expand {boolean}
      */
     focus_item(item, expand = false) {
+        console.log("focus : ", expand)
         if (!this.this_item())
             return console.error("Cannot focus : item is not initialized yet on {}", this);
         if (item.id === this.this_item().id) {
@@ -236,6 +237,7 @@ class TreeButton extends AppWidget {
     }
 
     async set_expanded(expand) {
+        console.trace("expand : ", expand)
         if (!this._expandable)
             return;
         if (this._expanded === expand)
