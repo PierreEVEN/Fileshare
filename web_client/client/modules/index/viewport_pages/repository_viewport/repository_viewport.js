@@ -19,6 +19,7 @@ import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
 import {delete_item} from "../../tools/delete_item/delete_item";
 import {AppWidget} from "../../../../app_widget";
 import "../global_carousel/global_carousel"
+import {StateSelection} from "../../../../utilities/state";
 
 require('./repository_viewport.scss')
 
@@ -46,9 +47,9 @@ document.addEventListener('keydown', async function (event) {
                 if (CURRENT_VIEWPORT.content.get_content_provider() instanceof DirectoryContentProvider) {
                     let item = CURRENT_VIEWPORT.content.get_content_provider().directory;
                     if (item.parent_item)
-                        await CURRENT_VIEWPORT.get_app().set_display_item(await item.filesystem().fetch_item(item.parent_item));
+                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_item(await item.filesystem().fetch_item(item.parent_item)));
                     else
-                        await CURRENT_VIEWPORT.get_app().set_display_repository(await Repository.find(CURRENT_VIEWPORT.get_app(), item.repository));
+                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_repository(await Repository.find(CURRENT_VIEWPORT.get_app(), item.repository)));
                     CURRENT_VIEWPORT.selector.select_item(item.id, false, false);
                 }
             }
@@ -91,7 +92,7 @@ document.addEventListener('keydown', async function (event) {
         if (CURRENT_VIEWPORT.selector.get_last_selected_item()) {
             let data = await CURRENT_VIEWPORT.try_get_item_data(CURRENT_VIEWPORT.selector.get_last_selected_item());
             if (!data || data.in_trash) return;
-            await CURRENT_VIEWPORT.get_app().set_display_item(data);
+            await this.get_app().state.select(new StateSelection().set_item(data));
         }
     }
     if (!CURRENT_VIEWPORT.get_app().get_modal().is_open() && !CURRENT_VIEWPORT.carousel_list) {
@@ -166,7 +167,7 @@ class RepositoryViewport extends AppWidget {
             const new_item = document.createElement('item-view');
             new_item.set_item(item);
             new_item.ondblclick = async () => {
-                await this.get_app().set_display_item(item);
+                await this.get_app().state.select(new StateSelection().set_item(item));
             };
             new_item.onclick = async (event) => {
                 const local_edit = event.ctrlKey;
@@ -175,7 +176,7 @@ class RepositoryViewport extends AppWidget {
                     if (this.mobile_selection) {
                         this.selector.action_select(item.id, true, false);
                     } else {
-                        await this.get_app().set_display_item(item);
+                        await this.get_app().state.select(new StateSelection().set_item(item));
                     }
                 } else {
                     this.selector.action_select(item.id, local_edit, fill_space);

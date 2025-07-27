@@ -2,6 +2,7 @@ import {Repository} from "../../../../types/repository";
 import {TreeButton} from "./tree_button";
 import {context_menu_repository} from "../../context_menu/contexts/context_repository";
 import {RepositoryRootProvider, TrashContentProvider} from "../../../../types/viewport_content/providers";
+import {StateSelection} from "../../../../utilities/state";
 
 class RepositoryTreeButton extends TreeButton {
     connectedCallback() {
@@ -54,9 +55,9 @@ class RepositoryTreeButton extends TreeButton {
             if (new_tab)
                 window.open(this.is_in_trash() ? await this._repository.trash_url(this.get_app()) : await this._repository.url(this.get_app()));
             else if (this.is_in_trash())
-                await this.get_app().set_display_trash(this._repository);
+                await this.get_app().state.select(new StateSelection().set_repository(await this._repository, true));
             else
-                await this.get_app().set_display_repository(this._repository);
+                await this.get_app().state.select(new StateSelection().set_repository(await this._repository));
         }
     }
 

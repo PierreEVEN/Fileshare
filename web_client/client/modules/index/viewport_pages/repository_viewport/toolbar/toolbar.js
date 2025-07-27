@@ -1,6 +1,7 @@
 import {context_menu_item} from "../../../context_menu/contexts/context_item";
 import {context_menu_repository} from "../../../context_menu/contexts/context_repository";
 import {AppWidget} from "../../../../../app_widget";
+import {StateSelection} from "../../../../../utilities/state";
 
 require("./toolbar.scss");
 
@@ -14,9 +15,9 @@ class ViewportToolbar extends AppWidget {
         let div = require('./toolbar.hbs')({}, {
             select_root: async () => {
                 if (this.is_trash)
-                    await this.get_app().set_display_trash(this.repository);
+                    await this.get_app().state.select(new StateSelection().set_repository(this.repository, true));
                 else
-                    await this.get_app().set_display_repository(this.repository);
+                    await this.get_app().state.select(new StateSelection().set_repository(this.repository));
             },
             download: () => {
                 if (this.current_item)

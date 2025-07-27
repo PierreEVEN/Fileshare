@@ -2,8 +2,80 @@ import {User} from "../types/user";
 import {Repository} from "../types/repository";
 import {FilesystemItem} from "../types/filesystem_stream";
 import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
+import {EventManager} from "../types/event_manager";
 
-class State {
+class StateSelection {
+    constructor() {
+        /**
+         * @type {Repository}
+         */
+        this.repository = null;
+        /**
+         * @type {FilesystemItem}
+         */
+        this.item = null;
+        /**
+         * @type {User}
+         */
+        this.user = null;
+        /**
+         * @type {boolean}
+         */
+        this.in_trash = false;
+        /**
+         * @type {boolean}
+         */
+        this.in_settings = false;
+
+        /**
+         * @type {boolean}
+         */
+        this.in_admin_pannel = false;
+    }
+
+    /**
+     * @param repository {Repository}
+     * @param in_trash {boolean}
+     * @param in_settings {Boolean}
+     * @return {StateSelection}
+     */
+    set_repository(repository, in_trash = false, in_settings = false) {
+        this.repository = repository;
+        this.in_settings = in_settings;
+        return this;
+    }
+
+    /**
+     * @param user {User}
+     * @returns {StateSelection}
+     */
+    set_user(user) {
+        this.user = user;
+        return this;
+    }
+
+    /**
+     * @returns {StateSelection}
+     */
+    set_admin() {
+        this.in_admin_pannel = true;
+        return this;
+    }
+
+    /**
+     * @param item {FilesystemItem}
+     * @param in_trash {boolean}
+     * @returns {StateSelection}
+     */
+    set_item(item, in_trash = false) {
+        this.item = item;
+        this.in_trash = in_trash;
+        return this;
+    }
+}
+
+
+class AppState {
     /**
      * @param app {FileshareApp}
      */
@@ -11,41 +83,97 @@ class State {
         this.app = app;
         addEventListener('popstate', async (event) => {
             if (event.state && event.state.app_action)
-                await this._handle_state(event.state)
+                await this.select(event.state.selection, false);
         })
 
         this._disable_state = false;
+
+        this.events = new EventManager();
+
+        /**
+         * @type {StateSelection}
+         * @private
+         */
+        this._selected_item = new StateSelection();
+    }
+
+    async _clear_selection() {
+        await this.events.broadcast('deselect', this._selected_item);
+        this._selected_item = new StateSelection();
+    }
+
+    /**
+     * @param selection {StateSelection}
+     * @param with_state {boolean}
+     */
+    async select(selection, with_state = true) {
+        await this._clear_selection();
+        if (selection) {
+            this._selected_item = selection;
+            await this.events.broadcast('select', this._selected_item);
+
+            if (selection.item)
+                APP_COOKIES.push_last_repositories(selection.item.repository);
+            if (selection.repository)
+                APP_COOKIES.push_last_repositories(selection.repository.id)
+
+            if (with_state) {
+                const repository = selection.repository || selection.item ? await Repository.find(this.app, selection.item.repository) : null;
+                const user = selection.user || repository ? await User.fetch(this.app, repository.owner) : null;
+
+                if (selection.item) {
+                    if (selection.in_trash)
+                        history.pushState({
+                            app_action: true,
+                            selection: selection,
+                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash${selection.item.absolute_path.encoded()}`);
+                    else
+                        console.log(selection);
+                        history.pushState({
+                            app_action: true,
+                            selection: selection,
+                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/tree${selection.item.absolute_path.encoded()}`);
+                } else if (selection.repository) {
+                    if (selection.in_settings)
+                        history.pushState({
+                            app_action: true,
+                            selection: selection,
+                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/settings`);
+                    else if (selection.in_trash)
+                        history.pushState({
+                            app_action: true,
+                            selection: selection,
+                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash`);
+                    else
+                        history.pushState({
+                            app_action: true,
+                            selection: selection,
+                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}`);
+                } else if (selection.user) {
+                    history.pushState({
+                        app_action: true,
+                        selection: selection,
+                    }, "", `${this.app.app_config.origin()}/${user.name.encoded()}`);
+                } else if (selection.in_admin_pannel) {
+                    history.pushState({
+                        app_action: true,
+                        selection: selection,
+                    }, "", `${this.app.app_config.origin()}/administration`);
+                }
+            }
+        }
     }
 
     /**
      * @param repository {Repository}
      */
     async open_repository(repository) {
-        if (this._disable_state)
-            return;
-
-        APP_COOKIES.push_last_repositories(repository.id);
-
-        history.pushState({
-            app_action: true,
-            repository: repository.id,
-        }, "", `${this.app.app_config.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}`);
     }
 
     /**
      * @param repository {Repository}
      */
     async open_repository_settings(repository) {
-        if (this._disable_state)
-            return;
-
-        APP_COOKIES.push_last_repositories(repository.id);
-
-        history.pushState({
-            app_action: true,
-            repository: repository.id,
-            settings: true
-        }, "", `${this.app.app_config.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/settings`);
     }
 
     /**
@@ -53,72 +181,19 @@ class State {
      * @return {Promise<void>}
      */
     async open_item(item) {
-        if (this._disable_state)
-            return;
-
-        APP_COOKIES.push_last_repositories(item.repository);
-
-        let repository = await Repository.find(this.app, item.repository);
-        history.pushState({
-            app_action: true,
-            item: item.id,
-            repository: item.repository
-        }, "", `${this.app.app_config.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/tree${item.absolute_path.encoded()}${item.is_regular_file ? "" : ""}`);
     }
 
     /**
      * @param repository {Repository}
      */
     async open_trash(repository) {
-        if (this._disable_state)
-            return;
-        history.pushState({
-            app_action: true,
-            repository: repository.id,
-            trash: true
-        }, "", `${this.app.app_config.origin()}/${await this._get_user_name(repository.owner)}/${repository.url_name.encoded()}/trash`);
     }
 
     async open_user(user) {
-        if (this._disable_state)
-            return;
-        history.pushState({
-            app_action: true,
-            user: user.id
-        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}`);
     }
 
     async open_stats() {
-        if (this._disable_state)
-            return;
-        history.pushState({
-            app_action: true,
-        }, "", `${this.app.app_config.origin()}/administration`);
-    }
-
-    async _handle_state(state) {
-        this._disable_state = true;
-        if (state.item && state.repository) {
-            let repository = await Repository.find(this.app, state.repository);
-            await this.app.set_display_item(await repository.content.fetch_item(state.item));
-        } else if (state.repository) {
-            let repository = await Repository.find(this.app, state.repository);
-            if (state.trash)
-                await this.app.set_display_trash(repository);
-            else if (state.settings)
-                await this.app.set_display_repository_settings(repository);
-            else
-                await this.app.set_display_repository(repository);
-        } else if (state.user) {
-            let user = await User.fetch(this.app, state.user);
-            await this.app.set_display_user(user);
-        }
-        this._disable_state = false;
-    }
-
-    async _get_user_name(id) {
-        return (await User.fetch(this.app, id)).name.encoded()
     }
 }
 
-export {State}
+export {AppState, StateSelection}

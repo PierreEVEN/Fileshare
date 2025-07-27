@@ -3,6 +3,7 @@ import {context_menu_item} from "../../context_menu/contexts/context_item";
 import {get_mime_icon_path} from "../../../../utilities/mime_utils";
 import {Repository} from "../../../../types/repository";
 import {DirectoryContentProvider} from "../../../../types/viewport_content/providers";
+import {StateSelection} from "../../../../utilities/state";
 
 class ItemTreeButton extends TreeButton {
     /**
@@ -52,12 +53,12 @@ class ItemTreeButton extends TreeButton {
                 if (new_tab)
                     window.open(await (await Repository.find(this.get_app(), this._item.repository)).trash_url(this.get_app()));
                 else
-                    await this.get_app().set_display_trash(await Repository.find(this.get_app(), this._item.repository));
+                    await this.get_app().state.select(new StateSelection().set_repository(await Repository.find(this.get_app(), this._item.repository)));
             } else {
                 if (new_tab)
                     window.open(await this._item.url(this.get_app()));
                 else
-                    await this.get_app().set_display_item(this._item);
+                    await this.get_app().state.select(new StateSelection().set_item(this._item));
             }
         }
     }

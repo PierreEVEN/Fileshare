@@ -17,10 +17,8 @@ import "./modules/index/side_bar/side_bar";
 require("./modules/index/modal/modal");
 
 import "./modules/index/viewport_pages/repository_viewport/upload/uploader";
-import {State} from "./utilities/state";
-import {Repository} from "./types/repository";
+import {AppState, StateSelection} from "./utilities/state";
 import {AppConfig} from "./utilities/app_config";
-import {FilesystemItem} from "./types/filesystem_stream";
 import "./modules/index/viewport_pages/error_page";
 import "./modules/index/viewport_pages/repository_viewport/repository_viewport";
 import {APP_COOKIES} from "./modules/index/tools/cookies/cookies";
@@ -32,7 +30,8 @@ class FileshareApp extends HTMLElement {
     constructor() {
         super();
 
-        this.state = new State(this);
+        this.state = new AppState(this);
+        this.state.events.add('select', async selection => { await this._on_state_change(selection); })
 
         /**
          * @type {AppConfig}
@@ -69,23 +68,22 @@ class FileshareApp extends HTMLElement {
                 this.set_viewport_content(document.createElement('page-error').set_error(this.app_config.error()));
             else {
                 if (this.app_config.show_stats()) {
-                    await this.set_display_stats();
+                    await this.state.select(new StateSelection().set_admin())
                 } else if (await this.app_config.display_item()) {
-                    await this.set_display_item(await this.app_config.display_item());
+                    await this.state.select(new StateSelection().set_item(await this.app_config.display_item()))
                 } else if (this.app_config.display_repository()) {
-                    await this._elements.side_bar.expand_to(this.app_config.display_repository(), null, this.app_config.in_trash());
                     if (this.app_config.in_trash())
-                        await this.set_display_trash(this.app_config.display_repository());
+                        await this.state.select(new StateSelection().set_repository(await this.app_config.display_repository(), true));
                     else if (this.app_config.repository_settings()) {
-                        await this.state.open_repository_settings(this.app_config.display_repository());
-                        await this.set_display_repository_settings(this.app_config.display_repository());
+                        await this.state.select(new StateSelection().set_repository(await this.app_config.display_repository(), false, true));
                     }
                     else
-                        await this.set_display_repository(this.app_config.display_repository());
+                        await this.state.select(new StateSelection().set_repository(await this.app_config.display_repository()));
                 }
                 else if (this.app_config.display_user()) {
-                    await this.set_display_user(this.app_config.display_user());
-                } else {
+                    await this.state.select(new StateSelection().set_user(await this.app_config.display_user()));
+                }
+                else {
                     if (screen.availHeight > screen.availWidth)
                         await this._elements.side_bar.show_mobile();
                     if (this.app_config.connected_user())
@@ -98,59 +96,35 @@ class FileshareApp extends HTMLElement {
     }
 
     /**
-     * @param repository {Repository}
-     * @return {Promise<void>}
+     * @param selection {StateSelection}
+     * @private
      */
-    async set_display_repository(repository) {
-        await this.get_repository_page().open_root(repository);
-        await this.state.open_repository(repository);
+    async _on_state_change(selection) {
+        if (selection.item) {
+            await this._get_repository_page().open_item(selection.item);
+        } else if (selection.repository) {
+            if (selection.in_settings)
+                this.set_viewport_content(document.createElement('page-repository-settings').set_repository(selection.repository));
+            if (selection.in_trash)
+                await this._get_repository_page().open_trash(selection.repository);
+            else
+                await this._get_repository_page().open_root(selection.repository);
+        } else if (selection.user)
+            this.set_viewport_content(document.createElement('page-user').set_user(selection.user));
+        else if (selection.in_admin_pannel)
+            this.set_viewport_content(document.createElement('page-stats'));
     }
 
     /**
-     * @param item {FilesystemItem}
-     * @return {Promise<void>}
+     * @returns {RepositoryViewport}
+     * @private
      */
-    async set_display_item(item) {
-        const repository = await Repository.find(this, item.repository);
-        await this.get_repository_page().open_item(item);
-        await this.state.open_item(item);
-        this.get_repository_page(repository);
-        await this.side_bar.expand_to(repository, item, false);
-    }
-
-    /**
-     * @return {Promise<void>}
-     */
-    async set_display_stats() {
-        this.set_viewport_content(document.createElement('page-stats'));
-        await this.state.open_stats();
-    }
-
-    /**
-     * @param repository {Repository}
-     * @return {Promise<void>}
-     */
-    async set_display_trash(repository) {
-        await this.get_repository_page().open_trash(repository);
-        await this.state.open_trash(repository);
-    }
-
-    get_repository_page() {
+    _get_repository_page() {
         if (this._viewport_content && this._viewport_content.tagName.toLowerCase() === 'page-repository') {
             return this._viewport_content;
         } else {
             return this.set_viewport_content(document.createElement('page-repository'));
         }
-    }
-
-    async set_display_user(new_user) {
-        this.set_viewport_content(document.createElement('page-user').set_user(new_user));
-        await this.state.open_user(new_user);
-    }
-
-    async set_display_repository_settings(repository) {
-        this.set_viewport_content(document.createElement('page-repository-settings').set_repository(repository));
-        await this.state.open_repository_settings(repository);
     }
 
     set_viewport_content(page_content) {

@@ -2,6 +2,7 @@ import {Authentication} from "../tools/authentication/authentication";
 import {GLOBAL_EVENTS} from "../../../types/event_manager";
 import {AppWidget} from "../../../app_widget";
 import {Filter} from "../../../types/filter/filter";
+import {StateSelection} from "../../../utilities/state";
 
 require('./global_header.scss')
 
@@ -30,7 +31,7 @@ class AppHeader extends AppWidget {
                 this.get_app().side_bar.show_mobile()
             },
             user: async () => {
-                await this.get_app().set_display_user(this._connected_user);
+                await this.get_app().state.select(new StateSelection().set_user(this._connected_user));
             },
             search_changed: async (event) => {
                 if (!event.key || event.key === 'Enter') {
