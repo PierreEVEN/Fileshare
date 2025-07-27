@@ -13,7 +13,7 @@ impl ActionPush {
         let mut actions = vec![];
         for action in diff.actions() {
             match action {
-                Action::ResyncLocal(_) => { actions.push(action.clone()); }
+                Action::ResyncLocal(_, _) => { actions.push(action.clone()); }
                 Action::ConflictAddLocalNewer(_, _) => { actions.push(action.clone()); }
                 Action::ErrorRemoteDowngraded(_, _) => {}
                 Action::LocalUpgraded(_, _) => { actions.push(action.clone()); }

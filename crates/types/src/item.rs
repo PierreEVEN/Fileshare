@@ -42,6 +42,7 @@ pub struct Item {
     pub in_trash: bool,
     pub directory: Option<DirectoryData>,
     pub file: Option<FileData>,
+    pub corrupted: Option<bool>,
 }
 
 impl Item {
@@ -208,6 +209,7 @@ impl<'de> Deserialize<'de> for Item {
                         "parent_item" => { item.parent_item = map.next_value()? }
                         "absolute_path" => { item.absolute_path = map.next_value()? }
                         "in_trash" => { item.in_trash = map.next_value()? }
+                        "corrupted" => { item.corrupted = map.next_value()? }
                         "is_regular_file" => {
                             if map.next_value()? {
                                 item.directory = None;
@@ -227,7 +229,7 @@ impl<'de> Deserialize<'de> for Item {
                 Ok(item)
             }
         }
-        const FIELDS: &[&str] = &["id", "repository", "owner", "name", "description", "parent_item", "absolute_path", "in_trash", "open_upload", "content_size", "num_items", "is_regular_file", "timestamp", "mimetype", "size"];
+        const FIELDS: &[&str] = &["id", "repository", "owner", "name", "description", "parent_item", "absolute_path", "in_trash", "open_upload", "content_size", "num_items", "is_regular_file", "timestamp", "mimetype", "size", "corrupted"];
         deserializer.deserialize_struct("Item", FIELDS, ItemVisitor)
     }
 }

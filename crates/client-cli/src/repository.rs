@@ -1,5 +1,5 @@
 use crate::content::connection::Connection;
-use crate::content::diff::Action;
+use crate::content::diff::{sort_items_to_set, Action};
 use crate::content::filesystem::{Filesystem, LocalFilesystem, RemoteFilesystem};
 use crate::content::item::{Item, LocalItem, RemoteItem};
 use crate::content::meta_dir::MetaDir;
@@ -7,7 +7,7 @@ use anyhow::Error;
 use futures_util::StreamExt;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use paris::{error, info};
-use reqwest::Body;
+use reqwest::{Body, Response};
 use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
@@ -83,12 +83,13 @@ impl Repository {
             None => {}
             Some(remote_content) => { return Ok(remote_content.clone()); }
         }
-        let response = self.connection.get(format!("/repository/content/{}/", self.connection.remote_id()?)).await?.send().await?;
+        let response = self.connection.get(format!("/repository/content/{}", self.connection.remote_id()?)).await?.send().await?;
 
         let data = self.connection.parse_result(response).await?
             .error_for_status()?
             .text().await?;
-        let mut content: Vec<RemoteItem> = serde_json::from_str(data.as_str())?;
+        let mut content: Vec<RemoteItem> = serde_json::from_str(data.as_str()).map_err(|err| {Error::msg(format!("Failed to parse remote content : {err}"))})?;
+
         let filesystem = Arc::new(RwLock::new(RemoteFilesystem::default()));
         for item in &mut content {
             item.set_filesystem(&filesystem);
@@ -192,12 +193,17 @@ impl Repository {
         Ok(())
     }
 
-    fn resync_local_item_state(&mut self, item: &dyn Item) -> Result<(), Error> {
+    fn resync_local_item_state(&mut self, scanned: &dyn Item, remote: &dyn Item) -> Result<(), Error> {
         let root = self.connection.metadata_directory().root()?.clone();
-        self.update_local_item_state(&root, item)?;
+        self.update_local_item_state(&root, scanned)?;
 
-        for child in item.get_children()? {
-            self.resync_local_item_state(&*child.read().unwrap())?;
+        let scanned_children = sort_items_to_set(&scanned.get_children()?);
+        let remote_children = sort_items_to_set(&remote.get_children()?);
+
+        for (child, scanned) in scanned_children {
+            if let Some(remote) = remote_children.get(&child) {
+                self.resync_local_item_state(&*scanned.read().unwrap(), &*remote.read().unwrap())?;
+            }
         }
 
         Ok(())
@@ -287,7 +293,7 @@ impl Repository {
                     parent_item: None,
                 };
 
-                let result = self.connection.post("/item/new-directory/".to_string()).await?
+                let result = self.connection.post("/item/new-directory".to_string()).await?
                     .json(&vec![dir_data])
                     .send().await?;
                 let new_dirs: Vec<RemoteItem> = self.connection.parse_result(result).await?.json().await?;
@@ -311,7 +317,7 @@ impl Repository {
                             parent_item: Some(remote_parent.read().unwrap().cast::<RemoteItem>().id().clone()),
                         };
 
-                        let result = self.connection.post("/item/new-directory/".to_string()).await?
+                        let result = self.connection.post("/item/new-directory".to_string()).await?
                             .json(&vec![dir_data])
                             .send().await?;
                         let new_dirs: Vec<RemoteItem> = self.connection.parse_result(result).await?.json().await?;
@@ -401,7 +407,7 @@ impl Repository {
             }
         };
 
-        let mut request = self.connection.post("/item/send/".to_string()).await?
+        let mut request = self.connection.post("/item/send".to_string()).await?
             .header("Content-Name", item.name().encoded().as_str())
             .header("Content-Size", item.size().to_string().as_str())
             .header("Content-Timestamp", item.timestamp().to_string().as_str())
@@ -438,7 +444,7 @@ impl Repository {
     }
 
     async fn remove_remote_item(&mut self, scanned_ref: &Arc<RwLock<dyn Item>>, remote_ref: &Arc<RwLock<dyn Item>>) -> Result<(), Error> {
-        let result = self.connection.post(format!("{}move-to-trash/", "todo"))
+        let result = self.connection.post(format!("{}move-to-trash", "todo"))
             .await?.json(&vec![remote_ref.read().unwrap().cast::<RemoteItem>().id()])
             .send().await?;
         self.connection_mut().parse_result(result).await?;
@@ -453,8 +459,8 @@ impl Repository {
 
         for action in actions {
             match action {
-                Action::ResyncLocal(scanned) => {
-                    self.resync_local_item_state(&*scanned.read().unwrap())?;
+                Action::ResyncLocal(scanned, remote) => {
+                    self.resync_local_item_state(&*scanned.read().unwrap(), &*remote.read().unwrap())?;
                 }
                 Action::ConflictAddLocalNewer(_scanned, _remote) => {
                     todo!()

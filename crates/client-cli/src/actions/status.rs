@@ -20,7 +20,7 @@ impl ActionStatus {
         let mut actions = vec![];
         for action in diff.actions() {
             match action {
-                Action::ResyncLocal(scanned) => {
+                Action::ResyncLocal(scanned, _) => {
                     let scanned = scanned.read().unwrap();
                     actions.push(action.clone());
                     println!(" ⚊ . ⚊ | {} - The file exists on both side but was not tracked.", scanned.path_from_root()?.display());

@@ -62,7 +62,7 @@ impl Connection {
     }
 
     pub async fn ping_repository(&mut self) -> Result<Repository, Error> {
-        let response = self.post("/repository/find/".to_string()).await?
+        let response = self.post("/repository/find".to_string()).await?
             .json(&vec![self.remote_id()?])
             .send().await?;
         let repositories: Vec<Repository> = self.parse_result(response).await?.error_for_status()?.json().await?;
@@ -138,7 +138,7 @@ impl Connection {
                     return Err(Error::msg(err));
                 }
             };
-            let client = self.client.post(format!("{}/api/user/login/", url.origin))
+            let client = self.client.post(format!("{}/api/user/login", url.origin))
                 .json(&body)
                 .send().await?;
 
@@ -162,7 +162,7 @@ impl Connection {
         if self.authentication_token.is_none() {
             return Err(Error::msg("Already disconnected"));
         }
-        self.post("/user/logout/".to_string()).await?
+        self.post("/user/logout".to_string()).await?
             .send().await?.error_for_status()?;
         self.authentication_token = None;
         success!("Successfully disconnected");

@@ -10,7 +10,7 @@ pub struct Diff {
     actions: Vec<Action>,
 }
 
-fn sort_items_to_set(items: &Vec<Arc<RwLock<dyn Item>>>) -> HashMap<String, Arc<RwLock<dyn Item>>> {
+pub fn sort_items_to_set(items: &Vec<Arc<RwLock<dyn Item>>>) -> HashMap<String, Arc<RwLock<dyn Item>>> {
     let mut hashmap = HashMap::new();
     for item in items {
         hashmap.insert(item.read().unwrap().name().plain().unwrap(), item.clone());
@@ -21,7 +21,7 @@ fn sort_items_to_set(items: &Vec<Arc<RwLock<dyn Item>>>) -> HashMap<String, Arc<
 #[derive(Debug, Clone)]
 pub enum Action {
     ///scanned : up to date but local reference needs to be updated (#resync local)
-    ResyncLocal(Arc<RwLock<dyn Item>>),
+    ResyncLocal(Arc<RwLock<dyn Item>>, Arc<RwLock<dyn Item>>),
     ///scanned - remote : CONFLICT : Local item was added on both side, but local is newer
     ConflictAddLocalNewer(Arc<RwLock<dyn Item>>, Arc<RwLock<dyn Item>>),
     ///scanned - remote : ERROR : Remote downgraded. Is it normal ?
@@ -85,7 +85,7 @@ impl Diff {
                     match local.get(key) {
                         None => {
                             // item up to date but local reference needs to be updated (#resync local)
-                            self.actions.push(Action::ResyncLocal(scanned_item_ref.clone()));
+                            self.actions.push(Action::ResyncLocal(scanned_item_ref.clone(), remote_item_ref.clone()));
                         }
                         Some(_local_item_ref) => {
                             // Nothing to do. Keep scanning inside
