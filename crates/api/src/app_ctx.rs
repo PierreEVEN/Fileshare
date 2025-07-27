@@ -69,7 +69,7 @@ impl AppCtx {
             .remove(id)
             .ok_or(Error::msg("Upload not found"))?;
         let mut upload = item.write().await;
-        upload.store(db).await?;
+        upload.store(db).await.map_err(|err| {Error::msg(format!("Failed to store uploaded item {} : {err}", upload.item().name))})?;
         Ok(upload.get_state())
     }
 

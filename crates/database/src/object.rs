@@ -51,13 +51,11 @@ impl Object {
                     return Err(Error::msg(format!("Failed to store new object : {err}")));
                 }
             }
-        } else {
-            if let Err(err) = fs::rename(file, Object::data_path(new_object.id(), db)) {
-                query_fmt!(db, r#"DELETE FROM SCHEMA_NAME.objects WHERE id = $1;"#, *new_object.id);
-                error!("Failed to rename object from {} to {}", file.display(), Object::data_path(new_object.id(), db).display());
-                let _ = fs::remove_file(file);
-                return Err(Error::msg(format!("Failed to store new object : {err} (please see server logs for more details) ")));
-            };
+        } else if let Err(err) = fs::rename(file, Object::data_path(new_object.id(), db)) {
+            query_fmt!(db, r#"DELETE FROM SCHEMA_NAME.objects WHERE id = $1;"#, *new_object.id);
+            error!("Failed to rename object from {} to {}", file.display(), Object::data_path(new_object.id(), db).display());
+            let _ = fs::remove_file(file);
+            return Err(Error::msg(format!("Failed to store new object : {err} (please see server logs for more details) ")));
         }
         Ok(new_object)
     }

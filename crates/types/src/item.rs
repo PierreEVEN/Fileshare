@@ -73,12 +73,13 @@ impl FromRow for Item {
             repository: row.get::<&str, RepositoryId>("repository"),
             owner: row.get::<&str, UserId>("owner"),
             name: row.get::<&str, EncString>("name"),
-            description: if let Ok(description) = row.try_get::<&str, EncString>("description") { Some(description) } else { None },
-            parent_item: if let Ok(parent_item) = row.try_get::<&str, ItemId>("parent_item") { Some(parent_item) } else { None },
+            description: row.try_get::<&str, EncString>("description").ok(),
+            parent_item: row.try_get::<&str, ItemId>("parent_item").ok(),
             absolute_path: row.get::<&str, EncPath>("absolute_path"),
             in_trash: row.get::<&str, bool>("in_trash"),
             directory: None,
             file: None,
+            corrupted: row.try_get::<&str, bool>("corrupted").ok(),
         };
         if let Ok(size) = row.try_get::<&str, i64>("size") {
             item.file = Some(FileData {
@@ -105,12 +106,13 @@ impl FromRow for Item {
             repository: row.try_get::<&str, RepositoryId>("repository")?,
             owner: row.try_get::<&str, UserId>("owner")?,
             name: row.try_get::<&str, EncString>("name")?,
-            description: if let Ok(description) = row.try_get::<&str, EncString>("description") { Some(description) } else { None },
-            parent_item: if let Ok(parent_item) = row.try_get::<&str, ItemId>("parent_item") { Some(parent_item) } else { None },
+            description: row.try_get::<&str, EncString>("description").ok(),
+            parent_item: row.try_get::<&str, ItemId>("parent_item").ok(),
             absolute_path: row.try_get::<&str, EncPath>("absolute_path")?,
             in_trash: row.try_get::<&str, bool>("in_trash")?,
             directory: None,
             file: None,
+            corrupted: row.try_get::<&str, bool>("corrupted").ok(),
         };
 
         if let Ok(size) = row.try_get::<&str, i64>("size") {

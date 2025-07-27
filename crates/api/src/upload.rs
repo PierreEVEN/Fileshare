@@ -13,6 +13,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt, BufWriter};
 use tokio_util::io::StreamReader;
 use database::{Database};
 use database::item::DbItem;
+use database::item::Trash::Both;
 use types::database_ids::{DatabaseId, ItemId, RepositoryId, UserId};
 use types::item::{FileData, Item};
 
@@ -123,7 +124,22 @@ impl Upload {
             }
         }
 
+        // Register the new object
         let object = Object::insert(db, self.get_file_path().as_path(), &hash).await?;
+
+        // In the case where a file already exists at the given path
+        if let Ok(mut existing_at_path) = DbItem::from_path(db, &self.item.absolute_path, &self.item.repository, Both).await {
+            if existing_at_path.directory.is_some() {
+                return Err(Error::msg(format!("Cannot store item to path {} : a directory with the same name already exists", existing_at_path.absolute_path.plain()?)));
+            }
+            if let Some(file) = &mut existing_at_path.file {
+                *file = self.file.clone();
+                file.object = object.id().clone();
+                DbItem::push(&mut self.item, db).await?;
+                return Ok(existing_at_path.clone())
+            }
+        }
+
         self.file.object = object.id().clone();
         self.item.file = Some(self.file.clone());
         DbItem::push(&mut self.item, db).await?;
