@@ -7,7 +7,7 @@ use anyhow::Error;
 use futures_util::StreamExt;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use paris::{error, info};
-use reqwest::{Body, Response};
+use reqwest::{Body};
 use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
