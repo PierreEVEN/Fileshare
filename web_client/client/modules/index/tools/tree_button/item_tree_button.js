@@ -49,36 +49,19 @@ class ItemTreeButton extends TreeButton {
 
     async open(new_tab) {
         if (this._item) {
-            if (this.is_in_trash()) {
-                if (new_tab)
+            if (new_tab) {
+                if (this.is_in_trash())
                     window.open(await (await Repository.find(this.get_app(), this._item.repository)).trash_url(this.get_app()));
                 else
-                    await this.get_app().state.select(new StateSelection().set_repository(await Repository.find(this.get_app(), this._item.repository)));
-            } else {
-                if (new_tab)
                     window.open(await this._item.url(this.get_app()));
-                else
-                    await this.get_app().state.select(new StateSelection().set_item(this._item));
             }
+            else
+                await this.get_app().state.select(new StateSelection().set_item(this._item, this.is_in_trash()));
         }
-    }
-
-    async is_a_child(item) {
-        if (!this._item || this.is_in_trash())
-            return false;
-        return item.parent_item === this._item.id;
     }
 
     get_content() {
         return new DirectoryContentProvider(this._item);
-        /*
-        if (!this._item || this._item.is_regular_file)
-            return new Set()
-        return await this._item.filesystem().directory_content(this._item.id)*/
-    }
-
-    get_filesystem() {
-        return this._item ? this._item.filesystem() : null;
     }
 }
 

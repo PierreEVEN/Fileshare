@@ -54,39 +54,16 @@ class RepositoryTreeButton extends TreeButton {
         if (this._repository) {
             if (new_tab)
                 window.open(this.is_in_trash() ? await this._repository.trash_url(this.get_app()) : await this._repository.url(this.get_app()));
-            else if (this.is_in_trash())
-                await this.get_app().state.select(new StateSelection().set_repository(await this._repository, true));
-            else
-                await this.get_app().state.select(new StateSelection().set_repository(await this._repository));
+            await this.get_app().state.select(new StateSelection().set_repository(await this._repository, this.is_in_trash()));
         }
-    }
-
-    async is_a_child(item) {
-        if (!this._repository)
-            return false;
-        if (this.is_in_trash()) {
-            if (item.in_trash && item.repository === this._repository.id)
-                if (!item.parent_item || !(await item.filesystem().fetch_item(item.parent_item)).in_trash)
-                    return true;
-            return false;
-        }
-        else
-            return item.repository === this._repository.id && !item.parent_item && !item.in_trash;
-
     }
 
     get_content() {
         if (this.is_in_trash()) {
             return new TrashContentProvider(this._repository);
-            //return this._repository ? await this._repository.content.trash_content() : new Set();
         } else {
             return new RepositoryRootProvider(this._repository);
-            //return this._repository ? await this._repository.content.root_content() : new Set();
         }
-    }
-
-    get_filesystem() {
-        return this._repository ? this._repository.content : null;
     }
 }
 

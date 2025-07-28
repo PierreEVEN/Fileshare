@@ -51,7 +51,7 @@ class ViewportToolbar extends AppWidget {
      */
     async set_toolbar_path(current_item, is_trash) {
         this.current_item = current_item;
-        this.is_trash = is_trash && !current_item;
+        this.is_trash = is_trash;
         this.hb_elements.repository.set_repository(this.repository).display_trash(this.is_trash);
 
         this.hb_elements.path.innerHTML = '';

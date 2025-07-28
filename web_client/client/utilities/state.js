@@ -41,6 +41,7 @@ class StateSelection {
      */
     set_repository(repository, in_trash = false, in_settings = false) {
         this.repository = repository;
+        this.in_trash = in_trash;
         this.in_settings = in_settings;
         return this;
     }

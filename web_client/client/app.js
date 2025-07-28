@@ -109,14 +109,12 @@ class FileshareApp extends HTMLElement {
      */
     async _on_state_change(selection) {
         if (selection.item) {
-            await this._get_repository_page().open_item(selection.item);
+            this._get_repository_page();
         } else if (selection.repository) {
             if (selection.in_settings)
                 this.set_viewport_content(document.createElement('page-repository-settings').set_repository(selection.repository));
-            if (selection.in_trash)
-                await this._get_repository_page().open_trash(selection.repository);
             else
-                await this._get_repository_page().open_root(selection.repository);
+                this._get_repository_page()
         } else if (selection.user)
             this.set_viewport_content(document.createElement('page-user').set_user(selection.user));
         else if (selection.in_admin_pannel)

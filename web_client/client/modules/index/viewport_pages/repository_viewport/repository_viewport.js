@@ -92,7 +92,7 @@ document.addEventListener('keydown', async function (event) {
         if (CURRENT_VIEWPORT.selector.get_last_selected_item()) {
             let data = await CURRENT_VIEWPORT.try_get_item_data(CURRENT_VIEWPORT.selector.get_last_selected_item());
             if (!data || data.in_trash) return;
-            await this.get_app().state.select(new StateSelection().set_item(data));
+            await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_item(data));
         }
     }
     if (!CURRENT_VIEWPORT.get_app().get_modal().is_open() && !CURRENT_VIEWPORT.carousel_list) {
@@ -280,6 +280,57 @@ class RepositoryViewport extends AppWidget {
                 this.open_upload_container();
             return this.uploader;
         }
+
+        if (!this._on_state_select_cb)
+            this._on_state_select_cb = this.get_app().state.events.add('select', async selection => {await this._on_state_select(selection)})
+    }
+
+    /**
+     * @param selection {StateSelection}
+     * @returns {Promise<void>}
+     * @private
+     */
+    async _on_state_select(selection) {
+        if (selection.item) {
+            const repository = await Repository.find(this.get_app(), selection.item.repository);
+            if (!this.repository || this.repository.id !== repository.id)
+                this._set_repository(repository);
+
+            const directory = selection.item.parent_item ? selection.item.is_regular_file ? await repository.content.fetch_item(selection.item.parent_item) : selection.item : null;
+
+            if (selection.in_trash) {
+                if (!this.content.get_content_provider() || !this.content.get_content_provider() instanceof TrashContentProvider || this.content.get_content_provider().repository.id !== repository.id)
+                    await this.content.set_content_provider(new TrashContentProvider(repository));
+            } else {
+                if (directory) {
+                    if (!this.content.get_content_provider() || !this.content.get_content_provider() instanceof DirectoryContentProvider || this.content.get_content_provider().directory.id !== directory.id)
+                        await this.content.set_content_provider(new DirectoryContentProvider(directory));
+                }
+                else {
+                    if (!this.content.get_content_provider() || !this.content.get_content_provider() instanceof RepositoryRootProvider || this.content.get_content_provider().repository.id !== repository.id)
+                        await this.content.set_content_provider(new RepositoryRootProvider(repository));
+                }
+            }
+            if (selection.item.is_regular_file) {
+                await this._open_carousel(selection.item);
+            }
+            else {
+                await this.close_carousel();
+                await this._update_description(directory);
+            }
+            await this._elements.toolbar.set_toolbar_path(directory, selection.in_trash);
+        } else if (selection.repository) {
+            await this._elements.toolbar.set_toolbar_path(null, selection.in_trash);
+            await this.close_carousel();
+
+            if (!this.content.get_content_provider() || !this.content.get_content_provider().repository || this.content.get_content_provider().repository.id !== selection.repository.id) {
+                if (selection.in_trash)
+                    await this.content.set_content_provider(new TrashContentProvider(selection.repository));
+                else
+                    await this.content.set_content_provider(new RepositoryRootProvider(selection.repository));
+            }
+            await this.content.set_content_provider(selection.in_trash ? new TrashContentProvider(selection.repository) : new RepositoryRootProvider(selection.repository));
+        }
     }
 
     /**
@@ -322,42 +373,6 @@ class RepositoryViewport extends AppWidget {
         }
     }
 
-    /**
-     * @param item {FilesystemItem}
-     * @return {Promise<RepositoryViewport>}
-     */
-    async open_item(item) {
-        this._set_repository(await Repository.find(this.get_app(), item.repository))
-        if (item.is_regular_file) {
-            if (!this.content.get_content_provider())
-                await this.content.set_content_provider(new DirectoryContentProvider(await item.filesystem().fetch_item(item.parent_item)));
-            await this._open_carousel(item);
-        }
-        else {
-            await this.close_carousel();
-            await this.content.set_content_provider(new DirectoryContentProvider(item));
-        }
-        await this._update_description(item);
-        await this._elements.toolbar.set_toolbar_path(item, false);
-        return this;
-    }
-
-    async open_root(repository) {
-        this._set_repository(repository);
-        await this._elements.toolbar.set_toolbar_path(null, false);
-        await this.content.set_content_provider(new RepositoryRootProvider(repository));
-        await this._update_description(repository);
-        return this;
-    }
-
-    async open_trash(repository) {
-        this._set_repository(repository);
-        await this._elements.toolbar.set_toolbar_path(null, true);
-        await this.content.set_content_provider(new TrashContentProvider(repository));
-        await this._update_description(null);
-        return this;
-    }
-
     close_upload_container() {
         this._elements.upload_button.style.display = 'flex';
         this._elements.upload_container.innerHTML = '';
@@ -398,6 +413,9 @@ class RepositoryViewport extends AppWidget {
     }
 
     disconnectedCallback() {
+        if (this._on_state_select_cb)
+            this._on_state_select_cb.remove();
+        delete this._on_state_select_cb;
         if (this.uploader)
             this.uploader.delete();
         this.uploader = null;
@@ -447,6 +465,8 @@ class RepositoryViewport extends AppWidget {
     async close_carousel() {
         if (this.get_app().get_carousel().is_open()) {
             this.carousel_list = null;
+            this._carousel_viewport = null;
+            this._carousel_content_provider = null;
             this.get_app().get_carousel().close();
 
             if (this.content.get_content_provider() instanceof DirectoryContentProvider)

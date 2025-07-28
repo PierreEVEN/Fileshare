@@ -125,7 +125,7 @@ class SideBar extends AppWidget {
         if (selection.item) {
             tree_root.focus_item(selection.item);
         } else {
-            tree_root.focus_root(true);
+            tree_root.focus_root(selection.in_trash, true);
         }
     }
 

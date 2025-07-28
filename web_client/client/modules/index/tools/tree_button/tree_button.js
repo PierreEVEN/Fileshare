@@ -168,12 +168,19 @@ class TreeButton extends AppWidget {
     }
 
     /**
+     * @param in_trash {boolean}
      * @param expand {boolean}
      */
-    focus_root(expand = false) {
-        this._select(true);
-        if (expand)
-            this.set_expanded(true);
+    focus_root(in_trash, expand = false) {
+        if (in_trash) {
+            this._trash_div._select(true);
+            if (expand)
+                this._trash_div.set_expanded(true);
+        } else {
+            this._select(true);
+            if (expand)
+                this.set_expanded(true);
+        }
     }
 
     /**
@@ -291,40 +298,14 @@ class TreeButton extends AppWidget {
                 this._add_item(item);
 
             if (this.this_item().constructor.name === 'Repository' && !this.is_in_trash()) {
-                const div = document.createElement('repository-tree-button')
+                this._trash_div = document.createElement('repository-tree-button')
                     .set_repository(this.this_item())
                     .set_expandable(true)
                     .show_regular_files(true)
                     .display_trash(true);
-                div._root = this.get_tree_root();
-                this.elements().content.append(div);
+                this._trash_div._root = this.get_tree_root();
+                this.elements().content.append(this._trash_div);
             }
-
-            /*
-            this._on_add_item = GLOBAL_EVENTS.add('add_item', async (item) => {
-                if (await this.is_a_child(item)) {
-                    this._add_item(item);
-                    // Re-sort children
-                    const to_sort = Array.prototype.slice.call(this.elements().content.children, 0);
-                    to_sort.sort((a, b) => {
-                        if (a.this_item().is_regular_file && !b.this_item().is_regular_file)
-                            return 1;
-                        else if (b.this_item().is_regular_file && !a.this_item().is_regular_file)
-                            return -1;
-                        if (a.this_item().display_name && !b.this_item().display_name)
-                            return 1;
-                        else if (b.this_item().display_name && !a.this_item().display_name)
-                            return -1;
-                        return a.this_item().name.plain().localeCompare(b.this_item().name.plain())
-                    });
-                    this.elements().content.innerHTML = '';
-                    for (const element of to_sort)
-                        this.elements().content.append(element);
-                }
-            })
-            this._on_remove_item = GLOBAL_EVENTS.add('remove_item', (item) => {
-                this._remove_item(item);
-            })*/
         }
     }
 

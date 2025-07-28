@@ -33,7 +33,6 @@ class Selector {
     }
 
     delete() {
-        super.delete();
         this._add_content_event.remove();
         this._add_content_event = null;
         this._remove_content_event.remove();
