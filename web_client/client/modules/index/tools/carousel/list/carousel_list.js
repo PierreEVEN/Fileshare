@@ -24,11 +24,13 @@ class CarouselList extends HTMLElement{
         this._rebuild();
     }
 
-    select_item(meta_data, scroll_center = false) {
-        if (this.events)
+    select_item(meta_data, scroll_center = false, no_update = false) {
+        if (this.events && !no_update)
             this.events.broadcast('select', meta_data)
 
         if (this._last_selected) {
+            if (this._last_selected.id === meta_data.id)
+                return;
             this._last_selected.classList.remove('selected');
         }
         this._last_selected = this._element_map.get(meta_data.id);

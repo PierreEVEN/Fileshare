@@ -91,10 +91,10 @@ class TreeButton extends AppWidget {
                     this.context_menu();
                 },
                 open: async (event) => {
-                    if (!this.is_selected())
-                        await this.open(false);
                     if (this._expandable)
                         await this.set_expanded(!this._expanded);
+                    if (!this.is_selected())
+                        await this.open(false);
                     if (this.onclick && !this.is_selected())
                         this.onclick(event)
                 },
@@ -168,11 +168,19 @@ class TreeButton extends AppWidget {
     }
 
     /**
-     * @param item {FilesystemItem | Repository}
+     * @param expand {boolean}
+     */
+    focus_root(expand = false) {
+        this._select(true);
+        if (expand)
+            this.set_expanded(true);
+    }
+
+    /**
+     * @param item {FilesystemItem}
      * @param expand {boolean}
      */
     focus_item(item, expand = false) {
-        console.log("focus : ", expand)
         if (!this.this_item())
             return console.error("Cannot focus : item is not initialized yet on {}", this);
         if (item.id === this.this_item().id) {
@@ -212,20 +220,25 @@ class TreeButton extends AppWidget {
         })
     }
 
+    clear_selection() {
+        const root = this.get_tree_root();
+        if (root._selected) {
+            root._selected.classList.remove('selected');
+            delete root._selected;
+        }
+    }
+
     _select(select) {
         const root = this.get_tree_root();
         if ((root._selected === this) === select)
             return;
 
-        if (select && root._selected)
-            root._selected._select(false);
+        this.clear_selection();
 
         if (select) {
             root._selected = this;
             this.classList.add('selected');
         }
-        else
-            this.classList.remove('selected');
     }
 
     is_selected() {
@@ -237,7 +250,6 @@ class TreeButton extends AppWidget {
     }
 
     async set_expanded(expand) {
-        console.trace("expand : ", expand)
         if (!this._expandable)
             return;
         if (this._expanded === expand)

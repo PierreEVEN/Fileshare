@@ -72,6 +72,37 @@ class StateSelection {
         this.in_trash = in_trash;
         return this;
     }
+
+    _get_raw_data() {
+        const res = {};
+        for (const [key, value] of Object.entries(this)) {
+            if (!value)
+                continue;
+            if (key === "item")
+                res[key] = {id: value.id, repository: value.repository};
+            else if (key === "repository" || key === "user")
+                res[key] = value.id;
+            else
+                res[key] = value;
+        }
+        return res;
+    }
+
+    async _from_raw_data(app, data) {
+        for (const [key, value] of Object.entries(data)) {
+            if (key === "repository")
+                this.repository = await Repository.find(app, value);
+            else if (key === "user")
+                this.user = await User.fetch(app, value);
+            else if (key === "item") {
+                const repository = await Repository.find(app, value.repository);
+                this.item = await repository.content.find(value.id);
+            } else {
+                this[key] = value;
+            }
+        }
+        return this;
+    }
 }
 
 
@@ -83,7 +114,7 @@ class AppState {
         this.app = app;
         addEventListener('popstate', async (event) => {
             if (event.state && event.state.app_action)
-                await this.select(event.state.selection, false);
+                await this.select(await new StateSelection()._from_raw_data(this.app, event.state.selection), false);
         })
 
         this._disable_state = false;
@@ -102,6 +133,10 @@ class AppState {
         this._selected_item = new StateSelection();
     }
 
+    selection() {
+        return this._selected_item;
+    }
+
     /**
      * @param selection {StateSelection}
      * @param with_state {boolean}
@@ -118,81 +153,49 @@ class AppState {
                 APP_COOKIES.push_last_repositories(selection.repository.id)
 
             if (with_state) {
-                const repository = selection.repository || selection.item ? await Repository.find(this.app, selection.item.repository) : null;
+                const repository = selection.repository ? selection.repository : selection.item ? await Repository.find(this.app, selection.item.repository) : null;
                 const user = selection.user || repository ? await User.fetch(this.app, repository.owner) : null;
 
                 if (selection.item) {
                     if (selection.in_trash)
                         history.pushState({
                             app_action: true,
-                            selection: selection,
+                            selection: selection._get_raw_data(),
                         }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash${selection.item.absolute_path.encoded()}`);
                     else
-                        console.log(selection);
                         history.pushState({
                             app_action: true,
-                            selection: selection,
+                            selection: selection._get_raw_data(),
                         }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/tree${selection.item.absolute_path.encoded()}`);
                 } else if (selection.repository) {
                     if (selection.in_settings)
                         history.pushState({
                             app_action: true,
-                            selection: selection,
+                            selection: selection._get_raw_data(),
                         }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/settings`);
                     else if (selection.in_trash)
                         history.pushState({
                             app_action: true,
-                            selection: selection,
+                            selection: selection._get_raw_data(),
                         }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash`);
                     else
                         history.pushState({
                             app_action: true,
-                            selection: selection,
+                            selection: selection._get_raw_data(),
                         }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}`);
                 } else if (selection.user) {
                     history.pushState({
                         app_action: true,
-                        selection: selection,
+                        selection: selection._get_raw_data(),
                     }, "", `${this.app.app_config.origin()}/${user.name.encoded()}`);
                 } else if (selection.in_admin_pannel) {
                     history.pushState({
                         app_action: true,
-                        selection: selection,
+                        selection: selection._get_raw_data(),
                     }, "", `${this.app.app_config.origin()}/administration`);
                 }
             }
         }
-    }
-
-    /**
-     * @param repository {Repository}
-     */
-    async open_repository(repository) {
-    }
-
-    /**
-     * @param repository {Repository}
-     */
-    async open_repository_settings(repository) {
-    }
-
-    /**
-     * @param item {FilesystemItem}
-     * @return {Promise<void>}
-     */
-    async open_item(item) {
-    }
-
-    /**
-     * @param repository {Repository}
-     */
-    async open_trash(repository) {
-    }
-
-    async open_user(user) {
-    }
-
-    async open_stats() {
     }
 }
 

@@ -328,8 +328,11 @@ class RepositoryViewport extends AppWidget {
      */
     async open_item(item) {
         this._set_repository(await Repository.find(this.get_app(), item.repository))
-        if (item.is_regular_file)
-            await this.open_carousel(item);
+        if (item.is_regular_file) {
+            if (!this.content.get_content_provider())
+                await this.content.set_content_provider(new DirectoryContentProvider(await item.filesystem().fetch_item(item.parent_item)));
+            await this._open_carousel(item);
+        }
         else {
             await this.close_carousel();
             await this.content.set_content_provider(new DirectoryContentProvider(item));
@@ -413,27 +416,32 @@ class RepositoryViewport extends AppWidget {
         this.close_carousel();
     }
 
-    async open_carousel(item) {
-        await this.close_carousel();
+    async _open_carousel(item) {
+        // Spawn carousel if needed
+        if (!this.get_app().get_carousel().is_open() || !this._carousel_viewport || !this._carousel_viewport.isConnected || !this.carousel_list || !this.carousel_list.isConnected) {
+            /**
+             * @type {CarouselViewport}
+             * @private
+             */
+            this._carousel_viewport = document.createElement('carousel-viewport');
+            /**
+             * @type {CarouselList}
+             */
+            this.carousel_list = document.createElement('carousel-list');
+            this.get_app().get_carousel().open(this._carousel_viewport, this.carousel_list);
 
-        if (item.parent_item) {
-            await this.content.set_content_provider(new DirectoryContentProvider(await item.filesystem().fetch_item(item.parent_item)));
-        } else {
-            await this.content.set_content_provider(new RepositoryRootProvider(await Repository.find(this.get_app(), item.repository)));
+            this.carousel_list.events.add('select', (item) => {
+                this.get_app().state.select(new StateSelection().set_item(item));
+            })
         }
-
-        await this.get_app().state.open_item(item);
-
-        const viewport = document.createElement('carousel-viewport');
-        this.carousel_list = document.createElement('carousel-list');
-        this.carousel_list.events.add('select', (item) => {
-            viewport.set_item(item);
-            this.get_app().state.open_item(item);
-            this.selector.select_item(item.id, false, false);
-        })
-        await this.carousel_list.set_items(this.content.get_displayed_items());
-        this.get_app().get_carousel().open(viewport, this.carousel_list);
-        this.carousel_list.select_item(item, true);
+        this._carousel_viewport.set_item(item);
+        if (this._carousel_content_provider !== this.content.get_content_provider()) {
+            this._carousel_content_provider = this.content.get_content_provider();
+            await this.carousel_list.set_items(this.content.get_displayed_items());
+            this.carousel_list.select_item(item, true, true);
+        } else {
+            this.carousel_list.select_item(item, false, true);
+        }
     }
 
     async close_carousel() {
@@ -442,9 +450,9 @@ class RepositoryViewport extends AppWidget {
             this.get_app().get_carousel().close();
 
             if (this.content.get_content_provider() instanceof DirectoryContentProvider)
-                await this.get_app().state.open_item(this.content.get_content_provider().directory);
+                await this.get_app().state.select(new StateSelection().set_item(this.content.get_content_provider().directory));
             else if (this.content.get_content_provider() instanceof RepositoryRootProvider)
-                await this.get_app().state.open_repository(this.content.get_content_provider().repository);
+                await this.get_app().state.select(new StateSelection().set_repository(this.content.get_content_provider().repository));
         }
     }
 }

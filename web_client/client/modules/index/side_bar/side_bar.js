@@ -81,6 +81,54 @@ class SideBar extends AppWidget {
         this.events = new EventManager();
     }
 
+    connectedCallback() {
+        if (!this._on_select_cb)
+            this._on_select_cb = this.get_app().state.events.add('select', async selection => {
+                await this._state_selection_changed(selection);
+            })
+
+        this._state_selection_changed(this.get_app().state.selection())
+    }
+
+    disconnectedCallback() {
+        if (this._on_select_cb)
+            this._on_select_cb.remove();
+        delete this._on_select_cb;
+    }
+
+    /**
+     * @param selection {StateSelection}
+     * @private
+     */
+    async _state_selection_changed(selection) {
+        if (!selection)
+            return;
+        let repository = selection.repository ? selection.repository.id : selection.item ? selection.item.repository : null;
+
+        if (!repository)
+            return;
+
+        let tree_root = this._my_repositories_loaded.get(repository);
+        if (!tree_root)
+            tree_root = this._shared_repositories_loaded.get(repository)
+        if (!tree_root)
+            tree_root = this._recent_repositories_loaded.get(repository)
+        if (!tree_root)
+            return;
+
+        if (this._last_selected) {
+            if (this._last_selected !== tree_root)
+                this._last_selected.clear_selection();
+        }
+        this._last_selected = tree_root;
+
+        if (selection.item) {
+            tree_root.focus_item(selection.item);
+        } else {
+            tree_root.focus_root(true);
+        }
+    }
+
     async expand_my_repositories(expanded) {
         if (this._my_repos_expanded === expanded)
             return;
@@ -184,35 +232,6 @@ class SideBar extends AppWidget {
             this._remove_repository.remove();
         delete this._remove_repository;
         delete this._add_repository;
-    }
-
-    /**
-     * @param target_repository {Repository}
-     * @param item {FilesystemItem|null}
-     * @param trash {boolean}
-     * @return {Promise<void>}
-     */
-    async expand_to(target_repository, item, trash) {
-        await this.expand_my_repositories(true);
-        let my_repositories = this._my_repositories_loaded.get(target_repository.id);
-        if (my_repositories) {
-            await my_repositories.focus_item(item ? item : target_repository, this._first_time);
-            this._first_time = false;
-            return;
-        }
-        await this.expand_recent(true);
-        let recent_repositories = this._my_repositories_loaded.get(target_repository.id);
-        if (recent_repositories) {
-            await recent_repositories.focus_item(item ? item : target_repository, this._first_time);
-            this._first_time = false;
-        }
-    }
-
-    select_div(div) {
-        if (this.selected_div)
-            this.selected_div.classList.remove('side-bar-selected');
-        this.selected_div = div;
-        this.selected_div.classList.add('side-bar-selected');
     }
 }
 

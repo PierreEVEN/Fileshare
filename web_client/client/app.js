@@ -31,7 +31,6 @@ class FileshareApp extends HTMLElement {
         super();
 
         this.state = new AppState(this);
-        this.state.events.add('select', async selection => { await this._on_state_change(selection); })
 
         /**
          * @type {AppConfig}
@@ -40,6 +39,9 @@ class FileshareApp extends HTMLElement {
     }
 
     connectedCallback() {
+        if (!this._on_select_cb)
+            this._on_select_cb = this.state.events.add('select', async selection => { await this._on_state_change(selection); })
+
         const layout = require('./app.hbs')({}, {
             close_mobile: () => {
                 layout.hb_elements.side_bar.show_mobile();
@@ -93,6 +95,12 @@ class FileshareApp extends HTMLElement {
                 }
             }
         })().catch(error => console.error(`initialization failed :`, error));
+    }
+
+    disconnectedCallback() {
+        if (this._on_select_cb)
+            this._on_select_cb.remove();
+        delete this._on_select_cb;
     }
 
     /**
