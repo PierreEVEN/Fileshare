@@ -1,3 +1,4 @@
 # TODO
 - fix l'erreur d'initialisation de la side bar au chargement du site
+- passer get_available_mime_icons() en global pour pas être copié 1000x
 - supporter plus de 1000 items par dossiers

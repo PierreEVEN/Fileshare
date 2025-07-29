@@ -15,9 +15,7 @@ function get(app, item) {
             switch (mimetype[1]) {
                 case 'x-pdf':
                 case 'pdf':
-                    return `<object data="${url}" type="application/pdf" width="100%" height="100%">
-                                <pdf-embed src="${url}"></pdf-embed>
-                        </object>`
+                    return `<object data="${url}" type="application/pdf" width="100%" height="100%"><pdf-embed src="${url}"></pdf-embed></object>`
                 case 'json':
                 case 'x-json':
                     return `<document-code src="${url}" class="language-json"></document-code>`

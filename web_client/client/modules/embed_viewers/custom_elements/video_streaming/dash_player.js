@@ -1,4 +1,3 @@
-import * as dashjs from 'dashjs';
 import {ControlBar} from "./ControlBar";
 import {AppWidget} from "../../../../app_widget";
 require('./controlbar.scss')
@@ -33,28 +32,32 @@ class DashPlayer extends AppWidget {
         video_div.style.height = "100%";
         for (const element of elements)
             this.append(element);
-        this.player = dashjs.MediaPlayer().create();
-        this.player.updateSettings({
-            debug: {
-                logLevel: 2
-            }
-        })
-        this.player.initialize(video_div, url, true, 0);
 
-        video_div.onclick = () => {
-            if (this.player.isPaused())
-                this.player.play();
-            else
-                this.player.pause();
-        }
-        this.control_bar = new ControlBar(this.player, false, elements.hb_elements);
-        this.control_bar.initialize();
-        video_div.ondblclick = () => {
-            if (this.control_bar.isFullscreen())
-                this.control_bar.exitFullscreen();
-            else
-                this.control_bar.enterFullscreen();
-        }
+        import("dashjs").then(dashjs => {
+
+            this.player = dashjs.MediaPlayer().create();
+            this.player.updateSettings({
+                debug: {
+                    logLevel: 2
+                }
+            })
+            this.player.initialize(video_div, url, true, 0);
+
+            video_div.onclick = () => {
+                if (this.player.isPaused())
+                    this.player.play();
+                else
+                    this.player.pause();
+            }
+            this.control_bar = new ControlBar(this.player, false, elements.hb_elements);
+            this.control_bar.initialize();
+            video_div.ondblclick = () => {
+                if (this.control_bar.isFullscreen())
+                    this.control_bar.exitFullscreen();
+                else
+                    this.control_bar.enterFullscreen();
+            }
+        });
     }
 
     disconnectedCallback() {
