@@ -5,7 +5,7 @@
   "scripts": {
     "dev:debug": "webpack --watch --config webpack.analyze.dev.js",
     "prod:debug": "webpack --config webpack.analyze.prod.js",
-    "dev": "webpack --watch --config webpack.analyze.prod.js",
+    "dev": "webpack --watch --config webpack.dev.js",
     "prod": "webpack --config webpack.prod.js"
   },
   "dependencies": {
