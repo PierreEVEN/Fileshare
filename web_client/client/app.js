@@ -1,11 +1,5 @@
-import './utilities/handlebars_helpers';
-//@FIX : don't importing this cause a weird issue when rendering pdf...
-require('./modules/embed_viewers/custom_elements/pdf_viewer/pdf-viewer.hbs');
-require('./modules/embed_viewers/custom_elements/document/code');
-require('./modules/embed_viewers/custom_elements/document/markdown');
-require('./modules/embed_viewers/custom_elements/pdf_viewer/pdf-viewer');
-require('./app.scss');
 
+import './utilities/handlebars_helpers';
 import "./modules/index/global_header/global_header";
 import "./modules/index/viewport_pages/stats_viewport/stats_viewport";
 import "./modules/index/viewport_pages/user_viewport/user_viewport";
@@ -13,18 +7,19 @@ import "./modules/index/tools/tree_button/item_tree_button";
 import "./modules/index/tools/tree_button/repository_tree_button";
 import "./modules/index/viewport_pages/repository_settings/repository_settings";
 import "./modules/index/side_bar/side_bar";
-
-require("./modules/index/modal/modal");
-
+import "./modules/index/modal/modal";
 import "./modules/index/viewport_pages/repository_viewport/upload/uploader";
-import {AppState, StateSelection} from "./utilities/state";
-import {AppConfig} from "./utilities/app_config";
 import "./modules/index/viewport_pages/error_page";
 import "./modules/index/viewport_pages/repository_viewport/repository_viewport";
+import "./modules/index/side_bar/side_bar";
+
+import {AppState, StateSelection} from "./utilities/state";
+import {AppConfig} from "./utilities/app_config";
 import {APP_COOKIES} from "./modules/index/tools/cookies/cookies";
 import {Authentication} from "./modules/index/tools/authentication/authentication";
-import "./modules/index/side_bar/side_bar";
 import {Message, NOTIFICATION} from "./modules/index/tools/message_box/notification";
+
+require('./app.scss');
 
 class FileshareApp extends HTMLElement {
     constructor() {

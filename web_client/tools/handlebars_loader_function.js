@@ -2,39 +2,41 @@ const Handlebars = require('handlebars');
 const parser = new DOMParser();
 
 // Used to register contexts
-if (!document.__handlebar_custom_loader)
-    document.__handlebar_custom_loader = {
-        __next_obj_id: 0,
-        __next_container_id: 0,
-        __registered_ctx: {},
-        __registered_objects_container: {}
+if (!document.__hbs_cl)
+    document.__hbs_cl = {
+        // Next object id
+        noid: 0,
+        // Next container id
+        ncid: 0,
+        // registered_ctx
+        ctx: {},
+        // registered object container
+        c: {}
     }
-
-Handlebars.get_mime_icons = () => JSON.parse('{{mime_icons}}');
 
 module.exports = (data, ctx) => {
     if (ctx) {
-        if (!ctx['__handlebar_ctx_id']) {
-            ctx.__handlebar_ctx_id = ++document.__handlebar_custom_loader.__next_obj_id;
-            document.__handlebar_custom_loader.__registered_ctx[ctx.__handlebar_ctx_id] = ctx;
+        if (!ctx.__hbs_cid) {
+            ctx.__hbs_cid = ++document.__hbs_cl.noid;
+            document.__hbs_cl.ctx[ctx.__hbs_cid] = ctx;
         }
-        data.__handlebar_ctx_id = ctx.__handlebar_ctx_id;
+        data.__hbs_cid = ctx.__hbs_cid;
     }
 
-    const container_id = String(++document.__handlebar_custom_loader.__next_container_id);
+    const container_id = String(++document.__hbs_cl.ncid);
 
-    document.__handlebar_custom_loader.__registered_objects_container[container_id] = new Map();
+    document.__hbs_cl.c[container_id] = new Map();
 
     if (!data)
         data = {};
 
-    data['__registered_objects_container_id'] = container_id;
+    data.c_id = container_id;
     const generated_html = Handlebars.template('{{template}}')(data);
     const body = parser.parseFromString(generated_html, 'text/html').body;
 
 
     const elements = {};
-    let container = document.__handlebar_custom_loader.__registered_objects_container[container_id];
+    let container = document.__hbs_cl.c[container_id];
     if (container.size > 0) {
         const attribute_map = new Map();
 
@@ -48,7 +50,7 @@ module.exports = (data, ctx) => {
         }
         recursive_fetch_items_ids(body);
 
-        for (const [key, value] of document.__handlebar_custom_loader.__registered_objects_container[container_id]) {
+        for (const [key, value] of document.__hbs_cl.c[container_id]) {
             const found_element = attribute_map.get(value);
             if (!found_element) {
                 console.error(`Failed to register element with id ${key}`);
@@ -61,7 +63,7 @@ module.exports = (data, ctx) => {
         body.children[0].hb_elements = elements;
         return body.children[0];
     }
-    delete document.__handlebar_custom_loader.__registered_objects_container[container_id];
+    delete document.__hbs_cl.c[container_id];
     // Force children generation
     const children = [];
     for (let i = 0; i < body.children.length; ++i) {

@@ -26,22 +26,22 @@ async function open_file_picker(directory, app) {
         inputElement.addEventListener("cancel", () => {
             resolve([]);
         });
-        inputElement.addEventListener("change", (e) => {
+        inputElement.addEventListener("change", async (e) => {
             const roots = new Map();
             const files = [];
 
             /**
              * @param remaining_path {string[]}
              * @param parent {UploadItem|null}
-             * @return {UploadItem|null}
+             * @return {Promise<UploadItem|null>}
              */
-            function find_or_create_directory(remaining_path, parent) {
+            async function find_or_create_directory(remaining_path, parent) {
                 if (remaining_path.length === 0)
                     return null;
                 let dir_name = remaining_path.pop();
                 let available = parent ? parent.children : roots;
                 if (!available.has(dir_name)) {
-                    let directory = UploadItem.FromUploadModal(app, dir_name);
+                    let directory = await UploadItem.FromUploadModal(app, dir_name);
                     if (!parent)
                         files.push(directory);
                     else
@@ -51,14 +51,14 @@ async function open_file_picker(directory, app) {
                 if (remaining_path.length === 0)
                     return available.get(dir_name);
                 else
-                    return find_or_create_directory(remaining_path, available.get(dir_name));
+                    return await find_or_create_directory(remaining_path, available.get(dir_name));
             }
 
             for (const file of e.target['files']) {
                 const directory_path = (file.webkitRelativePath ? file.webkitRelativePath : '').split('/').filter(Boolean);
                 directory_path.pop();
-                let directory = find_or_create_directory(directory_path.reverse(), null);
-                let item = UploadItem.FromUploadModal(app, file.name, file);
+                let directory = await find_or_create_directory(directory_path.reverse(), null);
+                let item = await UploadItem.FromUploadModal(app, file.name, file);
                 if (directory) {
                     directory.add_child(item);
                 } else

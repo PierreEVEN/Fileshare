@@ -193,9 +193,6 @@ class TreeButton extends AppWidget {
      * @param expand {boolean}
      */
     async focus_item(item, expand = false) {
-        if (!this._initialized_content_promise)
-            this._initialize_content();
-        await this._initialized_content_promise;
         if (item.in_trash && !this.is_in_trash())
             return this.get_tree_root()._trash_div.focus_item(item, expand);
         if (!this.this_item())
@@ -281,6 +278,7 @@ class TreeButton extends AppWidget {
                 this._initialize_content();
                 this.elements().content.style.display = 'flex';
                 this.elements().arrow.classList.add('expanded');
+                await this._initialized_content_promise;
             }
             else {
                 this.elements().content.style.display = 'none';
@@ -293,6 +291,8 @@ class TreeButton extends AppWidget {
     }
 
     _initialize_content() {
+        if (!this.isConnected)
+            return;
         if (!this._initialized_content_promise) {
             this._initialized_content_promise = new Promise(async resolve => {
                 const content = (await this._content_provider.get_content()).sort(((a, b) => {
@@ -302,7 +302,6 @@ class TreeButton extends AppWidget {
                         return -1;
                     return a.name.plain().localeCompare(b.name.plain())
                 }));
-
                 for (const item of content)
                     this._add_item(item);
 

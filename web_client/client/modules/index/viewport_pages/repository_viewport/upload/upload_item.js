@@ -3,7 +3,6 @@ import {EncString} from "../../../../../types/encstring";
 import {FilesystemItem} from "../../../../../types/filesystem_stream";
 import {overwrite_or_restore} from "../../../tools/item_conflict/item_conflict";
 import {Message, NOTIFICATION} from "../../../tools/message_box/notification";
-import mime from 'mime';
 
 class UploadItem {
     constructor(data, app) {
@@ -83,8 +82,10 @@ class UploadItem {
                     resolve(file);
                 })
             })
-            if (!file.type)
-                file.mimetype = mime.getType(file.name);
+            if (!file.type) {
+                const mime = await import("mime");
+                file.mimetype = mime.default.getType(file.name);
+            }
             else
                 file.mimetype = file.type;
         }
@@ -102,12 +103,14 @@ class UploadItem {
      * @param app {FileshareApp}
      * @param file {File|null}
      * @param name {string}
-     * @return {UploadItem}
+     * @return {Promise<UploadItem>}
      * @constructor
      */
-    static FromUploadModal(app, name, file = null) {
-        if (file && !file.type)
-            file.mimetype = mime.getType(file.name);
+    static async FromUploadModal(app, name, file = null) {
+        if (file && !file.type) {
+            const mime = await import('mime');
+            file.mimetype = mime.default.getType(file.name);
+        }
         else if (file)
             file.mimetype = file.type;
         return new UploadItem({

@@ -18,12 +18,24 @@ module.exports = {
         maxEntrypointSize: 4194304,
         maxAssetSize: 4194304
     },
+    plugins: [
+        {
+            apply: (compiler) => {
+                compiler.hooks.compile.tap("generate_dependencies", () => {
+                    require("./tools/generate_dependencies");
+                });
+            },
+        },
+    ],
+    watchOptions: {
+        ignored: ['**/mime_icon_list.js', 'tools'],
+    },
     module: {
         rules: [
             {
                 test: /\.(hbs)$/,
                 include: path.resolve(__dirname, 'client'),
-                use: path.resolve('handlebars_custom_loader.js')
+                use: path.resolve('tools/handlebars_custom_loader.js')
             },
             {
                 test: /\.(scss)$/,

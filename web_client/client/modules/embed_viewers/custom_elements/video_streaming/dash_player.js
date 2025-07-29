@@ -1,4 +1,3 @@
-import {ControlBar} from "./ControlBar";
 import {AppWidget} from "../../../../app_widget";
 require('./controlbar.scss')
 
@@ -33,7 +32,7 @@ class DashPlayer extends AppWidget {
         for (const element of elements)
             this.append(element);
 
-        import("dashjs").then(dashjs => {
+        import("dashjs").then(async dashjs => {
 
             this.player = dashjs.MediaPlayer().create();
             this.player.updateSettings({
@@ -49,7 +48,10 @@ class DashPlayer extends AppWidget {
                 else
                     this.player.pause();
             }
-            this.control_bar = new ControlBar(this.player, false, elements.hb_elements);
+
+            const control_bar = await import("./control_bar");
+
+            this.control_bar = new control_bar.ControlBar(this.player, false, elements.hb_elements);
             this.control_bar.initialize();
             video_div.ondblclick = () => {
                 if (this.control_bar.isFullscreen())

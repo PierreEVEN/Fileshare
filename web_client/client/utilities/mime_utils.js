@@ -1,5 +1,7 @@
 const Handlebars = require('handlebars');
 
+const mime_icons = require('./mime_icon_list')
+
 /**
  * @param mimetype {string}
  * @return {string}
@@ -48,7 +50,6 @@ function get_mime_icon_path(mimetype) {
 
     const [mime_left, mime_right] = get_mime_alias(mimetype).split('/');
 
-    const mime_icons = Handlebars.get_mime_icons();
     const mime_category = mime_icons[mime_left];
     if (!mime_category)
         return '/public/images/icons/no-mime-icon.png';
