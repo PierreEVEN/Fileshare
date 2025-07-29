@@ -88,10 +88,6 @@ class FileshareApp extends HTMLElement {
                 else {
                     if (screen.availHeight > screen.availWidth)
                         await this._elements.side_bar.show_mobile();
-                    if (this.app_config.connected_user())
-                        await this._elements.side_bar.expand_my_repositories(true);
-                    else
-                        await this._elements.side_bar.expand_recent(true);
                 }
             }
         })().catch(error => console.error(`initialization failed :`, error));

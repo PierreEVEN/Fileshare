@@ -12,6 +12,53 @@ class Filter {
         this._owners = null;
     }
 
+
+    /**
+     * @param other {Filter}
+     * @returns {boolean}
+     */
+    equals(other) {
+        if (!(this._name === other._name &&
+            this._before === other._before &&
+            this._after === other._after &&
+            this._max_size === other._max_size &&
+            this._min_size === other._min_size &&
+            this._mime_type === other._mime_type))
+            return false;
+
+        if (this._owners && other._owners) {
+            const a = new Set()
+            const b = new Set()
+            for (const owner of this._owners)
+                a.add(owner);
+            for (const owner of other._owners)
+                b.add(owner);
+            if (a.size !== b.size)
+                return false;
+            for (const owner of a)
+                if (!b.has(owner))
+                    return false;
+        } else if (this._owners || other._owners)
+            return false;
+
+        if (this._repositories && other._repositories) {
+            const a = new Set()
+            const b = new Set()
+            for (const repository of this._repositories)
+                a.add(repository);
+            for (const repository of other._repositories)
+                b.add(repository);
+            if (a.size !== b.size)
+                return false;
+            for (const owner of a)
+                if (!b.has(owner))
+                    return false;
+        } else if (this._repositories || other._repositories)
+            return false;
+
+        return true;
+    }
+
     name(name) {
         this._name = name;
         return this;

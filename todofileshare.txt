@@ -1,2 +1,3 @@
 # TODO
+- fix l'erreur d'initialisation de la side bar au chargement du site
 - supporter plus de 1000 items par dossiers

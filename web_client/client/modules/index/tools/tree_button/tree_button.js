@@ -171,15 +171,20 @@ class TreeButton extends AppWidget {
      * @param in_trash {boolean}
      * @param expand {boolean}
      */
-    focus_root(in_trash, expand = false) {
+    async focus_root(in_trash, expand = false) {
+        if (!this._initialized_content_promise)
+            this._initialize_content();
+        await this._initialized_content_promise;
         if (in_trash) {
-            this._trash_div._select(true);
+            if (!this.get_tree_root()._trash_div)
+                return console.error("Trash Div is not initialized")
+            this.get_tree_root()._trash_div._select(true);
             if (expand)
                 this._trash_div.set_expanded(true);
         } else {
             this._select(true);
             if (expand)
-                this.set_expanded(true);
+                await this.set_expanded(true);
         }
     }
 
@@ -187,13 +192,18 @@ class TreeButton extends AppWidget {
      * @param item {FilesystemItem}
      * @param expand {boolean}
      */
-    focus_item(item, expand = false) {
+    async focus_item(item, expand = false) {
+        if (!this._initialized_content_promise)
+            this._initialize_content();
+        await this._initialized_content_promise;
+        if (item.in_trash && !this.is_in_trash())
+            return this.get_tree_root()._trash_div.focus_item(item, expand);
         if (!this.this_item())
             return console.error("Cannot focus : item is not initialized yet on {}", this);
         if (item.id === this.this_item().id) {
             this._select(true);
             if (expand)
-                this.set_expanded(true);
+                await this.set_expanded(true);
             return;
         }
         if (this._expandable) {
@@ -268,7 +278,7 @@ class TreeButton extends AppWidget {
         this._expansion_promise = new Promise(async resolve => {
             this._expanded = expand;
             if (expand) {
-                await this._initialize_content();
+                this._initialize_content();
                 this.elements().content.style.display = 'flex';
                 this.elements().arrow.classList.add('expanded');
             }
@@ -282,30 +292,31 @@ class TreeButton extends AppWidget {
         await this._expansion_promise;
     }
 
-    async _initialize_content() {
-        if (!this._initialized_content) {
-            this._initialized_content = true;
+    _initialize_content() {
+        if (!this._initialized_content_promise) {
+            this._initialized_content_promise = new Promise(async resolve => {
+                const content = (await this._content_provider.get_content()).sort(((a, b) => {
+                    if (a.is_regular_file && !b.is_regular_file)
+                        return 1;
+                    else if (b.is_regular_file && !a.is_regular_file)
+                        return -1;
+                    return a.name.plain().localeCompare(b.name.plain())
+                }));
 
-            const content = (await this._content_provider.get_content()).sort(((a, b) => {
-                if (a.is_regular_file && !b.is_regular_file)
-                    return 1;
-                else if (b.is_regular_file && !a.is_regular_file)
-                    return -1;
-                return a.name.plain().localeCompare(b.name.plain())
-            }));
+                for (const item of content)
+                    this._add_item(item);
 
-            for (const item of content)
-                this._add_item(item);
-
-            if (this.this_item().constructor.name === 'Repository' && !this.is_in_trash()) {
-                this._trash_div = document.createElement('repository-tree-button')
-                    .set_repository(this.this_item())
-                    .set_expandable(true)
-                    .show_regular_files(true)
-                    .display_trash(true);
-                this._trash_div._root = this.get_tree_root();
-                this.elements().content.append(this._trash_div);
-            }
+                if (this.this_item().constructor.name === 'Repository' && !this.is_in_trash() && this.get_app().app_config.connected_user()) {
+                    this._trash_div = document.createElement('repository-tree-button')
+                        .set_repository(this.this_item())
+                        .set_expandable(true)
+                        .show_regular_files(true)
+                        .display_trash(true);
+                    this._trash_div._root = this.get_tree_root();
+                    this.elements().content.append(this._trash_div);
+                }
+                resolve();
+            })
         }
     }
 

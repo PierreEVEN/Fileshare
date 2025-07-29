@@ -3,44 +3,59 @@ side-bar {
   flex-direction: column;
   width: 100%;
 
-  button {
-    justify-content: left;
-    width: 100%;
+
+  side-bar-category {
     display: flex;
-    flex-direction: row;
-    margin: 0;
+    flex-direction: column;
 
-    .title {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    button {
+      justify-content: left;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      margin: 0;
 
-    img {
-      width: 20px;
-      margin-right: 10px;
-      margin-left: 2px;
-    }
+      .title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-    .arrow {
-      transition-duration: 0.2s;
-      min-width: 15px;
-    }
-  }
+      img {
+        width: 20px;
+        margin-right: 10px;
+        margin-left: 2px;
+      }
 
-  .expand {
-    > button {
-      > p.arrow {
-        rotate: 90deg;
+      .arrow {
+        transition-duration: 0.2s;
+        min-width: 15px;
       }
     }
-  }
 
-  .content {
-    .trash {
+    .content {
       margin-left: 15px;
       display: none;
+
+      .trash {
+        margin-left: 15px;
+        display: none;
+      }
     }
+
+    &.expand {
+      .content {
+        display: flex;
+        flex-direction: column;
+      }
+
+      > button {
+        > p.arrow {
+          rotate: 90deg;
+        }
+      }
+    }
+
   }
 }
 

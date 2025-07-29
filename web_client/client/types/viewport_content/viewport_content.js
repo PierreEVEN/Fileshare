@@ -25,6 +25,16 @@ class ContentProvider {
     delete() {
         this._add_event.remove();
     }
+
+    /**
+     * @param other {ContentProvider}
+     * @return boolean
+     */
+    is_same(other) {
+        if (!other)
+            return false;
+        return other.constructor.name === this.constructor.name;
+    }
 }
 
 class ContentSorter {

@@ -4,6 +4,7 @@ import {context_menu_my_repositories} from "../context_menu/contexts/context_my_
 import {EventManager, GLOBAL_EVENTS} from "../../../types/event_manager";
 import {APP_COOKIES} from "../tools/cookies/cookies";
 import {AppWidget} from "../../../app_widget";
+import "./category"
 
 require('./side_bar.scss')
 
@@ -15,21 +16,13 @@ class SideBar extends AppWidget {
          * @private
          */
         this._connected_user = undefined;
-        this._first_time = true;
 
         const div = require('./side_bar.hbs')({}, {
-            expand_my_repositories: async () => {
-                await this.expand_my_repositories(!this._my_repos_expanded);
-            },
-            switch_shared: async () => {
-                await this.expand_shared(!this._shared_expanded);
-            },
-            switch_recent: async () => {
-                await this.expand_recent(!this._recent_expanded);
-            },
             context_my_repositories: (e) => {
-                context_menu_my_repositories(this.get_app());
-                e.preventDefault();
+                if (e.target && e.target.parentElement === this._elements.my_repositories) {
+                    context_menu_my_repositories(this.get_app());
+                    e.preventDefault();
+                }
             }
         });
         this._elements = div['hb_elements'];
@@ -37,47 +30,16 @@ class SideBar extends AppWidget {
             this.append(element);
 
         GLOBAL_EVENTS.add('on_connected_user_changed', async (data) => {
-            this.refresh(data.new);
+            this._refresh(data.new);
         });
-        this.refresh(this.get_app().app_config.connected_user());
-
-        /**
-         * @type {Map<number, TreeButton>}
-         * @private
-         */
-        this._my_repositories_loaded = new Map();
-
-        /**
-         * @type {Map<number, TreeButton>}
-         * @private
-         */
-        this._shared_repositories_loaded = new Map();
-
-        /**
-         * @type {Map<number, TreeButton>}
-         * @private
-         */
-        this._recent_repositories_loaded = new Map();
 
         this._add_repository = GLOBAL_EVENTS.add('add_repository', async (repository) => {
             if (this._my_repos_expanded && !this._my_repositories_loaded.has(repository.id) && this.get_app().app_config.connected_user() && repository.owner === this.get_app().app_config.connected_user().id) {
-                const div = document.createElement('repository-tree-button').set_repository(repository).set_expandable(true);
-                this._elements.my_repositories.append(div);
-                this._my_repositories_loaded.set(repository.id, div);
-            }
-        });
-
-        this._remove_repository = GLOBAL_EVENTS.add('remove_repository', async (repository) => {
-            const my_repos_loaded = this._my_repositories_loaded.get(repository.id);
-            if (my_repos_loaded) {
-                my_repos_loaded.root.remove();
-                this._my_repositories_loaded.delete(repository.id);
+                this._elements.my_repositories.add_repository(repository);
             }
         });
 
         this.show_menu_mobile = false;
-        this.selected_div = null;
-
         this.events = new EventManager();
     }
 
@@ -87,13 +49,16 @@ class SideBar extends AppWidget {
                 await this._state_selection_changed(selection);
             })
 
-        this._state_selection_changed(this.get_app().state.selection())
+        this._refresh(this.get_app().app_config.connected_user());
     }
 
     disconnectedCallback() {
         if (this._on_select_cb)
             this._on_select_cb.remove();
         delete this._on_select_cb;
+        if (this._add_repository)
+            this._add_repository.remove();
+        delete this._add_repository;
     }
 
     /**
@@ -108,94 +73,41 @@ class SideBar extends AppWidget {
         if (!repository)
             return;
 
-        let tree_root = this._my_repositories_loaded.get(repository);
-        if (!tree_root)
-            tree_root = this._shared_repositories_loaded.get(repository)
-        if (!tree_root)
-            tree_root = this._recent_repositories_loaded.get(repository)
+        let tree_root = null;
+        {
+            if (this._load_my_repos_promise)
+                await this._load_my_repos_promise;
+            if (this._elements.my_repositories.get_repository(repository))
+                tree_root = this._elements.my_repositories;
+        }
+        if (!tree_root) {
+            if (this._load_shared_promise)
+                await this._load_shared_promise;
+            if (this._elements.shared.get_repository(repository))
+                tree_root = this._elements.shared;
+        }
+        if (!tree_root) {
+            if (this._load_recent_promise)
+                await this._load_recent_promise;
+             if (this._elements.recent.get_repository(repository))
+                 tree_root = this._elements.recent;
+        }
         if (!tree_root)
             return;
+
+        tree_root.set_expanded(true);
+        const repository_div = tree_root.get_repository(repository);
 
         if (this._last_selected) {
-            if (this._last_selected !== tree_root)
+            if (this._last_selected !== repository_div)
                 this._last_selected.clear_selection();
         }
-        this._last_selected = tree_root;
+        this._last_selected = repository_div;
 
         if (selection.item) {
-            tree_root.focus_item(selection.item);
+            repository_div.focus_item(selection.item);
         } else {
-            tree_root.focus_root(selection.in_trash, true);
-        }
-    }
-
-    async expand_my_repositories(expanded) {
-        if (this._my_repos_expanded === expanded)
-            return;
-        this._elements.my_repositories.innerHTML = '';
-        this._my_repositories_loaded = new Map()
-        if (expanded) {
-            this._elements.div_my_repositories.classList.add('expand');
-            const my_repos_sorted = (await Repository.my_repositories(this.get_app())).sort(((a, b) => {
-                return a.display_name.plain().localeCompare(b.display_name.plain())
-            }));
-            for (const repository of my_repos_sorted) {
-                if (!this._my_repositories_loaded.has(repository.id)) {
-                    const div = document.createElement('repository-tree-button').set_repository(repository).set_expandable(true);
-                    this._elements.my_repositories.append(div);
-                    this._my_repositories_loaded.set(repository.id, div);
-                }
-            }
-        } else {
-            this._elements.div_my_repositories.classList.remove('expand');
-        }
-        this._my_repos_expanded = expanded;
-    }
-
-    async expand_shared(expanded) {
-        if (this._shared_expanded === expanded)
-            return;
-        this._elements.shared.innerHTML = '';
-        this._shared_expanded = expanded;
-        if (expanded) {
-            this._elements.div_shared.classList.add('expand');
-            const repositories_sorted = (await Repository.shared_repositories(this.get_app())).sort(((a, b) => {
-                return a.display_name.plain().localeCompare(b.display_name.plain())
-            }));
-
-            for (const repository of repositories_sorted) {
-                const div = document.createElement('repository-tree-button').set_repository(repository).set_expandable(true);
-                this._elements.shared.append(div);
-                this._shared_repositories_loaded.set(repository.id, div);
-            }
-        } else {
-            this._elements.div_shared.classList.remove('expand');
-        }
-    }
-
-    async expand_recent(expanded) {
-        if (this._recent_expanded === expanded)
-            return;
-        this._elements.recent.innerHTML = '';
-        this._recent_expanded = expanded;
-        this._recent_repositories_loaded.clear();
-
-        if (expanded) {
-            this._elements.div_recent.classList.add('expand');
-
-            const repositories_sorted = (await Repository.find(this.get_app(), APP_COOKIES.get_last_repositories())).sort(((a, b) => {
-                return a.display_name.plain().localeCompare(b.display_name.plain())
-            }));
-
-            for (const repository of repositories_sorted) {
-                if (repository && !this._recent_repositories_loaded.has(repository.id)) {
-                    const div = document.createElement('repository-tree-button').set_repository(repository).set_expandable(true);
-                    this._elements.recent.append(div);
-                    this._recent_repositories_loaded.set(repository.id, div);
-                }
-            }
-        } else {
-            this._elements.div_recent.classList.remove('expand');
+            repository_div.focus_root(selection.in_trash, true);
         }
     }
 
@@ -210,28 +122,62 @@ class SideBar extends AppWidget {
 
     /**
      * @param connected_user {User}
+     * @private
      */
-    refresh(connected_user) {
+    async _refresh(connected_user) {
         if (this._connected_user !== connected_user) {
             this._connected_user = connected_user;
 
             if (connected_user) {
-                this._elements.div_my_repositories.style.display = 'flex';
-                this._elements.div_shared.style.display = 'flex';
+                this._elements.my_repositories.style.display = 'flex';
+                this._elements.shared.style.display = 'flex';
             } else {
-                this._elements.div_my_repositories.style.display = 'none';
-                this._elements.div_shared.style.display = 'none';
+                this._elements.my_repositories.style.display = 'none';
+                this._elements.shared.style.display = 'none';
             }
         }
-    }
+        const selection = this.get_app().state.selection();
+        if (!(selection.user || selection.repository || selection.item)) {
+            if (connected_user)
+                this._elements.my_repositories.set_expanded(true);
+            else
+                this._elements.recent.set_expanded(true);
+        }
 
-    remove() {
-        if (this._add_repository)
-            this._add_repository.remove();
-        if (this._remove_repository)
-            this._remove_repository.remove();
-        delete this._remove_repository;
-        delete this._add_repository;
+        if (connected_user) {
+            if (this._load_my_repos_promise)
+                await this._load_my_repos_promise;
+            this._load_my_repos_promise = new Promise(async (resolve) => {
+                const my_repos_sorted = (await Repository.my_repositories(this.get_app())).sort(((a, b) => {
+                    return a.display_name.plain().localeCompare(b.display_name.plain())
+                }));
+                for (const repository of my_repos_sorted)
+                    this._elements.my_repositories.add_repository(repository);
+                resolve();
+            });
+
+            if (this._load_shared_promise)
+                await this._load_shared_promise;
+            this._load_shared_promise = new Promise(async (resolve) => {
+                const shared_sorted = (await Repository.shared_repositories(this.get_app())).sort(((a, b) => {
+                    return a.display_name.plain().localeCompare(b.display_name.plain())
+                }));
+                for (const repository of shared_sorted)
+                    this._elements.shared.add_repository(repository);
+                resolve();
+            });
+        }
+
+        if (this._load_recent_promise)
+            await this._load_recent_promise;
+        this._load_recent_promise = new Promise(async (resolve) => {
+            const last_sorted = (await Repository.find(this.get_app(), APP_COOKIES.get_last_repositories())).sort(((a, b) => {
+                return a.display_name.plain().localeCompare(b.display_name.plain())
+            }));
+            for (const repository of last_sorted)
+                this._elements.recent.add_repository(repository);
+            resolve();
+        });
     }
 }
 

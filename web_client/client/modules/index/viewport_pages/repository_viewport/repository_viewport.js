@@ -291,26 +291,20 @@ class RepositoryViewport extends AppWidget {
      * @private
      */
     async _on_state_select(selection) {
+        const tmp_provider = await this._spawn_content_provider(selection);
+        if (!this.content.get_content_provider() || !this.content.get_content_provider().is_same(tmp_provider)) {
+            await this.content.set_content_provider(tmp_provider);
+        } else {
+            tmp_provider.delete();
+        }
+
         if (selection.item) {
             const repository = await Repository.find(this.get_app(), selection.item.repository);
             if (!this.repository || this.repository.id !== repository.id)
                 this._set_repository(repository);
 
-            const directory = selection.item.parent_item ? selection.item.is_regular_file ? await repository.content.fetch_item(selection.item.parent_item) : selection.item : null;
+            const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.content.fetch_item(selection.item.parent_item) : selection.item : selection.item;
 
-            if (selection.in_trash) {
-                if (!this.content.get_content_provider() || !this.content.get_content_provider() instanceof TrashContentProvider || this.content.get_content_provider().repository.id !== repository.id)
-                    await this.content.set_content_provider(new TrashContentProvider(repository));
-            } else {
-                if (directory) {
-                    if (!this.content.get_content_provider() || !this.content.get_content_provider() instanceof DirectoryContentProvider || this.content.get_content_provider().directory.id !== directory.id)
-                        await this.content.set_content_provider(new DirectoryContentProvider(directory));
-                }
-                else {
-                    if (!this.content.get_content_provider() || !this.content.get_content_provider() instanceof RepositoryRootProvider || this.content.get_content_provider().repository.id !== repository.id)
-                        await this.content.set_content_provider(new RepositoryRootProvider(repository));
-                }
-            }
             if (selection.item.is_regular_file) {
                 await this._open_carousel(selection.item);
             }
@@ -318,18 +312,35 @@ class RepositoryViewport extends AppWidget {
                 await this.close_carousel();
                 await this._update_description(directory);
             }
-            await this._elements.toolbar.set_toolbar_path(directory, selection.in_trash);
+            await this._elements.toolbar.set_toolbar_path(selection.in_trash ? null : directory, selection.in_trash);
         } else if (selection.repository) {
             await this._elements.toolbar.set_toolbar_path(null, selection.in_trash);
             await this.close_carousel();
+        }
+    }
 
-            if (!this.content.get_content_provider() || !this.content.get_content_provider().repository || this.content.get_content_provider().repository.id !== selection.repository.id) {
-                if (selection.in_trash)
-                    await this.content.set_content_provider(new TrashContentProvider(selection.repository));
+    /**
+     * @param selection {StateSelection}
+     * @private
+     * @return Promise<ContentProvider>
+     */
+    async _spawn_content_provider(selection) {
+        if (selection.item) {
+            const repository = await Repository.find(this.get_app(), selection.item.repository);
+            if (selection.in_trash) {
+                return new TrashContentProvider(repository);
+            } else {
+                const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.content.fetch_item(selection.item.parent_item) : null : selection.item;
+                if (directory)
+                    return new DirectoryContentProvider(directory);
                 else
-                    await this.content.set_content_provider(new RepositoryRootProvider(selection.repository));
+                    return new RepositoryRootProvider(repository);
             }
-            await this.content.set_content_provider(selection.in_trash ? new TrashContentProvider(selection.repository) : new RepositoryRootProvider(selection.repository));
+        } else if (selection.repository) {
+           if (selection.in_trash)
+                return new TrashContentProvider(selection.repository);
+            else
+                return new RepositoryRootProvider(selection.repository);
         }
     }
 

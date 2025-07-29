@@ -404,14 +404,16 @@ class FilesystemStream {
         if (!this._init_trash_roots)
             this._init_trash_roots = new Promise(async (resolve) => {
                 this._trash_roots = new Set();
-                for (const item of await this.app.fetch_api(`repository/trash-content`, 'POST', [this._repository.id])
+                this.app.fetch_api(`repository/trash-content`, 'POST', [this._repository.id])
+                    .then(async (items) => {
+                        for (const item of items)
+                            await this.set_or_update_item(new FilesystemItem(item));
+                        resolve(this._trash_roots);
+                    })
                     .catch(error => {
                         NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de la corbeille de ${this._repository.url_name.plain()}`));
                         return resolve(new Set());
-                    })) {
-                    await this.set_or_update_item(new FilesystemItem(item));
-                }
-                resolve(this._trash_roots);
+                    });
             });
         return await this._init_trash_roots;
     }

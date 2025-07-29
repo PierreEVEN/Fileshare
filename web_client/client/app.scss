@@ -97,15 +97,6 @@ fileshare-app {
           }
         }
 
-        .category {
-          display: flex;
-          flex-direction: column;
-
-          .content {
-            margin-left: 15px;
-          }
-        }
-
         @media (orientation: portrait) {
           & {
             position: absolute;

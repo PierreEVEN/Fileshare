@@ -106,7 +106,7 @@ async function set_item_to_trash(item, in_trash) {
             await set_item_to_trash(item.filesystem().find(child), in_trash);
 
     if (in_trash && (await item.filesystem().trash_content()).has(item.id)) {
-        await item.refresh();
+        await item._refresh();
     }
 }
 

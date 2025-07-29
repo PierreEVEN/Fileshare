@@ -23,6 +23,10 @@ class RepositoryRootProvider extends ContentProvider {
         if (!item.in_trash && item.parent_item === undefined && item.repository === this.repository.id)
             this.events.broadcast('add', item);
     }
+
+    is_same(other) {
+        return super.is_same(other) && this.repository.id === other.repository.id;
+    }
 }
 
 class DirectoryContentProvider extends ContentProvider {
@@ -31,11 +35,16 @@ class DirectoryContentProvider extends ContentProvider {
      */
     constructor(directory) {
         super();
-        console.assert(!directory.is_regular_file, "Cannot open a file as a directory");
+        if (directory.is_regular_file)
+            console.error("Cannot open a file as a directory");
         /**
          * @type {FilesystemItem}
          */
         this.directory = directory;
+    }
+
+    is_same(other) {
+        return super.is_same(other) && this.directory.id === other.directory.id;
     }
 
     async get_content() {
@@ -78,6 +87,10 @@ class TrashContentProvider extends ContentProvider {
         return items;
     }
 
+    is_same(other) {
+        return super.is_same(other) && this.repository.id === other.repository.id;
+    }
+
     async _internal_add_item(item) {
         await super._internal_add_item(item);
         if (item.in_trash && item.repository === this.repository.id) {
@@ -112,6 +125,13 @@ class FilterContentProvider extends ContentProvider {
                 this._cache.push(item);
         }
         return this._cache;
+    }
+
+    is_same(other) {
+        return super.is_same(other) &&
+            this.repository.id === other.directory.id &&
+            ((!this.directory && !other.directory) || (this.directory && other.directory && this.directory.id === other.directory.id)) &&
+            this.filter.equals(other.filter);
     }
 
     async _internal_add_item(item) {

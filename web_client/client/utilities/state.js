@@ -162,7 +162,7 @@ class AppState {
                         history.pushState({
                             app_action: true,
                             selection: selection._get_raw_data(),
-                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash${selection.item.absolute_path.encoded()}`);
+                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash`);
                     else
                         history.pushState({
                             app_action: true,
