@@ -105,10 +105,13 @@ impl AsyncDirectoryZip {
         item_name.remove(0);
         if item.directory.is_some() { item_name += "/" };
 
+        println!("item name : {}", item_name);
+
         let version = if item.file.is_some() { 0x0Au16 } else { 0x14u16 };
 
-        let enable_data_descriptor = 0x08u16;
-
+        let mut enable_data_descriptor = 0x08u16; // enable data descriptor
+        enable_data_descriptor |= 0x0800;  // Set UTF-8 encoding flag
+        
         // local file header
         let signature = 0x04034b50u32.to_le_bytes();
         let version = version.to_le_bytes();
