@@ -70,8 +70,15 @@ class SideBar extends AppWidget {
             return;
         let repository = selection.repository ? selection.repository.id : selection.item ? selection.item.repository : null;
 
-        if (!repository)
+        if (!repository) {
+            if (this._last_selected)
+                this._last_selected.clear_selection();
+            this._elements.my_repositories.set_expanded(false);
+            this._elements.shared.set_expanded(false);
+            this._elements.recent.set_expanded(false);
+
             return;
+        }
 
         let tree_root = null;
         {

@@ -194,6 +194,11 @@ class AppState {
                         app_action: true,
                         selection: selection._get_raw_data(),
                     }, "", `${this.app.app_config.origin()}/administration`);
+                } else {
+                    history.pushState({
+                        app_action: true,
+                        selection: selection._get_raw_data(),
+                    }, "", `${this.app.app_config.origin()}`);
                 }
             }
         }

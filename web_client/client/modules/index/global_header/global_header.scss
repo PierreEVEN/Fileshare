@@ -8,6 +8,10 @@ app-header {
   .title {
     flex-grow: 1;
 
+    &:hover {
+      cursor: pointer;
+    }
+
     h1 {
       margin: 0 0 0 20px;
       font-style: italic;

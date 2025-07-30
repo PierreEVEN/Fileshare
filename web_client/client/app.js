@@ -110,6 +110,8 @@ class FileshareApp extends HTMLElement {
             this.set_viewport_content(document.createElement('page-user').set_user(selection.user));
         else if (selection.in_admin_pannel)
             this.set_viewport_content(document.createElement('page-stats'));
+        else
+            this.set_viewport_content(null);
     }
 
     /**
@@ -130,7 +132,8 @@ class FileshareApp extends HTMLElement {
             delete this._viewport_content;
         }
         this._viewport_content = page_content;
-        this._elements.viewport.append(this._viewport_content);
+        if (this._viewport_content)
+            this._elements.viewport.append(this._viewport_content);
         return page_content;
     }
 

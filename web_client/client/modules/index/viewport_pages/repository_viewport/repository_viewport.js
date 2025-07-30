@@ -474,6 +474,8 @@ class RepositoryViewport extends AppWidget {
     }
 
     async close_carousel() {
+        if (!this.isConnected)
+            return;
         if (this.get_app().get_carousel().is_open()) {
             this.carousel_list = null;
             this._carousel_viewport = null;

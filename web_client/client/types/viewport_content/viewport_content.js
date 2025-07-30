@@ -159,11 +159,12 @@ class ViewportContent {
         if (this._provider)
             this._provider.delete();
         this._provider = provider;
-        this.add_event = this._provider.events.add('add', (item) => {
-            if (this._pending_regeneration)
-                return;
-            this._add(item)
-        })
+        if (this._provider)
+            this.add_event = this._provider.events.add('add', (item) => {
+                if (this._pending_regeneration)
+                    return;
+                this._add(item)
+            })
         await this._regen_content();
     }
 

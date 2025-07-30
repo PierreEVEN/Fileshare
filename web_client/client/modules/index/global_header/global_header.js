@@ -33,6 +33,9 @@ class AppHeader extends AppWidget {
             user: async () => {
                 await this.get_app().state.select(new StateSelection().set_user(this._connected_user));
             },
+            go_home: async () => {
+                await this.get_app().state.select(new StateSelection());
+            },
             search_changed: async (event) => {
                 if (!event.key || event.key === 'Enter') {
                     if (event.target.value === "") {
