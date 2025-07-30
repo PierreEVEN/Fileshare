@@ -1,10 +1,10 @@
 use crate::converter_error::ConverterError;
 use crate::{Converter, ConverterTask, ToolPool};
-use std::ffi::OsString;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::Arc;
+use tracing::info;
 
 #[derive(Default)]
 pub struct PdfToImage;
@@ -32,7 +32,7 @@ impl Converter for PdfToImage {
     }
 
     fn get_output(&self, task: &ConverterTask) -> Result<(PathBuf, String), ConverterError> {
-        Ok((task.input.clone(), "application/pdf".to_string()))
+        Ok((task.output.clone(), "image/webp".to_string()))
     }
 
     fn run(&self, task: &ConverterTask, tool_pool: &Arc<ToolPool>) -> Result<(), ConverterError> {
@@ -57,9 +57,10 @@ impl Converter for PdfToImage {
                 .spawn()?
                 .wait_with_output()?;
 
-            let mut generated_file_name = OsString::from(task.output.file_name().unwrap());
-            generated_file_name.push(".webp");
-            fs::rename(task.output.parent().unwrap().join(generated_file_name), &task.output)?;
+            let mut generated_file_name = task.output.clone();
+            generated_file_name.set_extension("webp");
+            fs::rename(generated_file_name, &task.output)?;
+            info!("Successfully exported pdf file to image : {}", task.output.display());
             Ok(())
         } else {
             Err(ConverterError::TaskNotAcceptable)

@@ -172,9 +172,6 @@ class TreeButton extends AppWidget {
      * @param expand {boolean}
      */
     async focus_root(in_trash, expand = false) {
-        if (!this._initialized_content_promise)
-            this._initialize_content();
-        await this._initialized_content_promise;
         if (in_trash) {
             if (!this.get_tree_root()._trash_div)
                 return console.error("Trash Div is not initialized")
