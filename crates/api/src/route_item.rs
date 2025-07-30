@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use crate::app_ctx::AppCtx;
@@ -220,7 +221,7 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
         Some(extension) => {extension.display().to_string()}
     };
 
-    let thumbnail_path = ctx.thumbnailer.find_or_create(&Object::data_path(&file.object, &ctx.database), &Object::thumbnail_path(&file.object, &ctx.database), &file.mimetype.plain()?, &extension, 100).await?;
+    let thumbnail_path = ctx.thumbnailer.find_or_create_thumbnail(&Object::data_path(&file.object, &ctx.database), &Object::thumbnail_path(&file.object, &ctx.database), &file.mimetype.plain()?, &extension, 100).await?;
 
     #[derive(Serialize)]
     struct Result {
@@ -351,15 +352,60 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
     if let Some(file) = item.file {
         let object = Object::from_id(&ctx.database, &file.object).await?;
 
-        let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
-        let body = Body::from_stream(stream);
+        let extension = match PathBuf::from(item.name.plain()?.as_str()).extension() {
+            None => {String::new()}
+            Some(extension) => {extension.display().to_string()}
+        };
 
-        let headers = [
-            (header::CONTENT_TYPE, file.mimetype.plain()?),
-            (header::CONTENT_LENGTH, file.size.to_string()),
-            (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
-        ];
-        return Ok((StatusCode::OK, headers, body).into_response());
+        #[derive(Serialize)]
+        struct Result {
+            status: String
+        }
+
+        return match ctx.thumbnailer.find_or_create_preview(&Object::data_path(&file.object, &ctx.database), &Object::preview_path(&file.object, &ctx.database), &file.mimetype.plain()?, &extension, 100).await? {
+            ThumbnailResult::Ok(path) => {
+                let stream = ReaderStream::new(tokio::fs::File::open(&path).await?);
+                let body = Body::from_stream(stream);
+                let headers = [
+                    (header::CACHE_CONTROL, "max-age=604800".to_string()),
+                    (header::CONTENT_TYPE, "image/webp".to_string()),
+                    (header::CONTENT_LENGTH, fs::metadata(path)?.len().to_string()),
+                    (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
+                ];
+                Ok((headers, body).into_response())
+            }
+            ThumbnailResult::NoSourceFile => {
+                Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())],Json(Result {
+                    status: String::from("no_source")
+                })).into_response())
+            }
+            ThumbnailResult::UnsupportedMime(_) => {
+                let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
+                let body = Body::from_stream(stream);
+
+                let headers = [
+                    (header::CONTENT_TYPE, file.mimetype.plain()?),
+                    (header::CONTENT_LENGTH, file.size.to_string()),
+                    (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
+                ];
+                return Ok((StatusCode::OK, headers, body).into_response());
+            }
+            ThumbnailResult::InQueue => {
+                Ok(([(header::CACHE_CONTROL, "no-store".to_string())],Json(Result {
+                    status: String::from("in_queue")
+                })).into_response())
+            }
+            ThumbnailResult::InGeneration => {
+                Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                    status: String::from("in_generation")
+                })).into_response())
+            }
+            ThumbnailResult::UnknownStatus => {
+                Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                    status: String::from("unknown_status")
+                })).into_response())
+            }
+        };
     }
     Err(ServerError::msg(StatusCode::NOT_FOUND, "Cannot preview directory content"))
 }

@@ -40,10 +40,11 @@ class RepositorySettings extends AppWidget {
 
                 merged_data.num_extensions = data.extensions.length;
                 merged_data.extensions = [];
-                for (const extension of data.extensions)
+                for (const extension of data.extensions.sort((a, b) => { return b.total_size / b.count - a.total_size / a.count }))
                     merged_data.extensions.push({
                         name: (new EncString(extension.mimetype)).plain(),
-                        count: extension.count
+                        count: extension.count,
+                        size: humanFileSize(extension.total_size)
                     })
                 merged_data.num_contributors = data.contributors.length;
                 merged_data.contributors = [];

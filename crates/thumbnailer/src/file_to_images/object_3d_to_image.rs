@@ -1,4 +1,4 @@
-use crate::processors::Processor;
+use crate::file_to_images::Processor;
 use crate::ThumbnailerTask;
 use anyhow::{anyhow, Error};
 use std::ffi::OsStr;
@@ -6,9 +6,9 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::{env, fs};
 
-pub struct Object3DProcessor;
+pub struct Object3DToImage;
 
-impl Object3DProcessor {
+impl Object3DToImage {
 
     pub fn available() -> Result<(), Error> {
         match Command::new("f3d").arg("--version").output() {
@@ -57,9 +57,9 @@ impl Object3DProcessor {
     }
 }
 
-impl Processor for Object3DProcessor {
+impl Processor for Object3DToImage {
     fn name(&self) -> String {
-        "3d_common".to_string()
+        "object 3D to image".to_string()
     }
 
     fn available(&self) -> Result<(), Error> {

@@ -1,39 +1,67 @@
-<div class="section-title">
+<div class="main section-title">
+    <img src="/public/images/icons/icons8-storage-96.png" alt="repository">
     <h1>{{display_name}}</h1>
-    <button class="plus-button" onclick="{{ctx "edit()"}}">Modifier les paramètres
+    <button class="plus-button" onclick="{{ctx "edit()"}}">
+        <img src="/public/images/icons/icons8-edit-96.png" alt="add">
+        <p>Modifier les paramètres</p>
     </button>
 </div>
 <div class="hseparator"></div>
 <div class="section-title">
+    <img src="/public/images/icons/icons8-info-48.png" alt="information">
     <h2>Informations</h2>
 </div>
 <div class="repos-settings-information">
-    <p>Dépot :</p>
-    <p class="smaller">{{total_count}} éléments, {{total_dirs}} dossiers ({{total_size}})</p>
-    <p>Dont dans la corbeille :</p>
-    <p class="smaller">{{trash_count}} éléments, {{trash_dirs}} dossiers ({{trash_size}})</p>
-    <p>{{num_extensions}} extensions :</p>
-    <div class="item_list">
-        {{#each extensions}}
-            <p>- {{this.count}} {{this.name}}</p>
-        {{/each}}
+    <div class="cat">
+        <div class="head">
+            <img src="/public/images/icons/icons8-storage-96.png" alt="repository">
+            <p>Dépot :</p>
+        </div>
+        <p class="smaller">{{total_count}} éléments, {{total_dirs}} dossiers ({{total_size}})</p>
     </div>
-    <p>{{num_contributors}} contributeurs :</p>
-    <div class="item_list">
-        {{#each contributors}}
-            <p>- {{this.name}} ({{count}} elements)</p>
-        {{/each}}
+    <div class="cat">
+        <div class="head">
+            <img src="/public/images/icons/icons8-full-trash-96.png" alt="trash">
+            <p>Dont dans la corbeille :</p>
+        </div>
+        <p class="smaller">{{trash_count}} éléments, {{trash_dirs}} dossiers ({{trash_size}})</p>
     </div>
 
+    <div class="cat">
+        <div class="head">
+            <img src="/public/images/icons/icons8-file-96.png" alt="trash">
+            <p>{{num_extensions}} extensions :</p>
+        </div>
+        <div class="item_list">
+            {{#each extensions}}
+                <p>- {{this.count}} {{this.name}} ({{this.size}})</p>
+            {{/each}}
+        </div>
+    </div>
+
+    <div class="cat">
+        <div class="head">
+            <img src="/public/images/icons/icons8-user-60.png" alt="trash">
+            <p>{{num_contributors}} contributeur(s) :</p>
+        </div>
+        <div class="item_list">
+            {{#each contributors}}
+                <p>- {{this.name}} ({{count}} elements)</p>
+            {{/each}}
+        </div>
+    </div>
 </div>
 <div class="hseparator"></div>
 <div class="section-title">
+    <img src="/public/images/icons/icons8-public-96.png" alt="permissions">
     <h2>Autorisations</h2>
-    <button class="plus-button" onclick="{{ctx "add_user()"}}">Ajouter un utilisateur
+    <button class="plus-button" onclick="{{ctx "add_user()"}}">
+        <img src="/public/images/icons/icons8-add-96.png" alt="add">
+        <p>Ajouter un utilisateur</p>
     </button>
 </div>
-<div class="item_list repos-settings-authorizations" {{object "subscriptions"}}>
-    <div class="repos-setting-authorization">
+<div class="repos-settings-authorizations" {{object "subscriptions"}}>
+    <div class="repos-setting-authorization header">
         <div class="column">
             <p class="field">Utilisateur</p>
         </div>

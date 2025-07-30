@@ -3,19 +3,19 @@ use std::ffi::OsStr;
 use std::process::{Command, Stdio};
 use anyhow::{anyhow, Error};
 use tracing::info;
-use crate::processors::object_3d::Object3DProcessor;
-use crate::processors::Processor;
+use crate::file_to_images::object_3d_to_image::Object3DToImage;
+use crate::file_to_images::Processor;
 use crate::{ThumbnailerTask};
 
-pub struct BlenderProcessor;
+pub struct BlenderToImage;
 
-impl Processor for BlenderProcessor {
+impl Processor for BlenderToImage {
     fn name(&self) -> String {
-        "blender3d".to_string()
+        "blender to image".to_string()
     }
 
     fn available(&self) -> Result<(), Error> {
-        Object3DProcessor::available()?;
+        Object3DToImage::available()?;
         match Command::new("blender").arg("--version").output() {
             Ok(_) => {Ok(())}
             Err(err) => {
@@ -60,7 +60,7 @@ impl Processor for BlenderProcessor {
                 else {
                     return Err(Error::msg("Unable to export blend file to glb"));
                 }
-                Object3DProcessor::process_3d_object(task, temp_path)?;
+                Object3DToImage::process_3d_object(task, temp_path)?;
                 Ok(true)
             }
             &_ => { Ok(false) }

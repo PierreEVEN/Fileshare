@@ -11,17 +11,45 @@ page-repository-settings {
   }
 
   .section-title {
-    margin-left: 20px;
+    padding-left: 5px;
     display: flex;
     flex-direction: row;
     align-items: center;
 
+    &.main {
+      > img {
+        height: 45px;
+        margin-left: 20px;
+      }
+      background-color: #171920;
+    }
+
+    h1 {
+      font-weight: bolder;
+      font-size: 30px;
+    }
+
+    h2 {
+      font-size: 20px;
+    }
+
+    img {
+      height: 35px;
+      margin-right: 10px;
+    }
+
     .plus-button {
+      display: flex;
       margin-left: 40px;
-      padding: 10px;
       font-size: unset;
       width: auto;
-      border-radius: 2px;
+      border-radius: 10px;
+      padding: 25px 10px;
+
+      img {
+        height: 25px;
+        margin-right: 10px;
+      }
     }
   }
 
@@ -32,9 +60,11 @@ page-repository-settings {
     width: fit-content;
     background-color: $toolbar;
     padding: 10px;
+    margin-left: 20px;
 
     p {
-      font-size: smaller;
+      font-size: 12px;
+      line-height: 20px;
     }
   }
 
@@ -51,6 +81,11 @@ page-repository-settings {
       flex-direction: row;
       width: 100%;
       align-items: center;
+      border-bottom: solid 1px #3e3e3e;
+
+      &.header {
+        background-color: $toolbar;
+      }
 
       .column {
         display: flex;
@@ -66,19 +101,43 @@ page-repository-settings {
 
       button {
         flex-grow: unset;
-        width: 40px;
         min-width: unset;
-        margin-left: auto;
-        margin-right: 5%;
+        margin-left: 80%;
+        margin-right: 20%;
+
+        img {
+          height: 25px;
+        }
       }
     }
   }
 
   .repos-settings-information {
-    p {
-      font-weight: lighter;
-      margin-top: 5px;
-      margin-bottom: 5px;
+    .cat {
+      display: flex;
+      flex-direction: column;
+      margin-left: 25px;
+      margin-bottom: 25px;
+
+      .head {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        p {
+          font-weight: bold;
+          margin-left: 10px;
+        }
+
+        img {
+          height: 20px;
+        }
+      }
+      p {
+        font-weight: lighter;
+        margin-top: 5px;
+        margin-bottom: 5px;
+      }
     }
   }
 }
@@ -86,8 +145,6 @@ page-repository-settings {
 
 @media (orientation: portrait) {
   page-repository-settings {
-    margin-top: 40px;
-
     .section-title {
       flex-direction: column;
       margin-bottom: 20px;

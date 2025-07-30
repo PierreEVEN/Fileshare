@@ -19,6 +19,7 @@ pub struct RepositoryContributorStats {
 pub struct RepositoryExtensionStats {
     mimetype: EncString,
     count: i64,
+    total_size: i64
 }
 #[derive(Serialize, Default)]
 pub struct RepositoryStats {
@@ -110,10 +111,11 @@ impl DbRepository {
         if let Some(files) = query_fmt!(db, "SELECT COUNT(id) AS num FROM SCHEMA_NAME.items WHERE NOT is_regular_file AND id IN (SELECT id FROM SCHEMA_NAME.items WHERE repository = $1 AND in_trash)", repository.id()).pop() {
             stats.trash_directories = files.try_get::<&str, i64>("num")? as usize;
         }
-        for extension in query_fmt!(db, "SELECT mimetype, COUNT(id) AS num FROM SCHEMA_NAME.files WHERE id IN (SELECT id FROM SCHEMA_NAME.items WHERE repository = $1) GROUP BY mimetype ORDER BY num DESC", repository.id()) {
+        for extension in query_fmt!(db, "SELECT mimetype, COUNT(id) AS num, SUM(size)::bigint as total_size FROM SCHEMA_NAME.files WHERE id IN (SELECT id FROM SCHEMA_NAME.items WHERE repository = $1) GROUP BY mimetype", repository.id()) {
             stats.extensions.push(RepositoryExtensionStats {
                 mimetype: extension.try_get::<&str, EncString, >("mimetype")?,
                 count: extension.try_get::<&str, i64, >("num")?,
+                total_size: extension.try_get::<&str, i64, >("total_size")?,
             });
         }
         for user in query_fmt!(db, "SELECT owner, COUNT(id) AS num FROM SCHEMA_NAME.items WHERE repository = $1 GROUP BY owner ORDER BY num DESC", repository.id()) {

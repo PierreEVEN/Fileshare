@@ -4,7 +4,7 @@
   ],
   "backend_config": {
     "file_storage_path": "/opt/data/storage/files",
-    "thumbnail_storage_path": "opt/data/storage/thumbnails",
+    "static_cache_storage_path": "opt/data/storage/cache",
     "thumbnail_size": 100,
     "video_server": {
       "cache_path": "data/streaming_cache",

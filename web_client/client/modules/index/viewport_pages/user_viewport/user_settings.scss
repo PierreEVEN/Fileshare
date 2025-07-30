@@ -7,6 +7,17 @@ page-user {
   width: 0;
   overflow: auto;
 
+  .title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-left: 10px;
+    img {
+      margin-right: 10px;
+      height: 30px;
+    }
+  }
+
   .info-section {
     display: flex;
     flex-direction: row;
@@ -136,10 +147,14 @@ page-user {
       overflow: auto;
 
       .token {
-        border-bottom: 1px dotted $text-secondary;
+        border-bottom: 1px solid #525252;
         display: flex;
         flex-direction: row;
         align-items: center;
+
+        &.head {
+          background-color: $toolbar;
+        }
 
         .field {
           display: flex;

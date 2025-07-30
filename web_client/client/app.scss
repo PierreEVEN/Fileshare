@@ -110,6 +110,7 @@ fileshare-app {
         display: flex;
         height: 100%;
         width: 100%;
+        user-select: none;
 
         .error_page {
           margin-left: 1em;

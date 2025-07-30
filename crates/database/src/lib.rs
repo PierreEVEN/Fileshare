@@ -19,7 +19,7 @@ pub struct Database {
     db: Client,
     pub schema_name: String,
     pub file_storage_path: PathBuf,
-    pub thumbnail_storage_path: PathBuf,
+    pub static_cache_storage_path: PathBuf,
 }
 
 impl Database {
@@ -62,7 +62,7 @@ impl Database {
             config.postgres.database
         );
 
-        let database = Self { db, schema_name: config.postgres.scheme_name.to_string(), file_storage_path: config.file_storage_path.clone(), thumbnail_storage_path: config.thumbnail_storage_path.clone() };
+        let database = Self { db, schema_name: config.postgres.scheme_name.to_string(), file_storage_path: config.file_storage_path.clone(), static_cache_storage_path: config.static_cache_storage_path.clone() };
 
         database.migrate(PathBuf::from("./migrations"), config.postgres.scheme_name.as_str()).await?;
         Ok(database)

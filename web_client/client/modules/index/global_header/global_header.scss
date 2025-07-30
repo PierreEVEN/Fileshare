@@ -4,18 +4,23 @@ app-header {
   display: flex;
   flex-direction: row;
   align-items: center;
+  user-select: none;
 
   .title {
     flex-grow: 1;
-
-    &:hover {
-      cursor: pointer;
-    }
+    display: flex;
 
     h1 {
-      margin: 0 0 0 20px;
+      padding: 5px 10px 5px 10px;
+      margin: 0 0 0 10px;
       font-style: italic;
       font-size: 23px;
+
+      &:hover {
+        cursor: pointer;
+        background-color: rgba(27, 24, 24, 0.22);
+        border-radius: 8px;
+      }
     }
 
     @media (orientation: portrait) {

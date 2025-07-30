@@ -1,14 +1,14 @@
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 use anyhow::{anyhow, Error};
-use crate::processors::Processor;
+use crate::file_to_images::Processor;
 use crate::ThumbnailerTask;
 
-pub struct VideoProcessor;
+pub struct VideoToImage;
 
-impl Processor for VideoProcessor {
+impl Processor for VideoToImage {
     fn name(&self) -> String {
-        "video".to_string()
+        "video to image".to_string()
     }
 
     fn available(&self) -> Result<(), Error> {

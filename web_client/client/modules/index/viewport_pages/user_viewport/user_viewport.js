@@ -6,6 +6,7 @@ import {APP_COOKIES} from "../../tools/cookies/cookies";
 import {GLOBAL_EVENTS} from "../../../../types/event_manager";
 import {human_readable_timestamp} from "../../../../utilities/utils";
 import {AppWidget} from "../../../../app_widget";
+import {StateSelection} from "../../../../utilities/state";
 
 require('./user_settings.scss')
 
@@ -62,6 +63,9 @@ class UserViewport extends AppWidget {
         }, {
             edit: async () => {
                 await edit_user(this.get_app(), this.user);
+            },
+            admin: async () => {
+                await this.get_app().state.select(new StateSelection().set_admin())
             }
         });
         for (const element of viewport)

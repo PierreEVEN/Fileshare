@@ -1,15 +1,15 @@
-use crate::processors::Processor;
+use crate::file_to_images::Processor;
 use crate::ThumbnailerTask;
 use anyhow::Error;
 use std::ffi::OsString;
 use std::fs;
 use std::process::{Command, Stdio};
 
-pub struct PdfProcessor;
+pub struct PdfToImage;
 
-impl Processor for PdfProcessor {
+impl Processor for PdfToImage {
     fn name(&self) -> String {
-        "pdf".to_string()
+        "pdf to image".to_string()
     }
 
     fn available(&self) -> Result<(), Error> {

@@ -22,9 +22,13 @@ impl Object {
     }
 
     pub fn thumbnail_path(object: &ObjectId, db: &Database) -> PathBuf {
-        db.thumbnail_storage_path.join(object.to_string().as_str())
+        db.static_cache_storage_path.join("thumbnails").join(object.to_string().as_str())
     }
 
+    pub fn preview_path(object: &ObjectId, db: &Database) -> PathBuf {
+        db.static_cache_storage_path.join("previews").join(object.to_string().as_str())
+    }
+    
     pub async fn from_id(db: &Database, id: &ObjectId) -> Result<Self, Error> {
         Ok(query_object!(db, Object, "SELECT * FROM SCHEMA_NAME.objects WHERE id = $1", id).unwrap())
     }

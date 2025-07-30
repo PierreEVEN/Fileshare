@@ -1,9 +1,18 @@
 import {get_mime_icon_path} from "../../utilities/mime_utils";
 
+import './custom_elements/object3d/object3d'
+
 function get(app, item) {
     const url = `${app.app_config.origin()}/api/item/preview/${item.id}`;
     const thumbnail_url = `/api/item/thumbnail/${item.id}`;
     const mimetype = item.mimetype.split('/');
+
+    const extension = item.name.split('.').pop();
+    const extensions_3d = ["obj", "fbx", "stl", "dae", "ply", "glb", "gltf", "x3d", "x3db", "3ds", "blend"]
+    if (extensions_3d.includes(extension)) {
+        return `<object-3d src="${url}"></object-3d>`
+    }
+
     switch (mimetype[0]) {
         case 'image':
             return `<lazy-img class="item-large" src="${url}" alternate-src="${thumbnail_url}""/>`

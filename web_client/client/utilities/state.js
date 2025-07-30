@@ -155,8 +155,7 @@ class AppState {
 
             if (with_state) {
                 const repository = selection.repository ? selection.repository : selection.item ? await Repository.find(this.app, selection.item.repository) : null;
-                const user = selection.user || repository ? await User.fetch(this.app, repository.owner) : null;
-
+                const user = selection.user || (repository ? await User.fetch(this.app, repository.owner) : null);
                 if (selection.item) {
                     if (selection.in_trash)
                         history.pushState({

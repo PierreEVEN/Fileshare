@@ -95,8 +95,8 @@ pub struct BackendConfig {
     #[serde_inline_default(PathBuf::from("data").join("files"))]
     pub file_storage_path: PathBuf,
 
-    #[serde_inline_default(PathBuf::from("data").join("thumbnails"))]
-    pub thumbnail_storage_path: PathBuf,
+    #[serde_inline_default(PathBuf::from("data").join("cache"))]
+    pub static_cache_storage_path: PathBuf,
 
     #[serde_inline_default(100)]
     pub thumbnail_size: usize,

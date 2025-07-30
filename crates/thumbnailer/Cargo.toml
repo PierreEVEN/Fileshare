@@ -5,7 +5,5 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.89"
-image = { version = "0.25.2", default-features = false, features = ["webp"] }
 tracing = "0.1.41"
-tokio = "1.46.1"
 task_pool = "0.1.5"

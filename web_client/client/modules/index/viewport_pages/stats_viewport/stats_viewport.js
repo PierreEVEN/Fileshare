@@ -11,8 +11,6 @@ class StatsViewport extends AppWidget {
     }
 
     connectedCallback() {
-
-
         let content = require('./stats_viewport.hbs')({}, {
             calc_object_sizes: async () => {
                 this.pause();
@@ -38,6 +36,11 @@ class StatsViewport extends AppWidget {
         this.disks = {
 
         }
+    }
+
+    disconnectedCallback() {
+        clearInterval(this._refresh_interval)
+        delete this._refresh_interval;
     }
 
     start() {
@@ -161,12 +164,6 @@ class StatsViewport extends AppWidget {
 
             this._elements.networks.append(network_div)
         }
-    }
-
-    delete() {
-        super.delete();
-        clearInterval(this._refresh_interval)
-        delete this._refresh_interval;
     }
 }
 
