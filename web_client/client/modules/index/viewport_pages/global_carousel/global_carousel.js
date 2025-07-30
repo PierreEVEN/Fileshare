@@ -23,7 +23,7 @@ class GlobalCarousel extends HTMLElement {
         this.list_container.innerHTML = '';
 
         const overlay = document.createElement('carousel-overlay');
-        list.events.add('select', (item) => {
+        viewport.events.add('set', (item) => {
             overlay.set_item(item)
         })
 

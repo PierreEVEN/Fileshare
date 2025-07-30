@@ -9,9 +9,10 @@ class LazyImage extends HTMLElement {
         if (!this.hasAttribute('src'))
             return;
 
-        if (this.hasAttribute('alternate-src'))
+        if (this.hasAttribute('alternate-src')) {
             this.alternate_src = this.getAttribute('alternate-src');
-
+            this.set_image(this.alternate_src)
+        }
         this._delay = 50;
     }
 

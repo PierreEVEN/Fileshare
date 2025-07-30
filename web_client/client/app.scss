@@ -83,8 +83,8 @@ fileshare-app {
         display: flex;
         flex-direction: column;
         background-color: $secondary;
-        width: 15%;
-        min-width: 200px;
+        width: fit-content;
+        max-width: min(400px, 95dvw);
         height: 100%;
         overflow: auto;
         z-index: 10;
@@ -92,8 +92,7 @@ fileshare-app {
 
         &.show {
           @media (orientation: portrait) {
-            width: 15%;
-            min-width: 200px;
+            width: fit-content;
           }
         }
 

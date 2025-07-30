@@ -4,6 +4,7 @@ require("../../../../embed_viewers/index")
 
 require('./carousel_viewport.scss')
 const {AppWidget} = require("../../../../../app_widget");
+const {EventManager} = require("../../../../../types/event_manager");
 
 function clamp(s, a, b) {
     return s < a ? a : s > b ? b : s;
@@ -68,6 +69,8 @@ class CarouselViewport extends AppWidget{
                 this._apply_zoom(this.scale * zoom, e.clientX, e.clientY);
             }
         });
+
+        this.events = new EventManager();
     }
 
     connectedCallback() {
@@ -81,6 +84,7 @@ class CarouselViewport extends AppWidget{
 
     set_item(item) {
         this._item = item;
+        this.events.broadcast('set', item);
         if (!this.isConnected)
             return;
         if (!this._item)
