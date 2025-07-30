@@ -6,6 +6,7 @@ const {NOTIFICATION, Message} = require("../../../index/tools/message_box/notifi
 class Object3D extends AppWidget {
     constructor() {
         super();
+        this._delay = 50;
     }
 
     connectedCallback() {
@@ -27,7 +28,7 @@ class Object3D extends AppWidget {
         const src = this.getAttribute('src');
         console.assert(src);
 
-        let res = await fetch(src, {cache: 'no-cache'});
+        let res = await fetch(src, {cache: 'force-cache'});
 
         this._delay = Math.min(2000, this._delay * 1.5);
 
@@ -39,9 +40,16 @@ class Object3D extends AppWidget {
 
         const content_type = res.headers.get('Content-Type');
 
-        if (content_type?.startsWith('image/webp')) {
+        if (content_type?.startsWith('model/gltf-binary')) {
+
+            this.set_loading(true);
             import("./three_viewer").then(async module => {
-                new module.ThreeRenderer(this, await res.blob())
+                const blob = await res.blob();
+                if (this.loading) {
+                    this.loading.remove();
+                    delete this.loading;
+                }
+                new module.ThreeRenderer(this, blob);
             })
         } else if (content_type?.includes('json')) {
             const json = await res.json();
@@ -53,7 +61,7 @@ class Object3D extends AppWidget {
                 this.set_loading(false);
                 setTimeout(() => this._update_content(src), this._delay);
             } else if (json.status === 'in_generation') {
-                this.set_loading(true);
+                this.set_loading(false);
                 setTimeout(() => this._update_content(src), this._delay);
             } else if (json.status === 'unknown_status') {
                 this.set_image('/public/images/icons/icons8-pas-dimage-48.png');

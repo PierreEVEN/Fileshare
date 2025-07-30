@@ -6,6 +6,7 @@ lazy-img {
   overflow: hidden;
 
   .loading {
+    align-self: center;
     aspect-ratio: 1;
     border-radius: 50%;
     background: radial-gradient(farthest-side, #adb79f 94%, #0000) top/4px 4px no-repeat, conic-gradient(#0000 30%, #89a586);

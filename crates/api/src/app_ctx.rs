@@ -5,7 +5,7 @@ use rand::random;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
-use thumbnailer::Thumbnailer;
+use converter::ConverterTool;
 use utils::config::Config;
 use utils::stats::Statistics;
 use video_server::StreamingContext;
@@ -16,7 +16,7 @@ pub struct AppCtx {
     pub database: Database,
     streaming_context: StreamingContext,
     uploads: tokio::sync::RwLock<HashMap<String, Arc<tokio::sync::RwLock<Upload>>>>,
-    pub thumbnailer: Thumbnailer
+    pub converter: ConverterTool
 }
 
 impl AppCtx {
@@ -26,7 +26,7 @@ impl AppCtx {
         let statistics = Arc::new(Statistics::default());
 
         Ok(Self {
-            thumbnailer: Thumbnailer::new(config.backend_config.thumbnail_processes),
+            converter: ConverterTool::new(config.backend_config.thumbnail_processes),
             streaming_context: StreamingContext::new(config.backend_config.video_server.clone(), statistics.clone()),
             config,
             statistics,

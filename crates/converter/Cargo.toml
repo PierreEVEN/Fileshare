@@ -1,5 +1,5 @@
 [package]
-name = "thumbnailer"
+name = "converter"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,3 +7,4 @@ edition = "2021"
 anyhow = "1.0.89"
 tracing = "0.1.41"
 task_pool = "0.1.5"
+which = "8.0.0"

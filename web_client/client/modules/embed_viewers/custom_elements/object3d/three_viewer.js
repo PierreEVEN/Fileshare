@@ -17,7 +17,6 @@ class ThreeRenderer {
         this.container = container;
         this.blob = blob;
         this.container.addEventListener('resize', (event) => {
-            console.log("resi")
             this.onWindowResize(event)
         })
 

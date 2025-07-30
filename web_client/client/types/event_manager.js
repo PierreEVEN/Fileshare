@@ -12,8 +12,8 @@ class EventHandle {
             event.delete(this._id);
     }
 
-    execute(payload) {
-        this._callback(payload);
+    async execute(payload) {
+        await this._callback(payload);
     }
 }
 

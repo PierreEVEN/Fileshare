@@ -282,7 +282,9 @@ class RepositoryViewport extends AppWidget {
         }
 
         if (!this._on_state_select_cb)
-            this._on_state_select_cb = this.get_app().state.events.add('select', async selection => {await this._on_state_select(selection)})
+            this._on_state_select_cb = this.get_app().state.events.add('select', async selection => {
+                await this._on_state_select(selection)
+            })
     }
 
     /**

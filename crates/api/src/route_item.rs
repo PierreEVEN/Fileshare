@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use crate::app_ctx::AppCtx;
@@ -10,7 +9,7 @@ use database::async_zip::AsyncDirectoryZip;
 use types::enc_string::EncString;
 use crate::permissions::Permissions;
 use utils::server_error::ServerError;
-use thumbnailer::{ThumbnailResult};
+use converter::{ConverterResult, ConverterTask, TaskProgress};
 use crate::upload::Upload;
 use anyhow::Error;
 use axum::body::Body;
@@ -25,6 +24,15 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use tokio_util::io::ReaderStream;
 use tracing::{error, info, warn};
+use converter::converter_error::ConverterError;
+use converter::file_to_glb::blender_to_glb::BlenderToGlb;
+use converter::file_to_glb::object_3d_to_glb::Object3dToGlb;
+use converter::file_to_images::blender_to_image::BlenderToImage;
+use converter::file_to_images::image_no_web_to_image::ImageNoWebToImage;
+use converter::file_to_images::image_to_image::ImageToThumbnail;
+use converter::file_to_images::object_3d_to_image::Object3DToImage;
+use converter::file_to_images::pdf_to_image::PdfToImage;
+use converter::file_to_images::video_to_image::VideoToImage;
 use database::repository::DbRepository;
 use types::database_ids::{DatabaseId, ItemId, RepositoryId};
 use types::item::{CreateDirectoryParams, DirectoryData, Item};
@@ -204,12 +212,11 @@ async fn delete(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl
 
 /// Get item thumbnail if available
 async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, request: Request) -> Result<impl IntoResponse, ServerError> {
-
     let item = DbItem::from_id(&ctx.database, &ItemId::from(id), Trash::Both).await?;
     let permissions = Permissions::new(&request)?;
     if let Err(err) = permissions.view_item(&ctx.database, &item).await?.require() {
         error!("Cannot get thumbnail : {}", err);
-        return Err(err)
+        return Err(err);
     }
     let file = match &item.file {
         None => { return Err(ServerError::msg(StatusCode::NOT_ACCEPTABLE, "Cannot generate thumbnail for a directory")) }
@@ -217,53 +224,77 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
     };
 
     let extension = match PathBuf::from(item.name.plain()?.as_str()).extension() {
-        None => {String::new()}
-        Some(extension) => {extension.display().to_string()}
+        None => { String::new() }
+        Some(extension) => { extension.display().to_string() }
     };
-
-    let thumbnail_path = ctx.thumbnailer.find_or_create_thumbnail(&Object::data_path(&file.object, &ctx.database), &Object::thumbnail_path(&file.object, &ctx.database), &file.mimetype.plain()?, &extension, 100).await?;
 
     #[derive(Serialize)]
     struct Result {
-        status: String
+        status: String,
     }
 
-    match thumbnail_path {
-        ThumbnailResult::Ok(path) => {
-            let stream = ReaderStream::new(tokio::fs::File::open(path).await?);
-            let body = Body::from_stream(stream);
+    let pool = ctx.converter.create_pool();
+    pool.add::<PdfToImage>();
+    pool.add::<VideoToImage>();
+    pool.add::<ImageToThumbnail>();
+    pool.add::<Object3DToImage>();
+    pool.add::<BlenderToImage>();
 
-            let headers = [
-                (header::CACHE_CONTROL, "max-age=604800".to_string()),
-                (header::CONTENT_TYPE, "image/webp".to_string()),
-                (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
-            ];
-            Ok((headers, body).into_response())
+    let input_path = Object::data_path(&file.object, &ctx.database);
+
+    match ctx.converter.get_or_convert(ConverterTask::new(input_path.clone(), Object::thumbnail_path(&file.object, &ctx.database), file.mimetype.plain()?.clone(), extension).output_max_size(100), pool).await {
+        Ok(result) => {
+            match result {
+                ConverterResult::Queuing(progress) => {
+                    match progress {
+                        TaskProgress::InQueue => {
+                            Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                                status: String::from("in_queue")
+                            })).into_response())
+                        }
+                        TaskProgress::InWork => {
+                            Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                                status: String::from("in_generation")
+                            })).into_response())
+                        }
+                    }
+                }
+                ConverterResult::Ok { output_path, output_mime } => {
+                    let stream = ReaderStream::new(tokio::fs::File::open(output_path).await?);
+                    let body = Body::from_stream(stream);
+
+                    let headers = [
+                        (header::CACHE_CONTROL, "max-age=604800".to_string()),
+                        (header::CONTENT_TYPE, output_mime),
+                        (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
+                    ];
+                    Ok((headers, body).into_response())
+                }
+            }
         }
-        ThumbnailResult::NoSourceFile => {
-            Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())],Json(Result {
-                status: String::from("no_source")
-            })).into_response())
-        }
-        ThumbnailResult::UnsupportedMime(_) => {
-            Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())],Json(Result {
-                status: String::from("unsupported")
-            })).into_response())
-        }
-        ThumbnailResult::InQueue => {
-            Ok(([(header::CACHE_CONTROL, "no-store".to_string())],Json(Result {
-                status: String::from("in_queue")
-            })).into_response())
-        }
-        ThumbnailResult::InGeneration => {
-            Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                status: String::from("in_generation")
-            })).into_response())
-        }
-        ThumbnailResult::UnknownStatus => {
-            Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                status: String::from("unknown_status")
-            })).into_response())
+        Err(error) => {
+            match error {
+                ConverterError::ToolNotAvailable(_) => {
+                    Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
+                        status: String::from("unsupported")
+                    })).into_response())
+                }
+                ConverterError::NoSource => {
+                    Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
+                        status: String::from("no_source")
+                    })).into_response())
+                }
+                ConverterError::Other(error) => {
+                    Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                        status: error.to_string()
+                    })).into_response())
+                }
+                ConverterError::TaskNotAcceptable => {
+                    Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
+                        status: String::from("unsupported")
+                    })).into_response())
+                }
+            }
         }
     }
 }
@@ -350,64 +381,85 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
     permissions.view_item(&ctx.database, &item).await?.require()?;
 
     if let Some(file) = item.file {
-        let object = Object::from_id(&ctx.database, &file.object).await?;
-
         let extension = match PathBuf::from(item.name.plain()?.as_str()).extension() {
-            None => {String::new()}
-            Some(extension) => {extension.display().to_string()}
+            None => { String::new() }
+            Some(extension) => { extension.display().to_string() }
         };
 
         #[derive(Serialize)]
         struct Result {
-            status: String
+            status: String,
         }
 
-        return match ctx.thumbnailer.find_or_create_preview(&Object::data_path(&file.object, &ctx.database), &Object::preview_path(&file.object, &ctx.database), &file.mimetype.plain()?, &extension, 100).await? {
-            ThumbnailResult::Ok(path) => {
-                let stream = ReaderStream::new(tokio::fs::File::open(&path).await?);
-                let body = Body::from_stream(stream);
-                let headers = [
-                    (header::CACHE_CONTROL, "max-age=604800".to_string()),
-                    (header::CONTENT_TYPE, "image/webp".to_string()),
-                    (header::CONTENT_LENGTH, fs::metadata(path)?.len().to_string()),
-                    (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
-                ];
-                Ok((headers, body).into_response())
-            }
-            ThumbnailResult::NoSourceFile => {
-                Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())],Json(Result {
-                    status: String::from("no_source")
-                })).into_response())
-            }
-            ThumbnailResult::UnsupportedMime(_) => {
-                let stream = ReaderStream::new(tokio::fs::File::open(Object::data_path(object.id(), &ctx.database)).await?);
-                let body = Body::from_stream(stream);
+        let pool = ctx.converter.create_pool();
+        pool.add::<BlenderToGlb>();
+        pool.add::<Object3dToGlb>();
+        pool.add::<ImageNoWebToImage>();
+        let input_path = Object::data_path(&file.object, &ctx.database);
+        match ctx.converter.get_or_convert(ConverterTask::new(input_path.clone(), Object::preview_path(&file.object, &ctx.database), file.mimetype.plain()?.clone(), extension), pool).await {
+            Ok(result) => {
+                match result {
+                    ConverterResult::Queuing(progress) => {
+                        match progress {
+                            TaskProgress::InQueue => {
+                                Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                                    status: String::from("in_queue")
+                                })).into_response())
+                            }
+                            TaskProgress::InWork => {
+                                Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                                    status: String::from("in_generation")
+                                })).into_response())
+                            }
+                        }
+                    }
+                    ConverterResult::Ok { output_path, output_mime } => {
+                        let stream = ReaderStream::new(tokio::fs::File::open(output_path).await?);
+                        let body = Body::from_stream(stream);
 
-                let headers = [
-                    (header::CONTENT_TYPE, file.mimetype.plain()?),
-                    (header::CONTENT_LENGTH, file.size.to_string()),
-                    (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
-                ];
-                return Ok((StatusCode::OK, headers, body).into_response());
+                        let headers = [
+                            (header::CACHE_CONTROL, "max-age=604800".to_string()),
+                            (header::CONTENT_TYPE, output_mime),
+                            (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
+                        ];
+                        Ok((headers, body).into_response())
+                    }
+                }
             }
-            ThumbnailResult::InQueue => {
-                Ok(([(header::CACHE_CONTROL, "no-store".to_string())],Json(Result {
-                    status: String::from("in_queue")
-                })).into_response())
+            Err(error) => {
+                match error {
+                    ConverterError::ToolNotAvailable(_) => {
+                        Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
+                            status: String::from("unsupported")
+                        })).into_response())
+                    }
+                    ConverterError::NoSource => {
+                        Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
+                            status: String::from("no_source")
+                        })).into_response())
+                    }
+                    ConverterError::Other(error) => {
+                        Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                            status: error.to_string()
+                        })).into_response())
+                    }
+                    ConverterError::TaskNotAcceptable => {
+                        let stream = ReaderStream::new(tokio::fs::File::open(input_path).await?);
+                        let body = Body::from_stream(stream);
+
+                        let headers = [
+                            (header::CACHE_CONTROL, "max-age=604800".to_string()),
+                            (header::CONTENT_TYPE, file.mimetype.plain()?.clone()),
+                            (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
+                        ];
+                        Ok((headers, body).into_response())
+                    }
+                }
             }
-            ThumbnailResult::InGeneration => {
-                Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                    status: String::from("in_generation")
-                })).into_response())
-            }
-            ThumbnailResult::UnknownStatus => {
-                Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                    status: String::from("unknown_status")
-                })).into_response())
-            }
-        };
+        }
+    } else {
+        Err(ServerError::msg(StatusCode::NOT_FOUND, "Cannot preview directory content"))
     }
-    Err(ServerError::msg(StatusCode::NOT_FOUND, "Cannot preview directory content"))
 }
 
 /// Download item or directory
