@@ -1,6 +1,5 @@
 use crate::converter_error::ConverterError;
 use crate::{Converter, ConverterTask, ToolPool};
-use anyhow::Error;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::str::FromStr;
@@ -18,7 +17,7 @@ impl Converter for VideoToImage {
 
     fn accept(&self, task: &ConverterTask, _: &Arc<ToolPool>) -> Result<bool, ConverterError> {
         let mut mime_start = task.mimetype.split("/");
-        Ok(mime_start.next().ok_or(Error::msg("Invalid mimetype"))? == "video")
+        Ok(mime_start.next().ok_or(ConverterError::InvalidInput(format!("invalid mimetype : {}", task.mimetype)))? == "video")
     }
 
     fn get_output(&self, task: &ConverterTask) -> Result<(PathBuf, String), ConverterError> {

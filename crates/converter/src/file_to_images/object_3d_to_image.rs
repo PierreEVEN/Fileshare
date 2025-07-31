@@ -1,6 +1,5 @@
 use crate::converter_error::ConverterError;
 use crate::{Converter, ConverterTask, TempPath, ToolPool};
-use anyhow::Error;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -19,7 +18,7 @@ impl Object3DToImage {
 
     pub fn process_3d_object(task: &ConverterTask, tool_pool: &Arc<ToolPool>, input_file_path: &TempPath) -> Result<(), ConverterError> {
         if !input_file_path.exists() {
-            return Err(ConverterError::Other(Error::msg(format!("Cannot find object3d file : {}", input_file_path.display()))));
+            return Err(ConverterError::InvalidInput(format!("Cannot find object3d file : {}", input_file_path.display())));
         }
         if task.output.exists() {
             fs::remove_file(task.output.as_path())?;
@@ -47,7 +46,7 @@ impl Object3DToImage {
             Ok(())
         }
         else {
-            Err(ConverterError::Other(Error::msg(format!("Conversion from object3d to image failed : output file not found at {}", task.output.display()))))
+            Err(ConverterError::ConversionFailed(format!("Conversion from object3d to image failed : output file not found at {}", task.output.display())))
         }
     }
 }
@@ -83,7 +82,7 @@ impl Converter for Object3DToImage {
             }
             #[cfg(unix)]
             if let Err(err) = std::os::unix::fs::symlink(&task.input, &*temp_path) {
-                return Err(Error::msg(format!("Failed to create symlink : {}", err)));
+                return Err(ConverterError::ConversionFailed(format!("Failed to create symlink : {}", err)));
             }
             #[cfg(windows)]
             fs::copy(&task.input, &*temp_path)?;

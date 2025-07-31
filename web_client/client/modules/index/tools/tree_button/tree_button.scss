@@ -38,14 +38,13 @@
     p {
       text-overflow: ellipsis;
       white-space: nowrap;
-      overflow: hidden;
       font-size: 14px;
       margin-right: 20px;
     }
   }
 
   .expandable-content {
-    display: flex;
+    display: none;
     flex-direction: column;
     margin-left: 15px;
   }

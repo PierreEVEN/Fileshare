@@ -72,7 +72,7 @@ class SideBar extends AppWidget {
 
         if (!repository) {
             if (this._last_selected)
-                this._last_selected.clear_selection();
+                this._last_selected.clear_tree_selection();
             this._elements.my_repositories.set_expanded(false);
             this._elements.shared.set_expanded(false);
             this._elements.recent.set_expanded(false);
@@ -107,11 +107,11 @@ class SideBar extends AppWidget {
 
         if (this._last_selected) {
             if (this._last_selected !== repository_div)
-                this._last_selected.clear_selection();
+                this._last_selected.clear_tree_selection();
         }
         this._last_selected = repository_div;
 
-        if (selection.item) {
+        if (selection.item && !selection.item.in_trash) {
             repository_div.focus_item(selection.item);
         } else {
             repository_div.focus_root(selection.in_trash, true);

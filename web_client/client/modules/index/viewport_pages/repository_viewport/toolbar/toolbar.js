@@ -12,7 +12,14 @@ class ViewportToolbar extends AppWidget {
     }
 
     connectedCallback() {
-        let div = require('./toolbar.hbs')({}, {
+        this._rebuild_div();
+    }
+
+    _rebuild_div() {
+        if (!this.isConnected)
+            return;
+        this.innerHTML = '';
+        let div = require('./toolbar.hbs')({is_trash: this.is_trash}, {
             select_root: async () => {
                 if (this.is_trash)
                     await this.get_app().state.select(new StateSelection().set_repository(this.repository, true));
@@ -51,8 +58,12 @@ class ViewportToolbar extends AppWidget {
      */
     async set_toolbar_path(current_item, is_trash) {
         this.current_item = current_item;
-        this.is_trash = is_trash;
-        this.hb_elements.repository.set_repository(this.repository).display_trash(this.is_trash);
+        if (is_trash !== this.is_trash) {
+            this.is_trash = is_trash;
+            this._rebuild_div();
+        }
+
+        this.hb_elements.repository.set_repository(this.repository);
 
         this.hb_elements.path.innerHTML = '';
         if (current_item) {

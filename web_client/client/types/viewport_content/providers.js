@@ -6,6 +6,7 @@ class RepositoryRootProvider extends ContentProvider {
      */
     constructor(repository) {
         super();
+        console.assert(repository, "Cannot create a RepositoryRootProvider with a null repository");
         this.repository = repository;
     }
 
@@ -35,6 +36,7 @@ class DirectoryContentProvider extends ContentProvider {
      */
     constructor(directory) {
         super();
+        console.assert(directory, "Cannot create a DirectoryContentProvider with a null directory");
         if (directory.is_regular_file)
             console.error("Cannot open a file as a directory");
         /**
@@ -75,6 +77,7 @@ class TrashContentProvider extends ContentProvider {
      */
     constructor(repository) {
         super();
+        console.assert(repository, "Cannot create a TrashContentProvider with a null repository");
         this.repository = repository;
     }
 

@@ -2,16 +2,15 @@ pub mod file_to_images;
 pub mod file_to_glb;
 pub mod converter_error;
 mod utils;
+pub mod task;
 
-use std::collections::{HashMap};
-use std::fs;
-use std::ops::{Deref, DerefMut};
-use std::path::{PathBuf};
+use crate::converter_error::ConverterError;
+use crate::task::{ConverterResult, ConverterTask, TaskProgress, TaskState};
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::process::Command;
 use std::sync::{Arc, RwLock};
-use task_pool::{once, Lifo, Task, TaskPool, TaskQueue};
-use tracing::error;
-use crate::converter_error::ConverterError;
+use task_pool::{once, Lifo, TaskPool, TaskQueue};
 
 pub trait Converter: Send + Sync {
     fn available(&self, tool_pool: &Arc<ToolPool>) -> Result<(), ConverterError>;
@@ -20,84 +19,7 @@ pub trait Converter: Send + Sync {
     fn run(&self, task: &ConverterTask, tool_pool: &Arc<ToolPool>) -> Result<(), ConverterError>;
 }
 
-#[derive(Debug, Clone)]
-pub enum TaskProgress {
-    InQueue,
-    InWork,
-}
-
-#[derive(Debug)]
-pub enum ConverterResult {
-    Queuing(TaskProgress),
-    Ok {output_path: PathBuf, output_mime: String}
-}
-
-pub struct ConverterTask {
-    input: PathBuf,
-    mimetype: String,
-    extension: String,
-    output: PathBuf,
-    output_max_size: Option<u32>
-}
-
-impl ConverterTask {
-    pub fn new(input: PathBuf, output: PathBuf, input_mimetype: String, input_extension: String) -> Self {
-        Self {
-            input,
-            mimetype: input_mimetype,
-            extension: input_extension,
-            output,
-            output_max_size: None,
-        }
-    }
-
-    pub fn output_max_size(mut self, size: u32) -> Self {
-        self.output_max_size = Some(size);
-        self
-    }
-}
-
 pub struct TempPath(PathBuf, bool);
-
-impl TempPath {
-    pub fn new(path: PathBuf) -> Self {
-        Self(path, false)
-    }
-
-    pub fn forget(&mut self) {
-        self.1 = true;
-    }
-}
-
-impl Deref for TempPath {
-    type Target = PathBuf;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for TempPath {
-    fn deref_mut(&mut self) -> &mut PathBuf {
-        &mut self.0
-    }
-}
-
-impl Drop for TempPath {
-    fn drop(&mut self) {
-        if self.0.exists() && !self.1 {
-            if let Err(err) = fs::remove_file(&self.0) {
-                error!("Failed to remove unused temporary file {} : {}", self.0.display(), err)
-            }
-        }
-    }
-}
-
-struct TaskState {
-    pub status: TaskProgress,
-    #[allow(unused)]
-    pub handle: Task<Result<ConverterResult, ConverterError>, Lifo>
-}
 
 pub struct ConverterTool {
     tasks: Arc<RwLock<HashMap<PathBuf, TaskState>>>,
@@ -189,7 +111,7 @@ impl ConverterTool {
     async fn convert(&self, task: ConverterTask, tool: Arc<Box<dyn Converter>>) -> Result<ConverterResult, ConverterError> {
         // Ensure the input file exists
         if !task.input.exists() {
-            return Err(ConverterError::NoSource)
+            return Err(ConverterError::InvalidInput(format!("Input file does not exist: {}", task.input.display())));
         }
 
         // Check if task is already queuing, if so return queue status

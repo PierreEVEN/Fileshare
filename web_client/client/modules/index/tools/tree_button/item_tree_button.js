@@ -21,7 +21,7 @@ class ItemTreeButton extends TreeButton {
         if (this._item && item && this._item.id === item.id && this.isConnected)
             return this;
         this._item = item;
-        this.generate_content();
+        this._build_or_rebuild();
         return this;
     }
 
@@ -50,18 +50,18 @@ class ItemTreeButton extends TreeButton {
     async open(new_tab) {
         if (this._item) {
             if (new_tab) {
-                if (this.is_in_trash())
+                if (this._item.in_trash)
                     window.open(await (await Repository.find(this.get_app(), this._item.repository)).trash_url(this.get_app()));
                 else
                     window.open(await this._item.url(this.get_app()));
             }
             else
-                await this.get_app().state.select(new StateSelection().set_item(this._item, this.is_in_trash()));
+                await this.get_app().state.select(new StateSelection().set_item(this._item, this._item.in_trash));
         }
     }
 
     get_content() {
-        return new DirectoryContentProvider(this._item);
+        return this._item ? new DirectoryContentProvider(this._item) : null;
     }
 }
 

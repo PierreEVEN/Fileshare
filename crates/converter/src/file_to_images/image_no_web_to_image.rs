@@ -1,6 +1,5 @@
 use crate::converter_error::ConverterError;
 use crate::{Converter, ConverterTask, ToolPool};
-use anyhow::Error;
 use std::ffi::OsString;
 use std::fs;
 use std::path::PathBuf;
@@ -34,11 +33,11 @@ impl Converter for ImageNoWebToImage {
                 "image/x-tga" => {
                     "image/tga"
                 }
-                _ => { return Err(ConverterError::TaskNotAcceptable); }
+                mime => {mime}
             };
             let mut mime = mime_plain.split("/");
             mime.next();
-            let mut path_str = OsString::from(mime.next().ok_or(Error::msg(format!("invalid mimetype : {}", mime_plain)))?);
+            let mut path_str = OsString::from(mime.next().ok_or(ConverterError::InvalidInput(format!("invalid mimetype : {}", mime_plain)))?);
             path_str.push(":");
             path_str.push(task.input.as_os_str());
 
@@ -58,9 +57,9 @@ impl Converter for ImageNoWebToImage {
                 .spawn()?
                 .wait_with_output()?;
 
-            let mut generated_file_name = OsString::from(task.output.file_name().unwrap());
-            generated_file_name.push(".webp");
-            fs::rename(task.output.parent().unwrap().join(generated_file_name), &task.output)?;
+            let mut generated_file_name = PathBuf::from(&task.output);
+            generated_file_name.set_extension("webp");
+            fs::rename(generated_file_name, &task.output)?;
             Ok(())
         }
         else {

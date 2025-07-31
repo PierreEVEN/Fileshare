@@ -1,7 +1,6 @@
 use crate::converter_error::ConverterError;
 use crate::utils::safe_rename;
 use crate::{Converter, ConverterTask, TempPath, ToolPool};
-use anyhow::Error;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -56,7 +55,7 @@ impl Converter for Object3dToGlb {
             }
             #[cfg(unix)]
             if let Err(err) = std::os::unix::fs::symlink(&task.input, &*temp_path_in) {
-                return Err(Error::msg(format!("Failed to create symlink : {}", err)));
+                return Err(ConverterError::ConversionFailed(format!("Failed to create symlink : {}", err)));
             }
             #[cfg(windows)]
             fs::copy(&task.input, &*temp_path_in)?;
@@ -79,10 +78,10 @@ impl Converter for Object3dToGlb {
                 if !task.output.parent().unwrap().exists() {
                     fs::create_dir_all(task.output.parent().unwrap())?;
                 }
-                safe_rename(&temp_path_out, &task.output).map_err(|err| Error::msg(format!("Failed to rename generated glb from {} to {} : {err}", temp_path_out.display(), task.output.display())))?;
+                safe_rename(&temp_path_out, &task.output).map_err(|err| ConverterError::ConversionFailed(format!("Failed to rename generated glb from {} to {} : {err}", temp_path_out.display(), task.output.display())))?;
                 Ok(())
             } else {
-                Err(ConverterError::Other(Error::msg(format!("Cannot find generated file at {}", temp_path_out.display()))))
+                Err(ConverterError::ConversionFailed(format!("Cannot find generated file at {}", temp_path_out.display())))
             }
         } else {
             Err(ConverterError::TaskNotAcceptable)

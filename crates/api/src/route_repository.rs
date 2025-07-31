@@ -166,12 +166,10 @@ pub async fn root_content(State(ctx): State<Arc<AppCtx>>, request: axum::http::R
 /// Get trash root items of a repository
 pub async fn trash_content(State(ctx): State<Arc<AppCtx>>, request: axum::http::Request<Body>) -> Result<impl IntoResponse, ServerError> {
     let permission = Permissions::new(&request)?;
-
     let data = Json::<Vec<RepositoryId>>::from_request(request, &ctx).await?;
-
     let mut result = vec![];
     for repository in data.0 {
-        permission.edit_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.require()?;
+        permission.upload_to_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.require()?;
         result.append(&mut DbItem::repository_trash_root(&ctx.database, &repository).await?);
     }
     Ok(Json(result))

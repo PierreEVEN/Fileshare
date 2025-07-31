@@ -7,20 +7,41 @@ class TreeButton extends AppWidget {
     constructor() {
         super();
 
-        if (this.hasAttribute('expandable'))
-            this._expandable = true;
+        /**
+         * @type {boolean}
+         * @private
+         */
+        this._expandable = this.hasAttribute('expandable');
 
-        if (this.hasAttribute('show_regular_files'))
-            this._show_regular_files = true;
+        /**
+         * @type {boolean}
+         * @private
+         */
+        this._show_regular_files = this.hasAttribute('show_regular_files');
 
+        /**
+         * @type {boolean}
+         * @private
+         */
         this._expanded = false;
-        this._in_trash = false;
+
+        /**
+         * @type {Map<number, TreeButton>}
+         * @private
+         */
         this._items = new Map();
+
+        /**
+         * @type {ContentProvider}
+         * @private
+         */
+        this._content_provider = null;
     }
 
     connectedCallback() {
         this.className = 'tree-button';
-        this.generate_content();
+        this._build_or_rebuild();
+        this._init_content_provider();
     }
 
     disconnectedCallback() {
@@ -28,130 +49,21 @@ class TreeButton extends AppWidget {
             this._on_add_item.remove();
         if (this._on_remove_item)
             this._on_remove_item.remove();
+        if (this._content_provider)
+            this._content_provider.delete();
+        this._content_provider = null;
     }
 
-    /**
-     * @return {String}
-     */
-    get_icon() { return "" }
-
-    /**
-     * @return {Repository | FilesystemItem}
-     */
-    this_item() {}
-
-    /**
-     * @return {ContentProvider}
-     */
-    async get_content() { return null; }
-
-    expanded() {
-        return this._expandable && this._expanded;
-    }
-
-    generate_content() {
-        if (!this.isConnected)
-            return;
-        this.innerHTML = '';
-        if (!this.this_item())
-            return;
-
-        if (this._on_add_item)
-            this._on_add_item.remove();
-        if (this._on_remove_item)
-            this._on_remove_item.remove();
-
-        /**
-         * @type {ContentProvider}
-         * @private
-         */
-        this._content_provider = this.get_content();
-        this._content_provider.id = Math.random();
-
-        // Bind add and remove item (required to detect when we should add or remove arrow)
-        this._on_add_item = this._content_provider.events.add('add', (item) => {
-            this._add_item(item);
-        })
-
-        // Bind add and remove item (required to detect when we should add or remove arrow)
-        this._on_remove_item = GLOBAL_EVENTS.add('remove_item', (item) => {
-            this._remove_item(item);
-        })
-
-
-        this.set_content(require('./tree_button.hbs'),
-            {
-                name: this.get_name(),
-                expandable: this._expandable,
-                icon: this.get_icon(),
-            },
-            {
-                context: (event) => {
-                    event.preventDefault();
-                    this.context_menu();
-                },
-                open: async (event) => {
-                    if (this._expandable)
-                        await this.set_expanded(!this._expanded);
-                    if (!this.is_selected())
-                        await this.open(false);
-                    if (this.onclick && !this.is_selected())
-                        this.onclick(event)
-                },
-                open_aux: async (event) => {
-                    if (event.button === 1)
-                        await this.open(true);
-                }
-            });
-
-        if (!this._fetch_sub_content && this._expandable) {
-            this._fetch_sub_content = true;
-
-            // Fetch a first time to display or not expand arrow
-            this._content_provider.get_content().then(items => {
-                if (items.length > 0) {
-                    if (this._show_regular_files) {
-                        if (items.length !== 0)
-                            this.elements().arrow.style.visibility = 'visible';
-                    } else {
-                        let dir_count = 0;
-                        for (const element of items)
-                            if (!element.is_regular_file)
-                                dir_count++;
-                        if (dir_count !== 0)
-                            this.elements().arrow.style.visibility = 'visible';
-                    }
-                }
-                this._fetch_sub_content = false;
-            });
-        }
-
-        return this;
-    }
-
-    /**
-     * @return {String}
-     */
-    get_name() { return "" }
-
-    context_menu() { }
-
-    async open(new_tab) {}
+    /****************************************
+     *              SETTINGS                *
+     * **************************************/
 
     set_expandable(expandable) {
         if (this._expandable === expandable)
             return this;
 
         this._expandable = expandable;
-        this.generate_content();
-        return this;
-    }
-
-    display_trash(enable) {
-        if (this._in_trash === enable)
-            return this;
-        this._in_trash = enable;
-        this.generate_content();
+        this._build_or_rebuild();
         return this;
     }
 
@@ -159,30 +71,22 @@ class TreeButton extends AppWidget {
         if (this._show_regular_files === enable)
             return this;
         this._show_regular_files = enable;
-        this.generate_content();
+        this._build_or_rebuild();
         return this;
     }
 
-    is_in_trash() {
-        return this._in_trash;
-    }
+    /****************************************
+     *              MECHANICS               *
+     * **************************************/
 
     /**
      * @param in_trash {boolean}
      * @param expand {boolean}
      */
     async focus_root(in_trash, expand = false) {
-        if (in_trash) {
-            if (!this.get_tree_root()._trash_div)
-                return console.error("Trash Div is not initialized")
-            this.get_tree_root()._trash_div._select(true);
-            if (expand)
-                this._trash_div.set_expanded(true);
-        } else {
-            this._select(true);
-            if (expand)
-                await this.set_expanded(true);
-        }
+        this._set_selected(true);
+        if (expand)
+            await this.set_expanded(true);
     }
 
     /**
@@ -190,12 +94,10 @@ class TreeButton extends AppWidget {
      * @param expand {boolean}
      */
     async focus_item(item, expand = false) {
-        if (item.in_trash && !this.is_in_trash())
-            return this.get_tree_root()._trash_div.focus_item(item, expand);
         if (!this.this_item())
             return console.error("Cannot focus : item is not initialized yet on {}", this);
         if (item.id === this.this_item().id) {
-            this._select(true);
+            this._set_selected(true);
             if (expand)
                 await this.set_expanded(true);
             return;
@@ -207,57 +109,16 @@ class TreeButton extends AppWidget {
             while (hierarchy[hierarchy.length - 1].parent_item) {
                 hierarchy.push(item.filesystem().find(hierarchy[hierarchy.length - 1].parent_item))
             }
-            this._focus_item(hierarchy, expand);
+            await this._focus_item_internal(hierarchy, expand);
         }
     }
 
-    _focus_item(hierarchy, expand = false) {
-        if (hierarchy.length === 0) {
-            this._select(true);
-            if (expand)
-                this.set_expanded(true);
-            return;
-        }
-
-        const item = hierarchy.pop();
-
-        this.set_expanded(true).then(() => {
-            const found_child = this._items.get(item.id);
-            if (found_child)
-                found_child._focus_item(hierarchy, expand);
-            else {
-                this._focus_item([], expand);
-            }
-        })
-    }
-
-    clear_selection() {
+    clear_tree_selection() {
         const root = this.get_tree_root();
         if (root._selected) {
             root._selected.classList.remove('selected');
             delete root._selected;
         }
-    }
-
-    _select(select) {
-        const root = this.get_tree_root();
-        if ((root._selected === this) === select)
-            return;
-
-        this.clear_selection();
-
-        if (select) {
-            root._selected = this;
-            this.classList.add('selected');
-        }
-    }
-
-    is_selected() {
-        return this.get_tree_root()._selected === this;
-    }
-
-    get_tree_root() {
-        return this._root || this;
     }
 
     async set_expanded(expand) {
@@ -272,10 +133,14 @@ class TreeButton extends AppWidget {
         this._expansion_promise = new Promise(async resolve => {
             this._expanded = expand;
             if (expand) {
-                this._initialize_content();
                 this.elements().content.style.display = 'flex';
                 this.elements().arrow.classList.add('expanded');
-                await this._initialized_content_promise;
+                if (this._cached_divs) {
+                    for (const div of this._cached_divs.values()) {
+                        this._insert_child(div)
+                    }
+                    this._cached_divs = null;
+                }
             }
             else {
                 this.elements().content.style.display = 'none';
@@ -287,33 +152,116 @@ class TreeButton extends AppWidget {
         await this._expansion_promise;
     }
 
-    _initialize_content() {
+    /**
+     * Create or re-create div elements
+     * @private
+     */
+    _build_or_rebuild() {
         if (!this.isConnected)
             return;
-        if (!this._initialized_content_promise) {
-            this._initialized_content_promise = new Promise(async resolve => {
-                const content = (await this._content_provider.get_content()).sort(((a, b) => {
-                    if (a.is_regular_file && !b.is_regular_file)
-                        return 1;
-                    else if (b.is_regular_file && !a.is_regular_file)
-                        return -1;
-                    return a.name.plain().localeCompare(b.name.plain())
-                }));
-                for (const item of content)
-                    this._add_item(item);
+        this.innerHTML = '';
 
-                if (this.this_item().constructor.name === 'Repository' && !this.is_in_trash() && this.get_app().app_config.connected_user()) {
-                    this._trash_div = document.createElement('repository-tree-button')
-                        .set_repository(this.this_item())
-                        .set_expandable(true)
-                        .show_regular_files(true)
-                        .display_trash(true);
-                    this._trash_div._root = this.get_tree_root();
-                    this.elements().content.append(this._trash_div);
+        this.set_content(require('./tree_button.hbs'),
+            {
+                name: this.get_name(),
+                expandable: this._expandable,
+                icon: this.get_icon(),
+            },
+            {
+                context: (event) => {
+                    event.preventDefault();
+                    this.context_menu();
+                },
+                open: async (event) => {
+                    if (this._expandable) {
+                        if (this.is_selected()) {
+                            await this.set_expanded(!this._expanded);
+                        } else if (!this._expanded)
+                            await this.set_expanded(true);
+                    }
+                    if (!this.is_selected())
+                        await this.open(false);
+                    if (this.onclick && !this.is_selected())
+                        this.onclick(event)
+                },
+                open_aux: async (event) => {
+                    if (event.button === 1)
+                        await this.open(true);
                 }
-                resolve();
-            })
+            });
+    }
+
+    /**
+     * Load content provider and fetch content.
+     * Skipped if already called
+     * @private
+     */
+    async _init_content_provider() {
+        if (this._content_provider)
+            return;
+        this._content_provider = this.get_content();
+        if (!this._content_provider)
+            return;
+
+        // Bind add and remove item (required to detect when we should add or remove arrow)
+        this._on_add_item = this._content_provider.events.add('add', (item) => {
+            this._add_item(item);
+        })
+
+        // Bind add and remove item (required to detect when we should add or remove arrow)
+        this._on_remove_item = GLOBAL_EVENTS.add('remove_item', (item) => {
+            this._remove_item(item);
+        })
+
+        // Fetch content
+        if (this._expandable) {
+            const items = await this._content_provider.get_content()
+            for (const item of items)
+                if (!item.is_regular_file || this._show_regular_files)
+                    this._add_item(item);
         }
+    }
+
+    async _focus_item_internal(hierarchy, expand = false) {
+        if (hierarchy.length === 0) {
+            this._set_selected(true);
+            if (expand)
+                await this.set_expanded(true);
+            return;
+        }
+
+        const item = hierarchy.pop();
+
+        await this.set_expanded(true);
+        const found_child = this._items.get(item.id);
+        if (found_child)
+            await found_child._focus_item_internal(hierarchy, expand);
+        else {
+            await this._focus_item_internal([], expand);
+        }
+    }
+
+    _set_selected(select) {
+        const root = this.get_tree_root();
+        if ((root._selected === this) === select)
+            return;
+
+        this.clear_tree_selection();
+
+        if (select) {
+            root._selected = this;
+            this.classList.add('selected');
+        }
+    }
+
+    /**
+     * @param a {TreeButton}
+     * @param b {TreeButton}
+     * @return number
+     * @private
+     */
+    _compare_sort(a, b) {
+        return -a.get_name().localeCompare(b.get_name());
     }
 
     _add_item(item) {
@@ -325,16 +273,28 @@ class TreeButton extends AppWidget {
             return;
         if (!this._items || this._items.size === 0)
             this.elements().arrow.style.visibility = 'visible';
+
+        const div = document.createElement('item-tree-button')
+            .set_directory(item)
+            .set_expandable(true);
+        div._root = this.get_tree_root();
+        this._items.set(item.id, div);
         if (this.expanded()) {
-            const div = document.createElement('item-tree-button')
-                .set_directory(item)
-                .set_expandable(true)
-                .display_trash(this.is_in_trash());
-            div._root = this.get_tree_root();
-            this.elements().content.append(div);
-            this._items.set(item.id, div);
+            this._insert_child(div);
         } else {
-            this._items.set(item.id, null);
+            if (!this._cached_divs)
+                this._cached_divs = new Map();
+            this._cached_divs.set(item.id, div);
+        }
+    }
+
+    _insert_child(div) {
+        let existing_children = Array.from(this.elements().content.children);
+        let insertIndex = existing_children.findIndex(child => this._compare_sort(child, div) < 0);
+        if (insertIndex === -1) {
+            this.elements().content.appendChild(div);
+        } else {
+            this.elements().content.insertBefore(div, this.elements().content.children[insertIndex]);
         }
     }
 
@@ -350,6 +310,64 @@ class TreeButton extends AppWidget {
         if (this._items.size === 0)
             this.elements().arrow.style.visibility = 'hidden';
     }
+
+    /****************************************
+     *              GETTERS                 *
+     * **************************************/
+
+    expanded() {
+        return this._expandable && this._expanded;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    is_selected() {
+        return this.get_tree_root()._selected === this;
+    }
+
+    /**
+     * @returns {TreeButton}
+     */
+    get_tree_root() {
+        return this._root || this;
+    }
+
+    /****************************************
+     *              VIRTUAL                 *
+     * **************************************/
+
+
+    /**
+     * @return {String}
+     */
+    get_icon() { return "" }
+
+    /**
+     * @return {Repository | FilesystemItem}
+     */
+    this_item() {}
+
+    /**
+     * @return {String}
+     */
+    get_name() { return "" }
+
+    /**
+     * Called when we desire to open context menu
+     */
+    context_menu() { }
+
+    /**
+     * @param new_tab {boolean}
+     * @returns {Promise<void>}
+     */
+    async open(new_tab) {}
+
+    /**
+     * @return {ContentProvider}
+     */
+    async get_content() { return null; }
 }
 
 export {TreeButton};

@@ -1,4 +1,8 @@
-<repository-tree-button {{object "repository"}}></repository-tree-button>
+{{#if is_trash}}
+    <trash-tree-button {{object "repository"}}></trash-tree-button>
+{{else}}
+    <repository-tree-button {{object "repository"}}></repository-tree-button>
+{{/if}}
 <div class="path" {{object "path"}}></div>
 <div class="actions">
     <button><img alt="Download" src="/public/images/icons/icons8-download-96.png" onclick="{{ctx "download()"}}"></button>

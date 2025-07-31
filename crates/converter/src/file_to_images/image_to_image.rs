@@ -1,6 +1,5 @@
 use crate::converter_error::ConverterError;
 use crate::{Converter, ConverterTask, ToolPool};
-use anyhow::Error;
 use std::ffi::OsString;
 use std::fs;
 use std::path::PathBuf;
@@ -18,7 +17,7 @@ impl Converter for ImageToThumbnail {
 
     fn accept(&self, task: &ConverterTask, _: &Arc<ToolPool>) -> Result<bool, ConverterError> {
         let mut mime_start = task.mimetype.split("/");
-        Ok(mime_start.next().ok_or(Error::msg("Invalid mimetype"))? == "image")
+        Ok(mime_start.next().ok_or(ConverterError::InvalidInput(format!("invalid mimetype : {}", task.mimetype)))? == "image")
     }
 
     fn get_output(&self, task: &ConverterTask) -> Result<(PathBuf, String), ConverterError> {
@@ -48,7 +47,7 @@ impl Converter for ImageToThumbnail {
             };
             let mut mime = mime_plain.split("/");
             mime.next();
-            let mut path_str = OsString::from(mime.next().ok_or(Error::msg(format!("invalid mimetype : {}", mime_plain)))?);
+            let mut path_str = OsString::from(mime.next().ok_or(ConverterError::InvalidInput(format!("invalid mimetype : {}", mime_plain)))?);
             path_str.push(":");
             path_str.push(task.input.as_os_str());
 

@@ -2,7 +2,6 @@ use std::{fs};
 use std::path::{PathBuf};
 use std::process::{Stdio};
 use std::sync::Arc;
-use anyhow::{Error};
 use tracing::info;
 use crate::{Converter, ConverterTask, TempPath, ToolPool};
 use crate::converter_error::ConverterError;
@@ -39,7 +38,7 @@ impl BlenderToGlb {
             Ok(())
         }
         else {
-            Err(ConverterError::Other(Error::msg(format!("Conversion from blend to glb failed : output file not found at {}", output_file_path.display()))))
+            Err(ConverterError::ConversionFailed(format!("Conversion from blend to glb failed : output file not found at {}", output_file_path.display())))
         }
     }
 }

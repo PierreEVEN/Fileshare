@@ -9,7 +9,6 @@ use database::async_zip::AsyncDirectoryZip;
 use types::enc_string::EncString;
 use crate::permissions::Permissions;
 use utils::server_error::ServerError;
-use converter::{ConverterResult, ConverterTask, TaskProgress};
 use crate::upload::Upload;
 use anyhow::Error;
 use axum::body::Body;
@@ -33,6 +32,7 @@ use converter::file_to_images::image_to_image::ImageToThumbnail;
 use converter::file_to_images::object_3d_to_image::Object3DToImage;
 use converter::file_to_images::pdf_to_image::PdfToImage;
 use converter::file_to_images::video_to_image::VideoToImage;
+use converter::task::{ConverterResult, ConverterTask, TaskProgress};
 use database::repository::DbRepository;
 use types::database_ids::{DatabaseId, ItemId, RepositoryId};
 use types::item::{CreateDirectoryParams, DirectoryData, Item};
@@ -279,7 +279,7 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
                         status: String::from("unsupported")
                     })).into_response())
                 }
-                ConverterError::NoSource => {
+                ConverterError::InvalidInput(_) => {
                     Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
                         status: String::from("no_source")
                     })).into_response())
@@ -292,6 +292,11 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
                 ConverterError::TaskNotAcceptable => {
                     Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
                         status: String::from("unsupported")
+                    })).into_response())
+                }
+                ConverterError::ConversionFailed(_) => {
+                    Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
+                        status: String::from("failed")
                     })).into_response())
                 }
             }
@@ -433,7 +438,7 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
                             status: String::from("unsupported")
                         })).into_response())
                     }
-                    ConverterError::NoSource => {
+                    ConverterError::InvalidInput(_) => {
                         Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
                             status: String::from("no_source")
                         })).into_response())
@@ -453,6 +458,11 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
                             (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
                         ];
                         Ok((headers, body).into_response())
+                    }
+                    ConverterError::ConversionFailed(_) => {
+                        Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
+                            status: "failed".to_string()
+                        })).into_response())
                     }
                 }
             }

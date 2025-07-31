@@ -411,6 +411,7 @@ class FilesystemStream {
                         resolve(this._trash_roots);
                     })
                     .catch(error => {
+                        console.trace("ah")
                         NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de la corbeille de ${this._repository.url_name.plain()}`));
                         return resolve(new Set());
                     });

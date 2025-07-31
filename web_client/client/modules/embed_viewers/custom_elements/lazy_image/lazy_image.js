@@ -28,6 +28,7 @@ class LazyImage extends HTMLElement {
         }
         if (!this.image) {
             this.image = document.createElement("img");
+            this.image.draggable = false;
             if (this.hasAttribute('alt'))
                 this.image.alt = this.getAttribute('alt');
             this.append(this.image);
