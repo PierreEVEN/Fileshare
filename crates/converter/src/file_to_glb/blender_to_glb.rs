@@ -23,14 +23,18 @@ impl BlenderToGlb {
         export_path.set_extension("glb");
         
         let script = format!(r"import bpy;bpy.ops.wm.open_mainfile(filepath=r'{}');bpy.ops.export_scene.gltf(filepath=r'{}',export_format='GLB',export_apply=True)", task.input.display(), export_path.display());
-        tool_pool.create_cmd("blender")?
+        let res = tool_pool.create_cmd("blender")?
             .arg("--background")
             .arg("--python-expr")
             .arg(script)
             .stderr(Stdio::inherit())
             .stdout(Stdio::null())
             .spawn()?
-            .wait_with_output()?;
+            .wait_with_output()?;            
+        if !res.status.success() {
+            return Err(ConverterError::ConversionFailed(String::from_utf8_lossy(&res.stderr).to_string()))
+        }
+        
         fs::rename(export_path, output_file_path.as_path())?;
 
         if output_file_path.exists() {

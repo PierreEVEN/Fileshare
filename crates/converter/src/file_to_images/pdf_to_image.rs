@@ -38,7 +38,7 @@ impl Converter for PdfToImage {
     fn run(&self, task: &ConverterTask, tool_pool: &Arc<ToolPool>) -> Result<(), ConverterError> {
         if self.accept(task, tool_pool)? {
             fs::create_dir_all(task.output.parent().unwrap())?;
-            tool_pool.create_cmd("mogrify")?
+            let res = tool_pool.create_cmd("mogrify")?
                 .arg("-format")
                 .arg("webp")
                 .arg("-interlace")
@@ -56,7 +56,10 @@ impl Converter for PdfToImage {
                 .stdout(Stdio::inherit())
                 .spawn()?
                 .wait_with_output()?;
-
+            if !res.status.success() {
+                return Err(ConverterError::ConversionFailed(String::from_utf8_lossy(&res.stderr).to_string()))
+            }
+            
             let mut generated_file_name = task.output.clone();
             generated_file_name.set_extension("webp");
             fs::rename(generated_file_name, &task.output)?;

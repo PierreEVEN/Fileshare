@@ -6,6 +6,7 @@ use crate::converter_error::ConverterError;
 pub enum TaskProgress {
     InQueue,
     InWork,
+    Failed(ConverterError),
 }
 
 #[derive(Debug)]
@@ -17,7 +18,7 @@ pub enum ConverterResult {
 pub struct TaskState {
     pub status: TaskProgress,
     #[allow(unused)]
-    pub handle: Task<Result<ConverterResult, ConverterError>, Lifo>
+    pub handle: Task<(), Lifo>
 }
 
 pub struct ConverterTask {

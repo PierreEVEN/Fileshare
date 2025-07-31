@@ -131,10 +131,17 @@ impl ConverterTool {
                 }
                 match tool.run(&task, &tool_pool) {
                     Ok(_) => {
-                        let (path, mime) = tool.get_output(&task)?;
-                        Ok(ConverterResult::Ok {output_path: path, output_mime: mime})
+                        if let Err(err) = tool.get_output(&task) {
+                            if let Some(task) = task_copy.write().unwrap().get_mut(&task.input) {
+                                task.status = TaskProgress::Failed(err);
+                            }
+                        }
                     }
-                    Err(err) => {Err(err)}
+                    Err(err) => {
+                        if let Some(task) = task_copy.write().unwrap().get_mut(&task.input) {
+                            task.status = TaskProgress::Failed(err);
+                        }
+                    }
                 }
             }));
             tasks.insert(input_path, TaskState { status: TaskProgress::InQueue, handle });

@@ -23,7 +23,7 @@ impl Object3DToImage {
         if task.output.exists() {
             fs::remove_file(task.output.as_path())?;
         }
-        tool_pool.create_cmd("f3d")?
+        let res = tool_pool.create_cmd("f3d")?
             .arg("--no-background")
             .arg("--max-size=300")
             .arg("--grid=false")
@@ -39,7 +39,10 @@ impl Object3DToImage {
             .stderr(Stdio::inherit())
             .stdout(Stdio::inherit())
             .spawn()?
-            .wait_with_output()?;
+            .wait_with_output()?;            
+        if !res.status.success() {
+            return Err(ConverterError::ConversionFailed(String::from_utf8_lossy(&res.stderr).to_string()))
+        }
 
         if task.output.exists() {
             info!("Successfully exported object3d file to webp : {}", task.output.display());

@@ -41,7 +41,7 @@ impl Converter for ImageNoWebToImage {
             path_str.push(":");
             path_str.push(task.input.as_os_str());
 
-            tool_pool.create_cmd("mogrify")?
+            let res = tool_pool.create_cmd("mogrify")?
                 .arg("-format")
                 .arg("webp")
                 .arg("-interlace")
@@ -56,7 +56,10 @@ impl Converter for ImageNoWebToImage {
                 .stdout(Stdio::inherit())
                 .spawn()?
                 .wait_with_output()?;
-
+            if !res.status.success() {
+                return Err(ConverterError::ConversionFailed(String::from_utf8_lossy(&res.stderr).to_string()))
+            }
+            
             let mut generated_file_name = PathBuf::from(&task.output);
             generated_file_name.set_extension("webp");
             fs::rename(generated_file_name, &task.output)?;

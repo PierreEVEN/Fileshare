@@ -136,6 +136,16 @@ class TreeButton extends AppWidget {
                 this.elements().content.style.display = 'flex';
                 this.elements().arrow.classList.add('expanded');
                 if (this._cached_divs) {
+
+                    // Prefetch content of this directory content
+                    const items = await this._content_provider.get_content();
+                    if (items.length !== 0) {
+                        const items_to_fetch = [];
+                        for (const item of items)
+                            items_to_fetch.push(item.id);
+                        await items[0].filesystem().directory_content(items_to_fetch);
+                    }
+
                     for (const div of this._cached_divs.values()) {
                         this._insert_child(div)
                     }
@@ -203,6 +213,23 @@ class TreeButton extends AppWidget {
         if (!this._content_provider)
             return;
 
+        // Fetch content
+        if (this._expandable) {
+            const items = await this._content_provider.get_content();
+            if (this.expanded()) {
+                // Prefetch content of this directory content
+                if (items.length !== 0) {
+                    const items_to_fetch = [];
+                    for (const item of items)
+                        items_to_fetch.push(item.id);
+                    await items[0].filesystem().directory_content(items_to_fetch);
+                }
+            }
+            for (const item of items)
+                if (!item.is_regular_file || this._show_regular_files)
+                    this._add_item(item);
+        }
+
         // Bind add and remove item (required to detect when we should add or remove arrow)
         this._on_add_item = this._content_provider.events.add('add', (item) => {
             this._add_item(item);
@@ -212,14 +239,6 @@ class TreeButton extends AppWidget {
         this._on_remove_item = GLOBAL_EVENTS.add('remove_item', (item) => {
             this._remove_item(item);
         })
-
-        // Fetch content
-        if (this._expandable) {
-            const items = await this._content_provider.get_content()
-            for (const item of items)
-                if (!item.is_regular_file || this._show_regular_files)
-                    this._add_item(item);
-        }
     }
 
     async _focus_item_internal(hierarchy, expand = false) {

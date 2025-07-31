@@ -231,6 +231,7 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
     #[derive(Serialize)]
     struct Result {
         status: String,
+        error: Option<String>
     }
 
     let pool = ctx.converter.create_pool();
@@ -249,12 +250,21 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
                     match progress {
                         TaskProgress::InQueue => {
                             Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                                status: String::from("in_queue")
+                                status: String::from("in_queue"),
+                                error: None,
                             })).into_response())
                         }
                         TaskProgress::InWork => {
                             Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                                status: String::from("in_generation")
+                                status: String::from("in_generation"),
+                                error: None,
+                            })).into_response())
+                        }
+                        TaskProgress::Failed(error) => {
+                            // Store the error so the client won't try to re-download it as it will probably fail and waste server resources
+                            Ok(([(header::CACHE_CONTROL, "private, max-age=604800, immutable".to_string())], Json(Result {
+                                status: String::from("failed"),
+                                error: Some(error.to_string()),
                             })).into_response())
                         }
                     }
@@ -273,30 +283,37 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
             }
         }
         Err(error) => {
+
             match error {
-                ConverterError::ToolNotAvailable(_) => {
-                    Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
-                        status: String::from("unsupported")
+                ConverterError::ToolNotAvailable(error) => {
+                    Ok(([(header::CACHE_CONTROL, "private, max-age=604800, immutable".to_string())], Json(Result {
+                        status: String::from("unsupported"),
+                        error: Some(error),
                     })).into_response())
                 }
-                ConverterError::InvalidInput(_) => {
-                    Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
-                        status: String::from("no_source")
+                ConverterError::InvalidInput(error) => {
+                    Ok(([(header::CACHE_CONTROL, "private, max-age=604800, immutable".to_string())], Json(Result {
+                        status: String::from("no_source"),
+                        error: Some(error),
                     })).into_response())
                 }
                 ConverterError::Other(error) => {
                     Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                        status: error.to_string()
+                        status: String::from("other"),
+                        error: Some(error),
                     })).into_response())
                 }
                 ConverterError::TaskNotAcceptable => {
                     Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
-                        status: String::from("unsupported")
+                        status: String::from("unsupported"),
+                        error: None,
                     })).into_response())
                 }
-                ConverterError::ConversionFailed(_) => {
-                    Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
-                        status: String::from("failed")
+                ConverterError::ConversionFailed(result) => {
+                    // Don't try again before 10mn (to prevent overloading the server
+                    Ok(([(header::CACHE_CONTROL, "private, max-age=600, immutable".to_string())], Json(Result {
+                        status: "failed".to_string(),
+                        error: Some(result),
                     })).into_response())
                 }
             }
@@ -394,6 +411,7 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
         #[derive(Serialize)]
         struct Result {
             status: String,
+            error: Option<String>
         }
 
         let pool = ctx.converter.create_pool();
@@ -408,12 +426,21 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
                         match progress {
                             TaskProgress::InQueue => {
                                 Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                                    status: String::from("in_queue")
+                                    status: String::from("in_queue"),
+                                    error: None,
                                 })).into_response())
                             }
                             TaskProgress::InWork => {
                                 Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                                    status: String::from("in_generation")
+                                    status: String::from("in_generation"),
+                                    error: None,
+                                })).into_response())
+                            }
+                            TaskProgress::Failed(error) => {
+                                // Store the error so the client won't try to re-download it as it will probably fail and waste server resources
+                                Ok(([(header::CACHE_CONTROL, "private, max-age=604800, immutable".to_string())], Json(Result {
+                                    status: String::from("failed"),
+                                    error: Some(error.to_string()),
                                 })).into_response())
                             }
                         }
@@ -423,7 +450,7 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
                         let body = Body::from_stream(stream);
 
                         let headers = [
-                            (header::CACHE_CONTROL, "max-age=604800".to_string()),
+                            (header::CACHE_CONTROL, "private, max-age=31536000, immutable".to_string()),
                             (header::CONTENT_TYPE, output_mime),
                             (header::CONTENT_DISPOSITION, format!("inline; filename=\"{}\"", item.name.encoded()))
                         ];
@@ -433,19 +460,22 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
             }
             Err(error) => {
                 match error {
-                    ConverterError::ToolNotAvailable(_) => {
-                        Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
-                            status: String::from("unsupported")
+                    ConverterError::ToolNotAvailable(error) => {
+                        Ok(([(header::CACHE_CONTROL, "private, max-age=604800, immutable".to_string())], Json(Result {
+                            status: String::from("unsupported"),
+                            error: Some(error),
                         })).into_response())
                     }
-                    ConverterError::InvalidInput(_) => {
-                        Ok(([(header::CACHE_CONTROL, "max-age=604800".to_string())], Json(Result {
-                            status: String::from("no_source")
+                    ConverterError::InvalidInput(error) => {
+                        Ok(([(header::CACHE_CONTROL, "private, max-age=604800, immutable".to_string())], Json(Result {
+                            status: String::from("no_source"),
+                            error: Some(error),
                         })).into_response())
                     }
                     ConverterError::Other(error) => {
                         Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                            status: error.to_string()
+                            status: String::from("other"),
+                            error: Some(error),
                         })).into_response())
                     }
                     ConverterError::TaskNotAcceptable => {
@@ -459,9 +489,11 @@ async fn preview(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
                         ];
                         Ok((headers, body).into_response())
                     }
-                    ConverterError::ConversionFailed(_) => {
-                        Ok(([(header::CACHE_CONTROL, "no-store".to_string())], Json(Result {
-                            status: "failed".to_string()
+                    ConverterError::ConversionFailed(result) => {
+                        // Don't try again before 10mn (to prevent overloading the server
+                        Ok(([(header::CACHE_CONTROL, "private, max-age=600, immutable".to_string())], Json(Result {
+                            status: "failed".to_string(),
+                            error: Some(result),
                         })).into_response())
                     }
                 }

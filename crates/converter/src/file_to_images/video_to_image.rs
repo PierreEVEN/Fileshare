@@ -1,7 +1,7 @@
 use crate::converter_error::ConverterError;
 use crate::{Converter, ConverterTask, ToolPool};
 use std::path::PathBuf;
-use std::process::Stdio;
+use std::process::{Stdio};
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -26,7 +26,7 @@ impl Converter for VideoToImage {
 
     fn run(&self, task: &ConverterTask, tool_pool: &Arc<ToolPool>) -> Result<(), ConverterError> {
         if self.accept(task, tool_pool)? {
-            let get_duration_cmd = tool_pool.create_cmd("ffprobe")?
+            let res = tool_pool.create_cmd("ffprobe")?
                 .arg("-v")
                 .arg("error")
                 .arg("-show_entries")
@@ -35,11 +35,14 @@ impl Converter for VideoToImage {
                 .arg("default=noprint_wrappers=1:nokey=1")
                 .arg(&task.input)
                 .stderr(Stdio::inherit())
-                .output()?;
+                .spawn()?
+                .wait_with_output()?;
+            if !res.status.success() {
+                return Err(ConverterError::ConversionFailed(String::from_utf8_lossy(&res.stderr).to_string()))
+            }
+            let duration = f32::from_str(String::from_utf8(res.stdout)?.as_str()).unwrap_or(0f32);
 
-            let duration = f32::from_str(String::from_utf8(get_duration_cmd.stdout)?.as_str()).unwrap_or(0f32);
-
-            tool_pool.create_cmd("ffmpeg")?
+            let res = tool_pool.create_cmd("ffmpeg")?
                 .arg("-v")
                 .arg("error")
                 .arg("-ss")
@@ -55,7 +58,11 @@ impl Converter for VideoToImage {
                 .stderr(Stdio::inherit())
                 .spawn()?
                 .wait_with_output()?;
-            Ok(())
+            if !res.status.success() {
+                Err(ConverterError::ConversionFailed(String::from_utf8_lossy(&res.stderr).to_string()))
+            } else {
+                Ok(())
+            }
         } else {
             Err(ConverterError::TaskNotAcceptable)
         }

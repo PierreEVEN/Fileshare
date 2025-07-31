@@ -65,7 +65,7 @@ impl Converter for Object3dToGlb {
                 .join(String::from("out_") + file_name));
             temp_path_out.set_extension("glb");
 
-            tool_pool.create_cmd("assimp")?
+            let res = tool_pool.create_cmd("assimp")?
                 .arg("export")
                 .arg(&*temp_path_in)
                 .arg(&*temp_path_out)
@@ -73,7 +73,10 @@ impl Converter for Object3dToGlb {
                 .stdout(Stdio::inherit())
                 .spawn()?
                 .wait_with_output()?;
-
+            if !res.status.success() {
+                return Err(ConverterError::ConversionFailed(String::from_utf8_lossy(&res.stderr).to_string()))
+            }
+            
             if temp_path_out.exists() {
                 if !task.output.parent().unwrap().exists() {
                     fs::create_dir_all(task.output.parent().unwrap())?;

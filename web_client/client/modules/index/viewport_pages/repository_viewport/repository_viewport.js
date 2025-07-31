@@ -316,6 +316,7 @@ class RepositoryViewport extends AppWidget {
             }
             await this._elements.toolbar.set_toolbar_path(selection.in_trash ? null : directory, selection.in_trash);
         } else if (selection.repository) {
+            this._set_repository(selection.repository);
             await this._elements.toolbar.set_toolbar_path(null, selection.in_trash);
             await this.close_carousel();
         }

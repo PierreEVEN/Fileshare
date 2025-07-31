@@ -236,7 +236,7 @@ class FilesystemStream {
      */
     async fetch_item(item_id, force_update = true) {
         if (item_id === undefined)
-            console.error("Undefined item id")
+            return console.error("Undefined item id")
         if (item_id === null)
             return null;
 
@@ -282,43 +282,79 @@ class FilesystemStream {
     }
 
     /**
-     * @param item_id {number}
+     * @param item_ids {number[]}
      * @return {Promise<Set<number>>}
      */
-    async directory_content(item_id) {
-        const existing = await this.fetch_item(item_id);
-        if (!existing)
-            return new Set();
+    async directory_content(item_ids) {
 
-        if (existing._get_directory_content_promise)
-            return await existing._get_directory_content_promise;
+        let items = new Map();
 
-        if (!existing._get_directory_content_promise)
-            existing._get_directory_content_promise = new Promise(async resolve => {
-                existing.children = new Set();
-                for (const item of await this.app.fetch_api(`item/directory-content`, 'POST', [item_id])
+        let mutualise_fetch_promise = new Promise(async resolve => {
+
+            for (const item of item_ids) {
+                const existing = await this.fetch_item(item);
+                if (!existing)
+                    continue;
+
+                // The content is already in a generation process for this item
+                if (existing._get_directory_content_promise) {
+                    items.set(item, await existing._get_directory_content_promise)
+                }
+                // We need to fetch the content of this one
+                else {
+                    existing._get_directory_content_promise = new Promise(async resolve => {
+                        await mutualise_fetch_promise;
+                        resolve(existing.children);
+                    })
+                    existing.children = new Set();
+                    items.set(item, null)
+                }
+            }
+
+            let items_to_fetch = [];
+            for (const [item, content] of items)
+                if (!content)
+                    items_to_fetch.push(item);
+
+            if (items_to_fetch.length !== 0) {
+                let fetched_content = await this.app.fetch_api(`item/directory-content`, 'POST', items_to_fetch)
                     .catch(error => {
-                        NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de l'objet ${item_id}`))
+                        NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de ${items_to_fetch}`))
                         resolve(new Set())
-                    })) {
-                    if (this._items.has(item.id))
+                    });
+
+                for (const item of fetched_content) {
+                    const existing = await this.find(item.id);
+                    if (existing)
                         existing.children.add(item.id);
                     else
                         await this.set_or_update_item(new FilesystemItem(item));
                 }
-                resolve(existing.children);
-            })
-        return await existing._get_directory_content_promise;
+            }
+
+            for (const item of items_to_fetch)
+                items.set(item, this.find(item).children)
+
+            let result = new Set();
+            for (const content of items.values())
+                for (const item of content)
+                    result.add(item)
+
+
+            resolve(result);
+        });
+
+        return await mutualise_fetch_promise;
     }
 
     /**
-     * @param item_id {number}
+     * @param item_id {number[]}
      * @return {Promise<>}
      */
     async preload_to(item_id) {
-        const items = await this.app.fetch_api(`item/content-to`, 'POST', [item_id])
+        const items = await this.app.fetch_api(`item/content-to`, 'POST', item_id)
             .catch(error => {
-                NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de l'objet ${item_id}`))
+                NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de ${item_id}`))
                 return [];
             });
         /**
@@ -411,7 +447,6 @@ class FilesystemStream {
                         resolve(this._trash_roots);
                     })
                     .catch(error => {
-                        console.trace("ah")
                         NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de la corbeille de ${this._repository.url_name.plain()}`));
                         return resolve(new Set());
                     });
@@ -428,12 +463,12 @@ class FilesystemStream {
         }
         if (item.parent_item !== undefined) {
             if (!this.find(item.parent_item)) {
-                await this.preload_to(item.id);
+                await this.preload_to([item.id]);
             }
             // Fetch parents and parent's children
             const parent = await this.fetch_item(item.parent_item);
             if (!parent.children)
-                await parent.filesystem().directory_content(parent.id);
+                await parent.filesystem().directory_content([parent.id]);
         }
         this._register_item(item);
     }
@@ -490,7 +525,7 @@ class FilesystemStream {
      * @return {Promise<*|null>}
      */
     async find_child(child_name, parent_item) {
-        const children = parent_item ? await this.directory_content(parent_item.id) : await this.root_content();
+        const children = parent_item ? await this.directory_content([parent_item.id]) : await this.root_content();
         for (const child of children) {
             const child_data = this.find(child);
             if (child_data.name.plain() === child_name)

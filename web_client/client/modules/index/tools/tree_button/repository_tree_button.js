@@ -92,16 +92,19 @@ class RepositoryTreeButton extends TreeButton {
         if (!this.elements().content)
             return;
 
-        /**
-         * @type {TrashTreeButton}
-         * @private
-         */
-        this._div_trash = document.createElement('trash-tree-button')
-            .set_repository(this._repository)
-            .set_expandable(true);
-        this._div_trash.style.display = 'none';
-        this._div_trash._root = this.get_tree_root();
-        this._insert_child(this._div_trash);
+        if (this.get_app().app_config.connected_user()) {
+            console.log("a")
+            /**
+             * @type {TrashTreeButton}
+             * @private
+             */
+            this._div_trash = document.createElement('trash-tree-button')
+                .set_repository(this._repository)
+                .set_expandable(true);
+            this._div_trash.style.display = 'none';
+            this._div_trash._root = this.get_tree_root();
+            this._insert_child(this._div_trash);
+        }
     }
 }
 

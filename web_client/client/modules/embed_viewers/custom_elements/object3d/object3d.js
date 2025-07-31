@@ -66,6 +66,9 @@ class Object3D extends AppWidget {
             } else if (json.status === 'unknown_status') {
                 this.set_image('/public/images/icons/icons8-pas-dimage-48.png');
                 setTimeout(() => this._update_content(src), this._delay);
+            }
+            else if (json.status === 'failed') {
+                    this.set_image('/public/images/icons/icons8-pas-dimage-48.png');
             } else {
                 NOTIFICATION.error(new Message(`Invalid response for thumbnail ${this.src}`).title("Invalid response value"));
                 this.set_image('/public/images/icons/icons8-pas-dimage-48.png');

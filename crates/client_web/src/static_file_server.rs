@@ -28,7 +28,7 @@ impl StaticFileServer {
             .route("/{*file_path}", get(Self::serve_file).with_state(config.clone()))
     }
 
-    pub async fn serve_file_from_path(file_path: PathBuf) -> Result<impl IntoResponse, ServerError> {
+    pub async fn serve_file_from_path(file_path: PathBuf, immutable: bool) -> Result<impl IntoResponse, ServerError> {
         if file_path.exists() {
             let file_name = file_path.file_name().unwrap().to_str().unwrap().to_string();
             let mime_type = match mime_guess::from_path(file_path.clone()).first_raw() {
@@ -39,12 +39,22 @@ impl StaticFileServer {
 
             let stream = ReaderStream::new(file);
             let body = Body::from_stream(stream);
-            let headers = [
-                (header::CONTENT_TYPE, mime_type),
-                (header::CONTENT_DISPOSITION, &format!("attachment; filename=\"{}\"", file_name))
-            ];
 
-            Ok((headers, body).into_response())
+            if immutable {
+                let headers = [
+                    (header::CONTENT_TYPE, mime_type.to_string()),
+                    (header::CACHE_CONTROL, "public, max-age=31536000, immutable".to_string()),
+                    (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", file_name))
+                ];
+
+                Ok((headers, body).into_response())
+            } else {
+                let headers = [
+                    (header::CONTENT_TYPE, mime_type.to_string()),
+                    (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", file_name))
+                ];
+                Ok((headers, body).into_response())
+            }
         } else {
             Err(ServerError::msg(StatusCode::NOT_FOUND, format!("File not found ! (searching {})", file_path.display())))
         }
@@ -56,6 +66,15 @@ impl StaticFileServer {
             return Err(ServerError::msg(StatusCode::UNAUTHORIZED, "Cannot access elements outside public directory"));
         }
 
-        Self::serve_file_from_path(file_path).await
+        if let Some(extension) = file_path.extension() {
+            if let Some(extension) = extension.to_str() {
+                match extension {
+                    "js" | "css" => return Self::serve_file_from_path(file_path, false).await,
+                    _ => {}
+                }
+            }
+        }
+
+        Self::serve_file_from_path(file_path, true).await
     }
 }
