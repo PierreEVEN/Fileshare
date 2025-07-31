@@ -1,4 +1,5 @@
 import {ContentProvider} from "./viewport_content";
+import {FilesystemStream} from "../filesystem_stream";
 
 class RepositoryRootProvider extends ContentProvider {
     /**
@@ -12,7 +13,7 @@ class RepositoryRootProvider extends ContentProvider {
 
     async get_content() {
         const items = [];
-        for (const item_id of await this.repository.content.root_content()) {
+        for (const item_id of await FilesystemStream.root_content(this.repository.content.app, [this.repository.id])) {
             const item = await this.repository.content.fetch_item(item_id);
             if (!item.in_trash)
                 items.push(item);
@@ -85,7 +86,7 @@ class TrashContentProvider extends ContentProvider {
 
     async get_content() {
         const items = [];
-        for (const item_id of await this.repository.content.trash_content()) {
+        for (const item_id of await FilesystemStream.trash_content(this.repository.content.app, [this.repository.id])) {
             const item = await this.repository.content.fetch_item(item_id);
             items.push(item);
         }

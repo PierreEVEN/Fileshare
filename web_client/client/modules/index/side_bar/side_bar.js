@@ -5,6 +5,7 @@ import {EventManager, GLOBAL_EVENTS} from "../../../types/event_manager";
 import {APP_COOKIES} from "../tools/cookies/cookies";
 import {AppWidget} from "../../../app_widget";
 import "./category"
+import {FilesystemStream} from "../../../types/filesystem_stream";
 
 require('./side_bar.scss')
 
@@ -158,6 +159,13 @@ class SideBar extends AppWidget {
                 const my_repos_sorted = (await Repository.my_repositories(this.get_app())).sort(((a, b) => {
                     return a.display_name.plain().localeCompare(b.display_name.plain())
                 }));
+
+                const repos_to_preload_ids = [];
+                for (const repos of my_repos_sorted)
+                    repos_to_preload_ids.push(repos.id);
+                // Preload all repositories root content
+                await FilesystemStream.root_content(this.get_app(), repos_to_preload_ids);
+
                 for (const repository of my_repos_sorted)
                     this._elements.my_repositories.add_repository(repository);
                 resolve();
@@ -169,6 +177,13 @@ class SideBar extends AppWidget {
                 const shared_sorted = (await Repository.shared_repositories(this.get_app())).sort(((a, b) => {
                     return a.display_name.plain().localeCompare(b.display_name.plain())
                 }));
+
+                const repos_to_preload_ids = [];
+                for (const repos of shared_sorted)
+                    repos_to_preload_ids.push(repos.id);
+                // Preload all repositories root content
+                await FilesystemStream.root_content(this.get_app(), repos_to_preload_ids);
+
                 for (const repository of shared_sorted)
                     this._elements.shared.add_repository(repository);
                 resolve();
@@ -181,6 +196,13 @@ class SideBar extends AppWidget {
             const last_sorted = (await Repository.find(this.get_app(), APP_COOKIES.get_last_repositories())).sort(((a, b) => {
                 return a.display_name.plain().localeCompare(b.display_name.plain())
             }));
+
+            const repos_to_preload_ids = [];
+            for (const repos of last_sorted)
+                repos_to_preload_ids.push(repos.id);
+            // Preload all repositories root content
+            await FilesystemStream.root_content(this.get_app(), repos_to_preload_ids);
+
             for (const repository of last_sorted)
                 this._elements.recent.add_repository(repository);
             resolve();

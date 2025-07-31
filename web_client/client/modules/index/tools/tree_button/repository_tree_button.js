@@ -84,16 +84,10 @@ class RepositoryTreeButton extends TreeButton {
         return super._compare_sort(a, b);
     }
 
-    _build_or_rebuild() {
-        super._build_or_rebuild();
-        if (!this.isConnected)
-            return;
+    async set_expanded(expand) {
+        await super.set_expanded(expand);
 
-        if (!this.elements().content)
-            return;
-
-        if (this.get_app().app_config.connected_user()) {
-            console.log("a")
+        if (!this._div_trash && this.expanded() && this.get_app().app_config.connected_user()) {
             /**
              * @type {TrashTreeButton}
              * @private

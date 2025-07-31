@@ -302,11 +302,11 @@ class FilesystemStream {
                 }
                 // We need to fetch the content of this one
                 else {
+                    existing.children = new Set();
                     existing._get_directory_content_promise = new Promise(async resolve => {
                         await mutualise_fetch_promise;
                         resolve(existing.children);
                     })
-                    existing.children = new Set();
                     items.set(item, null)
                 }
             }
@@ -324,9 +324,9 @@ class FilesystemStream {
                     });
 
                 for (const item of fetched_content) {
-                    const existing = await this.find(item.id);
-                    if (existing)
-                        existing.children.add(item.id);
+                    const parent = await this.find(item.parent_item);
+                    if (await this.find(item.id))
+                        parent.children.add(item.id);
                     else
                         await this.set_or_update_item(new FilesystemItem(item));
                 }
@@ -388,27 +388,57 @@ class FilesystemStream {
     }
 
     /**
+     * @param app {FileshareApp}
+     * @param repositories {number[]}
      * @return {Promise<Set<number>>}
      */
-    async root_content() {
-        if (this._init_get_roots)
-            return await this._init_get_roots;
-        if (!this._init_get_roots)
-            this._init_get_roots = new Promise(async (resolve) => {
-                this._roots = new Set();
-                for (const item of await this.app.fetch_api(`repository/root-content`, 'POST', [this._repository.id])
-                    .catch(error => {
-                        NOTIFICATION.warn(new Message(error).title(`Impossible de lire la racine du dépot ${this._repository.url_name.plain()}`));
-                        resolve(new Set());
-                    })) {
-                    if (this._items.has(item.id))
-                        this._roots.add(item.id);
-                    else
-                        await this.set_or_update_item(new FilesystemItem(item));
+    static async root_content(app, repositories) {
+
+        const {Repository} = require("./repository");
+
+        let output_roots = new Map();
+
+        let cb_get_all_roots = new Promise(async resolve => {
+            let repository_to_fetch = [];
+            for (const repository_id of repositories) {
+                const repository = await Repository.find(app, repository_id);
+                if (repository.content._init_get_roots)
+                    output_roots.set(repository_id, await repository.content._init_get_roots);
+                else {
+                    repository.content._roots = new Set();
+                    repository.content._init_get_roots = new Promise(async resolve => {
+                        await cb_get_all_roots;
+                        resolve(repository.content._roots);
+                    });
+                    repository_to_fetch.push(repository_id);
+                    output_roots.set(repository_id, repository.content._roots);
                 }
-                resolve(this._roots);
-            })
-        return await this._init_get_roots;
+            }
+
+            if (repository_to_fetch.length !== 0) {
+                let retrieved_root_contents = await app.fetch_api(`repository/root-content`, 'POST', repository_to_fetch)
+                    .catch(error => {
+                        NOTIFICATION.warn(new Message(error).title(`Impossible de lire la racine de ${repository_to_fetch}`));
+                        resolve();
+                    });
+
+                for (const item of retrieved_root_contents) {
+                    const repository = await Repository.find(app, item.repository);
+                    if (repository.content._items.has(item.id))
+                        repository.content._roots.add(item.id);
+                    else
+                        await repository.content.set_or_update_item(new FilesystemItem(item));
+                }
+            }
+            resolve();
+        });
+        await cb_get_all_roots;
+        let result = new Set();
+        for (const [_, content] of output_roots) {
+            for (const item_id of content)
+                result.add(item_id);
+        }
+        return result;
     }
 
     /**
@@ -432,26 +462,59 @@ class FilesystemStream {
     }
 
     /**
+     * @param app {FileshareApp}
+     * @param repositories {number[]}
      * @return {Promise<Set<number>>}
      */
-    async trash_content() {
-        if (this._init_trash_roots)
-            return await this._init_trash_roots;
-        if (!this._init_trash_roots)
-            this._init_trash_roots = new Promise(async (resolve) => {
-                this._trash_roots = new Set();
-                this.app.fetch_api(`repository/trash-content`, 'POST', [this._repository.id])
-                    .then(async (items) => {
-                        for (const item of items)
-                            await this.set_or_update_item(new FilesystemItem(item));
-                        resolve(this._trash_roots);
-                    })
-                    .catch(error => {
-                        NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de la corbeille de ${this._repository.url_name.plain()}`));
-                        return resolve(new Set());
+    static async trash_content(app, repositories) {
+
+        const {Repository} = require("./repository");
+
+        let output_trashes = new Map();
+
+        let cb_get_all_trashes = new Promise(async resolve => {
+            let repository_to_fetch = [];
+            for (const repository_id of repositories) {
+                const repository = await Repository.find(app, repository_id);
+                if (repository.content._init_trash_roots)
+                    output_trashes.set(repository_id, await repository.content._init_trash_roots);
+                else {
+                    repository.content._trash_roots = new Set();
+                    repository.content._init_trash_roots = new Promise(async resolve => {
+                        await cb_get_all_trashes;
+                        resolve(repository.content._trash_roots);
                     });
-            });
-        return await this._init_trash_roots;
+                    repository_to_fetch.push(repository_id);
+                    output_trashes.set(repository_id, repository.content._trash_roots);
+                }
+            }
+
+            if (repository_to_fetch.length !== 0) {
+                let retrieved_trash_contents = await app.fetch_api(`repository/trash-content`, 'POST', repository_to_fetch)
+                    .catch(error => {
+                        NOTIFICATION.warn(new Message(error).title(`Impossible de lire le contenu de la corbeille de ${repository_to_fetch}`));
+                        resolve();
+                    });
+
+                for (const item of retrieved_trash_contents) {
+                    const repository = await Repository.find(app, item.repository);
+                    if (repository.content._items.has(item.id))
+                        repository.content._trash_roots.add(item.id);
+                    else
+                        await repository.content.set_or_update_item(new FilesystemItem(item));
+                }
+            }
+            resolve();
+        });
+
+        await cb_get_all_trashes;
+
+        let result = new Set();
+        for (const [_, content] of output_trashes) {
+            for (const item_id of content)
+                result.add(item_id);
+        }
+        return result;
     }
 
     /**
@@ -525,7 +588,7 @@ class FilesystemStream {
      * @return {Promise<*|null>}
      */
     async find_child(child_name, parent_item) {
-        const children = parent_item ? await this.directory_content([parent_item.id]) : await this.root_content();
+        const children = parent_item ? await this.directory_content([parent_item.id]) : await FilesystemStream.root_content(this.app, [this._repository.id]);
         for (const child of children) {
             const child_data = this.find(child);
             if (child_data.name.plain() === child_name)

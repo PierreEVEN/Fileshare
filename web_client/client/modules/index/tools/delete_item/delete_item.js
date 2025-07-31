@@ -1,4 +1,4 @@
-import {FilesystemItem} from "../../../../types/filesystem_stream";
+import {FilesystemItem, FilesystemStream} from "../../../../types/filesystem_stream";
 import {Message, NOTIFICATION} from "../message_box/notification";
 
 /**
@@ -105,7 +105,7 @@ async function set_item_to_trash(item, in_trash) {
         for (const child of item.children)
             await set_item_to_trash(item.filesystem().find(child), in_trash);
 
-    if (in_trash && (await item.filesystem().trash_content()).has(item.id)) {
+    if (in_trash && (await FilesystemStream.trash_content(item.filesystem().app, [item.repository])).has(item.id)) {
         await item._refresh();
     }
 }
