@@ -2,7 +2,7 @@ import {Repository} from "../../../../types/repository";
 import {TreeButton} from "./tree_button";
 import {context_menu_repository} from "../../context_menu/contexts/context_repository";
 import {RepositoryRootProvider} from "../../../../types/viewport_content/providers";
-import {StateSelection} from "../../../../utilities/state";
+import {StateSelection} from "../../../../utilities/state_selection";
 
 class RepositoryTreeButton extends TreeButton {
     connectedCallback() {
@@ -87,7 +87,7 @@ class RepositoryTreeButton extends TreeButton {
     async set_expanded(expand) {
         await super.set_expanded(expand);
 
-        if (!this._div_trash && this.expanded() && this.get_app().app_config.connected_user()) {
+        if (!this._div_trash && this.expanded() && this.get_app().state.connected_user()) {
             /**
              * @type {TrashTreeButton}
              * @private

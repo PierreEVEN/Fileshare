@@ -2,7 +2,7 @@ import {Authentication} from "../tools/authentication/authentication";
 import {GLOBAL_EVENTS} from "../../../types/event_manager";
 import {AppWidget} from "../../../app_widget";
 import {Filter} from "../../../types/filter/filter";
-import {StateSelection} from "../../../utilities/state";
+import {StateSelection} from "../../../utilities/state_selection";
 
 require('./global_header.scss')
 
@@ -55,7 +55,7 @@ class AppHeader extends AppWidget {
         for (const element of div)
             this.append(element);
 
-        this.refresh(this.get_app().app_config.connected_user())
+        this.refresh(this.get_app().state.connected_user())
     }
 
     update_burger_icon(show) {

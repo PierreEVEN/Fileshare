@@ -5,7 +5,6 @@ import {EventManager, GLOBAL_EVENTS} from "../../../types/event_manager";
 import {APP_COOKIES} from "../tools/cookies/cookies";
 import {AppWidget} from "../../../app_widget";
 import "./category"
-import {FilesystemStream} from "../../../types/filesystem_stream";
 import {ContentRequest} from "../../../types/remote_filesystem/content_request";
 
 require('./side_bar.scss')
@@ -36,7 +35,7 @@ class SideBar extends AppWidget {
         });
 
         this._add_repository = GLOBAL_EVENTS.add('add_repository', async (repository) => {
-            if (this._my_repos_expanded && !this._my_repositories_loaded.has(repository.id) && this.get_app().app_config.connected_user() && repository.owner === this.get_app().app_config.connected_user().id) {
+            if (this._my_repos_expanded && !this._my_repositories_loaded.has(repository.id) && this.get_app().state.connected_user() && repository.owner === this.get_app().state.connected_user().id) {
                 this._elements.my_repositories.add_repository(repository);
             }
         });
@@ -51,7 +50,7 @@ class SideBar extends AppWidget {
                 await this._state_selection_changed(selection);
             })
 
-        this._refresh(this.get_app().app_config.connected_user());
+        this._refresh(this.get_app().state.connected_user());
     }
 
     disconnectedCallback() {

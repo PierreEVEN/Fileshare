@@ -1,7 +1,7 @@
 import {ContextMenu, MenuAction} from "../context_menu";
 import {create_directory} from "../../tools/create_directory/create_directory";
 import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
-import {StateSelection} from "../../../../utilities/state";
+import {StateSelection} from "../../../../utilities/state_selection";
 
 /**
  * @param app {FileshareApp}

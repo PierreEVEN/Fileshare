@@ -1,7 +1,7 @@
 import {context_menu_item} from "../../../context_menu/contexts/context_item";
 import {context_menu_repository} from "../../../context_menu/contexts/context_repository";
 import {AppWidget} from "../../../../../app_widget";
-import {StateSelection} from "../../../../../utilities/state";
+import {StateSelection} from "../../../../../utilities/state_selection";
 
 require("./toolbar.scss");
 

@@ -1,7 +1,7 @@
 import {Repository} from "../../../../types/repository";
 import {TreeButton} from "./tree_button";
 import {TrashContentProvider} from "../../../../types/viewport_content/providers";
-import {StateSelection} from "../../../../utilities/state";
+import {StateSelection} from "../../../../utilities/state_selection";
 
 class TrashTreeButton extends TreeButton {
     connectedCallback() {

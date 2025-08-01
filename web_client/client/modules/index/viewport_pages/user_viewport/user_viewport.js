@@ -6,7 +6,7 @@ import {APP_COOKIES} from "../../tools/cookies/cookies";
 import {GLOBAL_EVENTS} from "../../../../types/event_manager";
 import {human_readable_timestamp} from "../../../../utilities/utils";
 import {AppWidget} from "../../../../app_widget";
-import {StateSelection} from "../../../../utilities/state";
+import {StateSelection} from "../../../../utilities/state_selection";
 
 require('./user_settings.scss')
 
@@ -58,7 +58,7 @@ class UserViewport extends AppWidget {
         const is_admin = this.user.user_role.toString() === "Admin";
         let viewport = require('./user_viewport.hbs')({
             user: this.user.display_data(),
-            is_self: this.user === this.get_app().app_config.connected_user(),
+            is_self: this.user === this.get_app().state.connected_user(),
             is_admin
         }, {
             edit: async () => {
@@ -82,7 +82,7 @@ class UserViewport extends AppWidget {
             this._elements.repository_list.append(document.createElement('repository-tree-button').set_repository(repository));
         }
 
-        if (this.user === this.get_app().app_config.connected_user()) {
+        if (this.user === this.get_app().state.connected_user()) {
             let tokens = await this.get_app().fetch_api('user/tokens')
                 .catch(err => {
                     NOTIFICATION.warn(new Message(err).title("Failed to retrieve user tokens"));

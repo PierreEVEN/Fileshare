@@ -89,7 +89,7 @@ class User {
     remove(app) {
         this._build_from_data({id: 0});
         this.events.broadcast('refresh', this);
-        if (app.app_config.connected_user() === this)
+        if (app.state.connected_user() === this)
             app.app_config.set_connected_user(null);
     }
 

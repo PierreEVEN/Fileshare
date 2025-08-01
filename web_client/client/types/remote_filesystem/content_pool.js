@@ -87,6 +87,7 @@ class ContentPool {
 
         this.get_app().fetch_api('repository/content', 'POST', this._running_request.make_body(this))
             .then(async request_result => {
+                console.log(request_result)
                 for (const repository of request_result.repositories)
                     await this._register_repository(repository);
 
@@ -125,25 +126,32 @@ class ContentPool {
     }
 
     async _register_repository(data) {
-        if (!this.find_repository(data.id)) {
+        const existing = this.find_repository(data.id);
+        if (!existing) {
             const repository = new Repository(data);
             repository.pool = this;
             this._repositories.set(data.id, repository);
             await this.events.broadcast('add_repository', repository);
+            return repository;
         }
+        return existing;
     }
 
     async _register_user(data) {
-        if (!this.find_user(data.id)) {
+        const existing = this.find_user(data.id);
+        if (!existing) {
             const user = new User(data);
             user.pool = this;
             this._users.set(data.id, user);
             await this.events.broadcast('add_user', user);
+            return user;
         }
+        return existing;
     }
 
     async _register_item(data) {
-        if (!this.find_item(data.id)) {
+        const existing = this.find_item(data.id);
+        if (!existing) {
             const item = new RemoteItem(data);
             item.pool = this;
             this._items.set(data.id, item);
@@ -157,7 +165,9 @@ class ContentPool {
                     repository.children.add(item.id);
             }
             await this.events.broadcast('add_item', item);
+            return item;
         }
+        return existing;
     }
 
     /**
@@ -314,10 +324,6 @@ class ContentPool {
                 NOTIFICATION.error(new Message(error).title(`Impossible de télécharger la liste des dépôts possédés`));
                 return [];
             });
-    }
-
-    load_raw_data(data) {
-
     }
 }
 

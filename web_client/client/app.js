@@ -14,12 +14,13 @@ import "./modules/index/viewport_pages/error_page";
 import "./modules/index/viewport_pages/repository_viewport/repository_viewport";
 import "./modules/index/side_bar/side_bar";
 
-import {AppState, StateSelection} from "./utilities/state";
-import {AppConfig} from "./utilities/app_config";
+import {AppState} from "./utilities/state";
 import {APP_COOKIES} from "./modules/index/tools/cookies/cookies";
 import {Authentication} from "./modules/index/tools/authentication/authentication";
 import {Message, NOTIFICATION} from "./modules/index/tools/message_box/notification";
 import {ContentPool} from "./types/remote_filesystem/content_pool";
+import {StateSelection} from "./utilities/state_selection";
+import {InitData} from "./utilities/app_init_data";
 
 require('./app.scss');
 
@@ -31,19 +32,18 @@ class FileshareApp extends HTMLElement {
          */
         this.pool = new ContentPool(this);
 
-        const raw_data = JSON.parse(document.body.dataset['app_config']);
-        console.assert(raw_data, "Invalid application raw data")
-        this.pool.load_raw_data(raw_data)
-
         /**
          * @type {AppState}
          */
         this.state = new AppState(this);
 
-        /**
-         * @type {AppConfig}
-         */
-        this.app_config = new AppConfig(this);
+        // Fetch init data
+        const init_data = new InitData(this.pool, JSON.parse(document.body.dataset['app_config']));
+        if (init_data.error)
+            this.set_viewport_content(document.createElement('page-error').set_error(init_data.error));
+        else
+            init_data.apply_to_state(this.state);
+        this._origin = init_data.origin;
     }
 
     connectedCallback() {
@@ -64,41 +64,12 @@ class FileshareApp extends HTMLElement {
                 layout.hb_elements.mobile_bg.classList.add('selected')
             else
                 layout.hb_elements.mobile_bg.classList.remove('selected')
-        });
-
-        this.side_bar = this._elements.side_bar;
-
-        this._elements.side_bar.events.add('show_mobile', (show) => {
             this._elements.app_header.update_burger_icon(show);
         });
+        if (screen.availHeight > screen.availWidth)
+            this._elements.side_bar.show_mobile();
 
-
-        (async () => {
-            if (this.app_config.error())
-                this.set_viewport_content(document.createElement('page-error').set_error(this.app_config.error()));
-            else {
-                if (this.app_config.show_stats()) {
-                    await this.state.select(new StateSelection().set_admin())
-                } else if (await this.app_config.display_item()) {
-                    await this.state.select(new StateSelection().set_item(await this.app_config.display_item()))
-                } else if (this.app_config.display_repository()) {
-                    if (this.app_config.in_trash())
-                        await this.state.select(new StateSelection().set_repository(await this.app_config.display_repository(), true));
-                    else if (this.app_config.repository_settings()) {
-                        await this.state.select(new StateSelection().set_repository(await this.app_config.display_repository(), false, true));
-                    }
-                    else
-                        await this.state.select(new StateSelection().set_repository(await this.app_config.display_repository()));
-                }
-                else if (this.app_config.display_user()) {
-                    await this.state.select(new StateSelection().set_user(await this.app_config.display_user()));
-                }
-                else {
-                    if (screen.availHeight > screen.availWidth)
-                        await this._elements.side_bar.show_mobile();
-                }
-            }
-        })().catch(error => console.error(`initialization failed :`, error));
+        this.side_bar = this._elements.side_bar;
     }
 
     disconnectedCallback() {
@@ -150,6 +121,9 @@ class FileshareApp extends HTMLElement {
         return page_content;
     }
 
+    origin() {
+        return this._origin;
+    }
 
     /**
      * @param path
@@ -164,20 +138,13 @@ class FileshareApp extends HTMLElement {
             headers.append('Content-Type', 'application/json');
         headers.append('Accept', 'application/json');
         headers.append('content-authtoken', custom_token ? custom_token : APP_COOKIES.get_token());
-        const result = await fetch(`${this.app_config.origin()}/api/${path}`, {
+        const result = await fetch(`${this.origin()}/api/${path}`, {
             method: method,
             body: body ? JSON.stringify(body) : null,
             headers: headers
         });
         if (result.status === 401) {
-            let error = false;
-            await Authentication.login(this)
-                .catch(() => {
-                    error = true;
-                });
-            if (!error) {
-                return await this.fetch_api(path, method, body);
-            }
+            await Authentication.login(this).then(async () => await this.fetch_api(path, method, body))
         } else {
             if (result.status.toString().startsWith("2")) {
                 let text = await result.text();

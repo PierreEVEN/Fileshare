@@ -29,7 +29,7 @@ class ErrorPage extends AppWidget {
 
         this.innerHTML = `<h1>⚠️ Error ${code} ⚠️</h1><h2>${message}</h2>`
 
-        if (error.code === '403 Forbidden' && !this.get_app().app_config.connected_user()) {
+        if (error.code === '403 Forbidden' && !this.get_app().state.connected_user()) {
             Authentication.login(this.get_app());
         }
         return this;

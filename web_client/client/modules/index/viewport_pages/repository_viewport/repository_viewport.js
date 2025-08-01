@@ -19,7 +19,7 @@ import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
 import {delete_item} from "../../tools/delete_item/delete_item";
 import {AppWidget} from "../../../../app_widget";
 import "../global_carousel/global_carousel"
-import {StateSelection} from "../../../../utilities/state";
+import {StateSelection} from "../../../../utilities/state_selection";
 
 require('./repository_viewport.scss')
 
