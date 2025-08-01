@@ -1,9 +1,5 @@
 import {EncString} from "./encstring";
-import {FilesystemStream} from "./filesystem_stream";
-import {GLOBAL_EVENTS} from "./event_manager";
-import {Message, NOTIFICATION} from "../modules/index/tools/message_box/notification";
 import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
-import {User} from "./user";
 
 class RepositoryStatus {
     constructor(data) {
@@ -28,14 +24,22 @@ class RepositoryStatus {
 
 
 class Repository {
+    constructor(data) {
+        /**
+         * @type {ContentPool}
+         */
+        this._pool = null;
 
-    /**
-     * @type {Map<number, Repository>}
-     * @private
-     */
-    static _LOCAL_CACHE = new Map();
+        /**
+         * @type {Set<number>}
+         */
+        this.children = null;
 
-    constructor(app, data) {
+        /**
+         * @type {Set<number>}
+         */
+        this.trash = null;
+
         /**
          * @type {number}
          */
@@ -73,25 +77,15 @@ class Repository {
          */
         this.allow_visitor_upload = data.allow_visitor_upload;
 
-        /**
-         * @type {FilesystemStream}
-         */
-        this.content = new FilesystemStream(app, this)
-
-        if (Repository._LOCAL_CACHE.has(this.id))
-            console.error("Don't use new constructor on repository")
-
-        Repository._LOCAL_CACHE.set(this.id, this);
-
-        GLOBAL_EVENTS.broadcast('add_repository', this);
+        APP_COOKIES.push_last_repositories(data.id);
     }
 
-    static new(app, data) {
-        const existing = Repository._LOCAL_CACHE.get(data.id);
-        if (existing)
-            return existing;
-        APP_COOKIES.push_last_repositories(data.id);
-        return new Repository(app, data)
+    /**
+     * @returns {ContentPool}
+     */
+    get_pool() {
+        console.assert(this._pool, `Content pool have not been initialized for repository, ${this.display_name.plain()}`)
+        return this._pool;
     }
 
     /**
@@ -101,9 +95,8 @@ class Repository {
         window.open(`/api/repository/download/${this.id}`);
     }
 
-    refresh() {
-        GLOBAL_EVENTS.broadcast('remove_repository', this);
-        GLOBAL_EVENTS.broadcast('add_repository', this);
+    async refresh() {
+        await this.get_pool().refresh_repository(this);
     }
 
     /**
@@ -118,56 +111,21 @@ class Repository {
     }
 
     /**
-     * @param app {FileshareApp}
      * @return {Promise<String>}
      */
-    async url(app) {
-        return `${app.app_config.origin()}/${(await User.fetch(app, this.owner)).name.plain()}/${this.url_name.plain()}`
+    async url() {
+        return `${this.get_pool().get_app().app_config.origin()}/${(await this.get_pool().fetch_user(this.owner)).name.plain()}/${this.url_name.plain()}`
     }
 
     /**
-     * @param app {FileshareApp}
      * @return {Promise<String>}
      */
-    async trash_url(app) {
-        return `${app.app_config.origin()}/${(await User.fetch(app, this.owner)).name.plain()}/${this.url_name.plain()}/trash`
+    async trash_url() {
+        return `${this.get_pool().get_app().app_config.origin()}/${(await this.get_pool().fetch_user(this.owner)).name.plain()}/${this.url_name.plain()}/trash`
     }
 
-    /**
-     * @param app {FileshareApp}
-     * @param repos {number|number[]}
-     * @returns {Promise<Repository|Repository[]>}
-     */
-    static async find(app, repos) {
-        const is_array = repos.constructor.name === 'Array';
-        const ids = is_array ? repos : [repos];
-
-        const found = [];
-        const not_found = [];
-        for (const id of ids) {
-            console.assert(id, "Invalid repository ID !");
-            const local = Repository._LOCAL_CACHE.get(id);
-            if (local)
-                found.push(local);
-            else
-                not_found.push(id.toString());
-        }
-        if (not_found.length !== 0) {
-            let repositories = await app.fetch_api('repository/find', 'POST', not_found)
-                .catch(error => {
-                    NOTIFICATION.warn(new Message(`Impossible de récupérer les dépots ${not_found} : ${error.message}`))
-                    throw error;
-                });
-            for (const repository of repositories)
-                found.push(Repository.new(app, repository));
-        }
-
-        return is_array ? found : found.length > 0 ? found[0] : null;
-    }
-
-    remove() {
-        Repository._LOCAL_CACHE.delete(this.id);
-        GLOBAL_EVENTS.broadcast('remove_repository', this);
+    async remove() {
+        await this._pool.remove_repository(this);
     }
 
     toJSON() {
@@ -177,37 +135,6 @@ class Repository {
                 data[key] = value;
         }
         return data;
-    }
-
-    /**
-     * @param app {FileshareApp}
-     * @return {Promise<Repository[]>}
-     */
-    static async my_repositories(app) {
-        const my_repositories = await app.fetch_api('repository/owned')
-            .catch(error => {
-                NOTIFICATION.error(new Message(error).title(`Impossible de télécharger la liste des dépôts possédés`));
-                return [];
-            });
-        const repositories = [];
-        for (const repository of my_repositories) {
-            repositories.push(Repository.new(app, repository));
-        }
-        return repositories;
-    }
-
-    /**
-     * @param app {FileshareApp}
-     * @return {Promise<Repository[]>}
-     */
-    static async shared_repositories(app) {
-        const shared_repositories = await app.fetch_api('repository/shared')
-            .catch(error => {NOTIFICATION.warn(new Message(error).title("Impossible de récupérer les dépôts partagés")); return;});
-        const repositories = [];
-        for (const repository of shared_repositories) {
-            repositories.push(Repository.new(app, repository));
-        }
-        return repositories;
     }
 }
 

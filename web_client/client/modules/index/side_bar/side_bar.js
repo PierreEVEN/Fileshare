@@ -6,6 +6,7 @@ import {APP_COOKIES} from "../tools/cookies/cookies";
 import {AppWidget} from "../../../app_widget";
 import "./category"
 import {FilesystemStream} from "../../../types/filesystem_stream";
+import {ContentRequest} from "../../../types/remote_filesystem/content_request";
 
 require('./side_bar.scss')
 
@@ -83,8 +84,8 @@ class SideBar extends AppWidget {
 
         let tree_root = null;
         {
-            if (this._load_my_repos_promise)
-                await this._load_my_repos_promise;
+            if (this._load_available_repositories_promise)
+                await this._load_available_repositories_promise;
             if (this._elements.my_repositories.get_repository(repository))
                 tree_root = this._elements.my_repositories;
         }
@@ -153,18 +154,15 @@ class SideBar extends AppWidget {
         }
 
         if (connected_user) {
-            if (this._load_my_repos_promise)
-                await this._load_my_repos_promise;
-            this._load_my_repos_promise = new Promise(async (resolve) => {
-                const my_repos_sorted = (await Repository.my_repositories(this.get_app())).sort(((a, b) => {
+            if (this._load_available_repositories_promise)
+                await this._load_available_repositories_promise;
+
+            this._load_available_repositories_promise = new Promise(async (resolve) => {
+                const available_repositories = await this.get_app().pool.available_repositories();
+
+                const my_repos_sorted = available_repositories.owned.sort(((a, b) => {
                     return a.display_name.plain().localeCompare(b.display_name.plain())
                 }));
-
-                const repos_to_preload_ids = [];
-                for (const repos of my_repos_sorted)
-                    repos_to_preload_ids.push(repos.id);
-                // Preload all repositories root content
-                await FilesystemStream.root_content(this.get_app(), repos_to_preload_ids);
 
                 for (const repository of my_repos_sorted)
                     this._elements.my_repositories.add_repository(repository);
@@ -178,12 +176,6 @@ class SideBar extends AppWidget {
                     return a.display_name.plain().localeCompare(b.display_name.plain())
                 }));
 
-                const repos_to_preload_ids = [];
-                for (const repos of shared_sorted)
-                    repos_to_preload_ids.push(repos.id);
-                // Preload all repositories root content
-                await FilesystemStream.root_content(this.get_app(), repos_to_preload_ids);
-
                 for (const repository of shared_sorted)
                     this._elements.shared.add_repository(repository);
                 resolve();
@@ -193,16 +185,15 @@ class SideBar extends AppWidget {
         if (this._load_recent_promise)
             await this._load_recent_promise;
         this._load_recent_promise = new Promise(async (resolve) => {
-            const last_sorted = (await Repository.find(this.get_app(), APP_COOKIES.get_last_repositories())).sort(((a, b) => {
+            const last_repositories = APP_COOKIES.get_last_repositories();
+            await this.get_app().pool.fetch_content(new ContentRequest().repository(last_repositories));
+
+            const repositories = [];
+            for (const repository of last_repositories)
+                repositories.push(this.get_app().pool.find_repository(repository));
+            const last_sorted = repositories.sort(((a, b) => {
                 return a.display_name.plain().localeCompare(b.display_name.plain())
             }));
-
-            const repos_to_preload_ids = [];
-            for (const repos of last_sorted)
-                repos_to_preload_ids.push(repos.id);
-            // Preload all repositories root content
-            await FilesystemStream.root_content(this.get_app(), repos_to_preload_ids);
-
             for (const repository of last_sorted)
                 this._elements.recent.add_repository(repository);
             resolve();

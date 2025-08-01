@@ -3,6 +3,7 @@ import {EncString} from "../encstring";
 class Filter {
     constructor() {
         this._repositories = null;
+        this._directory = null;
         this._name = null;
         this._before = null;
         this._after = null;
@@ -11,6 +12,7 @@ class Filter {
         this._mime_type = null;
         this._owners = null;
     }
+
 
 
     /**

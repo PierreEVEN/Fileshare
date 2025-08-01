@@ -62,18 +62,18 @@ impl Debug for dyn Item {
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct RemoteItem {
+pub struct  {
     item: types::item::Item,
     filesystem: Option<Weak<RwLock<RemoteFilesystem>>>,
 }
 
-impl Serialize for RemoteItem {
+impl Serialize for  {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         self.item.serialize(serializer)
     }
 }
 
-impl<'de> Deserialize<'de> for RemoteItem {
+impl<'de> Deserialize<'de> for  {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let mut item = Self::default();
         item.item = types::item::Item::deserialize(deserializer)?;
@@ -81,13 +81,13 @@ impl<'de> Deserialize<'de> for RemoteItem {
     }
 }
 
-impl RemoteItem {
+impl  {
     pub fn set_filesystem(&mut self, filesystem: &Arc<RwLock<RemoteFilesystem>>) {
         self.filesystem = Some(Arc::downgrade(filesystem));
     }
 }
 
-impl Deref for RemoteItem {
+impl Deref for  {
     type Target = types::item::Item;
 
     fn deref(&self) -> &Self::Target {
@@ -95,7 +95,7 @@ impl Deref for RemoteItem {
     }
 }
 
-impl Item for RemoteItem {
+impl Item for  {
     fn is_regular_file(&self) -> bool {
         self.item.file.is_some()
     }

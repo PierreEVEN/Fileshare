@@ -19,13 +19,25 @@ import {AppConfig} from "./utilities/app_config";
 import {APP_COOKIES} from "./modules/index/tools/cookies/cookies";
 import {Authentication} from "./modules/index/tools/authentication/authentication";
 import {Message, NOTIFICATION} from "./modules/index/tools/message_box/notification";
+import {ContentPool} from "./types/remote_filesystem/content_pool";
 
 require('./app.scss');
 
 class FileshareApp extends HTMLElement {
     constructor() {
         super();
+        /**
+         * @type {ContentPool}
+         */
+        this.pool = new ContentPool(this);
 
+        const raw_data = JSON.parse(document.body.dataset['app_config']);
+        console.assert(raw_data, "Invalid application raw data")
+        this.pool.load_raw_data(raw_data)
+
+        /**
+         * @type {AppState}
+         */
         this.state = new AppState(this);
 
         /**

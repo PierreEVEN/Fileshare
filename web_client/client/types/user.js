@@ -84,18 +84,6 @@ class User {
     }
 
     /**
-     * @param data
-     * @return {User}
-     */
-    static new(data) {
-        const existing = this.find(data.id);
-        if (existing) {
-            return existing;
-        }
-        return new User(data);
-    }
-
-    /**
      * @param app {FileshareApp}
      */
     remove(app) {
@@ -119,14 +107,6 @@ class User {
     }
 
     /**
-     * @param id {number}
-     * @returns {User}
-     */
-    static find(id) {
-        return User._LOCAL_CACHE.get(id);
-    }
-
-    /**
      * @param app {FileshareApp}
      * @param name {EncString}
      * @param exact {boolean}
@@ -140,22 +120,6 @@ class User {
             found_users.push(await User.fetch(app, user_id));
         }
         return found_users;
-    }
-
-    /**
-     * @param app {FileshareApp}
-     * @param id {number}
-     * @returns {Promise<User>}
-     */
-    static async fetch(app, id) {
-        const current = User._LOCAL_CACHE.get(id);
-        if (current)
-            return current;
-        let user = await app.fetch_api("user/find", "POST", [id])
-            .catch(error => NOTIFICATION.fatal(new Message(error).title(`Impossible de trouver l'utilisateur ${id}`)));
-        if (user.length !== 0)
-            return User.new(user[0]);
-        return null;
     }
 
     /**

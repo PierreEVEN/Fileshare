@@ -1,5 +1,4 @@
 const {EncString} = require("./encstring");
-const {User} = require("./user");
 const {GLOBAL_EVENTS} = require("./event_manager");
 const {NOTIFICATION, Message} = require("../modules/index/tools/message_box/notification");
 
@@ -201,14 +200,6 @@ class FilesystemStream {
         _LOCAL_STORAGE.set(this._repository.id, this);
 
         this.app = app;
-
-        /**
-         * @type {Promise<User>}
-         * @private
-         */
-        this._user = new Promise(async (ok) => {
-            ok(await User.find(this._repository.id, this.app));
-        });
 
         /**
          * @type {Map<number, FilesystemItem>}
@@ -582,7 +573,6 @@ class FilesystemStream {
     }
 
     /**
-     *
      * @param child_name {string}
      * @param parent_item {FilesystemItem|null}
      * @return {Promise<*|null>}
