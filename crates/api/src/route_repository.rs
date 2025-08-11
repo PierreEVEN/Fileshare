@@ -34,8 +34,7 @@ impl RepositoryRoutes {
         let router = Router::new()
             .route("/find", post(find_repositories).with_state(ctx.clone()))
             .route("/content/{id}", get(content).with_state(ctx.clone()))
-            .route("/owned", get(get_owned_repositories).with_state(ctx.clone()))
-            .route("/shared", get(get_shared_repositories).with_state(ctx.clone()))
+            .route("/available", get(get_available_repositories).with_state(ctx.clone()))
             .route("/public", get(get_public_repositories).with_state(ctx.clone()))
             .route("/create", post(create_repository).with_state(ctx.clone()))
             .route("/delete", post(delete_repository).with_state(ctx.clone()))
@@ -104,9 +103,11 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
     if let Some(repositories) = &json.repositories {
         for repository in repositories {
             if !output_repositories.contains_key(repository) {
-                let repository = DbRepository::from_id(&ctx.database, repository).await?;
-                permissions.view_repository(&ctx.database, &repository).await?.require()?;
-                output_repositories.insert(repository.id().clone(), repository);
+                if let Ok(repository) = DbRepository::from_id(&ctx.database, repository).await {
+                    if permissions.view_repository(&ctx.database, &repository).await?.granted() {
+                        output_repositories.insert(repository.id().clone(), repository);
+                    }
+                }
             }
         }
     }
@@ -123,8 +124,9 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
         for item in items {
             if !output_items.contains_key(item) {
                 let item = DbItem::from_id(&ctx.database, item, Trash::Both).await?;
-                permissions.view_item(&ctx.database, &item).await?.require()?;
-                output_items.insert(item.id().clone(), item);
+                if permissions.view_item(&ctx.database, &item).await?.granted() {
+                    output_items.insert(item.id().clone(), item);
+                }
             }
         }
     }
@@ -132,15 +134,17 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
     if let Some(repositories) = &json.repository_roots {
         for repository in repositories {
             if !output_repository_roots.contains_key(repository) {
-                permissions.view_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.require()?;
-                let mut content = HashSet::new();
-                for root_element in DbItem::repository_root(&ctx.database, &repository, Trash::Both).await? {
-                    if !output_items.contains_key(root_element.id()) {
-                        output_items.insert(root_element.id().clone(), root_element.clone());
+                if permissions.view_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.granted()
+                {
+                    let mut content = HashSet::new();
+                    for root_element in DbItem::repository_root(&ctx.database, &repository, Trash::Both).await? {
+                        if !output_items.contains_key(root_element.id()) {
+                            output_items.insert(root_element.id().clone(), root_element.clone());
+                        }
+                        content.insert(root_element.id().clone());
                     }
-                    content.insert(root_element.id().clone());
+                    output_repository_roots.insert(repository.clone(), content);
                 }
-                output_repository_roots.insert(repository.clone(), content);
             }
         }
     }
@@ -148,18 +152,19 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
     if let Some(repositories) = &json.trash_roots {
         let mut result_trash_roots = vec![];
         for repository in repositories {
-            permissions.upload_to_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.require()?;
-            let mut content = HashSet::new();
-            for root_element in DbItem::repository_trash_root(&ctx.database, &repository).await? {
-                if !output_items.contains_key(root_element.id()) {
-                    output_items.insert(root_element.id().clone(), root_element.clone());
+            if permissions.upload_to_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.granted() {
+                let mut content = HashSet::new();
+                for root_element in DbItem::repository_trash_root(&ctx.database, &repository).await? {
+                    if !output_items.contains_key(root_element.id()) {
+                        output_items.insert(root_element.id().clone(), root_element.clone());
+                    }
+                    content.insert(root_element.id().clone());
                 }
-                content.insert(root_element.id().clone());
+                result_trash_roots.push(RepositoryContentResult {
+                    repository: repository.clone(),
+                    content,
+                });
             }
-            result_trash_roots.push(RepositoryContentResult {
-                repository: repository.clone(),
-                content,
-            });
         }
         if !result_trash_roots.is_empty() {
             result.trash_roots = Some(result_trash_roots);
@@ -168,20 +173,20 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
 
     if let Some(directories) = &json.directory_content {
         for directory in directories {
-            permissions.view_item(&ctx.database, &DbItem::from_id(&ctx.database, &directory, Trash::Both).await?).await?.require()?;
-            let mut content = HashSet::new();
-            for root_element in DbItem::from_parent(&ctx.database, &directory, Trash::Both).await? {
-                if !output_items.contains_key(root_element.id()) {
-                    output_items.insert(root_element.id().clone(), root_element.clone());
+            if permissions.view_item(&ctx.database, &DbItem::from_id(&ctx.database, &directory, Trash::Both).await?).await?.granted() {
+                let mut content = HashSet::new();
+                for root_element in DbItem::from_parent(&ctx.database, &directory, Trash::Both).await? {
+                    if !output_items.contains_key(root_element.id()) {
+                        output_items.insert(root_element.id().clone(), root_element.clone());
+                    }
+                    content.insert(root_element.id().clone());
                 }
-                content.insert(root_element.id().clone());
+                output_directory_contents.insert(directory.clone(), content);
             }
-            output_directory_contents.insert(directory.clone(), content);
         }
     }
 
     if let Some(content_to) = &json.content_to {
-
         for target in content_to {
             let mut current_target = target.clone();
             loop {
@@ -302,16 +307,25 @@ async fn content(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
     Ok(Json(items))
 }
 
-/// Get repositories owned by connected user
-async fn get_owned_repositories(State(ctx): State<Arc<AppCtx>>, request: Request) -> impl IntoResponse {
-    let user = require_connected_user!(request);
-    Ok(Json(DbRepository::from_user(&ctx.database, user.id()).await?))
-}
-
 /// Get repositories shared with connected user
-async fn get_shared_repositories(State(ctx): State<Arc<AppCtx>>, request: Request) -> impl IntoResponse {
+async fn get_available_repositories(State(ctx): State<Arc<AppCtx>>, request: Request) -> impl IntoResponse {
     let user = require_connected_user!(request);
-    Ok(Json(DbRepository::shared_with(&ctx.database, user.id()).await?))
+
+    #[derive(Serialize, Default)]
+    pub struct Result {
+        pub owned: Vec<RepositoryId>,
+        pub shared: Vec<RepositoryId>,
+    }
+
+    let mut result = Result::default();
+
+    for repository in DbRepository::from_user(&ctx.database, user.id()).await? {
+        result.owned.push(repository.id().clone());
+    }
+    for repository in DbRepository::shared_with(&ctx.database, user.id()).await? {
+        result.shared.push(repository.id().clone());
+    }
+    Ok(Json(result))
 }
 
 /// Get all public repositories
@@ -344,7 +358,7 @@ async fn delete_repository(State(ctx): State<Arc<AppCtx>>, request: axum::http::
         }
 
         DbRepository::delete(&repository, &ctx.database).await?;
-        deleted_ids.push(repository.clone());
+        deleted_ids.push(repository.id().clone());
     }
     Ok(Json(deleted_ids))
 }

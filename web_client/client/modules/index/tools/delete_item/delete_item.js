@@ -1,10 +1,10 @@
-import {FilesystemItem, FilesystemStream} from "../../../../types/filesystem_stream";
+import {RemoteItem, FilesystemStream} from "../../../../types/filesystem_stream";
 import {Message, NOTIFICATION} from "../message_box/notification";
 import {ContentRequest} from "../../../../types/remote_filesystem/content_request";
 
 /**
  * @param app {FileshareApp}
- * @param item {FilesystemItem|FilesystemItem[]}
+ * @param item {RemoteItem|RemoteItem[]}
  * @param move_to_trash {boolean}
  * @return {Promise<void>}
  */
@@ -96,8 +96,8 @@ async function restore_item(app, item) {
  */
 async function set_item_to_trash(item, in_trash) {
     item.in_trash = in_trash;
-    if (item.children)
-        for (const child of item.children)
+    if (item._children)
+        for (const child of item._children)
             await set_item_to_trash(item.pool().find_item(child), in_trash);
 
     await item.pool().fetch_content(new ContentRequest().trash_root([item.repository]))

@@ -18,21 +18,18 @@ class SideBar extends AppWidget {
          */
         this._connected_user = undefined;
 
-        const div = require('./side_bar.hbs')({}, {
+        this.set_content(require('./side_bar.hbs'), {}, {
             context_my_repositories: (e) => {
-                if (e.target && e.target.parentElement === this._elements.my_repositories) {
+                if (e.target && e.target.parentElement === this.elements().my_repositories) {
                     context_menu_my_repositories(this.get_app());
                     e.preventDefault();
                 }
             }
         });
-        this._elements = div['hb_elements'];
-        for (const element of div)
-            this.append(element);
 
         this._add_repository = this.get_app().pool.events.add('add_repository', async (repository) => {
-            if (this._my_repos_expanded && !this._my_repositories_loaded.has(repository.id) && this.get_app().state.connected_user() && repository.owner === this.get_app().state.connected_user().id) {
-                this._elements.my_repositories.add_repository(repository);
+            if (this.get_app().state.connected_user() && repository.owner === this.get_app().state.connected_user().id) {
+                this.elements().my_repositories.add_repository(repository);
             }
         });
 
@@ -77,9 +74,9 @@ class SideBar extends AppWidget {
         if (!repository) {
             if (this._last_selected)
                 this._last_selected.clear_tree_selection();
-            this._elements.my_repositories.set_expanded(false);
-            this._elements.shared.set_expanded(false);
-            this._elements.recent.set_expanded(false);
+            this.elements().my_repositories.set_expanded(false);
+            this.elements().shared.set_expanded(false);
+            this.elements().recent.set_expanded(false);
 
             return;
         }
@@ -88,20 +85,17 @@ class SideBar extends AppWidget {
         {
             if (this._load_available_repositories_promise)
                 await this._load_available_repositories_promise;
-            if (this._elements.my_repositories.get_repository(repository))
-                tree_root = this._elements.my_repositories;
-        }
-        if (!tree_root) {
-            if (this._load_shared_promise)
-                await this._load_shared_promise;
-            if (this._elements.shared.get_repository(repository))
-                tree_root = this._elements.shared;
+            if (this.elements().my_repositories.get_repository(repository))
+                tree_root = this.elements().my_repositories;
+            if (!tree_root)
+                if (this.elements().shared.get_repository(repository))
+                    tree_root = this.elements().shared;
         }
         if (!tree_root) {
             if (this._load_recent_promise)
                 await this._load_recent_promise;
-             if (this._elements.recent.get_repository(repository))
-                 tree_root = this._elements.recent;
+             if (this.elements().recent.get_repository(repository))
+                 tree_root = this.elements().recent;
         }
         if (!tree_root)
             return;
@@ -140,19 +134,19 @@ class SideBar extends AppWidget {
             this._connected_user = connected_user;
 
             if (connected_user) {
-                this._elements.my_repositories.style.display = 'flex';
-                this._elements.shared.style.display = 'flex';
+                this.elements().my_repositories.style.display = 'flex';
+                this.elements().shared.style.display = 'flex';
             } else {
-                this._elements.my_repositories.style.display = 'none';
-                this._elements.shared.style.display = 'none';
+                this.elements().my_repositories.style.display = 'none';
+                this.elements().shared.style.display = 'none';
             }
         }
         const selection = this.get_app().state.selection();
         if (!(selection.user || selection.repository || selection.item)) {
             if (connected_user)
-                this._elements.my_repositories.set_expanded(true);
+                this.elements().my_repositories.set_expanded(true);
             else
-                this._elements.recent.set_expanded(true);
+                this.elements().recent.set_expanded(true);
         }
 
         if (connected_user) {
@@ -165,21 +159,14 @@ class SideBar extends AppWidget {
                 const my_repos_sorted = available_repositories.owned.sort(((a, b) => {
                     return a.display_name.plain().localeCompare(b.display_name.plain())
                 }));
-
                 for (const repository of my_repos_sorted)
-                    this._elements.my_repositories.add_repository(repository);
-                resolve();
-            });
+                    this.elements().my_repositories.add_repository(repository);
 
-            if (this._load_shared_promise)
-                await this._load_shared_promise;
-            this._load_shared_promise = new Promise(async (resolve) => {
-                const shared_sorted = (await Repository.shared_repositories(this.get_app())).sort(((a, b) => {
+                const shared_sorted = available_repositories.shared.sort(((a, b) => {
                     return a.display_name.plain().localeCompare(b.display_name.plain())
                 }));
-
                 for (const repository of shared_sorted)
-                    this._elements.shared.add_repository(repository);
+                    this.elements().shared.add_repository(repository);
                 resolve();
             });
         }
@@ -191,13 +178,16 @@ class SideBar extends AppWidget {
             await this.get_app().pool.fetch_content(new ContentRequest().repository(last_repositories));
 
             const repositories = [];
-            for (const repository of last_repositories)
-                repositories.push(this.get_app().pool.find_repository(repository));
+            for (const repository of last_repositories) {
+                const repository_object = this.get_app().pool.find_repository(repository);
+                if (repository_object)
+                    repositories.push(repository_object);
+            }
             const last_sorted = repositories.sort(((a, b) => {
                 return a.display_name.plain().localeCompare(b.display_name.plain())
             }));
             for (const repository of last_sorted)
-                this._elements.recent.add_repository(repository);
+                this.elements().recent.add_repository(repository);
             resolve();
         });
     }

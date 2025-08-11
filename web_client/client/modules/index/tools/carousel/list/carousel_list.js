@@ -64,12 +64,12 @@ class CarouselList extends HTMLElement{
     }
 
     /**
-     * @param items {FilesystemItem[]}
+     * @param items {RemoteItem[]}
      * @returns {Promise<void>}
      */
     async set_items(items) {
         /**
-         * @type {Map<number, FilesystemItem>}
+         * @type {Map<number, RemoteItem>}
          * @private
          */
         this._items = new Map();

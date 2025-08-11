@@ -6,7 +6,7 @@ import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
 
 /**
  * @param app {FileshareApp}
- * @param item {FilesystemItem|FilesystemItem[]}
+ * @param item {RemoteItem|RemoteItem[]}
  */
 function context_menu_item(app, item) {
     const ctx = new ContextMenu();
@@ -31,7 +31,7 @@ function context_menu_item(app, item) {
             const ids = [];
             for (const it of item)
                 ids.push(it.id);
-            await FilesystemItem.downloads(ids);
+            await RemoteItem.downloads(ids);
         } else
             await item.download();
     }, false));

@@ -99,6 +99,20 @@ class Repository {
     }
 
     /**
+     * @param name {String}
+     * @returns {RemoteItem|null}
+     */
+    async find_child(name) {
+        for (const child of await this.children()) {
+            const item = await this.get_pool().fetch_item(child);
+            if (item.name.plain() === name)
+                return item;
+        }
+
+        return null;
+    }
+
+    /**
      * @return {void}
      */
     download() {
@@ -135,7 +149,7 @@ class Repository {
     }
 
     async remove() {
-        await this._pool.remove_repository(this);
+        await this._pool.remove_repository(this.id);
     }
 
     toJSON() {

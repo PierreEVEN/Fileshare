@@ -350,7 +350,7 @@ class RepositoryViewport extends AppWidget {
     }
 
     /**
-     * @param object {FilesystemItem | Repository}
+     * @param object {RemoteItem | Repository}
      * @returns {Promise<void>}
      * @private
      */

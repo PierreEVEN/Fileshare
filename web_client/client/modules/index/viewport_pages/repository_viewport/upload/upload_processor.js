@@ -7,7 +7,7 @@ class UploadState {
         this.id = data.id;
         this.finished = data.finished;
         if (data.item)
-            this.item = FilesystemItem.new(data.item);
+            this.item = RemoteItem.new(data.item);
     }
 }
 

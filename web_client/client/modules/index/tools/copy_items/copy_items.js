@@ -3,7 +3,7 @@ import {Message, NOTIFICATION} from "../message_box/notification";
 class Clipboard {
     constructor() {
         /**
-         * @type {Map<number, FilesystemItem>}
+         * @type {Map<number, RemoteItem>}
          * @private
          */
         this._items = new Map();
@@ -50,7 +50,7 @@ let CLIPBOARD = new Clipboard();
 
 /**
  * @param app {FileshareApp}
- * @param items {FilesystemItem[]}
+ * @param items {RemoteItem[]}
  * @param remove_sources {boolean}
  * @param destination_repository {number}
  * @param destination_directory {number|null}
@@ -58,7 +58,7 @@ let CLIPBOARD = new Clipboard();
  */
 async function copy_items(app, items, remove_sources, destination_repository, destination_directory = null) {
     /**
-     * @type {Map<number, FilesystemItem>}
+     * @type {Map<number, RemoteItem>}
      */
     let item_map = new Map();
     if (items.length === 0)
@@ -69,7 +69,7 @@ async function copy_items(app, items, remove_sources, destination_repository, de
         item_map.set(it.id, it);
     }
     /**
-     * @type {FilesystemItem[]}
+     * @type {RemoteItem[]}
      */
     const new_items = await app.fetch_api(`item/copy`, 'POST',
         {
@@ -82,10 +82,9 @@ async function copy_items(app, items, remove_sources, destination_repository, de
 
     for (const item of new_items) {
         if (remove_sources) {
-            let old = item_map.get(item.id);
-            await old.filesystem().remove_item(old);
+            await app.pool.remove_item(item.id);
         }
-        await FilesystemItem.new(item);
+        await app.pool._register_item(item);
     }
 }
 

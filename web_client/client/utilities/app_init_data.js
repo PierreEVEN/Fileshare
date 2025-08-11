@@ -73,7 +73,7 @@ class InitData {
      */
     async apply_to_state(state) {
 
-        if (await state.connected_user())
+        if (await this.connected_user())
             await state.set_connected_user(await this.connected_user())
 
         if (this.show_stats) {

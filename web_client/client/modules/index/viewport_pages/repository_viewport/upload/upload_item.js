@@ -194,7 +194,7 @@ class UploadItem {
      * @param name {string}
      * @param repository_id {number}
      * @param parent {number|null}
-     * @return {Promise<FilesystemItem>}
+     * @return {Promise<RemoteItem>}
      * @private
      */
     async _get_or_create_dir(name, repository_id, parent) {
@@ -219,7 +219,7 @@ class UploadItem {
             }]
         ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de créer le dossier")));
         if (directories.length === 1) {
-            return await FilesystemItem.new(directories[0]);
+            return await RemoteItem.new(directories[0]);
         }
     }
 }

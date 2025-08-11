@@ -32,6 +32,9 @@ class AppWidget extends HTMLElement {
         return this._elements
     }
 
+    /**
+     * @returns {{ [key: string]: HTMLElement }}
+     */
     elements() {
         return this._elements;
     }

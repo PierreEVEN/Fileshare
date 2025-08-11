@@ -86,9 +86,10 @@ class TrashContentProvider extends ContentProvider {
 
     async get_content() {
         const items = [];
-        for (const item_id of await this.repository.get_pool().fetch_content(new ContentRequest().trash_root([this.repository.id]))) {
-            items.push(await this.repository.get_pool().fetch_item(item_id));
-        }
+        await this.repository.get_pool().fetch_content(new ContentRequest().trash_root([this.repository.id]));
+        if (this.repository.trash)
+            for (const item_id of this.repository.trash)
+                items.push(await this.repository.get_pool().fetch_item(item_id));
         return items;
     }
 

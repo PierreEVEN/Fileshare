@@ -1,7 +1,8 @@
 import {EncString} from "../../../../types/encstring";
-import {FilesystemItem, FilesystemStream} from "../../../../types/filesystem_stream";
+import {RemoteItem, FilesystemStream} from "../../../../types/filesystem_stream";
 import {overwrite_or_restore} from "../item_conflict/item_conflict";
 import {Message, NOTIFICATION} from "../message_box/notification";
+import {pow} from "three/tsl";
 
 
 /**
@@ -14,10 +15,9 @@ function create_directory(app, repository, parent_item = null) {
         mkdir: async (e) => {
             e.preventDefault();
             const new_name = widget.hb_elements.name.value;
-            const fs = FilesystemStream.find(repository);
-            const child = await fs.find_child(new_name, parent_item ? await fs.fetch_item(parent_item) : null);
+            const child = parent_item ? await (await app.pool.fetch_repository(repository)).find_child(new_name) : await (await app.pool.fetch_repository(repository)).find_child(new_name);
             if (child) {
-                if (!(await overwrite_or_restore(new_name, child, context)).handled) {
+                if (!(await overwrite_or_restore(app, new_name, child)).handled) {
                     return;
                 }
             }
@@ -31,7 +31,7 @@ function create_directory(app, repository, parent_item = null) {
             ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de créer le dossier")));
 
             for (const item of directories) {
-                await FilesystemItem.new(item);
+                await app.pool._register_item(item);
             }
 
             app.get_modal().close();

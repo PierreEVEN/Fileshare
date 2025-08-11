@@ -30,7 +30,12 @@ class AppState {
         addEventListener('popstate', async (event) => {
             if (event.state && event.state.app_action)
                 await this.select(await new StateSelection()._from_raw_data(this.app, event.state.selection), false);
-        })
+        });
+
+        app.pool.events.add('remove_repository', async (repository) => {
+            if (this._selected_item && this._selected_item.repository && this._selected_item.repository.id === repository.id)
+                await this.select(new StateSelection());
+        });
     }
 
     /********************************************************************

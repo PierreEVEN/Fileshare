@@ -15,7 +15,7 @@ input {
     background-color: rgba(255, 255, 255, 0.09);
   }
 
-  &[type='text'], &[type='password'] {
+  &[type='text'], &[type='password'], &[type='email'] {
     color: white;
     font-weight: 600;
     text-indent: 10px;

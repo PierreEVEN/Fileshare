@@ -116,7 +116,7 @@ class FileshareApp extends HTMLElement {
             delete this._viewport_content;
         }
         this._viewport_content = page_content;
-        if (this._viewport_content)
+        if (this._viewport_content && this._elements)
             this._elements.viewport.append(this._viewport_content);
         return page_content;
     }

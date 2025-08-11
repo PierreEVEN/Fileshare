@@ -25,7 +25,7 @@ async function delete_repository(app, repository) {
                 }
             ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de supprimer le dépôt")));
             for (const repository_id of repositories) {
-                await (await this.app.pool.fetch_repository(repository_id)).remove();
+                await (await app.pool.remove_repository(repository_id));
             }
 
             app.get_modal().close();

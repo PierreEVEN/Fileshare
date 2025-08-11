@@ -1,6 +1,7 @@
 import {EncString} from "../../../../types/encstring";
 import {Repository} from "../../../../types/repository";
 import {Message, NOTIFICATION} from "../message_box/notification";
+import {StateSelection} from "../../../../utilities/state_selection";
 
 /**
  * @param app {FileshareApp}
@@ -17,7 +18,7 @@ async function create_repository(app) {
                 }]
             ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de créer le dépôt")));
             for (const repository of repositories) {
-                Repository.new(app, repository);
+                await app.state.select(new StateSelection().set_repository(await app.pool._register_repository(repository)))
             }
 
             app.get_modal().close();

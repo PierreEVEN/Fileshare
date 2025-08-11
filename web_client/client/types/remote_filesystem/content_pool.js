@@ -183,10 +183,14 @@ class ContentPool {
     }
 
     /**
-     * @param item {RemoteItem}
+     * @param id {number}
      * @return {Promise<void>}
      */
-    async remove_item(item) {
+    async remove_item(id) {
+        const item = this.find_item(id);
+        if (!item)
+            return;
+
         const repository = this.find_repository(item.repository);
         console.assert(repository, `Cannot remove item ${item.name.plain()} as it's parent repository does not exists`);
 
@@ -212,12 +216,15 @@ class ContentPool {
     }
 
     /**
-     * @param repository {Repository}
+     * @param id {number}
      * @return {Promise<void>}
      */
-    async remove_repository(repository) {
-        this._repositories.delete(repository.id);
-        await this.events.broadcast('remove_repository', repository);
+    async remove_repository(id) {
+        const data = this.find_repository(id);
+        if (!data)
+            return;
+        this._repositories.delete(id);
+        await this.events.broadcast('remove_repository', data);
     }
 
     /**
@@ -334,11 +341,26 @@ class ContentPool {
      * @return {Promise<{owned: Repository[], shared: Repository[]}>}
      */
     async available_repositories() {
-        return await this.get_app().fetch_api('repository/available')
+        const data = await this.get_app().fetch_api('repository/available')
             .catch(error => {
                 NOTIFICATION.error(new Message(error).title(`Impossible de télécharger la liste des dépôts possédés`));
                 return [];
             });
+
+        await this.fetch_content(new ContentRequest().repository(data.owned).repository(data.shared))
+
+        const result = {
+            owned: [],
+            shared: [],
+        }
+
+        for (const repository of data.owned)
+            result.owned.push(this.find_repository(repository))
+
+        for (const repository of data.shared)
+            result.shared.push(this.find_repository(repository))
+
+        return result;
     }
 
     toJSON() {

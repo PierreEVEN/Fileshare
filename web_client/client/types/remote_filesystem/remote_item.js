@@ -123,6 +123,20 @@ class RemoteItem {
     }
 
     /**
+     * @param name {String}
+     * @returns {RemoteItem|null}
+     */
+    async find_child(name) {
+        for (const child of await this.children()) {
+            const item = await this.pool().fetch_item(child);
+            if (item.name.plain() === name)
+                return item;
+        }
+
+        return null;
+    }
+
+    /**
      * @param item_id {number}
      * @return {Promise<boolean>}
      */
@@ -147,7 +161,7 @@ class RemoteItem {
     }
 
     async remove() {
-        await this.pool().remove_item(this);
+        await this.pool().remove_item(this.id);
     }
 
     /**

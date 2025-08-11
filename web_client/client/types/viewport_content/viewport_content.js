@@ -72,8 +72,8 @@ class ContentSorter {
     }
 
     /**
-     * @param source {FilesystemItem[]}
-     * @return {FilesystemItem[]}
+     * @param source {RemoteItem[]}
+     * @return {RemoteItem[]}
      */
     sort_content(source) {
         return source;
@@ -101,7 +101,7 @@ class ViewportContent {
     constructor(viewport) {
 
         /**
-         * @type {Map<number, FilesystemItem>}
+         * @type {Map<number, RemoteItem>}
          * @private
          */
         this._displayed_items = new Map();
