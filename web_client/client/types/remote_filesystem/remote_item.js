@@ -1,3 +1,5 @@
+import {ContentRequest} from "./content_request";
+
 const {EncString} = require("../encstring");
 
 class RemoteItem {
@@ -95,7 +97,7 @@ class RemoteItem {
         /**
          * @type {null|Set<number>}
          */
-        this.children = null;
+        this._children = null;
     }
 
     /**
@@ -109,6 +111,15 @@ class RemoteItem {
         if (this.mimetype)
             result.mimetype = this.mimetype.plain()
         return result
+    }
+
+    /**
+     * @returns {Promise<Set<number>>}
+     */
+    async children() {
+        if (!this._children)
+            await this.pool().fetch_content(new ContentRequest().directory_content([this.id]));
+        return this._children || new Set();
     }
 
     /**

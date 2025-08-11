@@ -39,9 +39,7 @@ const Authentication = {
                         throw new Error(error);
                     });
                     await APP_COOKIES.login(app, result.token, signin_div.hb_elements.stay_connected.checked);
-                    app.app_config.set_connected_user(User.new(result.user));
-                    if (app.app_config.error())
-                        location.reload();
+                    await app.state.set_connected_user(await app.pool._register_user(result.user));
                     success();
                     app.get_modal().close();
                 },
@@ -104,7 +102,7 @@ const Authentication = {
                                                 throw new Error(error);
                                             });
                                             await APP_COOKIES.login(app, result.token, signin_div.hb_elements.stay_connected.checked);
-                                            app.app_config.set_connected_user(User.new(result.user));
+                                            await app.state.set_connected_user(await app.pool._register_user(result.user));
                                             app.get_modal().close();
                                         }
                                     });
@@ -153,7 +151,7 @@ const Authentication = {
                         throw new Error(error);
                     });
                     await APP_COOKIES.login(app, login_result.token, signup_div.hb_elements.stay_connected.checked);
-                    app.app_config.set_connected_user(User.new(login_result.user))
+                    await app.state.set_connected_user(await app.pool.fetch_user(login_result.user));
                     success();
                     app.get_modal().close();
                 },
@@ -172,7 +170,7 @@ const Authentication = {
         await app.fetch_api('user/logout', 'POST')
             .catch(error => NOTIFICATION.error(new Message(error).title("Erreur lors de la déconnexion")));
         APP_COOKIES.logout();
-        app.app_config.set_connected_user(null);
+        await app.state.set_connected_user(null);
     }
 }
 

@@ -2,7 +2,6 @@ import {ContextMenu, MenuAction} from "../context_menu";
 import {create_directory} from "../../tools/create_directory/create_directory";
 import {delete_item, restore_item} from "../../tools/delete_item/delete_item";
 import {edit_item} from "../../tools/edit_item/edit_item";
-import {FilesystemItem} from "../../../../types/filesystem_stream";
 import {CLIPBOARD, copy_items} from "../../tools/copy_items/copy_items";
 
 /**

@@ -1,5 +1,4 @@
 import {AppWidget} from "../../../app_widget";
-import {GLOBAL_EVENTS} from "../../../types/event_manager";
 
 class SideBarCategory extends AppWidget {
     constructor() {
@@ -8,7 +7,7 @@ class SideBarCategory extends AppWidget {
         this._loaded_repositories = new Map();
         this._expand = false;
 
-        this._remove_repository = GLOBAL_EVENTS.add('remove_repository', async (repository) => {
+        this._remove_repository = this.get_app().pool.events.add('remove_repository', async (repository) => {
             const loaded = this._loaded_repositories.get(repository.id);
             if (loaded)
                 loaded.remove();

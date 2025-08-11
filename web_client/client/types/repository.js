@@ -1,5 +1,6 @@
 import {EncString} from "./encstring";
 import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
+import {ContentRequest} from "./remote_filesystem/content_request";
 
 class RepositoryStatus {
     constructor(data) {
@@ -33,7 +34,7 @@ class Repository {
         /**
          * @type {Set<number>}
          */
-        this.children = null;
+        this._children = null;
 
         /**
          * @type {Set<number>}
@@ -89,6 +90,15 @@ class Repository {
     }
 
     /**
+     * @returns {Promise<Set<number>>}
+     */
+    async children() {
+        if (!this._children)
+            await this.get_pool().fetch_content(new ContentRequest().repository_root([this.id]));
+        return this._children || new Set();
+    }
+
+    /**
      * @return {void}
      */
     download() {
@@ -114,14 +124,14 @@ class Repository {
      * @return {Promise<String>}
      */
     async url() {
-        return `${this.get_pool().get_app().app_config.origin()}/${(await this.get_pool().fetch_user(this.owner)).name.plain()}/${this.url_name.plain()}`
+        return `${this.get_pool().get_app().origin()}/${(await this.get_pool().fetch_user(this.owner)).name.plain()}/${this.url_name.plain()}`
     }
 
     /**
      * @return {Promise<String>}
      */
     async trash_url() {
-        return `${this.get_pool().get_app().app_config.origin()}/${(await this.get_pool().fetch_user(this.owner)).name.plain()}/${this.url_name.plain()}/trash`
+        return `${this.get_pool().get_app().origin()}/${(await this.get_pool().fetch_user(this.owner)).name.plain()}/${this.url_name.plain()}/trash`
     }
 
     async remove() {

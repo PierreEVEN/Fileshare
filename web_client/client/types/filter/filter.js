@@ -67,7 +67,7 @@ class Filter {
     }
 
     /**
-     * @param item {FilesystemItem}
+     * @param item {RemoteItem}
      */
     test(item) {
         if (this._name) {

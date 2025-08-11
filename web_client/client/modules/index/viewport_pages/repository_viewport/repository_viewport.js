@@ -47,9 +47,9 @@ document.addEventListener('keydown', async function (event) {
                 if (CURRENT_VIEWPORT.content.get_content_provider() instanceof DirectoryContentProvider) {
                     let item = CURRENT_VIEWPORT.content.get_content_provider().directory;
                     if (item.parent_item)
-                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_item(await item.filesystem().fetch_item(item.parent_item)));
+                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_item(await item.pool().fetch_item(item.parent_item)));
                     else
-                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_repository(await Repository.find(CURRENT_VIEWPORT.get_app(), item.repository)));
+                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_repository(await CURRENT_VIEWPORT.get_app().pool.fetch_repository(item.repository)));
                     CURRENT_VIEWPORT.selector.select_item(item.id, false, false);
                 }
             }
@@ -145,6 +145,9 @@ class RepositoryViewport extends AppWidget {
          * @private
          */
         this._visible_items = new Map();
+    }
+
+    connectedCallback() {
 
         let content_num_items = 0;
         let content_total_size = 0;
@@ -192,7 +195,7 @@ class RepositoryViewport extends AppWidget {
                     } else {
                         const items = [];
                         for (const item_id of this.selector.get_selected_items()) {
-                            items.push(await item.filesystem()?.fetch_item(item_id));
+                            items.push(await item.get_pool().fetch_item(item_id));
                         }
                         context_menu_item(this.get_app(), items);
                     }
@@ -201,7 +204,7 @@ class RepositoryViewport extends AppWidget {
                     if (this.selector.is_selected(item.id)) {
                         const items = [];
                         for (const item_id of this.selector.get_selected_items()) {
-                            items.push(await item.filesystem()?.fetch_item(item_id));
+                            items.push(await item.get_pool().fetch_item(item_id));
                         }
                         context_menu_item(this.get_app(), items);
                     } else {
@@ -241,9 +244,8 @@ class RepositoryViewport extends AppWidget {
             }
         })
 
-    }
 
-    connectedCallback() {
+
         this.innerHTML = '';
 
         const div = require('./repository_viewport.hbs')({}, {
@@ -301,11 +303,11 @@ class RepositoryViewport extends AppWidget {
         }
 
         if (selection.item) {
-            const repository = await Repository.find(this.get_app(), selection.item.repository);
+            const repository = await this.get_app().pool.fetch_repository(selection.item.repository);
             if (!this.repository || this.repository.id !== repository.id)
                 this._set_repository(repository);
 
-            const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.content.fetch_item(selection.item.parent_item) : selection.item : selection.item;
+            const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.get_pool().fetch_item(selection.item.parent_item) : selection.item : selection.item;
 
             if (selection.item.is_regular_file) {
                 await this._open_carousel(selection.item);
@@ -329,11 +331,11 @@ class RepositoryViewport extends AppWidget {
      */
     async _spawn_content_provider(selection) {
         if (selection.item) {
-            const repository = await Repository.find(this.get_app(), selection.item.repository);
+            const repository = await this.get_app().pool.fetch_repository(selection.item.repository);
             if (selection.in_trash) {
                 return new TrashContentProvider(repository);
             } else {
-                const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.content.fetch_item(selection.item.parent_item) : null : selection.item;
+                const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.get_pool().fetch_item(selection.item.parent_item) : null : selection.item;
                 if (directory)
                     return new DirectoryContentProvider(directory);
                 else
@@ -375,16 +377,7 @@ class RepositoryViewport extends AppWidget {
     }
 
     async try_get_item_data(item_id) {
-        let fs = null;
-        if (this.content.get_content_provider().directory) {
-            fs = this.content.get_content_provider().directory.filesystem();
-        } else if (this.content.get_content_provider().repository) {
-            fs = this.content.get_content_provider().repository.content;
-        }
-
-        if (fs) {
-            return await fs.fetch_item(item_id)
-        }
+        return await this.get_app().pool.fetch_item(item_id)
     }
 
     close_upload_container() {

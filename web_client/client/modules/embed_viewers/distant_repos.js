@@ -3,7 +3,7 @@ import {get_mime_icon_path} from "../../utilities/mime_utils";
 import './custom_elements/object3d/object3d'
 
 function get(app, item) {
-    const url = `${app.app_config.origin()}/api/item/preview/${item.id}`;
+    const url = `${app.origin()}/api/item/preview/${item.id}`;
     const thumbnail_url = `/api/item/thumbnail/${item.id}`;
     const mimetype = item.mimetype.split('/');
 

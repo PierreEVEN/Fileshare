@@ -1,4 +1,6 @@
 
+let REQUEST_INDEX = 0;
+
 class ContentRequest {
     constructor() {
         /**
@@ -36,6 +38,11 @@ class ContentRequest {
          * @private
          */
         this._trash_roots = new Set();
+
+        /**
+         * @type {number[]}
+         */
+        this.indices = [++REQUEST_INDEX];
     }
 
     /**
@@ -54,6 +61,7 @@ class ContentRequest {
             this._repository_roots.add(key);
         for (const key of other._trash_roots)
             this._trash_roots.add(key);
+        this.indices.concat(other.indices);
     }
 
     /**
@@ -94,6 +102,7 @@ class ContentRequest {
                 continue;
             result.users.push(user);
         }
+        return result;
     }
 
     /**
@@ -124,7 +133,7 @@ class ContentRequest {
      * @param includes_parents {boolean}
      * @return {ContentRequest}
      */
-    item(items, includes_parents) {
+    item(items, includes_parents = false) {
         for (const item of items)
             this._items.set(item, includes_parents)
         return this;

@@ -53,7 +53,7 @@ class ViewportToolbar extends AppWidget {
     }
 
     /**
-     * @param current_item {FilesystemItem}
+     * @param current_item {RemoteItem}
      * @param is_trash {boolean}
      */
     async set_toolbar_path(current_item, is_trash) {
@@ -78,7 +78,7 @@ class ViewportToolbar extends AppWidget {
                     }
                     this.hb_elements.path.append(div);
                 }
-                item = item.parent_item ? await item.filesystem().fetch_item(item.parent_item) : null;
+                item = item.parent_item ? await item.pool().fetch_item(item.parent_item) : null;
             }
         }
     }

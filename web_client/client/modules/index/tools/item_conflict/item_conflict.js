@@ -3,7 +3,7 @@ import {delete_item, restore_item} from "../delete_item/delete_item";
 /**
  * @param app {FileshareApp}
  * @param item_name {string}
- * @param existing {FilesystemItem}
+ * @param existing {RemoteItem}
  * @return {Promise<object>}
  */
 async function overwrite_or_restore(app, item_name, existing) {

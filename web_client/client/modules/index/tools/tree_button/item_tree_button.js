@@ -7,11 +7,11 @@ import {StateSelection} from "../../../../utilities/state_selection";
 
 class ItemTreeButton extends TreeButton {
     /**
-     * @param item {FilesystemItem}
+     * @param item {RemoteItem}
      */
     set_directory(item) {
         /**
-         * @type {FilesystemItem}
+         * @type {RemoteItem}
          * @private
          */
         /**
@@ -51,7 +51,7 @@ class ItemTreeButton extends TreeButton {
         if (this._item) {
             if (new_tab) {
                 if (this._item.in_trash)
-                    window.open(await (await Repository.find(this.get_app(), this._item.repository)).trash_url(this.get_app()));
+                    window.open(await (await this.get_app().pool.fetch_repository(this._item.repository)).trash_url());
                 else
                     window.open(await this._item.url(this.get_app()));
             }

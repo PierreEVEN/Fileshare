@@ -1,7 +1,7 @@
 import {Repository} from "../../../types/repository";
 import {User} from "../../../types/user";
 import {context_menu_my_repositories} from "../context_menu/contexts/context_my_repositories";
-import {EventManager, GLOBAL_EVENTS} from "../../../types/event_manager";
+import {EventManager} from "../../../types/event_manager";
 import {APP_COOKIES} from "../tools/cookies/cookies";
 import {AppWidget} from "../../../app_widget";
 import "./category"
@@ -30,11 +30,7 @@ class SideBar extends AppWidget {
         for (const element of div)
             this.append(element);
 
-        GLOBAL_EVENTS.add('on_connected_user_changed', async (data) => {
-            this._refresh(data.new);
-        });
-
-        this._add_repository = GLOBAL_EVENTS.add('add_repository', async (repository) => {
+        this._add_repository = this.get_app().pool.events.add('add_repository', async (repository) => {
             if (this._my_repos_expanded && !this._my_repositories_loaded.has(repository.id) && this.get_app().state.connected_user() && repository.owner === this.get_app().state.connected_user().id) {
                 this._elements.my_repositories.add_repository(repository);
             }
@@ -50,10 +46,17 @@ class SideBar extends AppWidget {
                 await this._state_selection_changed(selection);
             })
 
+        this._cb_user_connected = this.get_app().state.events.add('user_connected', async (data) => {
+            this._refresh(data.new);
+        });
+
         this._refresh(this.get_app().state.connected_user());
     }
 
     disconnectedCallback() {
+        if (this._cb_user_connected)
+            this._cb_user_connected.remove();
+        delete this._cb_user_connected;
         if (this._on_select_cb)
             this._on_select_cb.remove();
         delete this._on_select_cb;

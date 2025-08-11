@@ -79,50 +79,50 @@ class AppState {
                 APP_COOKIES.push_last_repositories(selection.repository.id)
 
             if (with_state) {
-                const repository = selection.repository ? selection.repository : selection.item ? await Repository.find(this.app, selection.item.repository) : null;
-                const user = selection.user || (repository ? await User.fetch(this.app, repository.owner) : null);
+                const repository = selection.repository ? selection.repository : selection.item ? await this.app.pool.fetch_repository(selection.item.repository) : null;
+                const user = selection.user || (repository ? await this.app.pool.fetch_user(repository.owner) : null);
                 if (selection.item) {
                     if (selection.in_trash)
                         history.pushState({
                             app_action: true,
                             selection: selection._get_raw_data(),
-                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash`);
+                        }, "", `${this.app.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash`);
                     else
                         history.pushState({
                             app_action: true,
                             selection: selection._get_raw_data(),
-                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/tree${selection.item.absolute_path.encoded()}`);
+                        }, "", `${this.app.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/tree${selection.item.absolute_path.encoded()}`);
                 } else if (selection.repository) {
                     if (selection.in_settings)
                         history.pushState({
                             app_action: true,
                             selection: selection._get_raw_data(),
-                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/settings`);
+                        }, "", `${this.app.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/settings`);
                     else if (selection.in_trash)
                         history.pushState({
                             app_action: true,
                             selection: selection._get_raw_data(),
-                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash`);
+                        }, "", `${this.app.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}/trash`);
                     else
                         history.pushState({
                             app_action: true,
                             selection: selection._get_raw_data(),
-                        }, "", `${this.app.app_config.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}`);
+                        }, "", `${this.app.origin()}/${user.name.encoded()}/${repository.url_name.encoded()}`);
                 } else if (selection.user) {
                     history.pushState({
                         app_action: true,
                         selection: selection._get_raw_data(),
-                    }, "", `${this.app.app_config.origin()}/${user.name.encoded()}`);
+                    }, "", `${this.app.origin()}/${user.name.encoded()}`);
                 } else if (selection.in_admin_pannel) {
                     history.pushState({
                         app_action: true,
                         selection: selection._get_raw_data(),
-                    }, "", `${this.app.app_config.origin()}/administration`);
+                    }, "", `${this.app.origin()}/administration`);
                 } else {
                     history.pushState({
                         app_action: true,
                         selection: selection._get_raw_data(),
-                    }, "", `${this.app.app_config.origin()}`);
+                    }, "", `${this.app.origin()}`);
                 }
             }
         }

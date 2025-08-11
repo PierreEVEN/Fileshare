@@ -1,3 +1,4 @@
+use std::collections::{HashMap, HashSet};
 use crate::app_ctx::AppCtx;
 use crate::permissions::Permissions;
 use crate::require_connected_user;
@@ -10,18 +11,20 @@ use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use database::async_zip::AsyncDirectoryZip;
-use database::item::{DbItem, ItemSearchData, Trash};
+use database::item::{DbItem, Trash};
 use database::repository::{DbRepository};
 use database::subscription::{Subscription, SubscriptionAccessType};
 use database::user::DbUser;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio_util::io::ReaderStream;
 use tracing::info;
-use types::database_ids::{DatabaseId, RepositoryId, UserId};
+use types::database_ids::{DatabaseId, ItemId, RepositoryId, UserId};
 use types::enc_string::EncString;
+use types::item::Item;
 use types::repository::{Repository, RepositoryStatus};
+use types::user::User;
 use utils::server_error::ServerError;
 
 pub struct RepositoryRoutes {}
@@ -37,16 +40,214 @@ impl RepositoryRoutes {
             .route("/create", post(create_repository).with_state(ctx.clone()))
             .route("/delete", post(delete_repository).with_state(ctx.clone()))
             .route("/root-content", post(root_content).with_state(ctx.clone()))
+            .route("/fetch", post(fetch).with_state(ctx.clone()))
             .route("/download/{id}", get(download).with_state(ctx.clone()))
             .route("/update", post(update).with_state(ctx.clone()))
             .route("/subscribe", post(subscribe).with_state(ctx.clone()))
             .route("/unsubscribe", post(unsubscribe).with_state(ctx.clone()))
             .route("/stats", post(stats).with_state(ctx.clone()))
             .route("/subscriptions", post(subscriptions).with_state(ctx.clone()))
-            .route("/search", post(search).with_state(ctx.clone()))
             .route("/trash-content", post(trash_content).with_state(ctx.clone()));
         Ok(router)
     }
+}
+
+async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
+    #[derive(Deserialize)]
+    pub struct FetchData {
+        items: Option<Vec<ItemId>>,
+        repositories: Option<Vec<RepositoryId>>,
+        users: Option<Vec<UserId>>,
+        directory_content: Option<Vec<ItemId>>,
+        repository_roots: Option<Vec<RepositoryId>>,
+        trash_roots: Option<Vec<RepositoryId>>,
+        content_to: Option<Vec<ItemId>>
+    }
+
+    #[derive(Serialize)]
+    pub struct RepositoryContentResult {
+        repository: RepositoryId,
+        content: HashSet<ItemId>
+    }
+
+    #[derive(Serialize)]
+    pub struct DirectoryContentResult {
+        directory: ItemId,
+        content: HashSet<ItemId>
+    }
+
+    #[derive(Serialize, Default)]
+    pub struct FetchResult {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        repositories: Option<Vec<Repository>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        users: Option<Vec<User>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        items: Option<Vec<Item>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        repository_roots: Option<Vec<RepositoryContentResult>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        trash_roots: Option<Vec<RepositoryContentResult>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        directory_content: Option<Vec<DirectoryContentResult>>
+    }
+
+    let permissions = Permissions::new(&request)?;
+    let json = Json::<FetchData>::from_request(request, &ctx).await.map_err(|err| { Error::msg(format!("Invalid body : {err}")) })?;
+    let mut result = FetchResult::default();
+    let mut output_repositories = HashMap::new();
+    let mut output_repository_roots = HashMap::new();
+    let mut output_directory_contents = HashMap::new();
+    let mut output_users = HashMap::new();
+    let mut output_items = HashMap::new();
+
+    if let Some(repositories) = &json.repositories {
+        for repository in repositories {
+            if !output_repositories.contains_key(repository) {
+                let repository = DbRepository::from_id(&ctx.database, repository).await?;
+                permissions.view_repository(&ctx.database, &repository).await?.require()?;
+                output_repositories.insert(repository.id().clone(), repository);
+            }
+        }
+    }
+
+    if let Some(users) = &json.users {
+        for user in users {
+            if !output_users.contains_key(user) {
+                output_users.insert(user.clone(), DbUser::from_id(&ctx.database, user).await?);
+            }
+        }
+    }
+
+    if let Some(items) = &json.items {
+        for item in items {
+            if !output_items.contains_key(item) {
+                let item = DbItem::from_id(&ctx.database, item, Trash::Both).await?;
+                permissions.view_item(&ctx.database, &item).await?.require()?;
+                output_items.insert(item.id().clone(), item);
+            }
+        }
+    }
+
+    if let Some(repositories) = &json.repository_roots {
+        for repository in repositories {
+            if !output_repository_roots.contains_key(repository) {
+                permissions.view_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.require()?;
+                let mut content = HashSet::new();
+                for root_element in DbItem::repository_root(&ctx.database, &repository, Trash::Both).await? {
+                    if !output_items.contains_key(root_element.id()) {
+                        output_items.insert(root_element.id().clone(), root_element.clone());
+                    }
+                    content.insert(root_element.id().clone());
+                }
+                output_repository_roots.insert(repository.clone(), content);
+            }
+        }
+    }
+
+    if let Some(repositories) = &json.trash_roots {
+        let mut result_trash_roots = vec![];
+        for repository in repositories {
+            permissions.upload_to_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.require()?;
+            let mut content = HashSet::new();
+            for root_element in DbItem::repository_trash_root(&ctx.database, &repository).await? {
+                if !output_items.contains_key(root_element.id()) {
+                    output_items.insert(root_element.id().clone(), root_element.clone());
+                }
+                content.insert(root_element.id().clone());
+            }
+            result_trash_roots.push(RepositoryContentResult {
+                repository: repository.clone(),
+                content,
+            });
+        }
+        if !result_trash_roots.is_empty() {
+            result.trash_roots = Some(result_trash_roots);
+        }
+    }
+
+    if let Some(directories) = &json.directory_content {
+        for directory in directories {
+            permissions.view_item(&ctx.database, &DbItem::from_id(&ctx.database, &directory, Trash::Both).await?).await?.require()?;
+            let mut content = HashSet::new();
+            for root_element in DbItem::from_parent(&ctx.database, &directory, Trash::Both).await? {
+                if !output_items.contains_key(root_element.id()) {
+                    output_items.insert(root_element.id().clone(), root_element.clone());
+                }
+                content.insert(root_element.id().clone());
+            }
+            output_directory_contents.insert(directory.clone(), content);
+        }
+    }
+
+    if let Some(content_to) = &json.content_to {
+
+        for target in content_to {
+            let mut current_target = target.clone();
+            loop {
+                let data = DbItem::from_id(&ctx.database, &current_target, Trash::Both).await?;
+                if !permissions.view_item(&ctx.database, &data).await?.granted() {
+                    break;
+                }
+                if let Some(parent) = &data.parent_item {
+                    if !output_directory_contents.contains_key(data.id()) {
+                        let mut content = HashSet::new();
+                        for content_item in DbItem::from_parent(&ctx.database, parent, Trash::Both).await? {
+                            content.insert(content_item.id().clone());
+                        }
+                        output_directory_contents.insert(parent.clone(), content);
+                    }
+                } else {
+                    if !output_repository_roots.contains_key(&data.repository) {
+                        let mut content = HashSet::new();
+                        for content_item in DbItem::repository_root(&ctx.database, &data.repository, Trash::Both).await? {
+                            content.insert(content_item.id().clone());
+                        }
+                        output_repository_roots.insert(data.repository.clone(), content);
+                    }
+                }
+                if !output_items.contains_key(data.id()) {
+                    output_items.insert(data.id().clone(), data.clone());
+                }
+                if let Some(parent) = data.parent_item {
+                    current_target = parent;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    
+    if !output_repositories.is_empty() {
+        result.repositories = Some(output_repositories.values().cloned().collect());
+    }
+    if !output_users.is_empty() {
+        result.users = Some(output_users.values().cloned().collect());
+    }
+    if !output_items.is_empty() {
+        result.items = Some(output_items.values().cloned().collect());
+    }
+    if !output_repository_roots.is_empty() {
+        let mut repository_roots = vec![];
+        for (repository, content) in output_repository_roots {
+            repository_roots.push({RepositoryContentResult {
+                repository,
+                content,
+            }})
+        }
+        result.repository_roots = Some(repository_roots);
+    }
+    if !output_directory_contents.is_empty() {
+        let mut directory_contents = vec![];
+        for (directory, content) in output_directory_contents {
+            directory_contents.push({DirectoryContentResult {
+                directory,
+                content,
+            }})
+        }
+        result.directory_content = Some(directory_contents);
+    }
+    Ok(Json(result))
 }
 
 /// Find repository by url name
@@ -100,7 +301,6 @@ async fn content(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, req
     let items = DbItem::from_repository(&ctx.database, &repository, Trash::No).await?;
     Ok(Json(items))
 }
-
 
 /// Get repositories owned by connected user
 async fn get_owned_repositories(State(ctx): State<Arc<AppCtx>>, request: Request) -> impl IntoResponse {
@@ -306,14 +506,4 @@ async fn stats(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
     let data = Json::<RepositoryId>::from_request(request, &ctx).await?.0;
     permissions.edit_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &data).await?).await?.require()?;
     Ok(Json(DbRepository::stats(&DbRepository::from_id(&ctx.database, &data).await?, &ctx.database).await?))
-}
-
-/// Search element in repository
-async fn search(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
-    let permissions = Permissions::new(&request)?;
-    let data = Json::<ItemSearchData>::from_request(request, &ctx).await?.0;
-    for repos in &data.repositories {
-        permissions.view_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repos.repository).await?).await?.require()?;
-    }
-    Ok(Json(DbItem::search(&ctx.database, data).await?))
 }

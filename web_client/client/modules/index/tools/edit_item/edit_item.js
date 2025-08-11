@@ -1,10 +1,9 @@
 import {EncString} from "../../../../types/encstring";
-import {FilesystemItem} from "../../../../types/filesystem_stream";
 import {Message, NOTIFICATION} from "../message_box/notification";
 
 /**
  * @param app {FileshareApp}
- * @param item {FilesystemItem}
+ * @param item {RemoteItem}
  * @return {Promise<void>}
  */
 async function edit_item(app, item) {

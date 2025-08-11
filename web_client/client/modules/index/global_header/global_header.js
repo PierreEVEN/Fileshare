@@ -1,5 +1,4 @@
 import {Authentication} from "../tools/authentication/authentication";
-import {GLOBAL_EVENTS} from "../../../types/event_manager";
 import {AppWidget} from "../../../app_widget";
 import {Filter} from "../../../types/filter/filter";
 import {StateSelection} from "../../../utilities/state_selection";
@@ -47,7 +46,7 @@ class AppHeader extends AppWidget {
             }
         });
 
-        GLOBAL_EVENTS.add('on_connected_user_changed', async (data) => {
+        this.get_app().state.events.add('user_connected', async (data) => {
             this.refresh(data.new);
         });
 

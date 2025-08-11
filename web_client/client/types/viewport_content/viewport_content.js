@@ -1,18 +1,20 @@
-import {EventManager, GLOBAL_EVENTS} from "../event_manager";
+import {EventManager} from "../event_manager";
 import {DirectoryContentProvider, RepositoryRootProvider} from "./providers";
-import {Repository} from "../repository";
 
 class ContentProvider {
-    constructor() {
-
+    /**
+     * @param pool {ContentPool}
+     */
+    constructor(pool) {
+        console.assert(pool);
         this.events = new EventManager();
-        this._add_event = GLOBAL_EVENTS.add('add_item', async (item) => {
+        this._add_event = pool.events.add('add_item', async (item) => {
             await this._internal_add_item(item)
         })
     }
 
     /**
-     * @return {Promise<FilesystemItem[]>}
+     * @return {Promise<RemoteItem[]>}
      */
     async get_content() {
         return [];
@@ -123,11 +125,11 @@ class ViewportContent {
 
         this._pending_regeneration = false;
 
-        this._listener_remove = GLOBAL_EVENTS.add('remove_item', async (item) => {
+        this._listener_remove = viewport.get_app().pool.events.add('remove_item', async (item) => {
             await this._remove_entry(item);
             if (this._provider instanceof DirectoryContentProvider && this._provider.directory) {
                 if (await this._provider.directory.is_in_parents(item.id) || this._provider.directory.id === item.id)
-                    await this.set_content_provider(new RepositoryRootProvider(await Repository.find(viewport.get_app(), this._provider.directory.repository)))
+                    await this.set_content_provider(new RepositoryRootProvider(await viewport.get_app().pool.fetch_repository(this._provider.directory.repository)))
             }
         })
     }
@@ -173,13 +175,6 @@ class ViewportContent {
      */
     get_content_provider() {
         return this._provider
-    }
-
-    get_filesystem() {
-        for (const item of this._displayed_items.values()) {
-            return item.filesystem();
-        }
-        return null;
     }
 
     get_displayed_items() {

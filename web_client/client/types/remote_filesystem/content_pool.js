@@ -74,6 +74,8 @@ class ContentPool {
         else
             this._request_in_queue = request;
 
+        if (this._running_request)
+            await this._next_request_promise
         this._try_execute_pending_request();
         await this._next_request_promise;
     }
@@ -85,41 +87,51 @@ class ContentPool {
         this._running_request = this._request_in_queue;
         this._request_in_queue = null;
 
-        this.get_app().fetch_api('repository/content', 'POST', this._running_request.make_body(this))
+        this.get_app().fetch_api('repository/fetch', 'POST', this._running_request.make_body(this))
             .then(async request_result => {
-                console.log(request_result)
-                for (const repository of request_result.repositories)
-                    await this._register_repository(repository);
+                if (typeof(request_result) === "string") {
+                    console.error("Failed to fetch content :", request_result);
+                    return;
+                }
 
-                for (const user of request_result.users)
+                if (request_result.repositories)
+                    for (const repository of request_result.repositories)
+                        await this._register_repository(repository);
+
+                if (request_result.users)
+                    for (const user of request_result.users)
                     await this._register_user(user);
 
-                for (const item of request_result.items)
-                    await this._register_item(item);
+                if (request_result.items)
+                    for (const item of request_result.items)
+                        await this._register_item(item);
 
-                for (const data of request_result.repository_roots) {
-                    const repository = this.find_repository(data.repository);
-                    console.assert(repository, `Fetched root content of repository ${data.repository}} but base repository does not exists`)
-                    repository.children = new Set(data.content);
-                }
+                if (request_result.repository_roots)
+                    for (const data of request_result.repository_roots) {
+                        const repository = this.find_repository(data.repository);
+                        console.assert(repository, `Fetched root content of repository ${data.repository}} but base repository does not exists`)
+                        repository._children = new Set(data.content);
+                    }
 
-                for (const data of request_result.trash_roots) {
-                    const repository = this.find_repository(data.repository);
-                    console.assert(repository, `Fetched trash content of repository ${data.repository}} but base repository does not exists`)
-                    repository.trash = new Set(data.content);
-                }
+                if (request_result.trash_roots)
+                    for (const data of request_result.trash_roots) {
+                        const repository = this.find_repository(data.repository);
+                        console.assert(repository, `Fetched trash content of repository ${data.repository}} but base repository does not exists`)
+                        repository.trash = new Set(data.content);
+                    }
 
-                for (const data of request_result.directory_content) {
-                    const directory = this.find_item(data.directory);
-                    console.assert(directory, `Fetched content of directory ${data.directory}} but base directory does not exists`)
-                    directory.children = new Set(data.content);
-                }
+                if (request_result.directory_content)
+                    for (const data of request_result.directory_content) {
+                        const directory = this.find_item(data.directory);
+                        console.assert(directory, `Fetched content of directory ${data.directory}} but base directory does not exists`)
+                        directory._children = new Set(data.content);
+                    }
             }).catch(error => {
                 console.error("Failed to fetch content :", error);
             })
             .finally(() => {
+                this._resolve_running_request(this._running_request.indices);
                 delete this._running_request;
-                this._resolve_running_request();
                 this._next_request_promise = new Promise((resolve) => this._resolve_running_request = resolve);
                 this._try_execute_pending_request();
             });
@@ -129,7 +141,7 @@ class ContentPool {
         const existing = this.find_repository(data.id);
         if (!existing) {
             const repository = new Repository(data);
-            repository.pool = this;
+            repository._pool = this;
             this._repositories.set(data.id, repository);
             await this.events.broadcast('add_repository', repository);
             return repository;
@@ -141,7 +153,7 @@ class ContentPool {
         const existing = this.find_user(data.id);
         if (!existing) {
             const user = new User(data);
-            user.pool = this;
+            user._pool = this;
             this._users.set(data.id, user);
             await this.events.broadcast('add_user', user);
             return user;
@@ -153,16 +165,16 @@ class ContentPool {
         const existing = this.find_item(data.id);
         if (!existing) {
             const item = new RemoteItem(data);
-            item.pool = this;
+            item._pool = this;
             this._items.set(data.id, item);
             if (item.parent_item) {
                 const parent = this.find_item(item.parent_item);
-                if (parent.children)
-                    parent.children.add(item.id);
+                if (parent && parent._children)
+                    parent._children.add(item.id);
             } else {
                 const repository = this.find_repository(item.repository);
-                if (repository.children)
-                    repository.children.add(item.id);
+                if (repository._children)
+                    repository._children.add(item.id);
             }
             await this.events.broadcast('add_item', item);
             return item;
@@ -178,12 +190,12 @@ class ContentPool {
         const repository = this.find_repository(item.repository);
         console.assert(repository, `Cannot remove item ${item.name.plain()} as it's parent repository does not exists`);
 
-        if (repository.children)
-            repository.children.delete(item.id);
+        if (repository._children)
+            repository._children.delete(item.id);
         if (repository.trash)
             repository.trash.delete(item.id);
 
-        for (const child_id of item.children) {
+        for (const child_id of item._children) {
             const child = this.find_item(child_id);
             if (child)
                 await this.remove_item(child);
@@ -191,8 +203,8 @@ class ContentPool {
 
         if (item.parent_item) {
             const parent = this.find_item(item.parent_item);
-            if (parent && parent.children)
-                parent.children.delete(item.id);
+            if (parent && parent._children)
+                parent._children.delete(item.id);
         }
         this._items.delete(item.id);
 
@@ -225,6 +237,7 @@ class ContentPool {
         if (existing)
             return existing;
         await this.fetch_content(new ContentRequest().repository([id]));
+        return this.find_repository(id);
     }
 
     /**
@@ -244,6 +257,7 @@ class ContentPool {
         if (existing)
             return existing;
         await this.fetch_content(new ContentRequest().item([id]));
+        return this.find_item(id);
     }
 
     /**
@@ -263,6 +277,7 @@ class ContentPool {
         if (existing)
             return existing;
         await this.fetch_content(new ContentRequest().user([id]));
+        return this.find_user(id);
     }
 
     /**
@@ -275,7 +290,7 @@ class ContentPool {
             return false;
         if (!item.parent_item)
             return true;
-        return this.has_hierarchy_to(item.parent_item)
+        return this.has_hierarchy_to(item.parent_item);
     }
 
     /**
@@ -324,6 +339,10 @@ class ContentPool {
                 NOTIFICATION.error(new Message(error).title(`Impossible de télécharger la liste des dépôts possédés`));
                 return [];
             });
+    }
+
+    toJSON() {
+        return {}
     }
 }
 

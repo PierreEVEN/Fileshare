@@ -1,5 +1,4 @@
 import {Message, NOTIFICATION} from "../../../tools/message_box/notification";
-import {FilesystemItem} from "../../../../../types/filesystem_stream";
 import {UploadItem} from "./upload_item";
 import {EncString} from "../../../../../types/encstring";
 
@@ -119,7 +118,7 @@ class UploadProcessor {
 
     async upload() {
         if (this.item.parent instanceof UploadItem) {
-            await this.item.parent.create_directory(this.repository.content);
+            await this.item.parent.create_directory();
         }
 
         this._init();

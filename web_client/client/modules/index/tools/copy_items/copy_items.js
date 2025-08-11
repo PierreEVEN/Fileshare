@@ -1,5 +1,4 @@
 import {Message, NOTIFICATION} from "../message_box/notification";
-import {FilesystemItem} from "../../../../types/filesystem_stream";
 
 class Clipboard {
     constructor() {
@@ -13,7 +12,7 @@ class Clipboard {
     }
 
     /**
-     * @param item {FilesystemItem}
+     * @param item {RemoteItem}
      */
     push(item) {
         this._items.set(item.id, item);

@@ -232,9 +232,9 @@ class Uploader extends AppWidget {
             found_item.remove();
 
             if (found_item.parent instanceof UploadItem) {
-                await found_item.parent.create_directory(this.viewport.repository.content);
+                await found_item.parent.create_directory();
             }
-            const existing = await this.viewport.repository.content.find_child(found_item.name, found_item.parent.directory);
+            const existing = await this.viewport.repository.get_pool().find_child(found_item.name, found_item.parent.directory);
             if (existing) {
                 console.warn("Existe deja !!")
                 continue
@@ -282,7 +282,7 @@ class Uploader extends AppWidget {
         const provider = this.viewport.content.get_content_provider();
         if (provider && provider instanceof DirectoryContentProvider) {
             /**
-             * @type {FilesystemItem}
+             * @type {RemoteItem}
              */
             const directory_item = provider['directory'];
             const directory = await this._add_existing_directory(directory_item);
@@ -307,7 +307,7 @@ class Uploader extends AppWidget {
     }
 
     /**
-     * @param directory {FilesystemItem}
+     * @param directory {RemoteItem}
      * @return {Promise<UploadItem>}
      * @private
      */

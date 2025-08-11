@@ -28,7 +28,7 @@ class CarouselOverlay extends AppWidget {
                 item.download();
             },
             share: async () => {
-                let url = `${this.get_app().app_config.origin()}/api/item/get/${item.id}`;
+                let url = `${this.get_app().origin()}/api/item/get/${item.id}`;
                 await navigator.clipboard.writeText(url);
                 NOTIFICATION.success(new Message(url).title("Lien copié dans le presse-papier"))
             }

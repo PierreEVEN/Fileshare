@@ -6,7 +6,7 @@ import {StateSelection} from "../../../../utilities/state_selection";
 class TrashTreeButton extends TreeButton {
     connectedCallback() {
         if (this.hasAttribute('repository')) {
-            Repository.find(this.get_app(), Number(this.getAttribute('repository'))).then(result => {
+            this.get_app().pool.fetch_repository(Number(this.getAttribute('repository'))).then(result => {
                 this._repository = result;
                 super.connectedCallback();
             })

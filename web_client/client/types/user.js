@@ -49,6 +49,13 @@ class User {
 
     constructor(data) {
         this.events = new EventManager();
+
+        /**
+         * @type {ContentPool}
+         * @private
+         */
+        this._pool = null;
+
         this._build_from_data(data);
     }
 
@@ -81,6 +88,13 @@ class User {
         console.assert(!data['password_hash'])
 
         User._LOCAL_CACHE.set(this.id, this);
+    }
+
+    /**
+     * @returns {ContentPool}
+     */
+    get_pool() {
+        return this._pool;
     }
 
     /**
@@ -117,7 +131,7 @@ class User {
             .catch(error => NOTIFICATION.fatal(new Message(error).title(`Recherche échouée`)));
         const found_users = [];
         for (const user_id of users) {
-            found_users.push(await User.fetch(app, user_id));
+            found_users.push(await app.pool.fetch_user(user_id));
         }
         return found_users;
     }

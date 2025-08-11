@@ -1,5 +1,5 @@
 import {AppWidget} from "../../../../app_widget";
-import {GLOBAL_EVENTS} from "../../../../types/event_manager";
+import {ContentRequest} from "../../../../types/remote_filesystem/content_request";
 
 require('./tree_button.scss')
 
@@ -90,7 +90,7 @@ class TreeButton extends AppWidget {
     }
 
     /**
-     * @param item {FilesystemItem}
+     * @param item {RemoteItem}
      * @param expand {boolean}
      */
     async focus_item(item, expand = false) {
@@ -107,7 +107,7 @@ class TreeButton extends AppWidget {
             const hierarchy = [];
             hierarchy.push(item);
             while (hierarchy[hierarchy.length - 1].parent_item) {
-                hierarchy.push(item.filesystem().find(hierarchy[hierarchy.length - 1].parent_item))
+                hierarchy.push(await item.pool().fetch_item(hierarchy[hierarchy.length - 1].parent_item))
             }
             await this._focus_item_internal(hierarchy, expand);
         }
@@ -136,15 +136,6 @@ class TreeButton extends AppWidget {
                 this.elements().content.style.display = 'flex';
                 this.elements().arrow.classList.add('expanded');
                 if (this._cached_divs) {
-
-                    // Prefetch content of this directory content
-                    const items = await this._content_provider.get_content();
-                    if (items.length !== 0) {
-                        const items_to_fetch = [];
-                        for (const item of items)
-                            items_to_fetch.push(item.id);
-                        await items[0].filesystem().directory_content(items_to_fetch);
-                    }
 
                     for (const div of this._cached_divs.values()) {
                         this._insert_child(div)
@@ -217,13 +208,10 @@ class TreeButton extends AppWidget {
         if (this._expandable) {
             const items = await this._content_provider.get_content();
             if (this.expanded()) {
-                // Prefetch content of this directory content
-                if (items.length !== 0) {
-                    const items_to_fetch = [];
-                    for (const item of items)
-                        items_to_fetch.push(item.id);
-                    await items[0].filesystem().directory_content(items_to_fetch);
-                }
+                const request = new ContentRequest();
+                for (const item of items)
+                    request.directory_content([item.id]);
+                await this.get_app().pool.fetch_content(request);
             }
             for (const item of items)
                 if (!item.is_regular_file || this._show_regular_files)
@@ -236,7 +224,7 @@ class TreeButton extends AppWidget {
         })
 
         // Bind add and remove item (required to detect when we should add or remove arrow)
-        this._on_remove_item = GLOBAL_EVENTS.add('remove_item', (item) => {
+        this._on_remove_item = this.get_app().pool.events.add('remove_item', (item) => {
             this._remove_item(item);
         })
     }
@@ -363,7 +351,7 @@ class TreeButton extends AppWidget {
     get_icon() { return "" }
 
     /**
-     * @return {Repository | FilesystemItem}
+     * @return {Repository | RemoteItem}
      */
     this_item() {}
 

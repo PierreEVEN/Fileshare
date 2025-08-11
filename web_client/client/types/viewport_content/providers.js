@@ -1,20 +1,21 @@
 import {ContentProvider} from "./viewport_content";
 import {FilesystemStream} from "../filesystem_stream";
+import {ContentRequest} from "../remote_filesystem/content_request";
 
 class RepositoryRootProvider extends ContentProvider {
     /**
      * @param repository {Repository}
      */
     constructor(repository) {
-        super();
+        super(repository.get_pool());
         console.assert(repository, "Cannot create a RepositoryRootProvider with a null repository");
         this.repository = repository;
     }
 
     async get_content() {
         const items = [];
-        for (const item_id of await FilesystemStream.root_content(this.repository.content.app, [this.repository.id])) {
-            const item = await this.repository.content.fetch_item(item_id);
+        for (const item_id of await this.repository.children()) {
+            const item = await this.repository.get_pool().fetch_item(item_id);
             if (!item.in_trash)
                 items.push(item);
         }
@@ -33,15 +34,15 @@ class RepositoryRootProvider extends ContentProvider {
 
 class DirectoryContentProvider extends ContentProvider {
     /**
-     * @param directory {FilesystemItem}
+     * @param directory {RemoteItem}
      */
     constructor(directory) {
-        super();
+        super(directory.pool());
         console.assert(directory, "Cannot create a DirectoryContentProvider with a null directory");
         if (directory.is_regular_file)
             console.error("Cannot open a file as a directory");
         /**
-         * @type {FilesystemItem}
+         * @type {RemoteItem}
          */
         this.directory = directory;
     }
@@ -52,11 +53,10 @@ class DirectoryContentProvider extends ContentProvider {
 
     async get_content() {
         const items = [];
-        const fs = this.directory.filesystem();
 
-        const directory_content = await fs.directory_content([this.directory.id]);
+        const directory_content = await this.directory.children([this.directory.id]);
         for (const item_id of directory_content) {
-            const item = await fs.fetch_item(item_id);
+            const item = await this.directory.pool().fetch_item(item_id);
             if (!item.in_trash)
                 items.push(item);
         }
@@ -79,16 +79,15 @@ class TrashContentProvider extends ContentProvider {
      * @param repository {Repository}
      */
     constructor(repository) {
-        super();
+        super(repository.get_pool());
         console.assert(repository, "Cannot create a TrashContentProvider with a null repository");
         this.repository = repository;
     }
 
     async get_content() {
         const items = [];
-        for (const item_id of await FilesystemStream.trash_content(this.repository.content.app, [this.repository.id])) {
-            const item = await this.repository.content.fetch_item(item_id);
-            items.push(item);
+        for (const item_id of await this.repository.get_pool().fetch_content(new ContentRequest().trash_root([this.repository.id]))) {
+            items.push(await this.repository.get_pool().fetch_item(item_id));
         }
         return items;
     }
@@ -100,7 +99,7 @@ class TrashContentProvider extends ContentProvider {
     async _internal_add_item(item) {
         await super._internal_add_item(item);
         if (item.in_trash && item.repository === this.repository.id) {
-            if (!item.parent_item || !(await item.filesystem().fetch_item(item.parent_item)).in_trash)
+            if (!item.parent_item || !(await item.get_pool().fetch_item(item.parent_item)).in_trash)
                 this.events.broadcast('add', item);
         }
     }
@@ -113,11 +112,11 @@ class TrashContentProvider extends ContentProvider {
 class FilterContentProvider extends ContentProvider {
     /**
      * @param repository {Repository}
-     * @param directory {FilesystemItem}
+     * @param directory {RemoteItem}
      * @param filter {Filter}
      */
     constructor(repository, directory, filter) {
-        super();
+        super(repository ? repository.get_pool() : directory.pool());
         this.repository = repository;
         this.directory = directory;
         this.filter = filter;
@@ -126,7 +125,7 @@ class FilterContentProvider extends ContentProvider {
     async get_content() {
         if (!this._cache) {
             this._cache = [];
-            const items = await this.repository.content.fetch_filtered(this.filter, this.directory);
+            const items = await this.repository.get_pool().fetch_filtered(this.filter, this.directory);
             for (const item of items)
                 this._cache.push(item);
         }

@@ -1,6 +1,5 @@
 import {Repository} from "../../../../../types/repository";
 import {EncString} from "../../../../../types/encstring";
-import {FilesystemItem} from "../../../../../types/filesystem_stream";
 import {overwrite_or_restore} from "../../../tools/item_conflict/item_conflict";
 import {Message, NOTIFICATION} from "../../../tools/message_box/notification";
 
@@ -24,7 +23,7 @@ class UploadItem {
          */
         this.parent = null;
         /**
-         * @type {FilesystemItem}
+         * @type {RemoteItem}
          */
         this.directory = data.directory;
         /**
@@ -124,7 +123,7 @@ class UploadItem {
 
     /**
      * @param app {FileshareApp}
-     * @param directory {FilesystemItem}
+     * @param directory {RemoteItem}
      * @return {UploadItem}
      * @constructor
      */
@@ -172,15 +171,14 @@ class UploadItem {
     }
 
     /**
-     * @param filesystem {FilesystemStream}
      * @return {Promise<void>}
      */
-    async create_directory(filesystem) {
+    async create_directory() {
         if (this.directory)
             return;
         if (this.parent instanceof UploadItem) {
             if (!this.parent.directory) {
-                await this.parent.create_directory(filesystem);
+                await this.parent.create_directory();
             }
             if (!this.parent.directory) {
                 console.error(`Failed to create parent directory for : ${this.parent.name}`);
@@ -200,9 +198,9 @@ class UploadItem {
      * @private
      */
     async _get_or_create_dir(name, repository_id, parent) {
-        const repository = await Repository.find(this.app, repository_id);
-        let parent_entry = parent ? await repository.content.fetch_item(parent) : null;
-        const existing = await repository.content.find_child(name, parent_entry);
+        const repository = await this.app.pool.fetch_repository(repository_id);
+        let parent_entry = parent ? await repository.get_pool().fetch_item(parent) : null;
+        const existing = await repository.get_pool().find_child(name, parent_entry);
         if (existing) {
             if (existing.in_trash) {
                 const res = (await overwrite_or_restore(this.app, existing.name.plain(), existing));

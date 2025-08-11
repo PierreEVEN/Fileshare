@@ -1,9 +1,7 @@
 import {Message, NOTIFICATION} from "../../tools/message_box/notification";
-import {Repository} from "../../../../types/repository";
 import {User} from "../../../../types/user";
 import {edit_user} from "../../tools/edit_user/edit_user";
 import {APP_COOKIES} from "../../tools/cookies/cookies";
-import {GLOBAL_EVENTS} from "../../../../types/event_manager";
 import {human_readable_timestamp} from "../../../../utilities/utils";
 import {AppWidget} from "../../../../app_widget";
 import {StateSelection} from "../../../../utilities/state_selection";
@@ -37,7 +35,7 @@ class UserViewport extends AppWidget {
             await this._fill_data();
         });
 
-        this._connected_user_event = GLOBAL_EVENTS.add('on_connected_user_changed', async (change) => {
+        this._connected_user_event = this.get_app().state.events.add('user_connected', async (change) => {
             if (change.old === user || change.new === user) {
                 await this._fill_data();
             }
@@ -72,7 +70,7 @@ class UserViewport extends AppWidget {
             this.append(element);
         this._elements = viewport.hb_elements;
 
-        let repositories = await Repository.find(this.get_app(), await this.get_app().fetch_api(`user/repositories/${this.user.id}`)
+        let repositories = await this.get_app().pool.fetch_repository(await this.get_app().fetch_api(`user/repositories/${this.user.id}`)
             .catch(err => {
                 NOTIFICATION.warn(new Message(err).title("Failed to retrieve user repositories"));
                 return [];

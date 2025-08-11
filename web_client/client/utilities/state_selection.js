@@ -89,12 +89,11 @@ class StateSelection {
     async _from_raw_data(app, data) {
         for (const [key, value] of Object.entries(data)) {
             if (key === "repository")
-                this.repository = await Repository.find(app, value);
+                this.repository = await app.pool.fetch_repository(value);
             else if (key === "user")
-                this.user = await User.fetch(app, value);
+                this.user = await app.pool.fetch_user(value);
             else if (key === "item") {
-                const repository = await Repository.find(app, value.repository);
-                this.item = await repository.content.find(value.id);
+                this.item = await app.pool.fetch_item(value.id);
             } else {
                 this[key] = value;
             }

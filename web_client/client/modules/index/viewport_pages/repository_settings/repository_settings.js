@@ -50,7 +50,7 @@ class RepositorySettings extends AppWidget {
                 merged_data.contributors = [];
                 for (const contributor of data.contributors)
                     merged_data.contributors.push({
-                        name: (await User.fetch(this.get_app(), contributor.id)).login.plain(),
+                        name: (await this.get_app().pool.fetch_user(contributor.id)).login.plain(),
                         count: contributor.count
                     });
 
@@ -90,7 +90,7 @@ class RepositorySettings extends AppWidget {
     }
 
     async _add_subscription(data) {
-        let user = await User.fetch(this.get_app(), data.owner);
+        let user = await this.get_app().pool.fetch_user(data.owner);
         const auth_widget = require('./authorization.hbs')({
             name: user.login.plain(),
             access_type: data.access_type,
