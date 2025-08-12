@@ -61,7 +61,7 @@ class ItemTreeButton extends TreeButton {
     }
 
     get_content() {
-        return this._item ? new DirectoryContentProvider(this._item) : null;
+        return this._item && !this._item.is_regular_file ? new DirectoryContentProvider(this._item) : null;
     }
 }
 

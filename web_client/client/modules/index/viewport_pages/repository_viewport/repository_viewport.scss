@@ -63,7 +63,8 @@ page-repository {
     padding: 0;
 
     &:not(:hover) {
-      border: 1px solid $border-default;
+      border: 2px solid #53812c;
+      background-color: #53812c6b;
     }
 
     img {

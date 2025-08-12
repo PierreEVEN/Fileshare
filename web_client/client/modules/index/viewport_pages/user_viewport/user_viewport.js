@@ -5,6 +5,7 @@ import {APP_COOKIES} from "../../tools/cookies/cookies";
 import {human_readable_timestamp} from "../../../../utilities/utils";
 import {AppWidget} from "../../../../app_widget";
 import {StateSelection} from "../../../../utilities/state_selection";
+import {ContentRequest} from "../../../../types/remote_filesystem/content_request";
 
 require('./user_settings.scss')
 
@@ -70,14 +71,15 @@ class UserViewport extends AppWidget {
             this.append(element);
         this._elements = viewport.hb_elements;
 
-        let repositories = await this.get_app().pool.fetch_repository(await this.get_app().fetch_api(`user/repositories/${this.user.id}`)
+        const repository_ids = await this.get_app().fetch_api(`user/repositories/${this.user.id}`)
             .catch(err => {
-                NOTIFICATION.warn(new Message(err).title("Failed to retrieve user repositories"));
-                return [];
-            }));
+            NOTIFICATION.warn(new Message(err).title("Failed to retrieve user repositories"));
+            return [];
+        });
+        await this.get_app().pool.fetch_content(new ContentRequest().repository(repository_ids));
 
-        for (const repository of repositories) {
-            this._elements.repository_list.append(document.createElement('repository-tree-button').set_repository(repository));
+        for (const repository of repository_ids) {
+            this._elements.repository_list.append(document.createElement('repository-tree-button').set_repository(this.get_app().pool.find_repository(repository)));
         }
 
         if (this.user === this.get_app().state.connected_user()) {

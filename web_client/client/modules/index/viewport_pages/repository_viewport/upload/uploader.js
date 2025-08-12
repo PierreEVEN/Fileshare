@@ -4,6 +4,7 @@ import {UploadProcessor} from "./upload_processor";
 import {EventManager} from "../../../../../types/event_manager";
 import {humanFileSize, seconds_to_str} from "../../../../../utilities/utils";
 import {AppWidget} from "../../../../../app_widget";
+import {Message, NOTIFICATION} from "../../../tools/message_box/notification";
 
 require("./uploader.scss")
 
@@ -194,7 +195,6 @@ class Uploader extends AppWidget {
 
 
     async start_upload() {
-
         this.total_to_upload = this.total_size;
         this._time_records = [];
         this.current_progress = this.uploaded;
@@ -234,9 +234,10 @@ class Uploader extends AppWidget {
             if (found_item.parent instanceof UploadItem) {
                 await found_item.parent.create_directory();
             }
-            const existing = await this.viewport.repository.get_pool().find_child(found_item.name, found_item.parent.directory);
+
+            const existing = found_item.parent.directory ? await found_item.parent.directory.find_child(found_item.name) : await this.viewport.repository.find_child(found_item.name);
             if (existing) {
-                console.warn("Existe deja !!")
+                NOTIFICATION.warn(new Message("Le fichier n'a pas été envoyé").title(`Le fichier ${found_item.name} existe déjà`))
                 continue
             }
 

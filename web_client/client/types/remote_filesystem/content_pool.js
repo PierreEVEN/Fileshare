@@ -86,7 +86,6 @@ class ContentPool {
 
         this._running_request = this._request_in_queue;
         this._request_in_queue = null;
-
         this.get_app().fetch_api('repository/fetch', 'POST', this._running_request.make_body(this))
             .then(async request_result => {
                 if (typeof(request_result) === "string") {
@@ -199,11 +198,9 @@ class ContentPool {
         if (repository.trash)
             repository.trash.delete(item.id);
 
-        for (const child_id of item._children) {
-            const child = this.find_item(child_id);
-            if (child)
-                await this.remove_item(child);
-        }
+        if (item._children)
+            for (const child_id of item._children)
+                await this.remove_item(child_id);
 
         if (item.parent_item) {
             const parent = this.find_item(item.parent_item);

@@ -33,7 +33,7 @@ document.addEventListener('keydown', async function (event) {
     if (event.target.type === 'text')
         return;
     if (CURRENT_VIEWPORT.get_app().get_modal().is_open()) {
-        if ((event.key === 'Backspace' || event.key === 'Escape'))
+        if (event.key === 'Escape')
             CURRENT_VIEWPORT.get_app().get_modal().close();
         return;
     }
@@ -204,7 +204,7 @@ class RepositoryViewport extends AppWidget {
                     if (this.selector.is_selected(item.id)) {
                         const items = [];
                         for (const item_id of this.selector.get_selected_items()) {
-                            items.push(await item.get_pool().fetch_item(item_id));
+                            items.push(await item.pool().fetch_item(item_id));
                         }
                         context_menu_item(this.get_app(), items);
                     } else {
@@ -287,6 +287,22 @@ class RepositoryViewport extends AppWidget {
             this._on_state_select_cb = this.get_app().state.events.add('select', async selection => {
                 await this._on_state_select(selection)
             })
+
+        this.get_app().state.events.add('user_connected', (user) => {
+            this.set_upload_button_visible(!!user.new)
+        })
+        this.set_upload_button_visible(!!this.get_app().state.connected_user())
+    }
+
+    set_upload_button_visible(visible) {
+        if (visible) {
+            if (!this.uploader)
+                this._elements.upload_button.style.display = 'flex';
+        }
+        else {
+            this.close_upload_container();
+                this._elements.upload_button.style.display = 'none';
+        }
     }
 
     /**
@@ -318,6 +334,7 @@ class RepositoryViewport extends AppWidget {
             }
             await this._elements.toolbar.set_toolbar_path(selection.in_trash ? null : directory, selection.in_trash);
         } else if (selection.repository) {
+            await this._update_description(selection.repository);
             this._set_repository(selection.repository);
             await this._elements.toolbar.set_toolbar_path(null, selection.in_trash);
             await this.close_carousel();

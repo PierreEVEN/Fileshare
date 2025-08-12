@@ -1,4 +1,3 @@
-import {Repository} from "../../../../../types/repository";
 import {EncString} from "../../../../../types/encstring";
 import {overwrite_or_restore} from "../../../tools/item_conflict/item_conflict";
 import {Message, NOTIFICATION} from "../../../tools/message_box/notification";
@@ -199,8 +198,7 @@ class UploadItem {
      */
     async _get_or_create_dir(name, repository_id, parent) {
         const repository = await this.app.pool.fetch_repository(repository_id);
-        let parent_entry = parent ? await repository.get_pool().fetch_item(parent) : null;
-        const existing = await repository.get_pool().find_child(name, parent_entry);
+        const existing = parent ? (await repository.get_pool().fetch_item(parent)).find_child(name) : await repository.find_child(name);
         if (existing) {
             if (existing.in_trash) {
                 const res = (await overwrite_or_restore(this.app, existing.name.plain(), existing));
@@ -218,8 +216,9 @@ class UploadItem {
                 parent_item: parent
             }]
         ).catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de créer le dossier")));
+
         if (directories.length === 1) {
-            return await RemoteItem.new(directories[0]);
+            return await repository.get_pool()._register_item(directories[0]);
         }
     }
 }

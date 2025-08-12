@@ -105,8 +105,6 @@ impl AsyncDirectoryZip {
         item_name.remove(0);
         if item.directory.is_some() { item_name += "/" };
 
-        println!("item name : {}", item_name);
-
         let version = if item.file.is_some() { 0x0Au16 } else { 0x14u16 };
 
         let mut enable_data_descriptor = 0x08u16; // enable data descriptor

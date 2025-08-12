@@ -4,6 +4,12 @@ import {TrashContentProvider} from "../../../../types/viewport_content/providers
 import {StateSelection} from "../../../../utilities/state_selection";
 
 class TrashTreeButton extends TreeButton {
+
+    constructor() {
+        super();
+        this._show_regular_files = true;
+    }
+
     connectedCallback() {
         if (this.hasAttribute('repository')) {
             this.get_app().pool.fetch_repository(Number(this.getAttribute('repository'))).then(result => {

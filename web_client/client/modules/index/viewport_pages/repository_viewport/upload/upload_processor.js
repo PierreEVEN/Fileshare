@@ -3,11 +3,14 @@ import {UploadItem} from "./upload_item";
 import {EncString} from "../../../../../types/encstring";
 
 class UploadState {
-    constructor(data) {
+    /**
+     * @param pool {ContentPool}
+     * @param data {object}
+     */
+    constructor(pool, data) {
         this.id = data.id;
         this.finished = data.finished;
-        if (data.item)
-            this.item = RemoteItem.new(data.item);
+        this.item = data.item
     }
 }
 
@@ -62,7 +65,9 @@ class UploadProcessor {
                     return this._fail(`Unhandled response`, `${this._request.status}`)
                 if (this._request.status !== 200)
                     return this._fail(this._request.response)
-                this.state = new UploadState(JSON.parse(this._request.response));
+                this.state = new UploadState(this.item.app.pool, JSON.parse(this._request.response));
+                if (this.state.item)
+                    this.repository.get_pool()._register_item(this.state.item);
                 if (this.state.finished) {
                     this.uploader.progress(this.item.file.size, this.item.file.size);
                     return this.upload_finished();
