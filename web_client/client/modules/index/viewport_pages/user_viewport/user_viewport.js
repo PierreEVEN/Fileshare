@@ -1,5 +1,5 @@
 import {Message, NOTIFICATION} from "../../tools/message_box/notification";
-import {User} from "../../../../types/user";
+import {User} from "../../../../types/remote_filesystem/user";
 import {edit_user} from "../../tools/edit_user/edit_user";
 import {APP_COOKIES} from "../../tools/cookies/cookies";
 import {human_readable_timestamp} from "../../../../utilities/utils";

@@ -1,4 +1,4 @@
-import {Repository} from "../../../../types/repository";
+import {Repository} from "../../../../types/remote_filesystem/repository";
 import {EncString} from "../../../../types/encstring";
 import {Message, NOTIFICATION} from "../message_box/notification";
 

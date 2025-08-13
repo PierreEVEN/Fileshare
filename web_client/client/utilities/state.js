@@ -1,5 +1,5 @@
-import {User} from "../types/user";
-import {Repository} from "../types/repository";
+import {User} from "../types/remote_filesystem/user";
+import {Repository} from "../types/remote_filesystem/repository";
 import {APP_COOKIES} from "../modules/index/tools/cookies/cookies";
 import {EventManager} from "../types/event_manager";
 import {StateSelection} from "./state_selection";

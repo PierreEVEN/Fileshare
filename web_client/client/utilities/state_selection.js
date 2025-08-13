@@ -1,5 +1,5 @@
-import {Repository} from "../types/repository";
-import {User} from "../types/user";
+import {Repository} from "../types/remote_filesystem/repository";
+import {User} from "../types/remote_filesystem/user";
 
 class StateSelection {
     constructor() {

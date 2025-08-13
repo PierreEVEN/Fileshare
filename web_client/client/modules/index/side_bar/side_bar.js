@@ -1,5 +1,5 @@
-import {Repository} from "../../../types/repository";
-import {User} from "../../../types/user";
+import {Repository} from "../../../types/remote_filesystem/repository";
+import {User} from "../../../types/remote_filesystem/user";
 import {context_menu_my_repositories} from "../context_menu/contexts/context_my_repositories";
 import {EventManager} from "../../../types/event_manager";
 import {APP_COOKIES} from "../tools/cookies/cookies";

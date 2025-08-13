@@ -1,6 +1,6 @@
-import {Repository} from "../repository";
+import {Repository} from "./repository";
 import {EventManager} from "../event_manager";
-import {User} from "../user";
+import {User} from "./user";
 import {RemoteItem} from "./remote_item";
 import {Message, NOTIFICATION} from "../../modules/index/tools/message_box/notification";
 import {ContentRequest} from "./content_request";

@@ -1,4 +1,4 @@
-import {Repository} from "../../../../types/repository";
+import {Repository} from "../../../../types/remote_filesystem/repository";
 import {TreeButton} from "./tree_button";
 import {context_menu_repository} from "../../context_menu/contexts/context_repository";
 import {RepositoryRootProvider} from "../../../../types/viewport_content/providers";

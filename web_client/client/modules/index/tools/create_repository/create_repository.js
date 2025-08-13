@@ -1,5 +1,5 @@
 import {EncString} from "../../../../types/encstring";
-import {Repository} from "../../../../types/repository";
+import {Repository} from "../../../../types/remote_filesystem/repository";
 import {Message, NOTIFICATION} from "../message_box/notification";
 import {StateSelection} from "../../../../utilities/state_selection";
 

@@ -1,8 +1,6 @@
 import {EncString} from "../../../../types/encstring";
-import {RemoteItem, FilesystemStream} from "../../../../types/filesystem_stream";
 import {overwrite_or_restore} from "../item_conflict/item_conflict";
 import {Message, NOTIFICATION} from "../message_box/notification";
-import {pow} from "three/tsl";
 
 
 /**

@@ -1,5 +1,4 @@
 import {ContentProvider} from "./viewport_content";
-import {FilesystemStream} from "../filesystem_stream";
 import {ContentRequest} from "../remote_filesystem/content_request";
 
 class RepositoryRootProvider extends ContentProvider {

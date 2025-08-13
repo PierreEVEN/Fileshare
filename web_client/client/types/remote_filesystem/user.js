@@ -1,6 +1,6 @@
-import {EncString} from "./encstring";
-import {Message, NOTIFICATION} from "../modules/index/tools/message_box/notification";
-import {EventManager} from "./event_manager";
+import {EncString} from "../encstring";
+import {Message, NOTIFICATION} from "../../modules/index/tools/message_box/notification";
+import {EventManager} from "../event_manager";
 
 class UserRole {
     constructor(data) {

@@ -1,5 +1,5 @@
-import {User} from "../types/user";
-import {Repository} from "../types/repository";
+import {User} from "../types/remote_filesystem/user";
+import {Repository} from "../types/remote_filesystem/repository";
 import {StateSelection} from "./state_selection";
 
 class InitData {

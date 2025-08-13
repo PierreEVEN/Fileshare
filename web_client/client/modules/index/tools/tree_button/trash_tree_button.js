@@ -1,4 +1,4 @@
-import {Repository} from "../../../../types/repository";
+import {Repository} from "../../../../types/remote_filesystem/repository";
 import {TreeButton} from "./tree_button";
 import {TrashContentProvider} from "../../../../types/viewport_content/providers";
 import {StateSelection} from "../../../../utilities/state_selection";

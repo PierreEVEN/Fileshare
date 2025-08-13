@@ -1,4 +1,3 @@
-import {RemoteItem, FilesystemStream} from "../../../../types/filesystem_stream";
 import {Message, NOTIFICATION} from "../message_box/notification";
 import {ContentRequest} from "../../../../types/remote_filesystem/content_request";
 

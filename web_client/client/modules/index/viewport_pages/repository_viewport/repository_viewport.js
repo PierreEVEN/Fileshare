@@ -10,7 +10,7 @@ import "./upload/uploader";
 import "./upload/drop_box";
 import {context_menu_item} from "../../context_menu/contexts/context_item";
 import "./toolbar/toolbar";
-import {Repository} from "../../../../types/repository";
+import {Repository} from "../../../../types/remote_filesystem/repository";
 import "../../tools/carousel/list/carousel_list";
 import "../../tools/carousel/viewport/carousel_viewport";
 import {humanFileSize, is_touch_screen} from "../../../../utilities/utils";

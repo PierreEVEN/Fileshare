@@ -1,7 +1,7 @@
 import {APP_COOKIES} from "../cookies/cookies";
 import {EncString} from "../../../../types/encstring";
 import {Message, NOTIFICATION} from "../message_box/notification";
-import {User} from "../../../../types/user";
+import {User} from "../../../../types/remote_filesystem/user";
 require('../checkslider/checkslider')
 
 require('./authentication.scss')

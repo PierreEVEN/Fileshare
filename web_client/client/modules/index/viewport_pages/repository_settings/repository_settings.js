@@ -1,7 +1,7 @@
 import {edit_repository} from "../../tools/edit_repository/edit_repository";
 import {EncString} from "../../../../types/encstring";
 import {Message, NOTIFICATION} from "../../tools/message_box/notification";
-import {User} from "../../../../types/user";
+import {User} from "../../../../types/remote_filesystem/user";
 import {humanFileSize} from "../../../../utilities/utils";
 import {AppWidget} from "../../../../app_widget";
 
