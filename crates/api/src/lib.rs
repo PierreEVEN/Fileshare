@@ -142,31 +142,31 @@ pub struct RequestContext {
 }
 
 impl RequestContext {
-    pub async fn connected_user(&self) -> tokio::sync::RwLockReadGuard<Option<User>> {
+    pub async fn connected_user(&self) -> tokio::sync::RwLockReadGuard<'_, Option<User>> {
         self.connected_user.read().await
     }
-    pub async fn connected_user_mut(&self) -> tokio::sync::RwLockWriteGuard<Option<User>> {
+    pub async fn connected_user_mut(&self) -> tokio::sync::RwLockWriteGuard<'_, Option<User>> {
         self.connected_user.write().await
     }
 
-    pub async fn display_user(&self) -> tokio::sync::RwLockReadGuard<Option<User>> {
+    pub async fn display_user(&self) -> tokio::sync::RwLockReadGuard<'_, Option<User>> {
         self.display_user.read().await
     }
-    pub async fn display_user_mut(&self) -> tokio::sync::RwLockWriteGuard<Option<User>> {
+    pub async fn display_user_mut(&self) -> tokio::sync::RwLockWriteGuard<'_, Option<User>> {
         self.display_user.write().await
     }
 
-    pub async fn display_repository(&self) -> tokio::sync::RwLockReadGuard<Option<Repository>> {
+    pub async fn display_repository(&self) -> tokio::sync::RwLockReadGuard<'_, Option<Repository>> {
         self.display_repository.read().await
     }
-    pub async fn display_repository_mut(&self) -> tokio::sync::RwLockWriteGuard<Option<Repository>> {
+    pub async fn display_repository_mut(&self) -> tokio::sync::RwLockWriteGuard<'_, Option<Repository>> {
         self.display_repository.write().await
     }
 
-    pub async fn display_item(&self) -> tokio::sync::RwLockReadGuard<Option<Item>> {
+    pub async fn display_item(&self) -> tokio::sync::RwLockReadGuard<'_, Option<Item>> {
         self.display_item.read().await
     }
-    pub async fn display_item_mut(&self) -> tokio::sync::RwLockWriteGuard<Option<Item>> {
+    pub async fn display_item_mut(&self) -> tokio::sync::RwLockWriteGuard<'_, Option<Item>> {
         self.display_item.write().await
     }
 

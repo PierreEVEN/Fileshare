@@ -94,7 +94,7 @@ impl AsyncDirectoryZip {
         Ok(())
     }
 
-    fn local_header(item: &Item) -> Result<Vec<u8>, Error> {
+    fn local_header(item: &Item, is_zip64: bool) -> Result<Vec<u8>, Error> {
         let mut item_name = item.absolute_path.plain()?;
         item_name.remove(0);
         if item.directory.is_some() {
@@ -102,7 +102,7 @@ impl AsyncDirectoryZip {
         };
 
         let version = if item.file.is_some() {
-            0x032Du16
+            0x002Du16
         } else {
             0x030Au16
         };
@@ -118,10 +118,10 @@ impl AsyncDirectoryZip {
         let last_modification_time = 0x0u16.to_le_bytes();
         let last_modification_date = 0x0u16.to_le_bytes();
         let crc32 = 0x0u32.to_le_bytes();
-        let compressed_size = 0x0u32.to_le_bytes();
-        let uncompressed_size = 0x0u32.to_le_bytes();
+        let compressed_size = if is_zip64 { 0xFFFFFFFFu32 } else { 0x0u32 }.to_le_bytes();
+        let uncompressed_size = if is_zip64 { 0xFFFFFFFFu32 } else { 0x0u32 }.to_le_bytes();
         let file_name_length = (item_name.len() as u16).to_le_bytes();
-        let extra_field_length = 0u16.to_le_bytes();
+        let extra_field_length = if is_zip64 { 20u16 } else { 0u16 }.to_le_bytes();
         let file_name = item_name.as_bytes();
 
         let mut local_file_header = vec![];
@@ -137,11 +137,25 @@ impl AsyncDirectoryZip {
         local_file_header.put_slice(&file_name_length);
         local_file_header.put_slice(&extra_field_length);
         local_file_header.put_slice(file_name);
+
+
+        // zip64 extra field
+        if is_zip64 {
+            let header_id = 0x0001u16.to_le_bytes();
+            let data_size = 24u16.to_le_bytes();
+            let uncompressed_size = 0u64.to_le_bytes();
+            let compressed_size = 0u64.to_le_bytes();
+
+            local_file_header.put_slice(&header_id);
+            local_file_header.put_slice(&data_size);
+            local_file_header.put_slice(&uncompressed_size);
+            local_file_header.put_slice(&compressed_size);
+        }
+
         Ok(local_file_header)
     }
 
     fn data_descriptor(item: &Item, crc32: u32, is_zip64: bool) -> Result<Vec<u8>, Error> {
-
         let mut local_file_header = vec![];
 
         let signature = 0x08074b50u32.to_le_bytes();
@@ -200,7 +214,7 @@ impl AsyncDirectoryZip {
         let compressed_size = if is_zip64 { 0xFFFFFFFFu32 } else { size as u32 }.to_le_bytes();
         let uncompressed_size = if is_zip64 { 0xFFFFFFFFu32 } else { size as u32 }.to_le_bytes();
         let file_name_length = (item_name.len() as u16).to_le_bytes();
-        let extra_field_length = if is_zip64 { 1u16 } else { 0u16 }.to_le_bytes();
+        let extra_field_length = if is_zip64 { 28u16 } else { 0u16 }.to_le_bytes();
         let file_comment_length = 0u16.to_le_bytes();
         let disk_number = 0u16.to_le_bytes();
         let internal_file_attributes = 0u16.to_le_bytes();
@@ -228,7 +242,7 @@ impl AsyncDirectoryZip {
         directory.put_slice(&relative_offset);
         directory.put_slice(file_name);
 
-        // Put zip64 header
+        // zip64 extra field
         if is_zip64 {
             let header_id = 0x0001u16.to_le_bytes();
             let data_size = 24u16.to_le_bytes();
@@ -247,8 +261,8 @@ impl AsyncDirectoryZip {
 
     fn end_of_central_directory(&self, central_directory_start: usize, central_directory_end: usize, is_zip64: bool) -> Vec<u8> {
         let signature = 0x06054b50u32.to_le_bytes();
-        let disk = 0u16.to_le_bytes();
-        let central_directory_start_disk = 0u16.to_le_bytes();
+        let disk = if is_zip64 { 0xFFFFu16 } else { 0u16 }.to_le_bytes();
+        let central_directory_start_disk = if is_zip64 { 0xFFFFu16 } else { 0u16 }.to_le_bytes();
         let central_directory_record_count_on_disk = if is_zip64 { 0xFFFFu16 } else { self.items.len() as u16 }.to_le_bytes();
         let central_directory_record_count = if is_zip64 { 0xFFFFu16 } else { self.items.len() as u16 }.to_le_bytes();
         let central_directory_size = if is_zip64 { 0xFFFFFFFFu32 } else { (central_directory_end - central_directory_start) as u32 }.to_le_bytes();
@@ -268,19 +282,8 @@ impl AsyncDirectoryZip {
     }
 
 
-    fn zip_64_end_of_central_directory(&self, central_directory_start: usize, central_directory_end: usize) -> Vec<u8> {
+    fn zip_64_end_of_central_directory(&self, central_directory_start: usize, current_location: usize) -> Vec<u8> {
         let mut directory = vec![];
-        // zip64 eocd locator
-        {
-            let signature = 0x07064b50u32.to_le_bytes();
-            let disk_number = 0u32.to_le_bytes();
-            let eocd_relative_offset = (central_directory_end as u64 + 20u64).to_le_bytes();
-            let disk_count = 1u32.to_le_bytes();
-            directory.put_slice(&signature);
-            directory.put_slice(&disk_number);
-            directory.put_slice(&eocd_relative_offset);
-            directory.put_slice(&disk_count);
-        }
         // zip64 eocd
         {
             let signature = 0x06064b50u32.to_le_bytes();
@@ -291,7 +294,7 @@ impl AsyncDirectoryZip {
             let disk_start = 0u32.to_le_bytes();
             let records_on_disk = (self.items.len() as u64).to_le_bytes();
             let total_records = (self.items.len() as u64).to_le_bytes();
-            let central_directory_size = ((central_directory_end - central_directory_start) as u64).to_le_bytes();
+            let central_directory_size = ((current_location - central_directory_start) as u64).to_le_bytes();
             let start_offset = (central_directory_start as u64).to_le_bytes();
 
             directory.put_slice(&signature);
@@ -305,11 +308,22 @@ impl AsyncDirectoryZip {
             directory.put_slice(&central_directory_size);
             directory.put_slice(&start_offset);
         }
+        // zip64 eocd locator
+        {
+            let signature = 0x07064b50u32.to_le_bytes();
+            let disk_number = 0u32.to_le_bytes();
+            let eocd_relative_offset = (current_location as u64).to_le_bytes();
+            let disk_count = 1u32.to_le_bytes();
+            directory.put_slice(&signature);
+            directory.put_slice(&disk_number);
+            directory.put_slice(&eocd_relative_offset);
+            directory.put_slice(&disk_count);
+        }
         directory
     }
 
     pub fn size(&self) -> Result<usize, Error> {
-        let local_header_size: usize = 30;
+        let local_header_size: usize = if self.is_zip64 { 30 + 20 } else { 30 };
         let data_descriptor_size: usize = if self.is_zip64 { 24 } else { 16 };
         let central_directory_size: usize = if self.is_zip64 { 46 + 28 } else { 46 };
         let end_of_central_directory_size: usize = if self.is_zip64 { 22 + 20 + 56 } else { 22 };
@@ -353,7 +367,7 @@ impl AsyncDirectoryZip {
             let block_location = location;
 
             // Write local header
-            let header = Self::local_header(item)?;
+            let header = Self::local_header(item, self.is_zip64)?;
             location += header.len();
             sink.write_all(header.as_slice()).await?;
 
@@ -397,12 +411,14 @@ impl AsyncDirectoryZip {
         }
 
         if self.is_zip64 {
-            let end_of_directory = self.zip_64_end_of_central_directory(central_directory_start, location);
-            sink.write_all(end_of_directory.as_slice()).await?;
+            let zip64_end_of_directory = self.zip_64_end_of_central_directory(central_directory_start, location);
+            location += zip64_end_of_directory.len();
+            sink.write_all(zip64_end_of_directory.as_slice()).await?;
         }
 
         let end_of_directory = self.end_of_central_directory(central_directory_start, location, self.is_zip64);
         sink.write_all(end_of_directory.as_slice()).await?;
+
         sink.flush().await?;
         Ok(())
     }
