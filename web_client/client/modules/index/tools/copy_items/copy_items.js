@@ -24,7 +24,6 @@ class Clipboard {
 
     clear() {
         this._items.clear();
-        this._move_mode = false;
     }
 
     items() {
@@ -57,14 +56,33 @@ let CLIPBOARD = new Clipboard();
  * @return {Promise<void>}
  */
 async function copy_items(app, items, remove_sources, destination_repository, destination_directory = null) {
+
+    const copied_items = [];
+
+    for (const item of items) {
+        if (destination_directory) {
+            if (await app.pool.find_item(destination_directory).find_child(item.name.plain())) {
+                NOTIFICATION.warn(new Message("Un fichier du même nom existe déjà").title(`Impossible de copier ${item.name.plain()} ici`));
+                continue;
+            }
+        } else {
+            if (await app.pool.find_repository(destination_repository).find_child(item.name.plain())) {
+                NOTIFICATION.warn(new Message("Un fichier du même nom existe déjà").title(`Impossible de copier ${item.name.plain()} ici`));
+                continue;
+            }
+        }
+        copied_items.push(item);
+    }
+
+
     /**
      * @type {Map<number, RemoteItem>}
      */
     let item_map = new Map();
-    if (items.length === 0)
+    if (copied_items.length === 0)
         return;
     let ids = [];
-    for (const it of items) {
+    for (const it of copied_items) {
         ids.push(it.id);
         item_map.set(it.id, it);
     }
