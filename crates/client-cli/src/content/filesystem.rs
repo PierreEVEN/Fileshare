@@ -1,4 +1,4 @@
-use crate::content::item::{Item, LocalItem, };
+use crate::content::item::{Item, LocalItem, RemoteItem};
 use crate::serialization_utils::vec_arc_rwlock_serde;
 use anyhow::Error;
 use serde_derive::{Deserialize, Serialize};
@@ -15,13 +15,13 @@ pub trait Filesystem {
 
 #[derive(Default, Debug)]
 pub struct RemoteFilesystem {
-    items: HashMap<ItemId, Arc<RwLock<>>>,
+    items: HashMap<ItemId, Arc<RwLock<RemoteItem>>>,
     children: HashMap<ItemId, HashSet<ItemId>>,
     roots: HashSet<ItemId>,
 }
 
 impl RemoteFilesystem {
-    pub fn add_item(&mut self, item: Arc<RwLock<>>) {
+    pub fn add_item(&mut self, item: Arc<RwLock<RemoteItem>>) {
         let (id, parent) = match item.read() {
             Ok(item) => { (item.id().clone(), item.parent_item.clone()) }
             Err(_) => { panic!() }
@@ -38,11 +38,11 @@ impl RemoteFilesystem {
         self.items.insert(id.clone(), item);
     }
 
-    pub fn find_item(&self, id: &ItemId) -> Option<Arc<RwLock<>>> {
+    pub fn find_item(&self, id: &ItemId) -> Option<Arc<RwLock<RemoteItem>>> {
         self.items.get(id).cloned()
     }
 
-    pub fn get_children(&self, id: &ItemId) -> Result<Vec<Arc<RwLock<>>>, Error> {
+    pub fn get_children(&self, id: &ItemId) -> Result<Vec<Arc<RwLock<RemoteItem>>>, Error> {
         let mut children = vec![];
 
         if let Some(children_set) = self.children.get(id) {
