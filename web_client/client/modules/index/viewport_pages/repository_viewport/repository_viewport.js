@@ -47,7 +47,7 @@ document.addEventListener('keydown', async function (event) {
                 if (CURRENT_VIEWPORT.content.get_content_provider() instanceof DirectoryContentProvider) {
                     let item = CURRENT_VIEWPORT.content.get_content_provider().directory;
                     if (item.parent_item)
-                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_item(await item.pool().fetch_item(item.parent_item)));
+                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_item(await item.get_pool().fetch_item(item.parent_item)));
                     else
                         await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_repository(await CURRENT_VIEWPORT.get_app().pool.fetch_repository(item.repository)));
                     CURRENT_VIEWPORT.selector.select_item(item.id, false, false);
@@ -204,7 +204,7 @@ class RepositoryViewport extends AppWidget {
                     if (this.selector.is_selected(item.id)) {
                         const items = [];
                         for (const item_id of this.selector.get_selected_items()) {
-                            items.push(await item.pool().fetch_item(item_id));
+                            items.push(await item.get_pool().fetch_item(item_id));
                         }
                         context_menu_item(this.get_app(), items);
                     } else {

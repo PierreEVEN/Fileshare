@@ -97,11 +97,11 @@ async function set_item_to_trash(item, in_trash) {
     item.in_trash = in_trash;
     if (item._children)
         for (const child of item._children)
-            await set_item_to_trash(item.pool().find_item(child), in_trash);
+            await set_item_to_trash(item.get_pool().find_item(child), in_trash);
 
-    await item.pool().fetch_content(new ContentRequest().trash_root([item.repository]))
+    await item.get_pool().fetch_content(new ContentRequest().trash_root([item.repository]))
 
-    if (in_trash && (await item.pool().fetch_repository(item.repository)).trash.has(item.id)) {
+    if (in_trash && (await item.get_pool().fetch_repository(item.repository)).trash.has(item.id)) {
         await item.refresh();
     }
 }

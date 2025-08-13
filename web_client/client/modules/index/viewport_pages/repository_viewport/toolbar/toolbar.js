@@ -78,7 +78,7 @@ class ViewportToolbar extends AppWidget {
                     }
                     this.hb_elements.path.append(div);
                 }
-                item = item.parent_item ? await item.pool().fetch_item(item.parent_item) : null;
+                item = item.parent_item ? await item.get_pool().fetch_item(item.parent_item) : null;
             }
         }
     }

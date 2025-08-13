@@ -21,9 +21,9 @@ class RepositoryRootProvider extends ContentProvider {
         return items;
     }
 
-    _internal_add_item(item) {
+    async _internal_add_item(item) {
         if (!item.in_trash && item.parent_item === undefined && item.repository === this.repository.id)
-            this.events.broadcast('add', item);
+            await this.events.broadcast('add', item);
     }
 
     is_same(other) {
@@ -36,7 +36,7 @@ class DirectoryContentProvider extends ContentProvider {
      * @param directory {RemoteItem}
      */
     constructor(directory) {
-        super(directory.pool());
+        super(directory.get_pool());
         console.assert(directory, "Cannot create a DirectoryContentProvider with a null directory");
         if (directory.is_regular_file)
             console.error("Cannot open a file as a directory");
@@ -55,17 +55,17 @@ class DirectoryContentProvider extends ContentProvider {
 
         const directory_content = await this.directory.children([this.directory.id]);
         for (const item_id of directory_content) {
-            const item = await this.directory.pool().fetch_item(item_id);
+            const item = await this.directory.get_pool().fetch_item(item_id);
             if (!item.in_trash)
                 items.push(item);
         }
         return items;
     }
 
-    _internal_add_item(item) {
-        super._internal_add_item(item);
+    async _internal_add_item(item) {
+        await super._internal_add_item(item);
         if (!item.in_trash && item.parent_item === this.directory.id)
-            this.events.broadcast('add', item);
+            await this.events.broadcast('add', item);
     }
 
     delete() {
@@ -100,7 +100,7 @@ class TrashContentProvider extends ContentProvider {
         await super._internal_add_item(item);
         if (item.in_trash && item.repository === this.repository.id) {
             if (!item.parent_item || !(await item.get_pool().fetch_item(item.parent_item)).in_trash)
-                this.events.broadcast('add', item);
+                await this.events.broadcast('add', item);
         }
     }
 
@@ -116,7 +116,7 @@ class FilterContentProvider extends ContentProvider {
      * @param filter {Filter}
      */
     constructor(repository, directory, filter) {
-        super(repository ? repository.get_pool() : directory.pool());
+        super(repository ? repository.get_pool() : directory.get_pool());
         this.repository = repository;
         this.directory = directory;
         this.filter = filter;

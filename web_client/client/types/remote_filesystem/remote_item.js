@@ -118,7 +118,7 @@ class RemoteItem {
      */
     async children() {
         if (!this._children)
-            await this.pool().fetch_content(new ContentRequest().directory_content([this.id]));
+            await this.get_pool().fetch_content(new ContentRequest().directory_content([this.id]));
         return this._children || new Set();
     }
 
@@ -128,7 +128,7 @@ class RemoteItem {
      */
     async find_child(name) {
         for (const child of await this.children()) {
-            const item = await this.pool().fetch_item(child);
+            const item = await this.get_pool().fetch_item(child);
             if (item.name.plain() === name)
                 return item;
         }
@@ -144,24 +144,24 @@ class RemoteItem {
         if (item_id === this.parent_item)
             return true;
         if (this.parent_item)
-            return await (await this.pool().fetch_item(this.parent_item)).is_in_parents(item_id);
+            return await (await this.get_pool().fetch_item(this.parent_item)).is_in_parents(item_id);
         return false;
     }
 
     async refresh() {
-        await this.pool().refresh_item(this);
+        await this.get_pool().refresh_item(this);
     }
 
     /**
      * @return {ContentPool}
      */
-    pool() {
+    get_pool() {
         console.assert(this._pool, `Content pool have not been initialized for item, ${this.absolute_path.plain()}`)
         return this._pool;
     }
 
     async remove() {
-        await this.pool().remove_item(this.id);
+        await this.get_pool().remove_item(this.id);
     }
 
     /**
@@ -169,8 +169,8 @@ class RemoteItem {
      * @returns {Promise<string>}
      */
     async url(app) {
-        const repository = await this.pool().fetch_repository(this.repository);
-        const base = await repository.url(app);
+        const repository = await this.get_pool().fetch_repository(this.repository);
+        const base = await repository.url();
         return `${base}/tree${this.absolute_path.plain()}`
     }
 

@@ -107,7 +107,7 @@ class TreeButton extends AppWidget {
             const hierarchy = [];
             hierarchy.push(item);
             while (hierarchy[hierarchy.length - 1].parent_item) {
-                hierarchy.push(await item.pool().fetch_item(hierarchy[hierarchy.length - 1].parent_item))
+                hierarchy.push(await item.get_pool().fetch_item(hierarchy[hierarchy.length - 1].parent_item))
             }
             await this._focus_item_internal(hierarchy, expand);
         }
