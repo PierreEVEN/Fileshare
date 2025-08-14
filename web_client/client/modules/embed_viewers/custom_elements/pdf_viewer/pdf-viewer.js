@@ -1,4 +1,5 @@
 require('./pdf_viewer.scss')
+const {NOTIFICATION, Message} = require("../../../index/tools/message_box/notification");
 
 class PdfViewer extends HTMLElement {
     constructor() {
@@ -44,17 +45,38 @@ class PdfViewer extends HTMLElement {
         this._elements = display.hb_elements;
         for (const element of display)
             this.append(element);
+        this._set_loading(true, false);
         import("./pdfjsdist_loader").then(pdfjs => {
-            this._pdfjs = pdfjs;
             pdfjs.get_pdf_js_dist().getDocument(this.getAttribute('src'))
                 .promise
                 .then((pdf_document) => {
+                    this._set_loading(true, true);
                     this.init_document(pdf_document);
                 })
         });
 
         this._elements.container.onscroll = () => {
             this.generate_pages_in_view();
+        }
+    }
+
+    _set_loading(loading, soon) {
+        if (!loading) {
+            if (this._loading_div) {
+                this._loading_div.remove();
+                delete this._loading_div;
+            }
+        } else {
+            if (!this._loading_div) {
+                this._loading_div = document.createElement('div');
+                this._loading_div.className = 'loading';
+                this.append(this._loading_div);
+            }
+            if (soon) {
+                this._loading_div.classList.add('soon');
+            } else {
+                this._loading_div.classList.remove('soon');
+            }
         }
     }
 
@@ -83,6 +105,7 @@ class PdfViewer extends HTMLElement {
             this._pages.set(i, {canvas: canvas, page: page, text_layer: text_layer, rendered: false});
         }
         this.set_zoom(1.0);
+        this._set_loading(false, false);
     }
 
     set_zoom(percent) {

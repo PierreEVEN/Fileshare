@@ -203,14 +203,14 @@ class TreeButton extends AppWidget {
      * @private
      */
     async _init_content_provider() {
-        if (this._content_provider)
-            return await this._init_content_provider_promise;
-        this._content_provider = this.get_content();
-        if (!this._content_provider)
-            return;
-
         // Fetch content
         if (this._expandable) {
+            if (this._content_provider)
+                return await this._init_content_provider_promise;
+            this._content_provider = this.get_content();
+            if (!this._content_provider)
+                return;
+
             this._init_content_provider_promise = new Promise(async resolve => {
                 const items = await this._content_provider.get_content();
                 if (this.expanded()) {
@@ -226,17 +226,17 @@ class TreeButton extends AppWidget {
                 resolve();
             })
             await this._init_content_provider_promise;
+
+            // Bind add and remove item (required to detect when we should add or remove arrow)
+            this._on_add_item = this._content_provider.events.add('add', (item) => {
+                this._add_item(item);
+            })
+
+            // Bind add and remove item (required to detect when we should add or remove arrow)
+            this._on_remove_item = this.get_app().pool.events.add('remove_item', (item) => {
+                this._remove_item(item);
+            })
         }
-
-        // Bind add and remove item (required to detect when we should add or remove arrow)
-        this._on_add_item = this._content_provider.events.add('add', (item) => {
-            this._add_item(item);
-        })
-
-        // Bind add and remove item (required to detect when we should add or remove arrow)
-        this._on_remove_item = this.get_app().pool.events.add('remove_item', (item) => {
-            this._remove_item(item);
-        })
     }
 
     async _focus_item_internal(hierarchy, expand = false) {
