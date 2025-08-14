@@ -1,0 +1,41 @@
+import {EncString} from "../../../src/encstring";
+import {Message, NOTIFICATION} from "../../misc/message_box/notification";
+
+/**
+ * @param app {FileshareApp}
+ * @param item {RemoteItem}
+ * @return {Promise<void>}
+ */
+async function edit_item(app, item) {
+    let data = item.display_data();
+    data.is_directory = !data.is_regular_file;
+    const widget = require('./edit_item.hbs')(data, {
+        submit: async (e) => {
+            e.preventDefault();
+
+            const description = widget.hb_elements.description.value;
+            let new_data = {
+                id: item.id,
+                name: EncString.from_client(widget.hb_elements.display_name.value),
+                description: description.length === 0 ? null : EncString.from_client(description),
+                open_upload: item.is_regular_file ? null : widget.hb_elements.allow_visitor_upload.checked,
+            };
+
+            const items = await app.fetch_api(`item/update`, 'POST', [new_data])
+                .catch(error => NOTIFICATION.fatal(new Message(error).title("Impossible de modifier l'object")));
+            if (items.length !== 0) {
+                item.name = new_data.name;
+                item.description = new_data.description;
+                if (!item.is_regular_file) {
+                    item.open_upload = new_data.open_upload;
+                }
+                await item.refresh();
+            }
+
+            app.get_modal().close();
+        }
+    });
+    app.get_modal().open(widget, {custom_width: '600px', custom_height: '480px'})
+}
+
+export {edit_item}

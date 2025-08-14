@@ -3,11 +3,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
     entry: {
-        index: './client/app.js',
-        viewers: {
-            import: './client/modules/embed_viewers/index.js',
-            dependOn: ['index'],
-        },
+        index: './client/widgets/app/app.js',
         pdf_worker: "pdfjs-dist/build/pdf.worker.mjs",
     },
     output: {

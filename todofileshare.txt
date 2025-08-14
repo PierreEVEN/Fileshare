@@ -1,5 +1,4 @@
 # TODO
 
-- Le dépot courant charge pas correctement dans la sidebar quand on F5
-
 - supporter plus de 1000 items par dossiers
+- Fix preview 3D sous chromium
