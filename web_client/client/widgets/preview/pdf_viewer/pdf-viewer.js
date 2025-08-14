@@ -1,6 +1,7 @@
 require('./pdf_viewer.scss')
+const {AppWidget} = require("../../../src/app_widget");
 
-class PdfViewer extends HTMLElement {
+class PdfViewer extends AppWidget {
     constructor() {
         super();
         if (!this.hasAttribute('src'))
@@ -27,23 +28,20 @@ class PdfViewer extends HTMLElement {
     }
 
     connectedCallback() {
-        const display = require('./pdf-viewer.hbs')({}, {
-            'page_next': () => {
+        this.set_content(require('./pdf-viewer.hbs'), {}, {
+            page_next: () => {
             },
-            'page_prev': () => {
+            page_prev: () => {
             },
-            'zoom': () => {
+            zoom: () => {
                 this.mark_pages_dirty();
                 this.set_zoom(this._zoom * 1.2);
             },
-            'dezoom': () => {
+            dezoom: () => {
                 this.mark_pages_dirty();
                 this.set_zoom(this._zoom / 1.2);
             }
         });
-        this._elements = display.hb_elements;
-        for (const element of display)
-            this.append(element);
         this._set_loading(true, false);
         import("./pdfjsdist_loader").then(pdfjs => {
             pdfjs.get_pdf_js_dist().getDocument(this.getAttribute('src'))
@@ -54,7 +52,7 @@ class PdfViewer extends HTMLElement {
                 })
         });
 
-        this._elements.container.onscroll = () => {
+        this.elements().container.onscroll = () => {
             this.generate_pages_in_view();
         }
     }
@@ -100,7 +98,7 @@ class PdfViewer extends HTMLElement {
             const canvas = document.createElement('canvas');
             page.append(canvas)
             page.append(text_layer)
-            this._elements.body.append(page);
+            this.elements().body.append(page);
             this._pages.set(i, {canvas: canvas, page: page, text_layer: text_layer, rendered: false});
         }
         this.set_zoom(1.0);
@@ -110,7 +108,7 @@ class PdfViewer extends HTMLElement {
     set_zoom(percent) {
         this._zoom = percent;
 
-        const height = this._elements.container.getBoundingClientRect().height * percent;
+        const height = this.elements().container.getBoundingClientRect().height * percent;
         for (const [_, page] of this._pages) {
             page.canvas.style.height = `${height}px`;
             page.canvas.style.width = `0`;
@@ -120,8 +118,8 @@ class PdfViewer extends HTMLElement {
     }
 
     get_pages_in_view() {
-        const scroll_px = this._elements.container.scrollTop;
-        const page_height = this._elements.container.getBoundingClientRect().height * this._zoom + 15 * 2;
+        const scroll_px = this.elements().container.scrollTop;
+        const page_height = this.elements().container.getBoundingClientRect().height * this._zoom + 15 * 2;
         let page_in_view = Math.round(scroll_px / page_height);
         let pages = [];
         for (let i = Math.max(0, page_in_view - this.preload_range); i <= Math.min(page_in_view + this.preload_range, this.pdf_doc.numPages - 1); ++i) {
@@ -153,7 +151,7 @@ class PdfViewer extends HTMLElement {
                 page_content.canvas.style.width = `100%`;
 
                 this.pdf_doc.getPage(page + 1).then(async (pdf_page) => {
-                    const page_height = this._elements.container.getBoundingClientRect().height * this._zoom;
+                    const page_height = this.elements().container.getBoundingClientRect().height * this._zoom;
                     const viewport_scale = page_height / pdf_page.view[3];
                     const viewport = pdf_page.getViewport({scale: viewport_scale});
 

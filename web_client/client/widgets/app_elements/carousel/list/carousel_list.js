@@ -1,8 +1,9 @@
 
 require('./carousel_list.scss')
 const {EventManager} = require("../../../../src/event_manager");
+const {AppWidget} = require("../../../../src/app_widget");
 
-class CarouselList extends HTMLElement{
+class CarouselList extends AppWidget {
     /**
      * @param viewport {RepositoryViewport}
      * @param on_select_item
@@ -89,7 +90,7 @@ class CarouselList extends HTMLElement{
         if (!this._items)
             return;
 
-        const content = require('./carousel_list.hbs')({}, {
+        this.set_content(require('./carousel_list.hbs'), {}, {
             move_left: () => {
                 this._select_previous();
             },
@@ -104,17 +105,16 @@ class CarouselList extends HTMLElement{
                 e.preventDefault();
             }
         })
-        this._elements = content.hb_elements;
 
-        this._elements.list.addEventListener('wheel', e => {
+        this.elements().list.addEventListener('wheel', e => {
             content.scrollLeft += (e.deltaY * 0.5);
         })
 
-        this._elements.list.innerHTML = '';
+        this.elements().list.innerHTML = '';
 
         const left_spacer = document.createElement('div');
         left_spacer.style.width = '100px';
-        this._elements.list.append(left_spacer);
+        this.elements().list.append(left_spacer);
 
         for (const [_, object] of this._items) {
             if (object.is_regular_file) {
@@ -125,27 +125,25 @@ class CarouselList extends HTMLElement{
                     this.select_item(object)
                 }
                 item.item_id = object.id;
-                this._elements.list.append(item);
+                this.elements().list.append(item);
             }
         }
 
         const right_spacer = document.createElement('div');
         right_spacer.style.width = '100px';
-        this._elements.list.append(right_spacer);
-        for (const element of content)
-            this.append(element);
+        this.elements().list.append(right_spacer);
         this._update_left_right_buttons();
     }
 
     _update_left_right_buttons() {
         if (!this._last_selected || !this._last_selected.previousSibling.classList.contains('carousel-item'))
-            this._elements.move_left.style.display = 'none';
+            this.elements().move_left.style.display = 'none';
         else
-            this._elements.move_left.style.display = 'unset';
+            this.elements().move_left.style.display = 'unset';
         if (!this._last_selected || !this._last_selected.nextSibling.classList.contains('carousel-item'))
-            this._elements.move_right.style.display = 'none';
+            this.elements().move_right.style.display = 'none';
         else
-            this._elements.move_right.style.display = 'unset';
+            this.elements().move_right.style.display = 'unset';
     }
 }
 
