@@ -38,12 +38,16 @@ class FileshareApp extends HTMLElement {
         this.state = new AppState(this);
 
         // Fetch init data
-        const init_data = new InitData(this.pool, JSON.parse(document.body.dataset['app_config']));
+        const raw_data = JSON.parse(document.body.dataset['app_config']);
+        const init_data = new InitData(this.pool, raw_data);
         if (init_data.error)
             this.set_viewport_content(document.createElement('page-error').set_error(init_data.error));
         else
             init_data.apply_to_state(this.state);
         this._origin = init_data.origin;
+
+        if (raw_data.display_item)
+            this.pool.fetch_item(raw_data.display_item.id, true);
     }
 
     connectedCallback() {
@@ -122,6 +126,7 @@ class FileshareApp extends HTMLElement {
     }
 
     origin() {
+        console.assert(this._origin, "Origin is not initialized yet")
         return this._origin;
     }
 

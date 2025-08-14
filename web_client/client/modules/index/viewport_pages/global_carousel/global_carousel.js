@@ -34,7 +34,7 @@ class GlobalCarousel extends HTMLElement {
     }
 
     is_open() {
-        return this.style.display !== 'none';
+        return this.style.display === 'flex';
     }
 
     close() {

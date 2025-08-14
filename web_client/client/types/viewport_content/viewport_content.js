@@ -6,7 +6,8 @@ class ContentProvider {
      * @param pool {ContentPool}
      */
     constructor(pool) {
-        console.assert(pool);
+        if (!pool)
+            console.error("Invalid pool in content provider");
         this.events = new EventManager();
         this._add_event = pool.events.add('add_item', async (item) => {
             await this._internal_add_item(item)

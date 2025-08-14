@@ -40,7 +40,10 @@ class AppHeader extends AppWidget {
                     if (event.target.value === "") {
                         this.get_app().set_global_search(null);
                     } else {
-                        this.get_app().set_global_search(new Filter().name(event.target.value));
+                        const selection = this.get_app().state.selection();
+                        this.get_app().set_global_search(new Filter()
+                            .name(event.target.value)
+                            .source(selection.repository ? selection.repository.id : selection.item.repository, selection.item ? selection.item.id : null));
                     }
                 }
             }

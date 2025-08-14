@@ -69,6 +69,9 @@ class ContentPool {
      * @returns {Promise<void>}
      */
     async fetch_content(request) {
+        if (!request.make_body(this))
+            return;
+
         if (this._request_in_queue)
             this._request_in_queue.merge(request);
         else
@@ -81,12 +84,22 @@ class ContentPool {
     }
 
     _try_execute_pending_request() {
-        if (this._running_request || !this._request_in_queue)
+        if (!this._request_in_queue || this._running_request)
             return;
 
         this._running_request = this._request_in_queue;
         this._request_in_queue = null;
-        this.get_app().fetch_api('repository/fetch', 'POST', this._running_request.make_body(this))
+
+        const body = this._running_request.make_body(this) || {};
+        /* //@TODO :: don't works with side bar hierarchy
+        if (!body) {
+            this._resolve_running_request(this._running_request.indices);
+            delete this._running_request;
+            this._next_request_promise = new Promise((resolve) => this._resolve_running_request = resolve);
+            this._try_execute_pending_request();
+            return;
+        }*/
+        this.get_app().fetch_api('repository/fetch', 'POST', body)
             .then(async request_result => {
                 if (typeof(request_result) === "string") {
                     console.error("Failed to fetch content :", request_result);
@@ -108,21 +121,21 @@ class ContentPool {
                 if (request_result.repository_roots)
                     for (const data of request_result.repository_roots) {
                         const repository = this.find_repository(data.repository);
-                        console.assert(repository, `Fetched root content of repository ${data.repository}} but base repository does not exists`)
+                        console.assert(repository, `Fetched root content of repository ${data.repository} but base repository does not exists`)
                         repository._children = new Set(data.content);
                     }
 
                 if (request_result.trash_roots)
                     for (const data of request_result.trash_roots) {
                         const repository = this.find_repository(data.repository);
-                        console.assert(repository, `Fetched trash content of repository ${data.repository}} but base repository does not exists`)
+                        console.assert(repository, `Fetched trash content of repository ${data.repository} but base repository does not exists`)
                         repository.trash = new Set(data.content);
                     }
 
                 if (request_result.directory_content)
                     for (const data of request_result.directory_content) {
                         const directory = this.find_item(data.directory);
-                        console.assert(directory, `Fetched content of directory ${data.directory}} but base directory does not exists`)
+                        console.assert(directory, `Fetched content of directory ${data.directory} but base directory does not exists`)
                         directory._children = new Set(data.content);
                     }
             }).catch(error => {
@@ -254,13 +267,16 @@ class ContentPool {
 
     /**
      * @param id {number}
+     * @param include_parents
      * @returns {Promise<RemoteItem>}
      */
-    async fetch_item(id) {
+    async fetch_item(id, include_parents = false) {
         const existing = this.find_item(id);
-        if (existing)
-            return existing;
-        await this.fetch_content(new ContentRequest().item([id]));
+        if (existing) {
+            if (!include_parents || this.has_hierarchy_to(id))
+                return existing;
+        }
+        await this.fetch_content(new ContentRequest().item([id], include_parents));
         return this.find_item(id);
     }
 
@@ -335,29 +351,14 @@ class ContentPool {
     }
 
     /**
-     * @return {Promise<{owned: Repository[], shared: Repository[]}>}
+     * @return {Promise<{owned: number[], shared: number[]}>}
      */
     async available_repositories() {
-        const data = await this.get_app().fetch_api('repository/available')
+        return await this.get_app().fetch_api('repository/available')
             .catch(error => {
                 NOTIFICATION.error(new Message(error).title(`Impossible de télécharger la liste des dépôts possédés`));
                 return [];
             });
-
-        await this.fetch_content(new ContentRequest().repository(data.owned).repository(data.shared))
-
-        const result = {
-            owned: [],
-            shared: [],
-        }
-
-        for (const repository of data.owned)
-            result.owned.push(this.find_repository(repository))
-
-        for (const repository of data.shared)
-            result.shared.push(this.find_repository(repository))
-
-        return result;
     }
 
     toJSON() {

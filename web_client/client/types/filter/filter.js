@@ -2,8 +2,7 @@ import {EncString} from "../encstring";
 
 class Filter {
     constructor() {
-        this._repositories = null;
-        this._directory = null;
+        this._repositories = [];
         this._name = null;
         this._before = null;
         this._after = null;
@@ -61,6 +60,16 @@ class Filter {
         return true;
     }
 
+    /**
+     * @param repository {number}
+     * @param directory {number}
+     * @returns {Filter}
+     */
+    source(repository, directory) {
+        this._repositories.push({repository: repository, root_items: directory ? [directory] : []});
+        return this;
+    }
+
     name(name) {
         this._name = name;
         return this;
@@ -79,6 +88,7 @@ class Filter {
 
     data() {
         const obj = {};
+        obj.repositories = this._repositories
         if (this._name)
             obj.name = new EncString(this._name)
         return obj;

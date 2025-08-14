@@ -49,8 +49,14 @@ class ContentRequest {
      * @param other {ContentRequest}
      */
     merge(other) {
-        for (const [key, value] of other._items)
+        for (const [key, value] of other._items) {
+            if (this._items.has(key)) {
+                if (this._items.get(key) !== value)
+                    this._items.set(key, value);
+                return;
+            }
             this._items.set(key, value);
+        }
         for (const key of other._repositories)
             this._repositories.add(key);
         for (const key of other._users)
@@ -66,16 +72,16 @@ class ContentRequest {
 
     /**
      * @param content_pool {ContentPool}
-     * @returns {Promise<Object>}
+     * @returns {Object}
      */
     make_body(content_pool) {
         const result = {
             items: [],
             repositories: [],
             users: [],
-            directory_content: Array.from(this._directory_content),
-            repository_roots: Array.from(this._repository_roots),
-            trash_roots: Array.from(this._trash_roots),
+            directory_content: [],
+            repository_roots: [],
+            trash_roots: [],
             content_to: [],
         }
 
@@ -102,6 +108,39 @@ class ContentRequest {
                 continue;
             result.users.push(user);
         }
+
+        for (const directory of this._directory_content) {
+            const dir = content_pool.find_item(directory);
+            if ((!dir && this._items.has(directory)) || (dir && !dir._children))
+                result.directory_content.push(directory);
+        }
+
+        for (const repos of this._repository_roots) {
+            const repository = content_pool.find_repository(repos);
+            if (!repository || (repository && !repository._children)) {
+                result.repository_roots.push(repos);
+                if (!this._repositories.has(repos))
+                    result.repositories.push(repos);
+            }
+        }
+
+        for (const repos of this._trash_roots) {
+            const repository = content_pool.find_repository(repos);
+            if (!repository || (repository && !repository.trash)) {
+                result.trash_roots.push(repos);
+                if (!this._repositories.has(repos))
+                    result.repositories.push(repos);
+            }
+        }
+
+        if (result.items.length === 0 &&
+            result.repositories.length === 0 &&
+            result.users.length === 0 &&
+            result.directory_content.length === 0 &&
+            result.repository_roots.length === 0 &&
+            result.trash_roots.length === 0 &&
+            result.content_to.length === 0)
+            return null;
         return result;
     }
 

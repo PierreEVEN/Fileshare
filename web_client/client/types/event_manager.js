@@ -56,6 +56,17 @@ class EventManager {
             for (const callback of callbacks.values())
                 await callback.execute(payload);
     }
+
+    /**
+     * @param event {string}
+     * @param payload {any}
+     */
+    broadcast_async(event, payload) {
+        const callbacks = this._events.get(event);
+        if (callbacks)
+            for (const callback of callbacks.values())
+                callback.execute(payload);
+    }
 }
 
 export {EventManager}

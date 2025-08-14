@@ -154,7 +154,26 @@ class SideBar extends AppWidget {
                 await this._load_available_repositories_promise;
 
             this._load_available_repositories_promise = new Promise(async (resolve) => {
-                const available_repositories = await this.get_app().pool.available_repositories();
+                const data = await this.get_app().pool.available_repositories();
+
+                await this.get_app().pool.fetch_content(new ContentRequest()
+                    .repository(data.owned)
+                    .repository(data.shared)
+                    .repository_root(data.owned)
+                    .repository_root(data.shared)
+                    .trash_root(data.owned)
+                    .trash_root(data.shared))
+
+                const available_repositories = {
+                    owned: [],
+                    shared: [],
+                }
+
+                for (const repository of data.owned)
+                    available_repositories.owned.push(this.get_app().pool.find_repository(repository))
+
+                for (const repository of data.shared)
+                    available_repositories.shared.push(this.get_app().pool.find_repository(repository))
 
                 const my_repos_sorted = available_repositories.owned.sort(((a, b) => {
                     return a.display_name.plain().localeCompare(b.display_name.plain())
@@ -175,7 +194,10 @@ class SideBar extends AppWidget {
             await this._load_recent_promise;
         this._load_recent_promise = new Promise(async (resolve) => {
             const last_repositories = APP_COOKIES.get_last_repositories();
-            await this.get_app().pool.fetch_content(new ContentRequest().repository(last_repositories));
+            await this.get_app().pool.fetch_content(new ContentRequest()
+                .repository(last_repositories)
+                .repository_root(last_repositories)
+                .trash_root(last_repositories))
 
             const repositories = [];
             for (const repository of last_repositories) {

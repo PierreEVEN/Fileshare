@@ -13,8 +13,10 @@ class RepositoryRootProvider extends ContentProvider {
 
     async get_content() {
         const items = [];
-        for (const item_id of await this.repository.children()) {
-            const item = await this.repository.get_pool().fetch_item(item_id);
+        const children = await this.repository.children();
+        await this.repository.get_pool().fetch_content(new ContentRequest().item(Array.from(children)))
+        for (const item_id of children) {
+            const item = await this.repository.get_pool().find_item(item_id);
             if (!item.in_trash)
                 items.push(item);
         }
@@ -53,9 +55,10 @@ class DirectoryContentProvider extends ContentProvider {
     async get_content() {
         const items = [];
 
-        const directory_content = await this.directory.children([this.directory.id]);
+        const directory_content = await this.directory.children();
+        await this.directory.get_pool().fetch_content(new ContentRequest().item(Array.from(directory_content)))
         for (const item_id of directory_content) {
-            const item = await this.directory.get_pool().fetch_item(item_id);
+            const item = await this.directory.get_pool().find_item(item_id);
             if (!item.in_trash)
                 items.push(item);
         }
@@ -111,31 +114,34 @@ class TrashContentProvider extends ContentProvider {
 
 class FilterContentProvider extends ContentProvider {
     /**
-     * @param repository {Repository}
-     * @param directory {RemoteItem}
+     * @param pool {ContentPool}
      * @param filter {Filter}
      */
-    constructor(repository, directory, filter) {
-        super(repository ? repository.get_pool() : directory.get_pool());
-        this.repository = repository;
-        this.directory = directory;
+    constructor(pool, filter) {
+        super(pool);
+        this.pool = pool;
         this.filter = filter;
     }
 
+    /**
+     * @returns {Promise<RemoteItem[]>}
+     */
     async get_content() {
         if (!this._cache) {
-            this._cache = [];
-            const items = await this.repository.get_pool().fetch_filtered(this.filter, this.directory);
-            for (const item of items)
-                this._cache.push(item);
+            this._cache = new Promise(async resolve => {
+                const cache = [];
+                const items = await this.pool.fetch_filtered(this.filter);
+                await this.pool.fetch_content(new ContentRequest().item(items));
+                for (const item of items)
+                    cache.push(this.pool.find_item(item));
+                resolve(cache);
+            });
         }
         return this._cache;
     }
 
     is_same(other) {
         return super.is_same(other) &&
-            this.repository.id === other.directory.id &&
-            ((!this.directory && !other.directory) || (this.directory && other.directory && this.directory.id === other.directory.id)) &&
             this.filter.equals(other.filter);
     }
 

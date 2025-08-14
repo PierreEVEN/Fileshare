@@ -158,7 +158,6 @@ class RepositoryViewport extends AppWidget {
         this.content = new ViewportContent(this);
 
         this.content.events.add('add', async (item) => {
-
             let in_trash = this.content.get_content_provider() instanceof TrashContentProvider;
 
             if (!this._visible_items.has(item.id) && item.in_trash === in_trash) {
@@ -322,8 +321,7 @@ class RepositoryViewport extends AppWidget {
             const repository = await this.get_app().pool.fetch_repository(selection.item.repository);
             if (!this.repository || this.repository.id !== repository.id)
                 this._set_repository(repository);
-
-            const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.get_pool().fetch_item(selection.item.parent_item) : selection.item : selection.item;
+            const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.get_pool().fetch_item(selection.item.parent_item, true) : selection.item : selection.item;
 
             if (selection.item.is_regular_file) {
                 await this._open_carousel(selection.item);
@@ -352,7 +350,7 @@ class RepositoryViewport extends AppWidget {
             if (selection.in_trash) {
                 return new TrashContentProvider(repository);
             } else {
-                const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.get_pool().fetch_item(selection.item.parent_item) : null : selection.item;
+                const directory = selection.item.is_regular_file ? selection.item.parent_item ? await repository.get_pool().fetch_item(selection.item.parent_item, true) : null : selection.item;
                 if (directory)
                     return new DirectoryContentProvider(directory);
                 else
@@ -420,6 +418,10 @@ class RepositoryViewport extends AppWidget {
         this._elements.current_description.style.display = 'none';
     }
 
+    /**
+     * @param filter {Filter}
+     * @returns {Promise<void>}
+     */
     async set_search_filter(filter) {
         if (!filter) {
             if (this.content.get_content_provider()) {
@@ -431,8 +433,8 @@ class RepositoryViewport extends AppWidget {
             }
         } else {
             const previous = this.content.get_content_provider();
-            await this.content.set_content_provider(new ContentProvider());
-            await this.content.set_content_provider(new FilterContentProvider(this.repository, previous ? previous.directory : null, filter))
+            await this.content.set_content_provider(new ContentProvider(this.get_app().pool));
+            await this.content.set_content_provider(new FilterContentProvider(this.get_app().pool, filter))
         }
     }
 

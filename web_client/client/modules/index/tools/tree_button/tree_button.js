@@ -3,9 +3,13 @@ import {ContentRequest} from "../../../../types/remote_filesystem/content_reques
 
 require('./tree_button.scss')
 
+let UID = 0;
+
 class TreeButton extends AppWidget {
     constructor() {
         super();
+
+        this.UID = UID++;
 
         /**
          * @type {boolean}
@@ -130,13 +134,12 @@ class TreeButton extends AppWidget {
         if (this._expansion_promise)
             await this._expansion_promise;
 
-        this._expansion_promise = new Promise(async resolve => {
+        this._expansion_promise = new Promise(resolve => {
             this._expanded = expand;
             if (expand) {
                 this.elements().content.style.display = 'flex';
                 this.elements().arrow.classList.add('expanded');
                 if (this._cached_divs) {
-
                     for (const div of this._cached_divs.values()) {
                         this._insert_child(div)
                     }
@@ -176,8 +179,8 @@ class TreeButton extends AppWidget {
                 open: async (event) => {
                     if (this._expandable) {
                         if (this.is_selected()) {
-                            await this.set_expanded(!this._expanded);
-                        } else if (!this._expanded)
+                            await this.set_expanded(!this.expanded());
+                        } else if (!this.expanded())
                             await this.set_expanded(true);
                     }
                     if (!this.is_selected())
@@ -213,6 +216,7 @@ class TreeButton extends AppWidget {
                     request.directory_content([item.id]);
                 await this.get_app().pool.fetch_content(request);
             }
+
             for (const item of items)
                 if (!item.is_regular_file || this._show_regular_files)
                     this._add_item(item);

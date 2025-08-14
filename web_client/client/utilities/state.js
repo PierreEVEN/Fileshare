@@ -77,7 +77,7 @@ class AppState {
         await this._clear_selection();
         if (selection) {
             this._selected_item = selection;
-            await this.events.broadcast('select', this._selected_item);
+            this.events.broadcast_async('select', this._selected_item);
             if (selection.item)
                 APP_COOKIES.push_last_repositories(selection.item.repository);
             if (selection.repository)
