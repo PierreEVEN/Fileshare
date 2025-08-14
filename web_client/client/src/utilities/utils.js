@@ -21,7 +21,6 @@ function humanFileSize(bytes) {
         ++u;
     } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
 
-
     return bytes.toFixed(1) + ' ' + units[u];
 }
 

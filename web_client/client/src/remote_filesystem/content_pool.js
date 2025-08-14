@@ -90,15 +90,17 @@ class ContentPool {
         this._running_request = this._request_in_queue;
         this._request_in_queue = null;
 
-        const body = this._running_request.make_body(this) || {};
-        /* //@TODO :: don't works with side bar hierarchy
+        const body = this._running_request.make_body(this);
         if (!body) {
-            this._resolve_running_request(this._running_request.indices);
-            delete this._running_request;
-            this._next_request_promise = new Promise((resolve) => this._resolve_running_request = resolve);
-            this._try_execute_pending_request();
+            setTimeout(() => {
+                this._resolve_running_request(this._running_request.indices);
+                delete this._running_request;
+                this._next_request_promise = new Promise((resolve) => this._resolve_running_request = resolve);
+                this._try_execute_pending_request();
+            }, 1)
             return;
-        }*/
+        }
+
         this.get_app().fetch_api('repository/fetch', 'POST', body)
             .then(async request_result => {
                 if (typeof(request_result) === "string") {

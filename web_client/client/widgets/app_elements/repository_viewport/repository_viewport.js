@@ -258,7 +258,7 @@ class RepositoryViewport extends AppWidget {
             },
             open_upload: () => {
                 this.open_upload_container()
-                div.hb_elements.upload_button.style.display = 'none';
+                this.elements().upload_button.style.display = 'none';
             },
             ctx_selection: async () => {
                 const items = [];

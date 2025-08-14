@@ -134,6 +134,17 @@ class TreeButton extends AppWidget {
             this._expanded = expand;
             if (expand) {
                 await this._init_content_provider();
+
+                // Prefetch subdirectories content
+                {
+                    let content = await this._content_provider.get_content();
+                    const new_request = new ContentRequest();
+                    for (const item of content)
+                        if (!item.is_regular_file)
+                            new_request.directory_content([item.id]);
+                    this.get_app().pool.fetch_content(new_request);
+                }
+
                 this.elements().content.style.display = 'flex';
                 this.elements().arrow.classList.add('expanded');
                 if (this._cached_divs) {

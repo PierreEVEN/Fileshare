@@ -10,10 +10,10 @@ module.exports = {
         filename: '[name].js',
         path: path.resolve(__dirname, 'public/dist'),
     },
-    performance: {
+    /*performance: {
         maxEntrypointSize: 4194304,
         maxAssetSize: 4194304
-    },
+    },*/
     plugins: [
         {
             apply: (compiler) => {
