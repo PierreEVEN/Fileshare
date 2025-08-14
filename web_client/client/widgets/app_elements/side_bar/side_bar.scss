@@ -1,3 +1,5 @@
+@import "../../app/palette.scss";
+
 side-bar {
   display: flex;
   flex-direction: column;
@@ -25,6 +27,7 @@ side-bar {
         width: 20px;
         margin-right: 10px;
         margin-left: 2px;
+        filter: $icon-filter;
       }
 
       .arrow {

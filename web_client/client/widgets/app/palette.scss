@@ -1,21 +1,37 @@
 $text-color: #ffffff;
-$text-secondary: rgba(255, 255, 255, 0.47);
+$text-secondary: #FFFFFF77;
+
 $primary: #53812c;
+$secondary: #0A0A0B82;
 $background: #1f232c;
-$secondary: rgba(10, 10, 11, 0.51);
-$notification: rgba(96, 96, 96, 0.51);
 $toolbar: #202a38;
 
-$border-default: #5b6574;
+$border-color: #5b6574;
+
+$notification: #60606082;
 $text-url: #3c94af;
-$progress-bar: #00ff04;
-$sub-progress-bar: #596c59;
+$widget-shadow: -10px -5px 20px #000;
+$icon-filter: none;
 
-$button_1: #2180FF;
-$cancel-background: #9f1600;
-$cancel-border: #f61701;
+/*
+$text-color: #000000;
+$text-secondary: #3c3b3b;
+$primary: #689546;
+$background: #ffffff;
+$secondary: #e1e1e1;
+$notification: #424242;
+$toolbar: #eeeeee;
+$border-color: #646464;
+$text-url: #a5a5a5;
+$icon-filter: drop-shadow(1px 2px 0.2rem #424242);
+ */
 
-$button_yes: #00ff04;
+/*
+$notification: #c739ff;
+ */
+
+
+
 
 @function item_hover($base) {
   @return adjust-color($base, $hue: -2deg, $lightness: -15%);

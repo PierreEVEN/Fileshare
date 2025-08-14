@@ -18,7 +18,7 @@ upload-widget {
     flex-direction: column;
     width: 300px;
     backdrop-filter: blur(20px);
-    box-shadow: -2px -2px 5px black;
+    box-shadow: $widget-shadow;
     border-radius: 5px;
     overflow: hidden;
     background-color: rgba(255, 255, 255, 0.06);
@@ -218,7 +218,7 @@ upload-widget {
         max-width: unset;
         min-width: unset;
         height: 50vh;
-        box-shadow: 0 5px 20px #000000;
+        box-shadow: $widget-shadow;
       }
     }
   }

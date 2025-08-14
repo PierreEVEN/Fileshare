@@ -252,7 +252,6 @@ class Uploader extends AppWidget {
     }
 
     delete() {
-        super.delete();
         if (this.processor)
             this.processor.delete();
         this.processor = null;

@@ -7,7 +7,7 @@
   background-color: opaque($secondary);
   z-index: 200000;
   padding: 10px;
-  box-shadow: 10px 5px 15px black;
+  box-shadow: $widget-shadow;
   border: 1px solid black;
   border-radius: 20px;
   user-select: none;
@@ -21,6 +21,7 @@
     width: 20px;
     height: 20px;
     margin-right: 10px;
+    filter: $icon-filter;
   }
 
   button {
