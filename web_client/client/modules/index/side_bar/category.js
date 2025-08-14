@@ -62,8 +62,18 @@ class SideBarCategory extends AppWidget {
         if (this._loaded_repositories.has(repository.id))
             return;
         const div = document.createElement('repository-tree-button').set_repository(repository).set_expandable(true);
-        this._elements.content.append(div);
+        this._append_repository(div);
         this._loaded_repositories.set(repository.id, div);
+    }
+
+    _append_repository(div) {
+        let existing_children = Array.from(this._elements.content.children);
+        let insertIndex = existing_children.findIndex(child => child.get_name().localeCompare(div.get_name()) > 0);
+        if (insertIndex === -1) {
+            this.elements().content.appendChild(div);
+        } else {
+            this.elements().content.insertBefore(div, this._elements.content.children[insertIndex]);
+        }
     }
 }
 

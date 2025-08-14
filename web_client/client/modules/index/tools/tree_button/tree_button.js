@@ -134,9 +134,10 @@ class TreeButton extends AppWidget {
         if (this._expansion_promise)
             await this._expansion_promise;
 
-        this._expansion_promise = new Promise(resolve => {
+        this._expansion_promise = new Promise(async resolve => {
             this._expanded = expand;
             if (expand) {
+                await this._init_content_provider();
                 this.elements().content.style.display = 'flex';
                 this.elements().arrow.classList.add('expanded');
                 if (this._cached_divs) {
@@ -154,6 +155,7 @@ class TreeButton extends AppWidget {
         })
 
         await this._expansion_promise;
+
     }
 
     /**
@@ -202,24 +204,28 @@ class TreeButton extends AppWidget {
      */
     async _init_content_provider() {
         if (this._content_provider)
-            return;
+            return await this._init_content_provider_promise;
         this._content_provider = this.get_content();
         if (!this._content_provider)
             return;
 
         // Fetch content
         if (this._expandable) {
-            const items = await this._content_provider.get_content();
-            if (this.expanded()) {
-                const request = new ContentRequest();
-                for (const item of items)
-                    request.directory_content([item.id]);
-                await this.get_app().pool.fetch_content(request);
-            }
+            this._init_content_provider_promise = new Promise(async resolve => {
+                const items = await this._content_provider.get_content();
+                if (this.expanded()) {
+                    const request = new ContentRequest();
+                    for (const item of items)
+                        request.directory_content([item.id]);
+                    await this.get_app().pool.fetch_content(request);
+                }
 
-            for (const item of items)
-                if (!item.is_regular_file || this._show_regular_files)
-                    this._add_item(item);
+                for (const item of items)
+                    if (!item.is_regular_file || this._show_regular_files)
+                        this._add_item(item);
+                resolve();
+            })
+            await this._init_content_provider_promise;
         }
 
         // Bind add and remove item (required to detect when we should add or remove arrow)
