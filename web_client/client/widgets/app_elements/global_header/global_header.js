@@ -42,9 +42,12 @@ class AppHeader extends AppWidget {
                         this.get_app().set_global_search(null);
                     } else {
                         const selection = this.get_app().state.selection();
-                        this.get_app().set_global_search(new Filter()
+                        const filter = new Filter()
                             .name(event.target.value)
-                            .source(selection.repository ? selection.repository.id : selection.item.repository, selection.item ? selection.item.id : null));
+                            .source(selection.repository ? selection.repository.id : selection.item.repository, selection.item ? selection.item.id : null);
+                        this.get_app().set_global_search(filter);
+                        await this.get_app().state.select(new StateSelection().set_filter(filter));
+                        console.error("TODO FILTER");
                     }
                 }
             }

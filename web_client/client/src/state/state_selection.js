@@ -23,11 +23,23 @@ class StateSelection {
          * @type {boolean}
          */
         this.in_settings = false;
-
         /**
          * @type {boolean}
          */
         this.in_admin_pannel = false;
+        /**
+         * @type {Filter}
+         */
+        this.filter = null;
+    }
+
+    /**
+     * @param filter {Filter}
+     * @returns {StateSelection}
+     */
+    set_filter(filter) {
+        this.filter = filter;
+        return this;
     }
 
     /**
