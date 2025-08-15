@@ -4,10 +4,7 @@
 <div class="burger-menu" onclick="{{ctx "menu()"}}">
     <button><img src="/public/images/icons/icons8-menu-96.png" alt="menu" {{object "menu_img"}}></button>
 </div>
-<div class="search-box">
-    <input type="text" placeholder="search" onchange="{{ctx "search_changed(event)"}}" onkeydown="{{ctx "search_changed(event)"}}" {{object "search_bar"}}>
-    <img src="/public/images/icons/icons8-search-100.png">
-</div>
+<search-bar></search-bar>
 <div class="signin" {{object "signin"}}>
     <button onclick="{{ctx 'signup()'}}">Nouveau compte</button>
     <button onclick="{{ctx 'login()'}}">Connexion</button>

@@ -2,6 +2,7 @@ import {Authentication} from "../../modals/authentication/authentication";
 import {AppWidget} from "../../../src/app_widget";
 import {Filter} from "../../../src/filter/filter";
 import {StateSelection} from "../../../src/state/state_selection";
+import "../../misc/search_bar/search_bar"
 
 require('./global_header.scss')
 
