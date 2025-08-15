@@ -3,6 +3,7 @@ import {create_directory} from "../../../modals/create_directory/create_director
 import {delete_item, restore_item} from "../../../modals/delete_item/delete_item";
 import {edit_item} from "../../../modals/edit_item/edit_item";
 import {CLIPBOARD, copy_items} from "../../../modals/copy_items/copy_items";
+import {RemoteItem} from "../../../../src/remote_filesystem/remote_item";
 
 /**
  * @param app {FileshareApp}
