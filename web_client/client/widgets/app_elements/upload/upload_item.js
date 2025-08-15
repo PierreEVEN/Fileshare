@@ -180,7 +180,7 @@ class UploadItem {
                 await this.parent.create_directory();
             }
             if (!this.parent.directory) {
-                console.error(`Failed to create parent directory for : ${this.parent.name}`);
+                console.error(`Failed to create parent directory ${this.parent.name} for : ${this.name}`);
                 return;
             }
             this.directory = await this._get_or_create_dir(this.name, this.parent.directory.repository, this.parent.directory.id);
@@ -198,7 +198,7 @@ class UploadItem {
      */
     async _get_or_create_dir(name, repository_id, parent) {
         const repository = await this.app.pool.fetch_repository(repository_id);
-        const existing = parent ? (await repository.get_pool().fetch_item(parent)).find_child(name) : await repository.find_child(name);
+        const existing = parent ? await (await repository.get_pool().fetch_item(parent)).find_child(name) : await repository.find_child(name);
         if (existing) {
             if (existing.in_trash) {
                 const res = (await overwrite_or_restore(this.app, existing.name.plain(), existing));

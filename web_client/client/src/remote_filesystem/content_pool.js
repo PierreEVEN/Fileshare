@@ -175,6 +175,11 @@ class ContentPool {
         return existing;
     }
 
+    /**
+     * @param data {Object}
+     * @return {Promise<RemoteItem>}
+     * @private
+     */
     async _register_item(data) {
         const existing = this.find_item(data.id);
         if (!existing) {
