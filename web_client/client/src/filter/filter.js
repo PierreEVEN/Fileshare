@@ -9,7 +9,7 @@ class Filter {
         this._max_size = null;
         this._min_size = null;
         this._mime_type = null;
-        this._owners = null;
+        this._owners = [];
     }
 
 
@@ -72,6 +72,36 @@ class Filter {
 
     name(name) {
         this._name = name;
+        return this;
+    }
+
+    owner(owner) {
+        this._owners.push(owner);
+        return this;
+    }
+
+    before(before) {
+        this._before = before;
+        return this;
+    }
+
+    after(after) {
+        this._after = after;
+        return this;
+    }
+
+    mime(mime) {
+        this._mime_type = mime;
+        return this;
+    }
+
+    less_than(size) {
+        this._max_size = size;
+        return this;
+    }
+
+    more_than(size) {
+        this._min_size = size;
         return this;
     }
 
