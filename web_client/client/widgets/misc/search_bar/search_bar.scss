@@ -1,0 +1,75 @@
+@import "../../app/palette";
+
+search-bar {
+  position: relative;
+  display: flex;
+  border-radius: 100px;
+  overflow: clip;
+  flex-grow: 1;
+  padding: 0;
+  justify-content: end;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.16);
+
+  search-bar-option:first-of-type {
+    margin-left: 15px;
+  }
+
+  .input-box {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+  }
+
+  input {
+    margin: 0;
+  }
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+
+  img {
+    position: absolute;
+    width: 25px;
+    margin-right: 25px;
+    filter: brightness(0.4);
+    cursor: pointer;
+  }
+
+  @media (orientation: portrait) {
+    & {
+      display: none;
+    }
+  }
+}
+
+.search-bar-option-div {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  border: solid 1px black;
+  box-shadow: $widget-shadow;
+  left: 0;
+  background-color: $background;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 5px;
+
+  button {
+    display: flex;
+    border-radius: 5px;
+    justify-content: left;
+
+    p {
+      text-align: left;
+      font-weight: bold;
+    }
+
+    :nth-child(2) {
+      color: $text-secondary;
+      font-weight: normal;
+      margin-left: 10px;
+    }
+  }
+}

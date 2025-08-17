@@ -24,7 +24,7 @@ function generate_available_mime_icons() {
         }
     }
 
-    fs.writeFileSync(`${__dirname}/client/utilities/mime_icon_list.js`, `module.exports = ${JSON.stringify(icons)}`);
+    fs.writeFileSync(`${__dirname}/client/src/utilities/mime_icon_list.js`, `module.exports = ${JSON.stringify(icons)}`);
 }
 
 generate_available_mime_icons();

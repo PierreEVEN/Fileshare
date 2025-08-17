@@ -1,0 +1,67 @@
+@import "../../app/palette.scss";
+
+side-bar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  user-select: none;
+
+  side-bar-category {
+    display: flex;
+    flex-direction: column;
+
+    button {
+      justify-content: left;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      margin: 0;
+
+      .title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      img {
+        width: 20px;
+        margin-right: 10px;
+        margin-left: 2px;
+        filter: $icon-filter;
+      }
+
+      .arrow {
+        transition-duration: 0.2s;
+        min-width: 15px;
+      }
+    }
+
+    .content {
+      margin-left: 15px;
+      display: none;
+
+      .trash {
+        margin-left: 15px;
+        display: none;
+      }
+    }
+
+    &.expand {
+      .content {
+        display: flex;
+        flex-direction: column;
+      }
+
+      > button {
+        > p.arrow {
+          rotate: 90deg;
+        }
+      }
+    }
+
+  }
+}
+
+.side-bar-selected > .field {
+  border: 1px solid gray;
+}

@@ -1,0 +1,170 @@
+
+@import "../../app/palette";
+
+page-repository-settings {
+  width: 100%;
+  overflow: auto;
+
+  .smaller {
+    font-size: smaller;
+    margin-left: 20px;
+  }
+
+  .section-title {
+    padding-left: 5px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    &.main {
+      > img {
+        height: 45px;
+        margin-left: 20px;
+      }
+      background-color: $secondary;
+    }
+
+    h1 {
+      font-weight: bolder;
+      font-size: 30px;
+    }
+
+    h2 {
+      font-size: 20px;
+    }
+
+    img {
+      height: 35px;
+      margin-right: 10px;
+    }
+
+    .plus-button {
+      display: flex;
+      margin-left: 40px;
+      font-size: unset;
+      width: auto;
+      border-radius: 10px;
+      padding: 25px 10px;
+
+      img {
+        height: 25px;
+        margin-right: 10px;
+      }
+    }
+  }
+
+
+  .item_list {
+    overflow: auto;
+    max-height: 120px;
+    width: fit-content;
+    background-color: $toolbar;
+    padding: 10px;
+    margin-left: 20px;
+
+    p {
+      font-size: 12px;
+      line-height: 20px;
+    }
+  }
+
+  .repos-settings-authorizations {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 30px;
+    padding: 0;
+    max-height: 300px;
+
+    .repos-setting-authorization {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      align-items: center;
+      border-bottom: solid 1px #3e3e3e;
+
+      &.header {
+        background-color: $toolbar;
+      }
+
+      .column {
+        display: flex;
+        flex: 1 1 0;
+        height: 100%;
+        justify-content: center;
+      }
+
+      select {
+        flex-grow: unset;
+        width: 100%;
+      }
+
+      button {
+        flex-grow: unset;
+        min-width: unset;
+        margin-left: 80%;
+        margin-right: 20%;
+
+        img {
+          height: 25px;
+        }
+      }
+    }
+  }
+
+  .repos-settings-information {
+    .cat {
+      display: flex;
+      flex-direction: column;
+      margin-left: 25px;
+      margin-bottom: 25px;
+
+      .head {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        p {
+          font-weight: bold;
+          margin-left: 10px;
+        }
+
+        img {
+          height: 20px;
+        }
+      }
+      p {
+        font-weight: lighter;
+        margin-top: 5px;
+        margin-bottom: 5px;
+      }
+    }
+  }
+}
+
+
+@media (orientation: portrait) {
+  page-repository-settings {
+    .section-title {
+      flex-direction: column;
+      margin-bottom: 20px;
+      margin-left: 0;
+      text-align: center;
+
+      h2 {
+        margin: 10px;
+      }
+
+      .plus-button {
+        margin-left: 0;
+      }
+    }
+
+    #repos-settings-information {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}

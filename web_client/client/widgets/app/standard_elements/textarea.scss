@@ -1,0 +1,19 @@
+@import "../palette";
+
+textarea {
+  flex-grow: 1;
+  border: 0;
+  border-bottom: 2px solid #282f3d;
+  background-color: $secondary;
+  color: $text-color;
+  padding: 10px;
+  margin-right: 5px;
+}
+
+form {
+  .field:has(textarea) {
+    label {
+      flex-grow: 0;
+    }
+  }
+}

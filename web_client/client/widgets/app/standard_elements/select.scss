@@ -1,0 +1,19 @@
+@import "../palette";
+
+select {
+  flex-grow: 1;
+  height: 50px;
+  border: 0;
+  background-color: $background;
+  padding: 0 15px;
+  color: white;
+  transition-duration: 0.15s;
+
+  &:hover {
+    background-color: rgb(33, 38, 49);
+  }
+
+  &:active {
+    background-color: rgb(4, 4, 5);
+  }
+}

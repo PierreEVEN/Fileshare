@@ -1,0 +1,54 @@
+$text-color: #ffffff;
+$text-secondary: #FFFFFF77;
+
+$primary: #53812c;
+$secondary: #0A0A0B82;
+$background: #1f232c;
+$toolbar: #202a38;
+
+$border-color: #5b6574;
+
+$notification: #60606082;
+$text-url: #3c94af;
+$widget-shadow: -10px -5px 20px #000;
+$icon-filter: none;
+
+/*
+$text-color: #000000;
+$text-secondary: #3c3b3b;
+$primary: #689546;
+$background: #ffffff;
+$secondary: #e1e1e1;
+$notification: #424242;
+$toolbar: #eeeeee;
+$border-color: #646464;
+$text-url: #a5a5a5;
+$icon-filter: drop-shadow(1px 2px 0.2rem #424242);
+ */
+
+/*
+$notification: #c739ff;
+ */
+
+
+
+
+@function item_hover($base) {
+  @return adjust-color($base, $hue: -2deg, $lightness: -15%);
+}
+
+@function item_active($base) {
+  @return adjust-color($base, $hue: 5deg, $lightness: -20%);
+}
+
+@function item_focused($base) {
+  @return adjust-color($base, $hue: 0deg, $lightness: -10%);
+}
+
+@function lighten($base) {
+  @return adjust-color($base, $hue: 0deg, $lightness: 10%);
+}
+
+@function opaque($base) {
+  @return rgba($base, 1);
+}
