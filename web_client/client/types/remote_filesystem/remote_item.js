@@ -165,10 +165,9 @@ class RemoteItem {
     }
 
     /**
-     * @param app {FileshareApp}
      * @returns {Promise<string>}
      */
-    async url(app) {
+    async url() {
         const repository = await this.get_pool().fetch_repository(this.repository);
         const base = await repository.url();
         return `${base}/tree${this.absolute_path.plain()}`
