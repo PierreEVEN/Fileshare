@@ -2,4 +2,4 @@
 <div class="input-box" {{object "search_bar"}}>
     <input type="text" placeholder="search" onfocusin="{{ctx "search_changed(event)"}}" oninput="{{ctx "search_changed(event)"}}" onchange="{{ctx "search_changed(event)"}}" onkeydown="{{ctx "keydown(event)"}}" {{object "text"}}>
 </div>
-<img src="/public/images/icons/icons8-search-100.png">
+<img src="/public/images/icons/icons8-search-100.png" onclick="{{ctx "search()"}}">

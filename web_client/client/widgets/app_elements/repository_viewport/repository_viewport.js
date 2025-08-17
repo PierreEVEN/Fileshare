@@ -1,6 +1,6 @@
-import {ContentProvider, ViewportContent} from "../../../src/viewport_content/viewport_content";
+import {ContentProvider} from "../../../src/viewport_content/viewport_content";
 import {
-    DirectoryContentProvider, FilterContentProvider,
+    DirectoryContentProvider,
     RepositoryRootProvider,
     TrashContentProvider
 } from "../../../src/viewport_content/providers";
@@ -13,19 +13,16 @@ import "../toolbar/toolbar";
 import {Repository} from "../../../src/remote_filesystem/repository";
 import "../carousel/list/carousel_list";
 import "../carousel/viewport/carousel_viewport";
-import {humanFileSize, is_touch_screen} from "../../../src/utilities/utils";
-import {Selector} from "./selector";
-import {CLIPBOARD, copy_items} from "../../modals/copy_items/copy_items";
+import {copy_items} from "../../modals/copy_items/copy_items";
 import {delete_item} from "../../modals/delete_item/delete_item";
 import {AppWidget} from "../../../src/app_widget";
 import "../global_carousel/global_carousel"
 import {StateSelection} from "../../../src/state/state_selection";
+import "../content_page/content_page"
 
 require('./repository_viewport.scss')
 
-/**
- * @type {RepositoryViewport}
- */
+/*
 let CURRENT_VIEWPORT = null;
 document.addEventListener('keydown', async function (event) {
     if (!CURRENT_VIEWPORT || !CURRENT_VIEWPORT.closest('fileshare-app'))
@@ -133,117 +130,14 @@ document.addEventListener('keydown', async function (event) {
                 await delete_item(CURRENT_VIEWPORT.get_app(), items, true);
         }
     }
-}, false);
+}, false);*/
 
 class RepositoryViewport extends AppWidget {
     constructor() {
         super();
-        CURRENT_VIEWPORT = this;
-
-        /**
-         * @type {Map<number, ItemView>}
-         * @private
-         */
-        this._visible_items = new Map();
     }
 
     connectedCallback() {
-        let content_num_items = 0;
-        let content_total_size = 0;
-
-        /**
-         * @type {ViewportContent}
-         */
-        this.content = new ViewportContent(this);
-
-        this.content.events.add('add', async (item) => {
-            let in_trash = this.content.get_content_provider() instanceof TrashContentProvider;
-
-            if (!this._visible_items.has(item.id) && item.in_trash === in_trash) {
-                content_total_size += item.content_size;
-                content_num_items += item.num_items;
-                this.elements().footer_text.innerText = `${content_num_items} fichiers - ${humanFileSize(content_total_size)}`
-            }
-
-            const new_item = document.createElement('item-view');
-            new_item.set_item(item);
-            new_item.ondblclick = async () => {
-                await this.get_app().state.select(new StateSelection().set_item(item));
-            };
-            new_item.onclick = async (event) => {
-                const local_edit = event.ctrlKey;
-                const fill_space = event.shiftKey;
-                if (is_touch_screen()) {
-                    if (this.mobile_selection) {
-                        this.selector.action_select(item.id, true, false);
-                    } else {
-                        await this.get_app().state.select(new StateSelection().set_item(item));
-                    }
-                } else {
-                    this.selector.action_select(item.id, local_edit, fill_space);
-                }
-            };
-            new_item.oncontextmenu = async (e) => {
-                e.preventDefault();
-                if (is_touch_screen()) {
-                    if (!this.mobile_selection || !this.selector.is_selected(item.id)) {
-                        this.selector.clear_selection();
-                        this.mobile_selection = true;
-                        this.selector.action_select(item.id, false, false);
-                    } else {
-                        const items = [];
-                        for (const item_id of this.selector.get_selected_items()) {
-                            items.push(await item.get_pool().fetch_item(item_id));
-                        }
-                        context_menu_item(this.get_app(), items);
-                    }
-                    this.update_selection();
-                } else {
-                    if (this.selector.is_selected(item.id)) {
-                        const items = [];
-                        for (const item_id of this.selector.get_selected_items()) {
-                            items.push(await item.get_pool().fetch_item(item_id));
-                        }
-                        context_menu_item(this.get_app(), items);
-                    } else {
-                        this.selector.select_item(item.id, false, false);
-                        context_menu_item(this.get_app(), item);
-                    }
-                }
-            }
-
-            this.elements().content.append(new_item);
-            this._visible_items.set(item.id, new_item);
-        });
-
-        this.content.events.add('remove', (item) => {
-            const div = this._visible_items.get(item.id);
-            if (div) {
-                div.remove();
-                this._visible_items.delete(item.id);
-
-                content_total_size -= item.content_size;
-                content_num_items -= item.num_items;
-                this.elements().footer_text.innerText = `${content_num_items} fichiers - ${humanFileSize(content_total_size)}`
-            }
-        })
-
-        /**
-         * @type {Selector}
-         */
-        this.selector = new Selector(this);
-        this.selector.events.add('update_selection', () => {
-            if (this.mobile_selection && this.selector.get_selected_items().length > 0) {
-                this.elements().num_elements.innerText = `${this.selector.get_selected_items().length} éléments`;
-                this.elements().mobile_selection.classList.add('visible');
-            } else {
-                this.mobile_selection = false;
-                this.elements().mobile_selection.classList.remove('visible');
-            }
-        })
-
-
-
         this.innerHTML = '';
 
         this.set_content(require('./repository_viewport.hbs'), {}, {
@@ -306,12 +200,7 @@ class RepositoryViewport extends AppWidget {
      * @private
      */
     async _on_state_select(selection) {
-        const tmp_provider = await this._spawn_content_provider(selection);
-        if (!this.content.get_content_provider() || !this.content.get_content_provider().is_same(tmp_provider)) {
-            await this.content.set_content_provider(tmp_provider);
-        } else {
-            tmp_provider.delete();
-        }
+        this.elements().content.set_content_provider(await this._spawn_content_provider(selection));
 
         if (selection.item) {
             const repository = await this.get_app().pool.fetch_repository(selection.item.repository);
@@ -383,14 +272,6 @@ class RepositoryViewport extends AppWidget {
         this.elements().toolbar.set_repository(this.repository)
     }
 
-    get_div(item_id) {
-        return this._visible_items.get(item_id);
-    }
-
-    async try_get_item_data(item_id) {
-        return await this.get_app().pool.fetch_item(item_id)
-    }
-
     close_upload_container() {
         this.elements().upload_button.style.display = 'flex';
         this.elements().upload_container.innerHTML = '';
@@ -414,26 +295,6 @@ class RepositoryViewport extends AppWidget {
         this.elements().current_description.style.display = 'none';
     }
 
-    /**
-     * @param filter {Filter}
-     * @returns {Promise<void>}
-     */
-    async set_search_filter(filter) {
-        if (!filter) {
-            if (this.content.get_content_provider()) {
-                if (this.content.get_content_provider()['directory']) {
-                    await this.content.set_content_provider(new DirectoryContentProvider(this.content.get_content_provider().directory));
-                } else if (this.content.get_content_provider()['repository']) {
-                    await this.content.set_content_provider(new RepositoryRootProvider(this.content.get_content_provider().repository));
-                }
-            }
-        } else {
-            const previous = this.content.get_content_provider();
-            await this.content.set_content_provider(new ContentProvider(this.get_app().pool));
-            await this.content.set_content_provider(new FilterContentProvider(this.get_app().pool, filter))
-        }
-    }
-
     disconnectedCallback() {
         if (this._on_state_select_cb)
             this._on_state_select_cb.remove();
@@ -450,8 +311,6 @@ class RepositoryViewport extends AppWidget {
         if (this.selector)
             this.selector.delete();
         this.selector = null;
-        if (CURRENT_VIEWPORT === this)
-            CURRENT_VIEWPORT = null;
 
         this.close_carousel();
     }

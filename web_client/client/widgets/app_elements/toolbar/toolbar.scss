@@ -3,6 +3,8 @@
 viewport-toolbar {
   display: flex;
   width: 100%;
+  background-color: $toolbar;
+  height: 45px;
 
   .root-button {
     display: flex;

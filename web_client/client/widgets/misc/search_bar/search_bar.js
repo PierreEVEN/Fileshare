@@ -1,6 +1,7 @@
 import {AppWidget} from "../../../src/app_widget";
 import './option/search_bar_option'
 import {Filter} from "../../../src/filter/filter";
+import {StateSelection} from "../../../src/state/state_selection";
 require('./search_bar.scss')
 
 class SearchBar extends AppWidget {
@@ -18,10 +19,13 @@ class SearchBar extends AppWidget {
                 if (event.key === 'Enter') {
                     const options = this.match_options(event.target.value);
                     if (options.length > 0) {
-                        console.log("test")
                         this._add_option(options[0])
-                    }
+                    } else
+                        this.apply_filter();
                 }
+            },
+            search: () => {
+                this.apply_filter();
             }
         });
 
@@ -89,14 +93,15 @@ class SearchBar extends AppWidget {
         this.update_options([]);
     }
 
-    apply_filter() {
+    async apply_filter() {
         const filter = new Filter();
         for (const [_, opt] of this.list_filters()) {
             opt.set(filter);
         }
         if (this.elements().text.value !== '')
             filter.name(this.elements().text.value);
-        console.log(filter);
+
+        await this.get_app().state.select(new StateSelection().set_filter(filter));
     }
 
     match_options(text) {
@@ -104,16 +109,16 @@ class SearchBar extends AppWidget {
         const options = [];
 
         if ("de:".includes(text) && !filters.has("de")) {
-            options.push({title: "de", value: "utilisateur", set: filter => filter.owner()});
+            options.push({title: "de", value: "utilisateur", set: (filter, value) => filter.owner(value)});
         }
         if ("mime:".includes(text) && !filters.has("mime")) {
-            options.push({title: "mime", value: "type de fichier"});
+            options.push({title: "mime", value: "type de fichier", set: (filter, value) => filter.mime(value)});
         }
         if ("plus grand que:".includes(text) && !filters.has("plus grand que")) {
-            options.push({title: "plus grand que", value: "taille"});
+            options.push({title: "plus grand que", value: "taille", set: (filter, value) => filter.more_than(value)});
         }
         if ("plus petit que:".includes(text) && !filters.has("plus petit que")) {
-            options.push({title: "plus petit que", value: "taille"});
+            options.push({title: "plus petit que", value: "taille", set: (filter, value) => filter.less_than(value)});
         }
 
         return options;

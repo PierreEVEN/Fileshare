@@ -2,19 +2,19 @@ import {EventManager} from "../../../src/event_manager";
 
 class Selector {
     /**
-     * @param viewport {RepositoryViewport}
+     * @param content {ContentPage}
      */
-    constructor(viewport) {
+    constructor(content) {
         this._selected_items = new Set();
-        this.viewport = viewport;
+        this.content = content;
 
         this.sorted_elements = [];
 
-        this._add_content_event = viewport.content.events.add('add', (item) => {
+        this._add_content_event = content._provider.events.add('add', (item) => {
             this.sorted_elements.push(item.id);
         });
 
-        this._remove_content_event = viewport.content.events.add('remove', (item) => {
+        this._remove_content_event = content._provider.events.add('remove', (item) => {
             if (this._last_selected === item.id)
                 this._last_selected = null;
             for (const i in this.sorted_elements) {
@@ -169,7 +169,7 @@ class Selector {
     _internal_select(item_id) {
         if (!this._selected_items.has(item_id)) {
             this._selected_items.add(item_id);
-            const div = this.viewport.get_div(item_id);
+            const div = this.content.get_div(item_id);
             if (div)
                 div.classList.add('selected');
             this.events.broadcast('update_selection', item_id);
@@ -179,7 +179,7 @@ class Selector {
     _internal_unselect(item_id) {
         if (this._selected_items.has(item_id)) {
             this._selected_items.delete(item_id);
-            const div = this.viewport.get_div(item_id);
+            const div = this.content.get_div(item_id);
             if (div)
                 div.classList.remove('selected');
             this.events.broadcast('update_selection', item_id);

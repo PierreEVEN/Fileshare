@@ -21,6 +21,7 @@ import {Message, NOTIFICATION} from "../misc/message_box/notification";
 import {ContentPool} from "../../src/remote_filesystem/content_pool";
 import {StateSelection} from "../../src/state/state_selection";
 import {InitData} from "../../src/utilities/app_init_data";
+import {FilterContentProvider} from "../../src/viewport_content/providers";
 
 require('./app.scss');
 
@@ -98,6 +99,8 @@ class FileshareApp extends HTMLElement {
             this.set_viewport_content(document.createElement('page-user').set_user(selection.user));
         else if (selection.in_admin_pannel)
             this.set_viewport_content(document.createElement('page-stats'));
+        else if (selection.filter)
+            this.set_viewport_content(await document.createElement('content-page').set_content_provider(new FilterContentProvider(this.pool, selection.filter)));
         else
             this.set_viewport_content(null);
     }

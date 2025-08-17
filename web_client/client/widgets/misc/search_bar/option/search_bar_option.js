@@ -49,6 +49,10 @@ class SearchBarOption extends AppWidget {
             this.closest('search-bar').elements().text.focus();
         }
     }
+
+    set(filter) {
+        this._data.set(filter, this.elements().text.value);
+    }
 }
 
 customElements.define('search-bar-option', SearchBarOption);
