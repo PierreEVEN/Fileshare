@@ -2,137 +2,124 @@ import {EventManager} from "../../../src/event_manager";
 
 class Selector {
     /**
-     * @param content {ContentPage}
+     * @param content {HTMLCollection}
      */
     constructor(content) {
+        /**
+         * @type {Set<number>}
+         * @private
+         */
         this._selected_items = new Set();
-        this.content = content;
-
-        this.sorted_elements = [];
-
-        this._add_content_event = content._provider.events.add('add', (item) => {
-            this.sorted_elements.push(item.id);
-        });
-
-        this._remove_content_event = content._provider.events.add('remove', (item) => {
-            if (this._last_selected === item.id)
-                this._last_selected = null;
-            for (const i in this.sorted_elements) {
-                const id = this.sorted_elements[i];
-                if (id === item.id) {
-                    this.sorted_elements.splice(i, 1);
-                    break;
-                }
-            }
-            this._selected_items.delete(item.id);
-        });
-
+        /**
+         * @type {number|null}
+         * @private
+         */
         this._last_selected = null;
+
+        /**
+         * @type {HTMLCollection}
+         */
+        this.content = content;
 
         this.events = new EventManager();
     }
 
-    delete() {
-        this._add_content_event.remove();
-        this._add_content_event = null;
-        this._remove_content_event.remove();
-        this._remove_content_event = null;
-    }
-
     /**
-     * @param item_id {string}
+     * @param item_id {number}
      * @param local_edit {boolean}
      */
-    unselect_item(item_id, local_edit) {
-
+    async unselect_item(item_id, local_edit) {
         if (!local_edit) {
             for (const item of this._selected_items) {
-                this.unselect_item(item, true);
+                await this.unselect_item(item, true);
             }
         }
 
         this._last_selected = item_id;
-        this._internal_unselect(item_id);
+        await this._internal_unselect(item_id);
     }
 
     /**
-     * @param item_id {string}
+     * @param item_id {number}
      * @param local_edit {boolean}
      * @param fill_space {boolean}
      */
-    select_item(item_id, local_edit, fill_space) {
+    async select_item(item_id, local_edit, fill_space) {
         if (!local_edit) {
             const last_selected = this._last_selected;
             for (const item of this._selected_items)
-                this.unselect_item(item, true);
+                await this.unselect_item(item, true);
             this._last_selected = last_selected;
         }
 
         if (fill_space && this._last_selected !== null && this._last_selected !== undefined) {
-            let start = -1;
-            let end = -1;
 
-            for (const i in this.sorted_elements)
-                if (this.sorted_elements[i] === this._last_selected)
-                    start = Number(i);
+            let start = this.find_item_view_by_id(this._last_selected);
+            let end = this.find_item_view_by_id(item_id);
 
-            for (const i in this.sorted_elements)
-                if (this.sorted_elements[i] === item_id)
-                    end = Number(i);
+            if (start && end) {
 
-            if (start > end) {
-                const tmp = end;
-                end = start;
-                start = tmp;
-            }
-
-            if (start >= 0 && end >= 0) {
-                for (let i = start; i <= end; ++i) {
-                    this._internal_select(this.sorted_elements[i]);
+                const content = Array.from(this.content);
+                const start_index = content.indexOf(start);
+                const end_index = content.indexOf(end);
+                if (start_index > end_index) {
+                    const tmp = end;
+                    end = start;
+                    start = tmp;
                 }
+
+                while (start && start !== end) {
+                    await this._internal_select(start.item().id);
+                    start = start.nextElementSibling;
+                }
+                await this._internal_select(end.item().id);
             }
         } else {
             this._last_selected = item_id;
         }
-        this._internal_select(item_id);
+        await this._internal_select(item_id);
     }
 
+    /**
+     * @param id {number}
+     * @return {ItemView}
+     */
+    find_item_view_by_id(id) {
+        for (const div of this.content)
+            if (div.item().id === id)
+                return div;
+        return null;
+    }
+
+    /**
+     * @returns {RemoteItem|null}
+     */
     get_last_selected_item() {
         return this._last_selected;
     }
 
     async select_next(local_edit) {
-        if (this.sorted_elements.length === 0)
+        if (this.content.length === 0)
             return;
-        if (!this._last_selected)
-            return this.select_item(this.sorted_elements[0], local_edit, false);
 
-        let index = null;
-        for (const item in this.sorted_elements)
-            if (this.sorted_elements[item] === this._last_selected) {
-                index = Number(item);
-                break;
-            }
-        if (index === null || this.sorted_elements.length - 1 === index)
-            return;
-        return this.select_item(this.sorted_elements[index + 1], local_edit, false);
+        const last_selected = this._last_selected ? this.find_item_view_by_id(this._last_selected) : this.content[0];
+        let next = last_selected.nextElementSibling;
+        if (!next)
+            next = this.content[0];
+
+        await this.select_item(next.item().id, local_edit, false);
     }
 
-    async select_previous(local_edit, fill_space) {
-        if (this.sorted_elements.length === 0)
+    async select_previous(local_edit) {
+        if (this.content.length === 0)
             return;
-        if (!this._last_selected)
-            return this.select_item(this.sorted_elements[this.sorted_elements.length - 1], local_edit, false);
 
-        let index = null;
-        for (const item in this.sorted_elements)
-            if (this.sorted_elements[item] === this._last_selected) {
-                index = Number(item);
-                break;
-            }
-        if (index === null || index === 0)
-            return;
-        return this.select_item(this.sorted_elements[index - 1], local_edit, false);
+        const last_selected = this._last_selected ? this.find_item_view_by_id(this._last_selected) : this.content[this.content.length - 1];
+        let previous = last_selected.nextElementSibling;
+        if (!previous)
+            previous = this.content[this.content.length - 1];
+
+        await this.select_item(previous.item().id, local_edit, false);
     }
 
     is_selected(item_id) {
@@ -146,43 +133,43 @@ class Selector {
         return Array.from(this._selected_items);
     }
 
-    clear_selection() {
+    async clear_selection() {
         for (const item of this._selected_items)
-            this.unselect_item(item, true);
+            await this.unselect_item(item, true);
     }
 
-    action_select(item_id, local_edit, fill_space) {
+    async action_select(item_id, local_edit, fill_space) {
         if (this._selected_items.has(item_id)) {
             if (local_edit) {
-                this.unselect_item(item_id, local_edit);
+                await this.unselect_item(item_id, local_edit);
             } else if (!fill_space) {
                 if (this._selected_items.size === 1)
-                    this.unselect_item(item_id, false);
+                    await this.unselect_item(item_id, false);
                 else
-                    this.select_item(item_id, false, false);
+                    await this.select_item(item_id, false, false);
             }
         } else {
-            this.select_item(item_id, local_edit, fill_space);
+            await this.select_item(item_id, local_edit, fill_space);
         }
     }
 
-    _internal_select(item_id) {
+    async _internal_select(item_id) {
         if (!this._selected_items.has(item_id)) {
             this._selected_items.add(item_id);
-            const div = this.content.get_div(item_id);
+            const div = this.find_item_view_by_id(item_id);
             if (div)
                 div.classList.add('selected');
-            this.events.broadcast('update_selection', item_id);
+            await this.events.broadcast('update_selection', item_id);
         }
     }
 
-    _internal_unselect(item_id) {
+    async _internal_unselect(item_id) {
         if (this._selected_items.has(item_id)) {
             this._selected_items.delete(item_id);
-            const div = this.content.get_div(item_id);
+            const div = this.find_item_view_by_id(item_id);
             if (div)
                 div.classList.remove('selected');
-            this.events.broadcast('update_selection', item_id);
+            await this.events.broadcast('update_selection', item_id);
         }
     }
 }

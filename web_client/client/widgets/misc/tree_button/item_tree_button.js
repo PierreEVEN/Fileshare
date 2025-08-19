@@ -2,7 +2,7 @@ import {TreeButton} from "./tree_button";
 import {context_menu_item} from "../context_menu/contexts/context_item";
 import {get_mime_icon_path} from "../../../src/utilities/mime_utils";
 import {Repository} from "../../../src/remote_filesystem/repository";
-import {DirectoryContentProvider} from "../../../src/viewport_content/providers";
+import {DirectoryContentProvider} from "../../../src/utilities/providers";
 import {StateSelection} from "../../../src/state/state_selection";
 
 class ItemTreeButton extends TreeButton {

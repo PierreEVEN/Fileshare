@@ -1,7 +1,7 @@
 import {Repository} from "../../../src/remote_filesystem/repository";
 import {TreeButton} from "./tree_button";
 import {context_menu_repository} from "../context_menu/contexts/context_repository";
-import {RepositoryRootProvider} from "../../../src/viewport_content/providers";
+import {RepositoryRootProvider} from "../../../src/utilities/providers";
 import {StateSelection} from "../../../src/state/state_selection";
 
 class RepositoryTreeButton extends TreeButton {

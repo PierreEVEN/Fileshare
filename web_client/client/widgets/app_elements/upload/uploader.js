@@ -1,5 +1,5 @@
 import {UploadItem} from "./upload_item";
-import {DirectoryContentProvider} from "../../../src/viewport_content/providers";
+import {DirectoryContentProvider} from "../../../src/utilities/providers";
 import {UploadProcessor} from "./upload_processor";
 import {EventManager} from "../../../src/event_manager";
 import {humanFileSize, seconds_to_str} from "../../../src/utilities/utils";

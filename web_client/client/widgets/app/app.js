@@ -21,7 +21,7 @@ import {Message, NOTIFICATION} from "../misc/message_box/notification";
 import {ContentPool} from "../../src/remote_filesystem/content_pool";
 import {StateSelection} from "../../src/state/state_selection";
 import {InitData} from "../../src/utilities/app_init_data";
-import {FilterContentProvider} from "../../src/viewport_content/providers";
+import {FilterContentProvider} from "../../src/utilities/providers";
 
 require('./app.scss');
 

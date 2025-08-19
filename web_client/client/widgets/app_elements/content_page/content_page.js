@@ -55,13 +55,13 @@ class ContentPage extends AppWidget {
         /**
          * @type {Selector}
          */
-        this.selector = new Selector(this);
+        this.selector = new Selector(this.children);
 
         const content = await this._provider.get_content();
         if (content.length > this._elements_per_page)
             console.warn("//@TODO : Handle multiple elements per page")
-        for (const element of content)
-            this._add_item(element);
+        for (let i = this._page * this._elements_per_page; i < content.length && i < (this._page + 1) * this._elements_per_page; ++i)
+            this._add_item(content[i]);
 
         this._cb_provider_add = this._provider.events.add('add', item => {
             this._add_item(item);
@@ -99,9 +99,9 @@ class ContentPage extends AppWidget {
         div.context_menu = async () => {
             if (is_touch_screen()) {
                 if (!this.mobile_selection || !this.selector.is_selected(item.id)) {
-                    this.selector.clear_selection();
+                    await this.selector.clear_selection();
                     this.mobile_selection = true;
-                    this.selector.action_select(item.id, false, false);
+                    await this.selector.action_select(item.id, false, false);
                 } else {
                     const items = [];
                     for (const item_id of this.selector.get_selected_items()) {
@@ -109,7 +109,6 @@ class ContentPage extends AppWidget {
                     }
                     context_menu_item(this.get_app(), items);
                 }
-                this.update_selection();
             } else {
                 if (this.selector.is_selected(item.id)) {
                     const items = [];
@@ -118,7 +117,7 @@ class ContentPage extends AppWidget {
                     }
                     context_menu_item(this.get_app(), items);
                 } else {
-                    this.selector.select_item(item.id, false, false);
+                    await this.selector.select_item(item.id, false, false);
                     context_menu_item(this.get_app(), item);
                 }
             }
@@ -127,12 +126,12 @@ class ContentPage extends AppWidget {
         div.select = async (ctrl, shift) => {
             if (is_touch_screen()) {
                 if (this.mobile_selection) {
-                    this.selector.action_select(item.id, true, false);
+                    await this.selector.action_select(item.id, true, false);
                 } else {
                     await this.get_app().state.select(new StateSelection().set_item(item));
                 }
             } else {
-                this.selector.action_select(item.id, ctrl, shift);
+                await this.selector.action_select(item.id, ctrl, shift);
             }
         }
 
@@ -157,14 +156,6 @@ class ContentPage extends AppWidget {
         if (this._provider)
             this._provider.delete();
         delete this._provider;
-    }
-
-    /**
-     * @param item_id {number}
-     * @returns {ItemView}
-     */
-    get_div(item_id) {
-        return this._items.get(item_id);
     }
 }
 

@@ -1,9 +1,8 @@
-import {ContentProvider} from "../../../src/viewport_content/viewport_content";
 import {
     DirectoryContentProvider,
     RepositoryRootProvider,
     TrashContentProvider
-} from "../../../src/viewport_content/providers";
+} from "../../../src/utilities/providers";
 import "../item/item";
 import {context_menu_repository} from "../../misc/context_menu/contexts/context_repository";
 import "../upload/uploader";

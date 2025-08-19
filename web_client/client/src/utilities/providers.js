@@ -1,5 +1,44 @@
-import {ContentProvider} from "./viewport_content";
 import {ContentRequest} from "../remote_filesystem/content_request";
+import {EventManager} from "../event_manager";
+
+class ContentProvider {
+    /**
+     * @param pool {ContentPool}
+     */
+    constructor(pool) {
+        if (!pool)
+            console.error("Invalid pool in content provider");
+        this.events = new EventManager();
+        this._add_event = pool.events.add('add_item', async (item) => {
+            await this._internal_add_item(item)
+        })
+    }
+
+    /**
+     * @return {Promise<RemoteItem[]>}
+     */
+    async get_content() {
+        return [];
+    }
+
+    async _internal_add_item(item) {
+
+    }
+
+    delete() {
+        this._add_event.remove();
+    }
+
+    /**
+     * @param other {ContentProvider}
+     * @return boolean
+     */
+    is_same(other) {
+        if (!other)
+            return false;
+        return other.constructor.name === this.constructor.name;
+    }
+}
 
 class RepositoryRootProvider extends ContentProvider {
     /**

@@ -1,6 +1,6 @@
 import {Repository} from "../../../src/remote_filesystem/repository";
 import {TreeButton} from "./tree_button";
-import {TrashContentProvider} from "../../../src/viewport_content/providers";
+import {TrashContentProvider} from "../../../src/utilities/providers";
 import {StateSelection} from "../../../src/state/state_selection";
 
 class TrashTreeButton extends TreeButton {
