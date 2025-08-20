@@ -92,7 +92,7 @@ class Selector {
     }
 
     /**
-     * @returns {RemoteItem|null}
+     * @returns {number|null}
      */
     get_last_selected_item() {
         return this._last_selected;
@@ -115,7 +115,7 @@ class Selector {
             return;
 
         const last_selected = this._last_selected ? this.find_item_view_by_id(this._last_selected) : this.content[this.content.length - 1];
-        let previous = last_selected.nextElementSibling;
+        let previous = last_selected.previousElementSibling;
         if (!previous)
             previous = this.content[this.content.length - 1];
 
@@ -157,8 +157,10 @@ class Selector {
         if (!this._selected_items.has(item_id)) {
             this._selected_items.add(item_id);
             const div = this.find_item_view_by_id(item_id);
-            if (div)
+            if (div) {
                 div.classList.add('selected');
+                div.scrollIntoView({behavior: "smooth", block: "nearest"})
+            }
             await this.events.broadcast('update_selection', item_id);
         }
     }

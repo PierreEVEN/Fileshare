@@ -2,9 +2,10 @@ import {AppWidget} from "../../../src/app_widget";
 import './option/search_bar_option'
 import {Filter} from "../../../src/filter/filter";
 import {StateSelection} from "../../../src/state/state_selection";
+import {NavigableAppWidget} from "../../../src/utilities/navigable";
 require('./search_bar.scss')
 
-class SearchBar extends AppWidget {
+class SearchBar extends NavigableAppWidget {
     constructor() {
         super();
     }

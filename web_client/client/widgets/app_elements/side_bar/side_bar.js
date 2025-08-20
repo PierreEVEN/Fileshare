@@ -2,9 +2,9 @@ import {User} from "../../../src/remote_filesystem/user";
 import {context_menu_my_repositories} from "../../misc/context_menu/contexts/context_my_repositories";
 import {EventManager} from "../../../src/event_manager";
 import {APP_COOKIES} from "../../modals/cookies/cookies";
-import {AppWidget} from "../../../src/app_widget";
 import "./category"
 import {ContentRequest} from "../../../src/remote_filesystem/content_request";
+import {AppWidget} from "../../../src/app_widget";
 
 require('./side_bar.scss')
 
@@ -114,6 +114,7 @@ class SideBar extends AppWidget {
             repository_div.focus_root(selection.in_trash, true);
         }
     }
+
 
     show_mobile() {
         this.show_menu_mobile = !this.show_menu_mobile;

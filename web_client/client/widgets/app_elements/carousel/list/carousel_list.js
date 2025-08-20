@@ -75,7 +75,7 @@ class CarouselList extends AppWidget {
          */
         this._items = new Map();
         if (items) {
-            for (const [_, item] of items) {
+            for (const item of items) {
                 this._items.set(item.id, item);
             }
         }

@@ -1,11 +1,14 @@
 # TODO
 
-- supporter plus de 1000 items par dossiers
-- Fix preview 3D sous chromium
 - Rework keyboard navigation
-- Rework gestion des droits
+- Gere le close du carousel
+- supporter plus de 1000 items par dossiers
+
 - Améliorer les filtres (filtrer par user etc...)
 - Ajouter les tris (par taille etc...)
+
+- Rework gestion des droits
 - Gérer les meta OG
+- Fix preview 3D sous chromium
 - Améliorer le seek du serveur Vidéo
 - Ajouter des popups contextuels

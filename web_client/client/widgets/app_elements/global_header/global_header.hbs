@@ -2,14 +2,14 @@
     <h1 onclick="{{ctx "go_home()"}}">FileShare</h1>
 </div>
 <div class="burger-menu" onclick="{{ctx "menu()"}}">
-    <button><img src="/public/images/icons/icons8-menu-96.png" alt="menu" {{object "menu_img"}}></button>
+    <button><img src="/public/images/icons/icons8-menu-96.png" alt="menu" {{object "menu_img"}} tabindex="-1"></button>
 </div>
 <search-bar></search-bar>
 <div class="signin" {{object "signin"}}>
-    <button onclick="{{ctx 'signup()'}}">Nouveau compte</button>
-    <button onclick="{{ctx 'login()'}}">Connexion</button>
+    <button onclick="{{ctx 'signup()'}}" tabindex="-1">Nouveau compte</button>
+    <button onclick="{{ctx 'login()'}}" tabindex="-1">Connexion</button>
 </div>
 <div class="user" {{object "user"}}>
-    <button onclick="{{ctx 'logout(event.target)'}}">Déconnexion</button>
-    <button class="user-button" {{object "username"}} onclick="{{ctx 'user()'}}">username</button>
+    <button onclick="{{ctx 'logout(event.target)'}}" tabindex="-1">Déconnexion</button>
+    <button class="user-button" {{object "username"}} onclick="{{ctx 'user()'}}" tabindex="-1">username</button>
 </div>

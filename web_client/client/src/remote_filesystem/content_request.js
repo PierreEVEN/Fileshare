@@ -1,6 +1,19 @@
 
 let REQUEST_INDEX = 0;
 
+/**
+ * @param i {any}
+ * @returns {string|number|void}
+ */
+function as_id(i) {
+    const number = Number(i);
+    if (isNaN(i)) {
+        console.error(i, "is not a number !");
+        return;
+    }
+    return number.toString();
+}
+
 class ContentRequest {
     constructor() {
         /**
@@ -151,7 +164,7 @@ class ContentRequest {
      */
     repository_root(repositories) {
         for (const repository of repositories)
-            this._repository_roots.add(repository)
+            this._repository_roots.add(as_id(repository))
         return this;
     }
 
@@ -162,7 +175,7 @@ class ContentRequest {
      */
     trash_root(repositories) {
         for (const repository of repositories)
-            this._trash_roots.add(repository)
+            this._trash_roots.add(as_id(repository))
         return this;
     }
 
@@ -174,7 +187,7 @@ class ContentRequest {
      */
     item(items, includes_parents = false) {
         for (const item of items)
-            this._items.set(item, includes_parents)
+            this._items.set(as_id(item), includes_parents)
         return this;
     }
 
@@ -185,7 +198,7 @@ class ContentRequest {
      */
     repository(repositories) {
         for (const repository of repositories)
-            this._repositories.add(repository)
+            this._repositories.add(as_id(repository))
         return this;
     }
 
@@ -196,7 +209,7 @@ class ContentRequest {
      */
     user(users) {
         for (const user of users)
-            this._users.add(user)
+            this._users.add(as_id(user))
         return this;
     }
 
@@ -207,7 +220,7 @@ class ContentRequest {
      */
     directory_content(directories) {
         for (const directory of directories)
-            this._directory_content.add(directory)
+            this._directory_content.add(as_id(directory))
         return this;
     }
 }

@@ -21,116 +21,6 @@ import "../content_page/content_page"
 
 require('./repository_viewport.scss')
 
-/*
-let CURRENT_VIEWPORT = null;
-document.addEventListener('keydown', async function (event) {
-    if (!CURRENT_VIEWPORT || !CURRENT_VIEWPORT.closest('fileshare-app'))
-        return;
-    if (event.target.type === 'text')
-        return;
-    if (CURRENT_VIEWPORT.get_app().get_modal().is_open()) {
-        if (event.key === 'Escape')
-            CURRENT_VIEWPORT.get_app().get_modal().close();
-        return;
-    }
-    if ((event.key === 'Backspace' || event.key === 'Escape')) {
-        if (CURRENT_VIEWPORT.carousel_list) {
-            await CURRENT_VIEWPORT.close_carousel();
-        } else {
-            if (event.key === 'Escape' && CURRENT_VIEWPORT.selector.get_selected_items().length > 1)
-                CURRENT_VIEWPORT.selector.clear_selection();
-            else {
-                if (CURRENT_VIEWPORT.content.get_content_provider() instanceof DirectoryContentProvider) {
-                    let item = CURRENT_VIEWPORT.content.get_content_provider().directory;
-                    if (item.parent_item)
-                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_item(await item.get_pool().fetch_item(item.parent_item)));
-                    else
-                        await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_repository(await CURRENT_VIEWPORT.get_app().pool.fetch_repository(item.repository)));
-                    CURRENT_VIEWPORT.selector.select_item(item.id, false, false);
-                }
-            }
-        }
-    }
-    if (event.key === 'ArrowRight') {
-        if (CURRENT_VIEWPORT.carousel_list) {
-            await CURRENT_VIEWPORT.carousel_list._select_next();
-            return;
-        } else if (CURRENT_VIEWPORT.get_app().get_modal().is_open())
-            return;
-        await CURRENT_VIEWPORT.selector.select_next(event.ctrlKey, event.shiftKey);
-    }
-    if (event.key === 'ArrowLeft') {
-        if (CURRENT_VIEWPORT.carousel_list) {
-            await CURRENT_VIEWPORT.carousel_list._select_previous();
-            return;
-        } else if (CURRENT_VIEWPORT.get_app().get_modal().is_open())
-            return;
-        await CURRENT_VIEWPORT.selector.select_previous(event.ctrlKey, event.shiftKey);
-    }
-    if (event.key === 'ArrowUp') {
-        if (CURRENT_VIEWPORT.get_app().get_modal().is_open() || CURRENT_VIEWPORT.carousel_list)
-            return;
-        const item_per_row = CURRENT_VIEWPORT.offsetWidth / 120;
-        for (let i = 1; i < item_per_row; ++i)
-            await CURRENT_VIEWPORT.selector.select_previous(event.ctrlKey, event.shiftKey);
-    }
-    if (event.key === 'ArrowDown') {
-        if (CURRENT_VIEWPORT.get_app().get_modal().is_open() || CURRENT_VIEWPORT.carousel_list)
-            return;
-        const item_per_row = CURRENT_VIEWPORT.offsetWidth / 120;
-        for (let i = 1; i < item_per_row; ++i)
-            await CURRENT_VIEWPORT.selector.select_next(event.ctrlKey, event.shiftKey);
-    }
-    if (event.key === 'Enter') {
-        if (CURRENT_VIEWPORT.get_app().get_modal().is_open())
-            return;
-
-        if (CURRENT_VIEWPORT.selector.get_last_selected_item()) {
-            let data = await CURRENT_VIEWPORT.try_get_item_data(CURRENT_VIEWPORT.selector.get_last_selected_item());
-            if (!data || data.in_trash) return;
-            await CURRENT_VIEWPORT.get_app().state.select(new StateSelection().set_item(data));
-        }
-    }
-    if (!CURRENT_VIEWPORT.get_app().get_modal().is_open() && !CURRENT_VIEWPORT.carousel_list) {
-        if ((event.key === 'a' || event.key === 'A') && event.ctrlKey) {
-            for (const elem of CURRENT_VIEWPORT._visible_items.keys())
-                CURRENT_VIEWPORT.selector.select_item(elem, true, false);
-            event.preventDefault();
-        }
-        if ((event.key === 'x' || event.key === 'X') && event.ctrlKey) {
-            CLIPBOARD.clear();
-            for (const item of CURRENT_VIEWPORT.selector.get_selected_items())
-                CLIPBOARD.push(await CURRENT_VIEWPORT.try_get_item_data(item));
-            CLIPBOARD.set_move_mode(true);
-        }
-        if ((event.key === 'c' || event.key === 'C') && event.ctrlKey) {
-            CLIPBOARD.clear();
-            for (const item of CURRENT_VIEWPORT.selector.get_selected_items())
-                CLIPBOARD.push(await CURRENT_VIEWPORT.try_get_item_data(item));
-            CLIPBOARD.set_move_mode(true);
-        }
-        if ((event.key === 'v' || event.key === 'V') && event.ctrlKey) {
-
-            if (CURRENT_VIEWPORT.content.get_content_provider() instanceof DirectoryContentProvider) {
-                let directory = CURRENT_VIEWPORT.content.get_content_provider().directory;
-                await copy_items(CURRENT_VIEWPORT.get_app(), CLIPBOARD.consume(), CLIPBOARD.move_mode(), directory.repository, directory.id);
-            } else if (CURRENT_VIEWPORT.content.get_content_provider() instanceof RepositoryRootProvider) {
-                let repository = CURRENT_VIEWPORT.content.get_content_provider().repository;
-                await copy_items(CURRENT_VIEWPORT.get_app(), CLIPBOARD.consume(), CLIPBOARD.move_mode(), repository.id, null);
-            }
-        }
-        if (event.key === 'Delete') {
-            let items = [];
-            for (const it of CURRENT_VIEWPORT.selector.get_selected_items())
-                items.push(await CURRENT_VIEWPORT.try_get_item_data(it));
-            if (CURRENT_VIEWPORT.content.get_content_provider() instanceof TrashContentProvider || event.shiftKey)
-                await delete_item(CURRENT_VIEWPORT.get_app(), items, false);
-            else
-                await delete_item(CURRENT_VIEWPORT.get_app(), items, true);
-        }
-    }
-}, false);*/
-
 class RepositoryViewport extends AppWidget {
     constructor() {
         super();
@@ -144,8 +34,8 @@ class RepositoryViewport extends AppWidget {
                 event.preventDefault();
                 if (!event.target.classList.contains('file-list'))
                     return;
-                if (this.content.get_content_provider() instanceof DirectoryContentProvider)
-                    context_menu_item(this.get_app(), this.content.get_content_provider().directory)
+                if (this.elements().content._provider instanceof DirectoryContentProvider)
+                    context_menu_item(this.get_app(), this.elements().content._provider.directory)
                 else
                     context_menu_repository(this.get_app(), this.repository);
             },
@@ -333,9 +223,10 @@ class RepositoryViewport extends AppWidget {
             })
         }
         this._carousel_viewport.set_item(item);
-        if (this._carousel_content_provider !== this.content.get_content_provider()) {
-            this._carousel_content_provider = this.content.get_content_provider();
-            await this.carousel_list.set_items(this.content.get_displayed_items());
+        if (this._carousel_content_provider !== this.elements().content._provider) {
+            this._carousel_content_provider = this.elements().content._provider;
+            const items = await this.elements().content._provider.get_content();
+            await this.carousel_list.set_items(items);
             this.carousel_list.select_item(item, true, true);
         } else {
             this.carousel_list.select_item(item, false, true);
@@ -350,11 +241,10 @@ class RepositoryViewport extends AppWidget {
             this._carousel_viewport = null;
             this._carousel_content_provider = null;
             this.get_app().get_carousel().close();
-
-            if (this.content.get_content_provider() instanceof DirectoryContentProvider)
-                await this.get_app().state.select(new StateSelection().set_item(this.content.get_content_provider().directory));
-            else if (this.content.get_content_provider() instanceof RepositoryRootProvider)
-                await this.get_app().state.select(new StateSelection().set_repository(this.content.get_content_provider().repository));
+            if (this.elements().content._provider instanceof DirectoryContentProvider)
+                await this.get_app().state.select(new StateSelection().set_item(this.elements().content._provider.directory));
+            else if (this.elements().content._provider instanceof RepositoryRootProvider)
+                await this.get_app().state.select(new StateSelection().set_repository(this.elements().content._provider.repository));
         }
     }
 }

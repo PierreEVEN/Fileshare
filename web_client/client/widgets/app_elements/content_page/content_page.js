@@ -4,10 +4,14 @@ import {Selector} from "./selector";
 import {is_touch_screen} from "../../../src/utilities/utils";
 import {StateSelection} from "../../../src/state/state_selection";
 import {context_menu_item} from "../../misc/context_menu/contexts/context_item";
+import {NavigableAppWidget} from "../../../src/utilities/navigable";
+import {CLIPBOARD, copy_items} from "../../modals/copy_items/copy_items";
+import {DirectoryContentProvider, RepositoryRootProvider, TrashContentProvider} from "../../../src/utilities/providers";
+import {delete_item} from "../../modals/delete_item/delete_item";
 
 require('./content_page.scss')
 
-class ContentPage extends AppWidget {
+class ContentPage extends NavigableAppWidget {
     constructor() {
         super();
 
@@ -72,6 +76,93 @@ class ContentPage extends AppWidget {
 
     connectedCallback() {
         this.set_content_provider(this._futur_provider);
+    }
+
+    disconnectedCallback() {
+        if (this._cb_provider_add)
+            this._cb_provider_add.remove();
+        delete this._cb_provider_add;
+        if (this._provider)
+            this._provider.delete();
+        delete this._provider;
+    }
+
+    move_next(e) {
+        e.preventDefault();
+        this.selector.select_next(e.shiftKey || e.ctrlKey)
+    }
+
+    move_previous(e) {
+        e.preventDefault();
+        this.selector.select_previous(e.shiftKey || e.ctrlKey)
+    }
+
+    async move_up(e) {
+        e.preventDefault();
+        const item_per_row = this.offsetWidth / 120;
+        for (let i = 1; i < item_per_row; ++i)
+            await this.selector.select_previous(e.ctrlKey || e.shiftKey);
+    }
+
+    async move_down(e) {
+        e.preventDefault();
+        const item_per_row = this.offsetWidth / 120;
+        for (let i = 1; i < item_per_row; ++i)
+            await this.selector.select_next(e.ctrlKey || e.shiftKey);
+    }
+
+    enter(e) {
+        const selected = this.selector.get_last_selected_item();
+        if (selected)
+            this.get_app().state.select(new StateSelection().set_item(this.get_app().pool.find_item(selected)));
+    }
+
+    async exit(e) {
+        const this_item = this._provider['directory'];
+        if (this_item) {
+            if (this_item.parent_item) {
+                const parent = await this.get_app().pool.fetch_item(this_item.parent_item);
+                if (parent)
+                    await this.get_app().state.select(new StateSelection().set_item(parent));
+            } else {
+                const this_repository = await this.get_app().pool.fetch_repository(this_item.repository);
+                if (this_repository)
+                    await this.get_app().state.select(new StateSelection().set_repository(this_repository));
+            }
+        }
+    }
+
+    async any_key(e) {
+        if (e.key === 'a' && e.ctrlKey)
+            for (const child of this.children)
+                await this.selector.select_item(child.item().id, true, false);
+        else if (e.key === 'c' && e.ctrlKey) {
+            CLIPBOARD.clear();
+            for (const item of this.selector.get_selected_items())
+                CLIPBOARD.push(await this.get_app().pool.find_item(item));
+            CLIPBOARD.set_move_mode(false);
+        } else if (e.key === 'x' && e.ctrlKey) {
+            CLIPBOARD.clear();
+            for (const item of this.selector.get_selected_items())
+                CLIPBOARD.push(await this.get_app().pool.find_item(item));
+            CLIPBOARD.set_move_mode(true);
+        } else if (e.key === 'v' && e.ctrlKey) {
+            if (this._provider instanceof DirectoryContentProvider) {
+                let directory = this._provider.directory;
+                await copy_items(this.get_app(), CLIPBOARD.consume(), CLIPBOARD.move_mode(), directory.repository, directory.id);
+            } else if (this._provider instanceof RepositoryRootProvider) {
+                let repository = this._provider.repository;
+                await copy_items(this.get_app(), CLIPBOARD.consume(), CLIPBOARD.move_mode(), repository.id, null);
+            }
+        } else if (e.key === 'Delete') {
+            let items = [];
+            for (const it of this.selector.get_selected_items())
+                items.push(await this.get_app().pool.find_item(it));
+            if (this._provider instanceof TrashContentProvider || e.shiftKey)
+                await delete_item(this.get_app(), items, false);
+            else
+                await delete_item(this.get_app(), items, true);
+        }
     }
 
     /**
@@ -148,16 +239,6 @@ class ContentPage extends AppWidget {
         this._items.clear();
         this.innerHTML = '';
     }
-
-    disconnectedCallback() {
-        if (this._cb_provider_add)
-            this._cb_provider_add.remove();
-        delete this._cb_provider_add;
-        if (this._provider)
-            this._provider.delete();
-        delete this._provider;
-    }
 }
-
 
 customElements.define('content-page', ContentPage);

@@ -92,7 +92,11 @@ class AppCookies {
      * @returns {number[]}
      */
     get_last_repositories() {
-        return this._last_repos.split('.').filter(Boolean);
+        const repositories = [];
+        for (const repos of this._last_repos.split('.').filter(Boolean))
+            if (!isNaN(Number(repos)))
+                repositories.push(repos);
+        return repositories;
     }
 
     /**

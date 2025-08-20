@@ -1,6 +1,6 @@
-import {AppWidget} from "../../../src/app_widget";
+import {NavigableAppWidget} from "../../../src/utilities/navigable";
 
-class SideBarCategory extends AppWidget {
+class SideBarCategory extends NavigableAppWidget {
     constructor() {
         super();
 
@@ -34,6 +34,32 @@ class SideBarCategory extends AppWidget {
         if (this._remove_repository)
             this._remove_repository.remove();
         delete this._remove_repository;
+    }
+
+
+
+    move_next(e) {
+        e.preventDefault();
+    }
+
+    move_previous(e) {
+        e.preventDefault();
+    }
+
+    move_right(e) {
+        e.preventDefault();
+    }
+
+    move_left(e) {
+        e.preventDefault();
+    }
+
+    enter(e) {
+
+    }
+
+    focus_in() {
+        this.set_expanded(true);
     }
 
     set_expanded(expand) {
