@@ -26,6 +26,7 @@ class SideBarCategory extends NavigableAppWidget {
     }
 
     connectedCallback() {
+        super.connectedCallback();
         this.innerHTML = '';
         this.set_content(require('./category.hbs'), this, {
             open: () => {

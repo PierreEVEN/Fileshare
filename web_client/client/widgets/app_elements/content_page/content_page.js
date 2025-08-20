@@ -75,6 +75,7 @@ class ContentPage extends NavigableAppWidget {
     }
 
     connectedCallback() {
+        super.connectedCallback();
         this.set_content_provider(this._futur_provider);
     }
 

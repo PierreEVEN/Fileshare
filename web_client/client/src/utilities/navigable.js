@@ -15,7 +15,7 @@ document.addEventListener('focusin', e => {
         FOCUSED_ITEM = new_elem;
         if (FOCUSED_ITEM.focus_in)
             FOCUSED_ITEM.focus_in(e);
-        console.log("Focus", FOCUSED_ITEM)
+        //console.log("Focus", FOCUSED_ITEM)
     } else {
         console.warn("Item", e.target, "is not focusable")
     }
@@ -62,7 +62,11 @@ class NavigableAppWidget extends AppWidget {
      */
     constructor(tab_index = 0) {
         super();
-        this.tabIndex = tab_index;
+        this._tab_index = tab_index;
+    }
+
+    connectedCallback() {
+        this.tabIndex = this._tab_index;
         this.classList.add('app-navigable-item');
     }
 }

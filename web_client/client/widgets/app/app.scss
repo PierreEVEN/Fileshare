@@ -114,14 +114,13 @@ fileshare-app {
 
         .error_page {
           margin-left: 1em;
-          h1 {
-
-          }
-          h2 {
-
-          }
         }
       }
     }
   }
 }
+
+.app-navigable-item {
+  outline: 0;
+}
+

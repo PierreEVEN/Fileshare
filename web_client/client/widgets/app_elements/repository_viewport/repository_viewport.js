@@ -12,8 +12,6 @@ import "../toolbar/toolbar";
 import {Repository} from "../../../src/remote_filesystem/repository";
 import "../carousel/list/carousel_list";
 import "../carousel/viewport/carousel_viewport";
-import {copy_items} from "../../modals/copy_items/copy_items";
-import {delete_item} from "../../modals/delete_item/delete_item";
 import {AppWidget} from "../../../src/app_widget";
 import "../global_carousel/global_carousel"
 import {StateSelection} from "../../../src/state/state_selection";
@@ -41,8 +39,8 @@ class RepositoryViewport extends AppWidget {
                 }
                 context_menu_item(this.get_app(), items);
             },
-            unselect_all: () => {
-                this.selector.clear_selection();
+            unselect_all: async () => {
+                await this.selector.clear_selection();
             },
         });
 
@@ -91,6 +89,7 @@ class RepositoryViewport extends AppWidget {
      */
     async _on_state_select(selection) {
         this.elements().content.set_content_provider(await this._spawn_content_provider(selection));
+        this.elements().content.focus();
 
         if (selection.item) {
             const repository = await this.get_app().pool.fetch_repository(selection.item.repository);
@@ -213,6 +212,7 @@ class RepositoryViewport extends AppWidget {
              * @private
              */
             this._carousel_viewport = document.createElement('carousel-viewport');
+
             /**
              * @type {CarouselList}
              */
@@ -222,8 +222,12 @@ class RepositoryViewport extends AppWidget {
             this.carousel_list.events.add('select', (item) => {
                 this.get_app().state.select(new StateSelection().set_item(item));
             })
+            this.carousel_list.events.add('close', () => {
+                this.close_carousel();
+            })
         }
         this._carousel_viewport.set_item(item);
+        this.carousel_list.focus();
         if (this._carousel_content_provider !== this.elements().content._provider) {
             this._carousel_content_provider = this.elements().content._provider;
             const items = await this.elements().content._provider.get_content();

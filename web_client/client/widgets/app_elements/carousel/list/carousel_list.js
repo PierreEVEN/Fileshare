@@ -1,33 +1,36 @@
 
 require('./carousel_list.scss')
 const {EventManager} = require("../../../../src/event_manager");
-const {AppWidget} = require("../../../../src/app_widget");
+const {NavigableAppWidget} = require("../../../../src/utilities/navigable");
 
-class CarouselList extends AppWidget {
-    /**
-     * @param viewport {RepositoryViewport}
-     * @param on_select_item
-     */
-    constructor(viewport, on_select_item) {
+class CarouselList extends NavigableAppWidget {
+    constructor() {
         super();
-        this.viewport = viewport;
-
-        this.on_select_item = on_select_item;
-
         this._last_selected = null;
-
         this._element_map = new Map();
-
         this.events = new EventManager();
     }
 
     connectedCallback() {
+        super.connectedCallback();
         this._rebuild();
     }
 
-    select_item(meta_data, scroll_center = false, no_update = false) {
-        if (this.events && !no_update)
-            this.events.broadcast('select', meta_data)
+    move_next() {
+        this._select_next();
+    }
+
+    move_previous() {
+        this._select_previous();
+    }
+
+    exit() {
+        this.events.broadcast('close', {});
+    }
+
+    async select_item(meta_data, scroll_center = false, no_update = false) {
+        if (!no_update)
+            await this.events.broadcast('select', meta_data)
 
         if (this._last_selected) {
             if (this._last_selected.id === meta_data.id)
@@ -40,8 +43,6 @@ class CarouselList extends AppWidget {
             return;
         this._last_selected.classList.add('selected');
 
-        if (this.on_select_item)
-            this.on_select_item(meta_data);
         this._last_selected.scrollIntoView({behavior: "smooth", inline: scroll_center ? 'center' : 'nearest'});
         this._update_left_right_buttons();
     }
@@ -51,7 +52,7 @@ class CarouselList extends AppWidget {
             return;
         const meta_data = await this._items.get(this._last_selected.nextSibling.item_id);
         if (meta_data && meta_data.is_regular_file) {
-            this.select_item(meta_data, true);
+            this.select_item(meta_data, false);
         }
     }
 
@@ -60,8 +61,18 @@ class CarouselList extends AppWidget {
             return;
         const meta_data = await this._items.get(this._last_selected.previousSibling.item_id);
         if (meta_data && meta_data.is_regular_file) {
-            this.select_item(meta_data, true);
+            this.select_item(meta_data, false);
         }
+    }
+
+    /**
+     * @param a {RemoteItem}
+     * @param b {RemoteItem}
+     * @return number
+     * @private
+     */
+    _compare_sort(a, b) {
+        return a.name.plain().localeCompare(b.name.plain());
     }
 
     /**
@@ -75,7 +86,7 @@ class CarouselList extends AppWidget {
          */
         this._items = new Map();
         if (items) {
-            for (const item of items) {
+            for (const item of items.sort(this._compare_sort)) {
                 this._items.set(item.id, item);
             }
         }
@@ -107,7 +118,7 @@ class CarouselList extends AppWidget {
         })
 
         this.elements().list.addEventListener('wheel', e => {
-            content.scrollLeft += (e.deltaY * 0.5);
+            this.elements().list.parentElement.scrollLeft += (e.deltaY * 0.5);
         })
 
         this.elements().list.innerHTML = '';

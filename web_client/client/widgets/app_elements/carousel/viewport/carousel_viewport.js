@@ -15,7 +15,7 @@ function clamp(s, a, b) {
     return s < a ? a : s > b ? b : s;
 }
 
-class CarouselViewport extends AppWidget{
+class CarouselViewport extends AppWidget {
     constructor() {
         super();
         this.scale = 1;

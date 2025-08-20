@@ -277,7 +277,7 @@ class Uploader extends AppWidget {
      * @param item {UploadItem}
      */
     async add_item(item) {
-        const provider = this.viewport.content.get_content_provider();
+        const provider = this.viewport.content ? this.viewport.content.get_content_provider() : null;
         if (provider && provider instanceof DirectoryContentProvider) {
             /**
              * @type {RemoteItem}

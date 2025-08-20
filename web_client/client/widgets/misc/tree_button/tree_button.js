@@ -84,7 +84,7 @@ class TreeButton extends AppWidget {
      * @param expand {boolean}
      */
     async focus_root(in_trash, expand = false) {
-        this._set_selected(true);
+        this._set_selected(true, false);
         if (expand)
             await this.set_expanded(true);
     }
@@ -97,7 +97,7 @@ class TreeButton extends AppWidget {
         if (!this.this_item())
             return console.error("Cannot focus : item is not initialized yet on {}", this);
         if (item.id === this.this_item().id) {
-            this._set_selected(true);
+            this._set_selected(true, false);
             if (expand)
                 await this.set_expanded(true);
             return;
@@ -137,7 +137,7 @@ class TreeButton extends AppWidget {
                 await this._init_content_provider();
 
                 // Prefetch subdirectories content
-                {
+                if (this._content_provider) {
                     let content = await this._content_provider.get_content();
                     const new_request = new ContentRequest();
                     for (const item of content)
@@ -289,7 +289,7 @@ class TreeButton extends AppWidget {
 
     async _focus_item_internal(hierarchy, expand = false) {
         if (hierarchy.length === 0) {
-            this._set_selected(true);
+            this._set_selected(true, false);
             if (expand)
                 await this.set_expanded(true);
             return;
@@ -306,7 +306,7 @@ class TreeButton extends AppWidget {
         }
     }
 
-    _set_selected(select) {
+    _set_selected(select, focus = true) {
         const root = this.get_tree_root();
         if ((root._selected === this) === select)
             return;
@@ -316,7 +316,8 @@ class TreeButton extends AppWidget {
         if (select) {
             root._selected = this;
             this.classList.add('selected');
-            this.elements().button.focus();
+            if (focus)
+                this.elements().button.focus();
         }
     }
 

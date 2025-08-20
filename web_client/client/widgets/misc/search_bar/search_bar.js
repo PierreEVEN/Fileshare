@@ -11,6 +11,7 @@ class SearchBar extends NavigableAppWidget {
     }
 
     connectedCallback() {
+        super.connectedCallback();
         this.set_content(require('./search_bar.hbs'), {}, {
             search_changed: (event) => {
                 const options = this.match_options(event.target.value);

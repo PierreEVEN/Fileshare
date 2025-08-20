@@ -24,7 +24,7 @@ class CarouselOverlay extends AppWidget {
             close_carousel: () => {
                 const parent = this.closest('global-carousel')
                 if (parent)
-                    parent.close();
+                    parent.list_container.firstChild.exit();
             },
             download: () => {
                 item.download();
