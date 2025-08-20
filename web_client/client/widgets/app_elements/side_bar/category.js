@@ -4,6 +4,10 @@ class SideBarCategory extends NavigableAppWidget {
     constructor() {
         super();
 
+        /**
+         * @type {Map<number, RepositoryTreeButton>}
+         * @private
+         */
         this._loaded_repositories = new Map();
         this._expand = false;
 
@@ -40,22 +44,51 @@ class SideBarCategory extends NavigableAppWidget {
 
     move_next(e) {
         e.preventDefault();
+        for (const [_, div] of this._loaded_repositories) {
+            if (div.get_selected_child()) {
+                div.get_selected_child().set_expanded(true);
+                break;
+            }
+        }
     }
 
     move_previous(e) {
         e.preventDefault();
+        for (const [_, div] of this._loaded_repositories) {
+            if (div.get_selected_child()) {
+                div.get_selected_child().set_expanded(false);
+                break;
+            }
+        }
     }
 
-    move_right(e) {
+    move_up(e) {
         e.preventDefault();
+        for (const [_, div] of this._loaded_repositories) {
+            if (div.get_selected_child()) {
+                div.get_selected_child().select_previous();
+                break;
+            }
+        }
     }
 
-    move_left(e) {
+    move_down(e) {
         e.preventDefault();
+        for (const [_, div] of this._loaded_repositories) {
+            if (div.get_selected_child()) {
+                div.get_selected_child().select_next();
+                break;
+            }
+        }
     }
 
     enter(e) {
-
+        for (const [_, div] of this._loaded_repositories) {
+            if (div.get_selected_child()) {
+                div.get_selected_child().open();
+                break;
+            }
+        }
     }
 
     focus_in() {

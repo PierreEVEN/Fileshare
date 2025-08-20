@@ -117,6 +117,7 @@ class TreeButton extends AppWidget {
         const root = this.get_tree_root();
         if (root._selected) {
             root._selected.classList.remove('selected');
+            root._selected.blur();
             delete root._selected;
         }
     }
@@ -163,6 +164,46 @@ class TreeButton extends AppWidget {
 
         await this._expansion_promise;
 
+    }
+
+    select_previous() {
+        if (this.previousSibling && this.previousSibling.style && this.previousSibling.style.display !== 'hidden') {
+            this.previousSibling._select_from_bottom();
+        } else if (this.parentNode.parentNode._set_selected) {
+            this.parentNode.parentNode._set_selected(true);
+        }
+    }
+
+    _select_from_bottom() {
+        if (this.expanded()) {
+            const children = this.elements().content.children;
+            if (children.length > 0) {
+                children[children.length - 1]._select_from_bottom();
+                return;
+            }
+        }
+        this._set_selected(true)
+    }
+
+    select_next() {
+        if (this.expanded()) {
+            const children = this.elements().content.children;
+            if (children.length > 0) {
+                children[0]._set_selected(true);
+                return;
+            }
+        }
+        this._select_next_at_stage();
+    }
+
+    _select_next_at_stage() {
+        if (this.nextSibling && this.nextSibling.style.display !== 'none') {
+            this.nextSibling._set_selected(true);
+        }
+        else {
+            if (this.parentNode.parentNode._select_next_at_stage)
+                this.parentNode.parentNode._select_next_at_stage();
+        }
     }
 
     /**
@@ -275,6 +316,7 @@ class TreeButton extends AppWidget {
         if (select) {
             root._selected = this;
             this.classList.add('selected');
+            this.elements().button.focus();
         }
     }
 
@@ -348,6 +390,13 @@ class TreeButton extends AppWidget {
      */
     is_selected() {
         return this.get_tree_root()._selected === this;
+    }
+
+    /**
+     * @returns {TreeButton}
+     */
+    get_selected_child() {
+        return this.get_tree_root()._selected;
     }
 
     /**

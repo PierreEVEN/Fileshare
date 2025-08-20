@@ -30,15 +30,6 @@ class RepositoryViewport extends AppWidget {
         this.innerHTML = '';
 
         this.set_content(require('./repository_viewport.hbs'), {}, {
-            background_context: (event) => {
-                event.preventDefault();
-                if (!event.target.classList.contains('file-list'))
-                    return;
-                if (this.elements().content._provider instanceof DirectoryContentProvider)
-                    context_menu_item(this.get_app(), this.elements().content._provider.directory)
-                else
-                    context_menu_repository(this.get_app(), this.repository);
-            },
             open_upload: () => {
                 this.open_upload_container()
                 this.elements().upload_button.style.display = 'none';
@@ -54,6 +45,16 @@ class RepositoryViewport extends AppWidget {
                 this.selector.clear_selection();
             },
         });
+
+        this.oncontextmenu = (event) => {
+            event.preventDefault();
+            if (!event.target.classList.contains('repository-content') && !event.target.classList.contains('app-navigable-item'))
+                return;
+            if (this.elements().content._provider instanceof DirectoryContentProvider)
+                context_menu_item(this.get_app(), this.elements().content._provider.directory)
+            else
+                context_menu_repository(this.get_app(), this.repository);
+        },
 
         this.elements().drop_box.get_uploader = () => {
             if (!this.uploader)
