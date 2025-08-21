@@ -2,47 +2,40 @@
 
 content-page {
   display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
-  position: relative;
+  overflow: auto;
 
-  .box {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    overflow: auto;
+  .container {
+    height: fit-content;
     width: 100%;
+    display: grid;
+    grid-auto-rows: minmax(100px, auto);
+    grid-template-columns: repeat(auto-fill, 120px);
+  }
 
-    .container {
-      height: fit-content;
-      width: 100%;
-      display: grid;
-      grid-auto-rows: minmax(100px, auto);
-      grid-template-columns: repeat(auto-fill, 120px);
-    }
+  .page-select {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: auto;
+    margin-bottom: 20px;
 
-    .page-select {
-      width: 100%;
+    .page-list {
       display: flex;
+      flex-direction: row;
+      align-items: center;
       justify-content: center;
-      margin-top: auto;
-      margin-bottom: 20px;
 
-      .page-list {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
+      button {
+        padding: 0;
+        min-width: 40px;
+        border: solid 1px $text-secondary;
+      }
 
-        button {
-          padding: 0;
-          min-width: 40px;
-          border: solid 1px $text-secondary;
-        }
-
-        .select {
-          background-color: $primary;
-        }
+      .select {
+        background-color: $primary;
       }
     }
   }

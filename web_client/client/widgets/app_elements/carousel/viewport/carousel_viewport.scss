@@ -39,6 +39,7 @@ carousel-viewport {
     border-left: dashed 1px #5b6574;
     display: none;
     overflow: auto;
+    user-select: text;
   }
 }
 

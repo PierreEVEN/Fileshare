@@ -72,18 +72,6 @@ page-repository {
     bottom: 0;
     flex-grow: 1;
 
-    @media (orientation: portrait) {
-      position: relative;
-      height: 100%;
-      top: 0;
-    }
-
-    content-page {
-      flex-grow: 1;
-      position: relative;
-    }
-
-
     .current-description {
       display: none;
       flex-direction: column;
@@ -94,6 +82,7 @@ page-repository {
       background-color: $secondary;
       font-size: 12px;
       padding: 10px;
+      user-select: text;
 
       h1 {
         font-size: 20px;

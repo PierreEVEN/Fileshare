@@ -105,6 +105,9 @@ class CarouselViewport extends AppWidget {
                 this.elements().description.style.padding = '20px';
                 this.elements().description.style.display = 'unset';
             });
+        } else {
+            this.elements().description.style.display = 'none';
+            this.elements().description.innerHTML = '';
         }
 
         // CASE : IS DIRECTORY

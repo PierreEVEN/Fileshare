@@ -4,7 +4,6 @@ import {
     TrashContentProvider
 } from "../../../src/utilities/providers";
 import "../item/item";
-import {context_menu_repository} from "../../misc/context_menu/contexts/context_repository";
 import "../upload/uploader";
 import "../upload/drop_box";
 import {context_menu_item} from "../../misc/context_menu/contexts/context_item";
@@ -44,21 +43,11 @@ class RepositoryViewport extends AppWidget {
             },
         });
 
-        this.oncontextmenu = (event) => {
-            event.preventDefault();
-            if (!event.target.classList.contains('repository-content') && !event.target.classList.contains('app-navigable-item'))
-                return;
-            if (this.elements().content._provider instanceof DirectoryContentProvider)
-                context_menu_item(this.get_app(), this.elements().content._provider.directory)
-            else
-                context_menu_repository(this.get_app(), this.repository);
-        },
-
-            this.elements().drop_box.get_uploader = () => {
-                if (!this.uploader)
-                    this.open_upload_container();
-                return this.uploader;
-            }
+        this.elements().drop_box.get_uploader = () => {
+            if (!this.uploader)
+                this.open_upload_container();
+            return this.uploader;
+        }
 
         if (!this._on_state_select_cb)
             this._on_state_select_cb = this.get_app().state.events.add('select', async selection => {

@@ -7,6 +7,7 @@ import {NavigableAppWidget} from "../../../src/utilities/navigable";
 import {CLIPBOARD, copy_items} from "../../modals/copy_items/copy_items";
 import {DirectoryContentProvider, RepositoryRootProvider, TrashContentProvider} from "../../../src/utilities/providers";
 import {delete_item} from "../../modals/delete_item/delete_item";
+import {context_menu_repository} from "../../misc/context_menu/contexts/context_repository";
 
 require('./content_page.scss')
 
@@ -79,10 +80,17 @@ class ContentPage extends NavigableAppWidget {
         for (let i = this._page * this._elements_per_page; i < content.length && i < (this._page + 1) * this._elements_per_page; ++i)
             this._add_item(content[i]);
 
-        const cell_num = window.innerWidth < 600 ? 3 : 7;
+        if (page_count <= 1) {
+            this.elements().page_select.style.display = 'none';
+            return;
+        } else {
+            this.elements().page_select.style.display = 'flex';
+        }
 
         const list = this.elements().page_list;
         list.innerHTML = '';
+        const cell_num = window.innerWidth < 600 ? 3 : 7;
+
         let start = Math.max(0, Math.min(this._page - Math.floor(cell_num / 2), page_count - cell_num));
         if (start > 0) {
             const button = document.createElement('button');
@@ -138,6 +146,16 @@ class ContentPage extends NavigableAppWidget {
                 await this._refresh_page();
             }
         })
+
+        this.oncontextmenu = (e) => {
+            e.preventDefault();
+            if (e.target.classList.contains('container') || e.target === this) {
+                if (this._provider instanceof DirectoryContentProvider)
+                    context_menu_item(this.get_app(), this._provider.directory);
+                else if (this._provider instanceof RepositoryRootProvider)
+                    context_menu_repository(this.get_app(), this._provider.repository);
+            }
+        }
 
         this.set_content_provider(this._futur_provider);
     }
