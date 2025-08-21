@@ -54,11 +54,11 @@ class RepositoryViewport extends AppWidget {
                 context_menu_repository(this.get_app(), this.repository);
         },
 
-        this.elements().drop_box.get_uploader = () => {
-            if (!this.uploader)
-                this.open_upload_container();
-            return this.uploader;
-        }
+            this.elements().drop_box.get_uploader = () => {
+                if (!this.uploader)
+                    this.open_upload_container();
+                return this.uploader;
+            }
 
         if (!this._on_state_select_cb)
             this._on_state_select_cb = this.get_app().state.events.add('select', async selection => {
@@ -71,14 +71,33 @@ class RepositoryViewport extends AppWidget {
         this.set_upload_button_visible(!!this.get_app().state.connected_user())
     }
 
+    disconnectedCallback() {
+        if (this._on_state_select_cb)
+            this._on_state_select_cb.remove();
+        delete this._on_state_select_cb;
+        if (this.uploader)
+            this.uploader.delete();
+        this.uploader = null;
+        if (this.content)
+            this.content.delete();
+        this.content = null;
+        if (this.drop_box)
+            this.drop_box.delete();
+        this.drop_box = null;
+        if (this.selector)
+            this.selector.delete();
+        this.selector = null;
+
+        this.close_carousel();
+    }
+
     set_upload_button_visible(visible) {
         if (visible) {
             if (!this.uploader)
                 this.elements().upload_button.style.display = 'flex';
-        }
-        else {
+        } else {
             this.close_upload_container();
-                this.elements().upload_button.style.display = 'none';
+            this.elements().upload_button.style.display = 'none';
         }
     }
 
@@ -99,8 +118,7 @@ class RepositoryViewport extends AppWidget {
 
             if (selection.item.is_regular_file) {
                 await this._open_carousel(selection.item);
-            }
-            else {
+            } else {
                 await this.close_carousel();
                 await this._update_description(directory);
             }
@@ -131,7 +149,7 @@ class RepositoryViewport extends AppWidget {
                     return new RepositoryRootProvider(repository);
             }
         } else if (selection.repository) {
-           if (selection.in_trash)
+            if (selection.in_trash)
                 return new TrashContentProvider(selection.repository);
             else
                 return new RepositoryRootProvider(selection.repository);
@@ -184,72 +202,36 @@ class RepositoryViewport extends AppWidget {
         this.elements().current_description.style.display = 'none';
     }
 
-    disconnectedCallback() {
-        if (this._on_state_select_cb)
-            this._on_state_select_cb.remove();
-        delete this._on_state_select_cb;
-        if (this.uploader)
-            this.uploader.delete();
-        this.uploader = null;
-        if (this.content)
-            this.content.delete();
-        this.content = null;
-        if (this.drop_box)
-            this.drop_box.delete();
-        this.drop_box = null;
-        if (this.selector)
-            this.selector.delete();
-        this.selector = null;
-
-        this.close_carousel();
-    }
-
     async _open_carousel(item) {
-        // Spawn carousel if needed
-        if (!this.get_app().get_carousel().is_open() || !this._carousel_viewport || !this._carousel_viewport.isConnected || !this.carousel_list || !this.carousel_list.isConnected) {
-            /**
-             * @type {CarouselViewport}
-             * @private
-             */
-            this._carousel_viewport = document.createElement('carousel-viewport');
-
-            /**
-             * @type {CarouselList}
-             */
-            this.carousel_list = document.createElement('carousel-list');
-            this.get_app().get_carousel().open(this._carousel_viewport, this.carousel_list);
-
-            this.carousel_list.events.add('select', (item) => {
-                this.get_app().state.select(new StateSelection().set_item(item));
-            })
-            this.carousel_list.events.add('close', () => {
-                this.close_carousel();
-            })
+        if (!this.get_app().get_carousel().is_open()) {
+            this.get_app().get_carousel().open();
+            this._cb_carousel_select_event = this.get_app().get_carousel().list().events.add('select', (item) => {
+                this.elements().content.selector.select_item(item.id, false, false);
+            });
+            this._cb_carousel_close_event = this.get_app().get_carousel().events.add('close', async () => {
+                if (this.elements().content._provider instanceof DirectoryContentProvider)
+                    await this.get_app().state.select(new StateSelection().set_item(this.elements().content._provider.directory));
+                else if (this.elements().content._provider instanceof RepositoryRootProvider)
+                    await this.get_app().state.select(new StateSelection().set_repository(this.elements().content._provider.repository));
+            });
         }
-        this._carousel_viewport.set_item(item);
-        this.carousel_list.focus();
-        if (this._carousel_content_provider !== this.elements().content._provider) {
-            this._carousel_content_provider = this.elements().content._provider;
-            const items = await this.elements().content._provider.get_content();
-            await this.carousel_list.set_items(items);
-            this.carousel_list.select_item(item, true, true);
-        } else {
-            this.carousel_list.select_item(item, false, true);
-        }
+
+        await this.get_app().get_carousel().list().set_items(await this.elements().content._provider.get_content());
+        await this.get_app().get_carousel().set_item(item);
+        await this.get_app().get_carousel().focus();
     }
 
     async close_carousel() {
         if (!this.isConnected)
             return;
         if (this.get_app().get_carousel().is_open()) {
-            this.carousel_list = null;
-            this._carousel_viewport = null;
-            this._carousel_content_provider = null;
-            this.get_app().get_carousel().close();
-            if (this.elements().content._provider instanceof DirectoryContentProvider)
-                await this.get_app().state.select(new StateSelection().set_item(this.elements().content._provider.directory));
-            else if (this.elements().content._provider instanceof RepositoryRootProvider)
-                await this.get_app().state.select(new StateSelection().set_repository(this.elements().content._provider.repository));
+            await this.get_app().get_carousel().close();
+            if (this._cb_carousel_select_event)
+                this._cb_carousel_select_event.remove();
+            delete this._cb_carousel_select_event;
+            if (this._cb_carousel_close_event)
+                this._cb_carousel_close_event.remove();
+            delete this._cb_carousel_close_event;
         }
     }
 }

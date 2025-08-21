@@ -89,6 +89,10 @@ class CarouselViewport extends AppWidget {
         this.events.broadcast('set', item);
         if (!this.isConnected)
             return;
+
+        const viewer = this.elements().item_viewer;
+        viewer.innerHTML = '';
+
         if (!this._item)
             return;
 
@@ -102,9 +106,6 @@ class CarouselViewport extends AppWidget {
                 this.elements().description.style.display = 'unset';
             });
         }
-
-        const viewer = this.elements().item_viewer;
-        viewer.innerHTML = '';
 
         // CASE : IS DIRECTORY
         if (!item.is_regular_file) {

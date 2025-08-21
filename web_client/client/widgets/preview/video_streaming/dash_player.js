@@ -11,9 +11,23 @@ class DashPlayer extends AppWidget {
     connectedCallback() {
         if (!this.item)
             return;
+        this._stopped = false;
         this.app = this.get_app();
         this.app.fetch_api(`stream/create/${this.item}`, 'POST', this.item)
-            .then(async stream_id => { await this._init(stream_id); })
+            .then(async stream_id => {
+                if (!this._stopped)
+                    await this._init(stream_id);
+            })
+    }
+
+    disconnectedCallback() {
+        this._stopped = true;
+        if (this.control_bar)
+            this.control_bar.destroy();
+        if (this.player)
+            this.player.destroy();
+        delete this.control_bar;
+        delete this.player;
     }
 
     async _init(stream_id) {
@@ -32,7 +46,8 @@ class DashPlayer extends AppWidget {
             this.append(element);
 
         import("dashjs").then(async dashjs => {
-
+            if (this._stopped)
+                return;
             this.player = dashjs.MediaPlayer().create();
             this.player.updateSettings({
                 debug: {
@@ -50,6 +65,8 @@ class DashPlayer extends AppWidget {
 
             const control_bar = await import("./control_bar");
 
+            if (!this.player || this._stopped)
+                return;
             this.control_bar = new control_bar.ControlBar(this.player, false, elements.hb_elements);
             this.control_bar.initialize();
             video_div.ondblclick = () => {
@@ -59,15 +76,6 @@ class DashPlayer extends AppWidget {
                     this.control_bar.enterFullscreen();
             }
         });
-    }
-
-    disconnectedCallback() {
-        if (this.control_bar)
-            this.control_bar.destroy();
-        if (this.player)
-            this.player.destroy();
-        delete this.control_bar;
-        delete this.player;
     }
 }
 

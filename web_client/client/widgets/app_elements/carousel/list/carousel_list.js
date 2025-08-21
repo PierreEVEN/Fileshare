@@ -1,43 +1,61 @@
 
 require('./carousel_list.scss')
 const {EventManager} = require("../../../../src/event_manager");
-const {NavigableAppWidget} = require("../../../../src/utilities/navigable");
+const {AppWidget} = require("../../../../src/app_widget");
 
-class CarouselList extends NavigableAppWidget {
+class CarouselList extends AppWidget {
     constructor() {
         super();
         this._last_selected = null;
         this._element_map = new Map();
         this.events = new EventManager();
+
+        this.addEventListener('wheel', e => {
+            if (e.ctrlKey) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        })
     }
 
     connectedCallback() {
-        super.connectedCallback();
+        this.set_content(require('./carousel_list.hbs'), {}, {
+            move_left: async () => {
+                await this._select_previous();
+            },
+            move_right: async () => {
+                await this._select_next();
+            }
+        });
+
+        this._cb_wheel_listener = e => {
+            this.elements().list.parentElement.scrollLeft += (e.deltaY * 0.5);
+        };
+        this.elements().list.addEventListener('wheel', this._cb_wheel_listener);
+
         this._rebuild();
     }
 
-    move_next() {
-        this._select_next();
+    disconnectedCallback() {
+        this.elements().list.removeEventListener('wheel', this._cb_wheel_listener);
     }
 
-    move_previous() {
-        this._select_previous();
-    }
-
-    exit() {
-        this.events.broadcast('close', {});
-    }
-
-    async select_item(meta_data, scroll_center = false, no_update = false) {
+    /**
+     * @param item {RemoteItem}
+     * @param scroll_center {boolean}
+     * @param no_update {boolean}
+     * @returns {Promise<void>}
+     */
+    async select_item(item, scroll_center = false, no_update = false) {
         if (!no_update)
-            await this.events.broadcast('select', meta_data)
+            await this.events.broadcast('select', item)
 
         if (this._last_selected) {
-            if (this._last_selected.id === meta_data.id)
+            if (this._last_selected.id === item.id)
                 return;
             this._last_selected.classList.remove('selected');
         }
-        this._last_selected = this._element_map.get(meta_data.id);
+        this._last_selected = this._element_map.get(item.id);
 
         if (!this._last_selected)
             return;
@@ -91,38 +109,18 @@ class CarouselList extends NavigableAppWidget {
             }
         }
 
+        delete this._last_selected;
+
         await this._rebuild();
     }
 
-    async _rebuild() {
+    _rebuild() {
         if (!this.isConnected)
             return;
-        this.innerHTML = '';
         if (!this._items)
             return;
 
-        this.set_content(require('./carousel_list.hbs'), {}, {
-            move_left: () => {
-                this._select_previous();
-            },
-            move_right: () => {
-                this._select_next();
-            }
-        });
-
-        this.addEventListener('wheel', e => {
-            if (e.ctrlKey) {
-                e.stopPropagation();
-                e.preventDefault();
-            }
-        })
-
-        this.elements().list.addEventListener('wheel', e => {
-            this.elements().list.parentElement.scrollLeft += (e.deltaY * 0.5);
-        })
-
         this.elements().list.innerHTML = '';
-
         const left_spacer = document.createElement('div');
         left_spacer.style.width = '100px';
         this.elements().list.append(left_spacer);
