@@ -1,8 +1,6 @@
 # TODO
 
-- Rework keyboard navigation
-- Gere le close du carousel
-- supporter plus de 1000 items par dossiers
+- Fix description de dossier sur mobile
 
 - Améliorer les filtres (filtrer par user etc...)
 - Ajouter les tris (par taille etc...)

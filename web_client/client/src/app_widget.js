@@ -23,13 +23,13 @@ class AppWidget extends HTMLElement {
     set_content(div, context = {}, callbacks = {}) {
         this.innerHTML = '';
         const elements = div(context, callbacks);
-        this._elements = elements.hb_elements
+        this._elements = elements.hb_elements;
         if (elements.constructor.name === 'Array')
             for (const element of elements)
                 this.append(element);
         else
             this.append(elements);
-        return this._elements
+        return this._elements;
     }
 
     /**

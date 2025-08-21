@@ -22,10 +22,11 @@ import {ContentPool} from "../../src/remote_filesystem/content_pool";
 import {StateSelection} from "../../src/state/state_selection";
 import {InitData} from "../../src/utilities/app_init_data";
 import {FilterContentProvider} from "../../src/utilities/providers";
+import {AppWidget} from "../../src/app_widget";
 
 require('./app.scss');
 
-class FileshareApp extends HTMLElement {
+class FileshareApp extends AppWidget {
     constructor() {
         super();
         /**
@@ -55,26 +56,23 @@ class FileshareApp extends HTMLElement {
         if (!this._on_select_cb)
             this._on_select_cb = this.state.events.add('select', async selection => { await this._on_state_change(selection); })
 
-        const layout = require('./app.hbs')({}, {
+        this.set_content(require('./app.hbs'), {}, {
             close_mobile: () => {
-                layout.hb_elements.side_bar.show_mobile();
+                this.elements().side_bar.show_mobile();
             }
         });
-        this._elements = layout['hb_elements'];
-        for (const element of layout)
-            this.append(element);
 
-        this._elements.side_bar.events.add('show_mobile', (show) => {
+        this.elements().side_bar.events.add('show_mobile', (show) => {
             if (show)
-                layout.hb_elements.mobile_bg.classList.add('selected')
+                this.elements().mobile_bg.classList.add('selected')
             else
-                layout.hb_elements.mobile_bg.classList.remove('selected')
-            this._elements.app_header.update_burger_icon(show);
+                this.elements().mobile_bg.classList.remove('selected')
+            this.elements().app_header.update_burger_icon(show);
         });
         if (screen.availHeight > screen.availWidth)
-            this._elements.side_bar.show_mobile();
+            this.elements().side_bar.show_mobile();
 
-        this.side_bar = this._elements.side_bar;
+        this.side_bar = this.elements().side_bar;
     }
 
     disconnectedCallback() {
@@ -123,8 +121,8 @@ class FileshareApp extends HTMLElement {
             delete this._viewport_content;
         }
         this._viewport_content = page_content;
-        if (this._viewport_content && this._elements)
-            this._elements.viewport.append(this._viewport_content);
+        if (this._viewport_content && this.elements())
+            this.elements().viewport.append(this._viewport_content);
         return page_content;
     }
 
@@ -170,11 +168,7 @@ class FileshareApp extends HTMLElement {
      * @returns {GlobalCarousel}
      */
     get_carousel() {
-        if (!this._carousel) {
-            this._carousel = document.createElement('global-carousel');
-            this.append(this._carousel);
-        }
-        return this._carousel;
+        return this.elements().carousel;
     }
 
     set_global_search(filter) {

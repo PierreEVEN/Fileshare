@@ -103,7 +103,7 @@ class Selector {
             return;
 
         const last_selected = this._last_selected ? this.find_item_view_by_id(this._last_selected) : this.content[0];
-        let next = last_selected.nextElementSibling;
+        let next = last_selected ? last_selected.nextElementSibling : null;
         if (!next)
             next = this.content[0];
 

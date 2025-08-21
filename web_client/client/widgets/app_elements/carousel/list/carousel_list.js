@@ -61,7 +61,7 @@ class CarouselList extends AppWidget {
             return;
         this._last_selected.classList.add('selected');
 
-        this._last_selected.scrollIntoView({behavior: "smooth", inline: scroll_center ? 'center' : 'nearest'});
+        this._last_selected.scrollIntoView({behavior: "smooth", block: scroll_center ? 'center' : 'nearest'});
         this._update_left_right_buttons();
     }
 

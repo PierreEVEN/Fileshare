@@ -1,4 +1,3 @@
-import {AppWidget} from "../../../src/app_widget";
 import {EventManager} from "../../../src/event_manager";
 import {Selector} from "./selector";
 import {is_touch_screen} from "../../../src/utilities/utils";
@@ -59,13 +58,9 @@ class ContentPage extends NavigableAppWidget {
         /**
          * @type {Selector}
          */
-        this.selector = new Selector(this.children);
+        this.selector = new Selector(this.container().children);
 
-        const content = await this._provider.get_content();
-        if (content.length > this._elements_per_page)
-            console.warn("//@TODO : Handle multiple elements per page")
-        for (let i = this._page * this._elements_per_page; i < content.length && i < (this._page + 1) * this._elements_per_page; ++i)
-            this._add_item(content[i]);
+        await this._refresh_page();
 
         this._cb_provider_add = this._provider.events.add('add', item => {
             this._add_item(item);
@@ -74,9 +69,84 @@ class ContentPage extends NavigableAppWidget {
         return this;
     }
 
+    async _refresh_page() {
+        this._clear();
+
+        const content = await this._provider.get_content();
+        const page_count = Math.ceil(content.length / this._elements_per_page);
+        this._page = Math.max(0, Math.min(page_count - 1, this._page));
+
+        for (let i = this._page * this._elements_per_page; i < content.length && i < (this._page + 1) * this._elements_per_page; ++i)
+            this._add_item(content[i]);
+
+        const cell_num = window.innerWidth < 600 ? 3 : 7;
+
+        const list = this.elements().page_list;
+        list.innerHTML = '';
+        let start = Math.max(0, Math.min(this._page - Math.floor(cell_num / 2), page_count - cell_num));
+        if (start > 0) {
+            const button = document.createElement('button');
+            button.innerText = '1';
+            button.onclick = async () => {
+                this._page = 0;
+                await this._refresh_page();
+            }
+            list.append(button);
+            const spacer = document.createElement('span');
+            spacer.innerText = '...'
+            list.append(spacer)
+        }
+
+        for (let i = 0; i < cell_num; ++i) {
+            if (start + i >= page_count)
+                return;
+            const button = document.createElement('button');
+            button.innerText = (start + i + 1).toString();
+
+            button.onclick = async () => {
+                this._page = start + i;
+                await this._refresh_page();
+            }
+
+            if ((start + i) === this._page)
+                button.classList.add('select')
+            list.append(button);
+        }
+        if (start + cell_num < page_count) {
+            const spacer = document.createElement('span');
+            spacer.innerText = '...'
+            list.append(spacer)
+            const button = document.createElement('button');
+            button.innerText = page_count.toString();
+            button.onclick = async () => {
+                this._page = page_count - 1;
+                await this._refresh_page();
+            }
+            list.append(button);
+        }
+    }
+
     connectedCallback() {
         super.connectedCallback();
+        this.set_content(require('./content_page.hbs'), {}, {
+            page_next: async () => {
+                this._page++;
+                await this._refresh_page();
+            },
+            page_previous: async () => {
+                this._page--;
+                await this._refresh_page();
+            }
+        })
+
         this.set_content_provider(this._futur_provider);
+    }
+
+    /**
+     * @returns {HTMLElement}
+     */
+    container() {
+        return this.elements().container;
     }
 
     disconnectedCallback() {
@@ -135,7 +205,7 @@ class ContentPage extends NavigableAppWidget {
 
     async any_key(e) {
         if (e.key === 'a' && e.ctrlKey)
-            for (const child of this.children)
+            for (const child of this.container().children)
                 await this.selector.select_item(child.item().id, true, false);
         else if (e.key === 'c' && e.ctrlKey) {
             CLIPBOARD.clear();
@@ -228,17 +298,17 @@ class ContentPage extends NavigableAppWidget {
         }
 
         this._items.set(item.id, div);
-        let existing_children = Array.from(this.children);
+        let existing_children = Array.from(this.container().children);
         let insertIndex = existing_children.findIndex(child => this._compare_sort(child, div) < 0);
         if (insertIndex === -1)
-            this.appendChild(div);
+            this.container().appendChild(div);
         else
-            this.insertBefore(div, this.children[insertIndex]);
+            this.container().insertBefore(div, this.container().children[insertIndex]);
     }
 
     _clear() {
         this._items.clear();
-        this.innerHTML = '';
+        this.container().innerHTML = '';
     }
 }
 

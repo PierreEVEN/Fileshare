@@ -1,17 +1,51 @@
 @import "../../app/palette";
 
 content-page {
-  height: fit-content;
-  max-height: 100%;
-  display: grid;
-  position: absolute;
-  overflow: auto;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  grid-auto-rows: minmax(100px, auto);
-  grid-template-columns: repeat(auto-fill, 120px);
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+
+  .box {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: auto;
+    width: 100%;
+
+    .container {
+      height: fit-content;
+      width: 100%;
+      display: grid;
+      grid-auto-rows: minmax(100px, auto);
+      grid-template-columns: repeat(auto-fill, 120px);
+    }
+
+    .page-select {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-top: auto;
+      margin-bottom: 20px;
+
+      .page-list {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+
+        button {
+          padding: 0;
+          min-width: 40px;
+          border: solid 1px $text-secondary;
+        }
+
+        .select {
+          background-color: $primary;
+        }
+      }
+    }
+  }
 
   .footer {
     pointer-events: none;
