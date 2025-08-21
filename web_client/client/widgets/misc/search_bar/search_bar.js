@@ -96,7 +96,16 @@ class SearchBar extends NavigableAppWidget {
     }
 
     async apply_filter() {
+        const repository = await this.get_app().state.get_current_repository();
+        if (!repository)
+            return;
+
+        const item = this.get_app().state.get_current_item();
+
         const filter = new Filter();
+        filter.source(repository.id, item ? item.id : null);
+
+
         for (const [_, opt] of this.list_filters()) {
             opt.set(filter);
         }

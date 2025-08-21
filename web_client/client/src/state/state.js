@@ -1,4 +1,3 @@
-import {User} from "../remote_filesystem/user";
 import {Repository} from "../remote_filesystem/repository";
 import {APP_COOKIES} from "../../widgets/modals/cookies/cookies";
 import {EventManager} from "../event_manager";
@@ -65,6 +64,9 @@ class AppState {
      *                          SELECTION                               *
      *******************************************************************/
 
+    /**
+     * @return {StateSelection}
+     */
     selection() {
         return this._selected_item;
     }
@@ -131,6 +133,22 @@ class AppState {
                 }
             }
         }
+    }
+
+    /**
+     * @return {Repository}
+     */
+    async get_current_repository() {
+        const selection = this.selection();
+        return selection.repository ? selection.repository : selection.item ? await this.app.pool.fetch_repository(selection.item.repository) : null;
+    }
+
+    /**
+     * @return {RemoteItem}
+     */
+    get_current_item() {
+        const selection = this.selection();
+        return selection.item;
     }
 
     async _clear_selection() {
