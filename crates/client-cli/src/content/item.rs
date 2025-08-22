@@ -34,7 +34,7 @@ pub trait Item: ItemCast + Send + Sync + 'static {
     fn is_regular_file(&self) -> bool;
     fn name(&self) -> EncString;
     fn size(&self) -> u64;
-    fn timestamp(&self) -> u64;
+    fn timestamp(&self) -> Result<u64, Error>;
     fn mime_type(&self) -> EncString;
     fn get_parent(&self) -> Result<Option<Arc<RwLock<dyn Item>>>, Error>;
     fn get_children(&self) -> Result<Vec<Arc<RwLock<dyn Item>>>, Error>;
@@ -54,7 +54,7 @@ impl Debug for dyn Item {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("'{}' - {} ({}o - {})",
                             self.name().plain().unwrap_or(String::from("Invalid/Name")),
-                            self.timestamp(),
+                            self.timestamp().unwrap_or(0),
                             self.size(),
                             self.mime_type().plain().unwrap_or(String::from("invalid-mimetype")),
         ).as_str())
@@ -110,10 +110,14 @@ impl Item for RemoteItem {
         } else { 0 }
     }
 
-    fn timestamp(&self) -> u64 {
+    fn timestamp(&self) -> Result<u64, Error> {
         if let Some(file) = &self.file {
-            file.timestamp as u64
-        } else { 0 }
+            if file.timestamp < 0 {
+                Err(Error::msg(format!("File {} with id ({}) has an invalid timestamp : {}", self.absolute_path, self.id(), file.timestamp)))
+            } else {
+                Ok(file.timestamp as u64)
+            }
+        } else { Ok(0) }
     }
 
     fn mime_type(&self) -> EncString {
@@ -243,8 +247,8 @@ impl Item for LocalItem {
         self.size
     }
 
-    fn timestamp(&self) -> u64 {
-        self.timestamp
+    fn timestamp(&self) -> Result<u64, Error> {
+        Ok(self.timestamp)
     }
 
     fn mime_type(&self) -> EncString {

@@ -28,56 +28,56 @@ impl ActionStatus {
                 Action::ConflictAddLocalNewer(scanned, remote) => {
                     let scanned = scanned.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!("+ . + | {} - ✅ CONFLICT ✅ : The file was added on both sides. (🖥️ {} ▶️ {} ☁️)", scanned.path_from_root()?.display(), scanned.timestamp(), remote.timestamp());
+                    println!("+ . + | {} - ✅ CONFLICT ✅ : The file was added on both sides. (🖥️ {} ▶️ {} ☁️)", scanned.path_from_root()?.display(), scanned.timestamp()?, remote.timestamp()?);
                 }
                 Action::ErrorRemoteDowngraded(scanned, remote) => {
                     let scanned = scanned.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!(" ⚊ ⚊ ⩢ | {} - ⬇️ Remote file was reverted to an older version. (🖥️{} ▶️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp(), remote.timestamp());
+                    println!(" ⚊ ⚊ ⩢ | {} - ⬇️ Remote file was reverted to an older version. (🖥️{} ▶️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp()?, remote.timestamp()?);
                 }
                 Action::LocalUpgraded(scanned, remote) => {
                     let scanned = scanned.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!(" ⩠ ⚊ ⚊ | {} - ⬇️ The file was updated locally. (🖥️{} ▶️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp(), remote.timestamp());
+                    println!(" ⩠ ⚊ ⚊ | {} - ⬇️ The file was updated locally. (🖥️{} ▶️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp()?, remote.timestamp()?);
                 }
                 Action::ConflictBothDowngraded(scanned, local, remote) => {
                     let scanned = scanned.read().unwrap();
                     let local = local.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!(" ⩢ ⚊ ⩢ | {} - ⬇️ File have been downgraded on both side. (🖥️{} ▶️ ☁️{} ▶️ ☁️{})", scanned.path_from_root()?.display(), scanned.timestamp(), local.timestamp(), remote.timestamp());
+                    println!(" ⩢ ⚊ ⩢ | {} - ⬇️ File have been downgraded on both side. (🖥️{} ▶️ 💾{} ▶️ ☁️{})", scanned.path_from_root()?.display(), scanned.timestamp()?, local.timestamp()?, remote.timestamp()?);
                 }
                 Action::ConflictBothUpgraded(scanned, local, remote) => {
                     let scanned = scanned.read().unwrap();
                     let local = local.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!(" ⩠ ⚊ ⩠ | {} - ⬇️ File have been upgraded on both side. (🖥️{} ▶️ ☁️{} ◀️ ☁️{})", scanned.path_from_root()?.display(), scanned.timestamp(), local.timestamp(), remote.timestamp());
+                    println!(" ⩠ ⚊ ⩠ | {} - ⬇️ File have been upgraded on both side. (🖥️{} ▶️ 💾{} ◀️ ☁️{})", scanned.path_from_root()?.display(), scanned.timestamp()?, local.timestamp()?, remote.timestamp()?);
                 }
                 Action::ConflictLocalUpgradedRemoteDowngraded(scanned, local, remote) => {
                     let scanned = scanned.read().unwrap();
                     let local = local.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!(" ⩠ ⚊ ⩢ | {} - ❔ Remote was reverted and local one was updated. (🖥️{} ▶️ ️💾{} ▶️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp(), local.timestamp(), remote.timestamp());
+                    println!(" ⩠ ⚊ ⩢ | {} - ❔ Remote was reverted and local one was updated. (🖥️{} ▶️ ️💾{} ▶️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp()?, local.timestamp()?, remote.timestamp()?);
                 }
                 Action::ConflictAddRemoteNewer(scanned, remote) => {
                     let scanned = scanned.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!(" + . + | {} - ✅ CONFLICT ✅ : The file was added on both sides. (🖥️{} ◀️ ☁️{})", scanned.path_from_root()?.display(), scanned.timestamp(), remote.timestamp());
+                    println!(" + . + | {} - ✅ CONFLICT ✅ : The file was added on both sides. (🖥️{} ◀️ ☁️{})", scanned.path_from_root()?.display(), scanned.timestamp()?, remote.timestamp()?);
                 }
                 Action::RemoteUpgraded(scanned, remote) => {
                     let scanned = scanned.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!(" ⚊ ⚊ ⩠ | {} - The file was upgraded on remote. (🖥️ {} ◀️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp(), remote.timestamp());
+                    println!(" ⚊ ⚊ ⩠ | {} - The file was upgraded on remote. (🖥️ {} ◀️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp()?, remote.timestamp()?);
                 }
                 Action::ErrorLocalDowngraded(scanned, remote) => {
                     let scanned = scanned.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!(" ⩢ ⚊ ⚊ | {} - The file was reverted locally. (🖥️{} ▶️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp(), remote.timestamp());
+                    println!(" ⩢ ⚊ ⚊ | {} - The file was reverted locally. (🖥️{} ▶️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp()?, remote.timestamp()?);
                 }
                 Action::ConflictLocalDowngradedRemoteUpgraded(scanned, local, remote) => {
                     let scanned = scanned.read().unwrap();
                     let local = local.read().unwrap();
                     let remote = remote.read().unwrap();
-                    println!(" ⩢ ⚊ ⩠ | {} - ❔ Local was reverted and remote one was updated. (🖥️{} ◀️ ️💾{} ◀️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp(), local.timestamp(), remote.timestamp());
+                    println!(" ⩢ ⚊ ⩠ | {} - ❔ Local was reverted and remote one was updated. (🖥️{} ◀️ ️💾{} ◀️ ☁️{} )", scanned.path_from_root()?.display(), scanned.timestamp()?, local.timestamp()?, remote.timestamp()?);
                 }
                 Action::RemoteRemoved(scanned) => {
                     let scanned = scanned.read().unwrap();

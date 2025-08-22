@@ -145,10 +145,18 @@ impl Repository {
                                 match self.download_file(item, &mut data_file).await {
                                     Ok(_) => {
                                         let final_path = self.connection.metadata_directory().root()?.join(item.path_from_root()?);
-
                                         fs::rename(downloaded_path, final_path.clone())?;
 
-                                        let timestamp = item.timestamp();
+                                        let timestamp = match item.timestamp() {
+                                            Ok(timestamp) => {timestamp}
+                                            Err(err) => {
+                                                error!("{}", err);
+                                                if let Err(err) = fs::remove_file(final_path) {
+                                                    error!("Failed to remove corrupted file : {}", err);
+                                                }
+                                                continue;
+                                            }
+                                        };
                                         let new_date = match UNIX_EPOCH.checked_add(Duration::from_millis(timestamp)) {
                                             None => {
                                                 error!("Failed to set timestamp '{}' for file {}", timestamp, final_path.display());
@@ -264,6 +272,7 @@ impl Repository {
         title_pb.finish_and_clear();
         pb.set_style(ProgressStyle::with_template(" ✅  {msg} ({total_bytes}) [{wide_bar:.green/red}] {elapsed}")?.progress_chars("->-"));
         pb.finish();
+
         Ok(())
     }
 
@@ -418,7 +427,7 @@ impl Repository {
         let mut request = self.connection.post("/item/send".to_string()).await?
             .header("Content-Name", item.name().encoded().as_str())
             .header("Content-Size", item.size().to_string().as_str())
-            .header("Content-Timestamp", item.timestamp().to_string().as_str())
+            .header("Content-Timestamp", item.timestamp()?.to_string().as_str())
             .header("Content-Mimetype", item.mime_type().encoded().as_str())
             .header("Content-Repository", self.connection.remote_id()?.to_string());
         if let Some(parent) = parent {

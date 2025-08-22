@@ -81,7 +81,7 @@ impl Diff {
                 let scanned_item = scanned_item_ref.read().unwrap();
                 let remote_item = remote_item_ref.read().unwrap();
 
-                if !scanned_item.is_regular_file() || scanned_item.timestamp() == remote_item.timestamp() {
+                if !scanned_item.is_regular_file() || scanned_item.timestamp()? == remote_item.timestamp()? {
                     match local.get(key) {
                         None => {
                             // item up to date but local reference needs to be updated (#resync local)
@@ -91,7 +91,7 @@ impl Diff {
                             // Nothing to do. Keep scanning inside
                         }
                     }
-                } else if scanned_item.timestamp() > remote_item.timestamp() {
+                } else if scanned_item.timestamp()? > remote_item.timestamp()? {
                     match local.get(key) {
                         None => {
                             // CONFLICT : Local item was added on both side, but local is newer
@@ -99,19 +99,19 @@ impl Diff {
                         }
                         Some(local_item_ref) => {
                             let local_item = local_item_ref.read().unwrap();
-                            if scanned_item.timestamp() == local_item.timestamp() {
+                            if scanned_item.timestamp()? == local_item.timestamp()? {
                                 // ERROR : Remote downgraded. Is it normal ?
                                 self.actions.push(Action::ErrorRemoteDowngraded(scanned_item_ref.clone(), remote_item_ref.clone()));
-                            } else if local_item.timestamp() == remote_item.timestamp() {
+                            } else if local_item.timestamp()? == remote_item.timestamp()? {
                                 // Scanned upgraded (#upload)
                                 self.actions.push(Action::LocalUpgraded(scanned_item_ref.clone(), remote_item_ref.clone()));
-                            } else if local_item.timestamp() > scanned_item.timestamp() {
+                            } else if local_item.timestamp()? > scanned_item.timestamp()? {
                                 // CONFLICT : Both downgraded
                                 self.actions.push(Action::ConflictBothDowngraded(scanned_item_ref.clone(), local_item_ref.clone(), remote_item_ref.clone()));
-                            } else if local_item.timestamp() < remote_item.timestamp() {
+                            } else if local_item.timestamp()? < remote_item.timestamp()? {
                                 // CONFLICT : Both upgraded
                                 self.actions.push(Action::ConflictBothUpgraded(scanned_item_ref.clone(), local_item_ref.clone(), remote_item_ref.clone()));
-                            } else if local_item.timestamp() > remote_item.timestamp() {
+                            } else if local_item.timestamp()? > remote_item.timestamp()? {
                                 // CONFLICT : Local upgraded / remote downgraded
                                 self.actions.push(Action::ConflictLocalUpgradedRemoteDowngraded(scanned_item_ref.clone(), local_item_ref.clone(), remote_item_ref.clone()));
                             } else {
@@ -119,7 +119,7 @@ impl Diff {
                             }
                         }
                     }
-                } else if scanned_item.timestamp() < remote_item.timestamp() {
+                } else if scanned_item.timestamp()? < remote_item.timestamp()? {
                     match local.get(key) {
                         None => {
                             // CONFLICT : Local item was added on both side, but remote is newer
@@ -127,19 +127,19 @@ impl Diff {
                         }
                         Some(local_item_ref) => {
                             let local_item = local_item_ref.read().unwrap();
-                            if scanned_item.timestamp() == local_item.timestamp() {
+                            if scanned_item.timestamp()? == local_item.timestamp()? {
                                 // Remote upgraded (#download)
                                 self.actions.push(Action::RemoteUpgraded(scanned_item_ref.clone(), remote_item_ref.clone()));
-                            } else if local_item.timestamp() == remote_item.timestamp() {
+                            } else if local_item.timestamp()? == remote_item.timestamp()? {
                                 // ERROR : Local downgraded. Is it normal ?
                                 self.actions.push(Action::ErrorLocalDowngraded(scanned_item_ref.clone(), remote_item_ref.clone()));
-                            } else if local_item.timestamp() < scanned_item.timestamp() {
+                            } else if local_item.timestamp()? < scanned_item.timestamp()? {
                                 // CONFLICT : Both upgraded
                                 self.actions.push(Action::ConflictBothUpgraded(scanned_item_ref.clone(), local_item_ref.clone(), remote_item_ref.clone()));
-                            } else if local_item.timestamp() > remote_item.timestamp() {
+                            } else if local_item.timestamp()? > remote_item.timestamp()? {
                                 // CONFLICT : Both downgraded
                                 self.actions.push(Action::ConflictBothDowngraded(scanned_item_ref.clone(), local_item_ref.clone(), remote_item_ref.clone()));
-                            } else if local_item.timestamp() < remote_item.timestamp() {
+                            } else if local_item.timestamp()? < remote_item.timestamp()? {
                                 // CONFLICT : Local downgraded / remote upgraded
                                 self.actions.push(Action::ConflictLocalDowngradedRemoteUpgraded(scanned_item_ref.clone(), local_item_ref.clone(), remote_item_ref.clone()));
                             } else {
