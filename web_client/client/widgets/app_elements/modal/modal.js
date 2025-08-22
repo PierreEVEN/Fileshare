@@ -1,6 +1,7 @@
 require('./modal.scss')
+const {NavigableAppWidget} = require("../../../src/utilities/navigable");
 
-class ModalContainer extends HTMLElement {
+class ModalContainer extends NavigableAppWidget {
     constructor() {
         super();
 
@@ -12,6 +13,7 @@ class ModalContainer extends HTMLElement {
     }
 
     connectedCallback() {
+        super.connectedCallback();
         this.modal_box = document.createElement('div');
         this.modal_box.classList.add('modal-box');
         this.append(this.modal_box)
@@ -23,6 +25,9 @@ class ModalContainer extends HTMLElement {
         this._create_infos = null;
         this.modal_box.innerHTML = '';
         this.classList.remove('modal-open');
+        if (this.get_last_focused_item()) {
+            this.get_last_focused_item().focus();
+        }
     }
 
     /**
@@ -49,13 +54,19 @@ class ModalContainer extends HTMLElement {
         }
         this.classList.add('modal-open');
         this.modal_box.style.left = 'auto'
-        this.modal_box.style.top = 'auto'
+        this.modal_box.style.top = 'auto';
+        this.focus();
+    }
+
+    back() {}
+
+    exit() {
+        this.close();
     }
 
     is_open() {
         return this.classList.contains('modal-open');
     }
-
 }
 
 customElements.define("modal-container", ModalContainer, {});

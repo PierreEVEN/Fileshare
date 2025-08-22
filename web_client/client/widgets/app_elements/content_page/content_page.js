@@ -8,6 +8,7 @@ import {CLIPBOARD, copy_items} from "../../modals/copy_items/copy_items";
 import {DirectoryContentProvider, RepositoryRootProvider, TrashContentProvider} from "../../../src/utilities/providers";
 import {delete_item} from "../../modals/delete_item/delete_item";
 import {context_menu_repository} from "../../misc/context_menu/contexts/context_repository";
+import {edit_item} from "../../modals/edit_item/edit_item";
 
 require('./content_page.scss')
 
@@ -136,6 +137,11 @@ class ContentPage extends NavigableAppWidget {
 
     connectedCallback() {
         super.connectedCallback();
+
+        this._remove_item_cb = this.get_app().pool.events.add('remove_item', item => {
+            this._remove_item(item);
+        })
+
         this.set_content(require('./content_page.hbs'), {}, {
             page_next: async () => {
                 this._page++;
@@ -168,6 +174,9 @@ class ContentPage extends NavigableAppWidget {
     }
 
     disconnectedCallback() {
+        if (this._remove_item_cb)
+            this._remove_item_cb.remove();
+        delete this._remove_item_cb;
         if (this._cb_provider_add)
             this._cb_provider_add.remove();
         delete this._cb_provider_add;
@@ -251,6 +260,10 @@ class ContentPage extends NavigableAppWidget {
                 await delete_item(this.get_app(), items, false);
             else
                 await delete_item(this.get_app(), items, true);
+        } else if (e.key === 'F2') {
+            const item = this.selector.get_last_selected_item();
+            if (item)
+                await edit_item(this.get_app(), this.get_app().pool.find_item(item));
         }
     }
 
@@ -322,6 +335,13 @@ class ContentPage extends NavigableAppWidget {
             this.container().appendChild(div);
         else
             this.container().insertBefore(div, this.container().children[insertIndex]);
+    }
+
+    _remove_item(item) {
+        const div = this._items.get(item.id);
+        if (div)
+            div.remove();
+        this._items.delete(item.id);
     }
 
     _clear() {

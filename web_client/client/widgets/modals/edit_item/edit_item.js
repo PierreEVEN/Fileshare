@@ -35,7 +35,9 @@ async function edit_item(app, item) {
             app.get_modal().close();
         }
     });
-    app.get_modal().open(widget, {custom_width: '600px', custom_height: '480px'})
+    app.get_modal().open(widget, {custom_width: '600px', custom_height: '480px'});
+    widget.hb_elements.display_name.focus();
+    widget.hb_elements.display_name.select();
 }
 
 export {edit_item}

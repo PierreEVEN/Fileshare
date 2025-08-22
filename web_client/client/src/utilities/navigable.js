@@ -10,9 +10,11 @@ document.addEventListener('focusin', e => {
     if (FOCUSED_ITEM === new_elem)
         return;
     if (new_elem) {
-        if (FOCUSED_ITEM && FOCUSED_ITEM.focus_out)
-            FOCUSED_ITEM.focus_out(e)
+        const old = FOCUSED_ITEM;
+        if (old && old.focus_out)
+            old.focus_out(e)
         FOCUSED_ITEM = new_elem;
+        FOCUSED_ITEM._last_focused_item = old;
         if (FOCUSED_ITEM.focus_in)
             FOCUSED_ITEM.focus_in(e);
         //console.log("Focus", FOCUSED_ITEM)
@@ -63,6 +65,18 @@ class NavigableAppWidget extends AppWidget {
     constructor(tab_index = 0) {
         super();
         this._tab_index = tab_index;
+        /**
+         * @type {NavigableAppWidget}
+         * @private
+         */
+        this._last_focused_item = null;
+    }
+
+    /**
+     * @return {NavigableAppWidget}
+     */
+    get_last_focused_item() {
+        return this._last_focused_item;
     }
 
     connectedCallback() {
