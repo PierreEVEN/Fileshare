@@ -11,9 +11,8 @@ use reqwest::{Body};
 use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
-use std::ops::Add;
 use std::sync::{Arc, RwLock};
-use std::time::{Duration, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{fs};
 use std::path::Path;
 use tokio_util::io::ReaderStream;
@@ -150,7 +149,16 @@ impl Repository {
                                         fs::rename(downloaded_path, final_path.clone())?;
 
                                         let timestamp = item.timestamp();
-                                        File::options().write(true).open(final_path)?.set_modified(UNIX_EPOCH.add(Duration::from_millis(timestamp)))?;
+                                        let new_date = match UNIX_EPOCH.checked_add(Duration::from_millis(timestamp)) {
+                                            None => {
+                                                error!("Failed to set timestamp '{}' for file {}", timestamp, final_path.display());
+                                                SystemTime::now()
+                                            }
+                                            Some(date) => {date}
+                                        };
+                                        if let Err(err) = File::options().write(true).open(&final_path)?.set_modified(new_date) {
+                                            error!("Failed to set timestamp '{}' for file {} : {}", timestamp, final_path.display(), err);
+                                        }
                                         let root = self.connection.metadata_directory().root()?.clone();
                                         self.update_local_item_state(&root, item as &dyn Item)?;
                                     }
