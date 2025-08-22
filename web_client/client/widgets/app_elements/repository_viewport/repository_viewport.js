@@ -3,7 +3,7 @@ import {
     RepositoryRootProvider,
     TrashContentProvider
 } from "../../../src/utilities/providers";
-import "../item/item";
+import "../item_view/item_view";
 import "../upload/uploader";
 import "../upload/drop_box";
 import {context_menu_item} from "../../misc/context_menu/contexts/context_item";

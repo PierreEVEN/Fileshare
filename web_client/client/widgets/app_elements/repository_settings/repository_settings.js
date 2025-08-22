@@ -48,11 +48,13 @@ class RepositorySettings extends AppWidget {
                     })
                 merged_data.num_contributors = data.contributors.length;
                 merged_data.contributors = [];
-                for (const contributor of data.contributors)
+                for (const contributor of data.contributors) {
+                    const user = await this.get_app().pool.fetch_user(contributor.id);
                     merged_data.contributors.push({
-                        name: (await this.get_app().pool.fetch_user(contributor.id)).login.plain(),
+                        name: user ? user.login.plain() : `Deleted user #${contributor.id}`,
                         count: contributor.count
                     });
+                }
 
                 this.set_content(require('./repository_settings.hbs'), merged_data, {
                     'edit': async () => {
@@ -88,7 +90,7 @@ class RepositorySettings extends AppWidget {
     async _add_subscription(data) {
         let user = await this.get_app().pool.fetch_user(data.owner);
         const auth_widget = require('./authorization.hbs')({
-            name: user.login.plain(),
+            name: user ? user.login.plain() : `Deleted user #${data.owner}`,
             access_type: data.access_type,
             is_read_only: data.access_type === 'ReadOnly',
             is_contributor: data.access_type === 'Contributor',

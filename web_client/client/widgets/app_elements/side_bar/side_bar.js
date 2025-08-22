@@ -43,7 +43,7 @@ class SideBar extends AppWidget {
             })
 
         this._cb_user_connected = this.get_app().state.events.add('user_connected', async (data) => {
-            this._refresh(data.new);
+            await this._refresh(data.new);
         });
 
         this._refresh(this.get_app().state.connected_user());

@@ -1,5 +1,6 @@
 import {Repository} from "../remote_filesystem/repository";
 import {User} from "../remote_filesystem/user";
+import {Filter} from "../filter/filter";
 
 class StateSelection {
     constructor() {
@@ -104,11 +105,14 @@ class StateSelection {
                 this.repository = await app.pool.fetch_repository(value);
             else if (key === "user")
                 this.user = await app.pool.fetch_user(value);
-            else if (key === "item") {
+            else if (key === "item")
                 this.item = await app.pool.fetch_item(value.id);
-            } else {
-                this[key] = value;
+            else if (key === "filter") {
+                this.filter = value;
+                Object.setPrototypeOf(this.filter, Filter.prototype);
             }
+            else
+                this[key] = value;
         }
         return this;
     }

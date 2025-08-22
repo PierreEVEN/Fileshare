@@ -1,4 +1,4 @@
-require('./item.scss')
+require('./item_view.scss')
 const {AppWidget} = require("../../../src/app_widget");
 const {StateSelection} = require("../../../src/state/state_selection");
 class ItemView extends AppWidget {
@@ -30,7 +30,7 @@ class ItemView extends AppWidget {
         if (!this.isConnected)
             return this;
 
-        this.set_content(require('./item.hbs'), {item: item.display_data()}, {});
+        this.set_content(require('./item_view.hbs'), {item: item.display_data()}, {});
         return this;
     }
 
