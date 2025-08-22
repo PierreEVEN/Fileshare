@@ -283,7 +283,6 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
             }
         }
         Err(error) => {
-
             match error {
                 ConverterError::ToolNotAvailable(error) => {
                     Ok(([(header::CACHE_CONTROL, "private, max-age=604800, immutable".to_string())], Json(Result {

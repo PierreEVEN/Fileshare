@@ -4,6 +4,5 @@
 - Ajouter les tris (par taille etc...)
 
 - Rework gestion des droits
-- Gérer les meta OG
 - Améliorer le seek du serveur Vidéo
 - Ajouter des popups contextuels

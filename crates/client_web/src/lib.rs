@@ -247,7 +247,39 @@ async fn get_index(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<i
         Ok(file) => { file }
         Err(err) => { Err(Error::msg(format!("Cannot find index file : {err} (searching in {index_path})")))? }
     };
-    let index_data = index_data.replace(r#"data-app_config='{}'"#, format!(r##"data-app_config='{}'"##, serde_json::to_string(&client_config)?).as_str());
+    let mut index_data = index_data.replace(r#"data-app_config='{}'"#, format!(r##"data-app_config='{}'"##, serde_json::to_string(&client_config)?).as_str());
+
+    let mut og_meta = String::new();
+    if let Some(item) = &client_config.display_item {
+        let repository = DbRepository::from_id(&ctx.database, &item.repository).await?;
+        let owner = DbUser::from_id(&ctx.database, &repository.owner).await?;
+        og_meta += format!("<meta property='og:title' content='{}'/>", item.name.encoded()).as_str();
+        og_meta += "<meta property='og:type' content='website'/>";
+        og_meta += "<meta property='og:site_name' content='fileshare'/>";
+        og_meta += format!("<meta property='og:url' content='{}/{}/{}/tree/{}'/>", client_config.origin, owner.name, repository.url_name, item.absolute_path).as_str();
+
+        if let Some(file) = &item.file {
+            if file.mimetype.plain()?.starts_with("image/") {
+                og_meta += format!("<meta property='og:image' content='{}/api/item/get/{}'/>", client_config.origin, item.id()).as_str();
+                og_meta += format!("<meta property='og:image:type' content='{}'/>", file.mimetype).as_str();
+            } else {
+                og_meta += format!("<meta property='og:image' content='{}/public/images/icons/icons8-file-96.png'/>", client_config.origin).as_str();
+            }
+        } else {
+            og_meta += format!("<meta property='og:image' content='{}/public/images/icons/icons8-folder-96.png'/>", client_config.origin).as_str();
+        }
+    } else if let Some(repository) = &client_config.display_repository {
+        let owner = DbUser::from_id(&ctx.database, &repository.owner).await?;
+        og_meta += format!("<meta property='og:title' content='{}'/>", repository.display_name).as_str();
+        og_meta += format!("<meta property='og:type' content='website'/>").as_str();
+        og_meta += format!("<meta property='og:url' content='{}/{}/{}'/>", client_config.origin, owner.name, repository.url_name).as_str();
+        og_meta += format!("<meta property='og:image' content='{}/public/images/icons/icons8-storage-96.png'/>", client_config.origin).as_str();
+    }
+
+    if !og_meta.is_empty() {
+        index_data = index_data.replace(r#"<meta property="og:title" content="Fileshare"/><meta property="og:type" content="website"/><meta property="og:description" content="Partagez facilement vos fichiers"/><meta property="og:image" content="/public/images/icons/favicon.ico"/>"#, og_meta.as_str());
+    }
+
     Ok(Html(index_data))
 }
 
