@@ -52,8 +52,28 @@ class DashPlayer extends AppWidget {
             this.player.updateSettings({
                 debug: {
                     logLevel: 2
+                },
+                streaming: {
+                    abr: {
+                        autoSwitchBitrate: { audio: false, video: false },
+                        initialBitrate: { audio: 800000000, video: 800000000 }
+                    }
                 }
             })
+
+            this.player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, () => {
+                const video_rep = this.player.getRepresentationsByType('video');
+                if (video_rep && video_rep.length > 0) {
+                    const highest = video_rep[video_rep.length - 1];
+                    this.player.setRepresentationForTypeById('video', highest.id);
+                }
+                const audio_rep = this.player.getRepresentationsByType('audio');
+                if (audio_rep && audio_rep.length > 0) {
+                    const highest = audio_rep[audio_rep.length - 1];
+                    this.player.setRepresentationForTypeById('audio', highest.id);
+                }
+            });
+
             this.player.initialize(video_div, url, true, 0);
 
             video_div.onclick = () => {

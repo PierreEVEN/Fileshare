@@ -5,6 +5,5 @@
 
 - Rework gestion des droits
 - Gérer les meta OG
-- Fix preview 3D sous chromium
 - Améliorer le seek du serveur Vidéo
 - Ajouter des popups contextuels

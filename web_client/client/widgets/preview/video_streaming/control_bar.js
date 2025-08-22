@@ -536,12 +536,37 @@ class ControlBar {
             availableBitrates.audio = this.player.getRepresentationsByType && this.player.getRepresentationsByType('audio') || [];
             availableBitrates.video = this.player.getRepresentationsByType && this.player.getRepresentationsByType('video') || [];
             availableBitrates.images = this.player.getRepresentationsByType && this.player.getRepresentationsByType('image') || [];
-
             if (availableBitrates.audio.length >= 1 || availableBitrates.video.length >= 1 || availableBitrates.images.length >= 1) {
                 let contentFunc = (element, index) => {
-                    let result = isNaN(index) ? ' Auto Switch' : Math.floor(element.bitrateInKbit) + ' kbps';
-                    result += element && element.width && element.height ? ' (' + element.width + 'x' + element.height + ')' : '';
-                    result += element && element.codecs ? ' (' + element.codecs + ')' : '';
+                    if (isNaN(index))
+                        return ' Auto Switch';
+
+                    let height = null;
+                    let bitrate = null;
+                    let fps = null;
+
+                    for (const value of element.id.split('&')) {
+                        const spl = value.split("=");
+                        const key = spl[0];
+                        const val = spl[1];
+                        if (key === "height")
+                            height = `${val}p`;
+                        if (key === "bitrate")
+                            bitrate = `${Number(val) / 1000}kbps`;
+                        if (key === "fps")
+                            fps = `${val} fps`;
+                    }
+
+                    if (!height && !bitrate && !fps)
+                        return " Source"
+
+                    let result = "";
+                    if (height)
+                        result += height;
+                    if (fps)
+                        result += result.length > 0 ? " " + fps : fps;
+                    if (bitrate)
+                        result += result.length > 0 ? ` (${bitrate})` : bitrate;
                     return result;
                 };
 
