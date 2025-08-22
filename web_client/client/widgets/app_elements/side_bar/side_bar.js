@@ -141,6 +141,8 @@ class SideBar extends AppWidget {
                 this.elements().shared.style.display = 'none';
             }
         }
+        if (!this.isConnected)
+            return;
         const selection = this.get_app().state.selection();
         if (!(selection.user || selection.repository || selection.item)) {
             if (connected_user)
@@ -154,8 +156,12 @@ class SideBar extends AppWidget {
                 await this._load_available_repositories_promise;
 
             this._load_available_repositories_promise = new Promise(async (resolve) => {
+                if (!this.isConnected)
+                    return;
                 const data = await this.get_app().pool.available_repositories();
 
+                if (!this.isConnected)
+                    return;
                 await this.get_app().pool.fetch_content(new ContentRequest()
                     .repository(data.owned)
                     .repository(data.shared)
@@ -169,6 +175,8 @@ class SideBar extends AppWidget {
                     shared: [],
                 }
 
+                if (!this.isConnected)
+                    return;
                 for (const repository of data.owned)
                     available_repositories.owned.push(this.get_app().pool.find_repository(repository))
 
@@ -199,6 +207,8 @@ class SideBar extends AppWidget {
                 .repository_root(last_repositories)
                 .trash_root(last_repositories))
 
+            if (!this.isConnected)
+                return;
             const repositories = [];
             for (const repository of last_repositories) {
                 const repository_object = this.get_app().pool.find_repository(repository);
