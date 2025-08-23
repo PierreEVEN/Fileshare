@@ -50,7 +50,7 @@ impl RepositoryRoutes {
         Ok(router)
     }
 }
-
+#[axum::debug_handler]
 async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
     #[derive(Deserialize)]
     pub struct FetchData {
@@ -141,9 +141,8 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
     }
 
     if let Some(items) = &json.items {
-        for item in items {
-            if !output_items.contains_key(item) {
-                let item = DbItem::from_id(&ctx.database, item, Trash::Both).await?;
+        for item in DbItem::from_ids(&ctx.database, items, Trash::Both).await? {
+            if !output_items.contains_key(item.id()) {
                 if permissions.view_item(&ctx.database, &item).await?.granted() {
                     output_items.insert(item.id().clone(), item);
                 }

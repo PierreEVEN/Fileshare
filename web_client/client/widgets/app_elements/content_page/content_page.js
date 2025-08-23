@@ -24,7 +24,7 @@ class ContentPage extends NavigableAppWidget {
         this._items = new Map();
 
         this._page = 0;
-        this._elements_per_page = 100;
+        this._elements_per_page = 50;
     }
 
     /**
@@ -75,10 +75,13 @@ class ContentPage extends NavigableAppWidget {
         this._clear();
 
         const content = await this._provider.get_content();
-        const page_count = Math.ceil(content.length / this._elements_per_page);
+        const bounds = this.getBoundingClientRect();
+        const elements_per_page = Math.max(this._elements_per_page, Math.max(1, Math.floor(bounds.width / 120)) * Math.max(1, Math.floor(bounds.height / 120)));
+
+        const page_count = Math.ceil(content.length / elements_per_page);
         this._page = Math.max(0, Math.min(page_count - 1, this._page));
 
-        for (let i = this._page * this._elements_per_page; i < content.length && i < (this._page + 1) * this._elements_per_page; ++i)
+        for (let i = this._page * elements_per_page; i < content.length && i < (this._page + 1) * elements_per_page; ++i)
             this._add_item(content[i]);
 
         if (page_count <= 1) {
@@ -183,9 +186,6 @@ class ContentPage extends NavigableAppWidget {
         if (this._provider)
             this._provider.delete();
         delete this._provider;
-        if (this.selector)
-            this.selector.delete();
-        this.selector = null;
     }
 
     move_next(e) {

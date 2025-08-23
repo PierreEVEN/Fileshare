@@ -12,8 +12,17 @@ class EventHandle {
             event.delete(this._id);
     }
 
+    disable() {
+        this._disabled = true;
+    }
+
+    enable() {
+        delete this._disabled;
+    }
+
     async execute(payload) {
-        await this._callback(payload);
+        if (!this._disabled)
+            await this._callback(payload);
     }
 }
 

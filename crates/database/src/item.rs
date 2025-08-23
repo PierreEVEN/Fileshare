@@ -51,7 +51,7 @@ impl DbItem {
     pub async fn from_id(db: &Database, id: &ItemId, filter: Trash) -> Result<Item, Error> {
         query_object!(db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE id = $1 {filter}"), id).ok_or(Error::msg(format!("Failed to find item from id {id}")))
     }
-    
+        
     pub async fn from_ids(db: &Database, id: &Vec<ItemId>, filter: Trash) -> Result<Vec<Item>, Error> {
         Ok(query_objects!(db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE id = any($1) {filter}"), id))
     }
@@ -132,9 +132,9 @@ impl DbItem {
         } else { String::new() };
 
         let start = SystemTime::now();
-        info!("Filtered query : \"{repository_req} {name} {before} {after} {max_size} {min_size} {mimetype} {owners} TRUE\"");
+        info!("Filtered query : \"({repository_req}) AND {name} {before} {after} {max_size} {min_size} {mimetype} {owners} TRUE\"");
 
-        let result = query_objects!(&db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE {repository_req} {name} {before} {after} {max_size} {min_size} {mimetype} {owners} TRUE"));
+        let result = query_objects!(&db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE ({repository_req}) AND {name} {before} {after} {max_size} {min_size} {mimetype} {owners} TRUE"));
         let elapsed = SystemTime::now().duration_since(start)?.as_secs_f64();
         if elapsed > 0.5 {
             warn!("Long query : \"({repository_req}) AND {name} {before} {after} {max_size} {min_size} {mimetype} {owners} is_regular_file\" in {}s", elapsed);

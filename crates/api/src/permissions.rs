@@ -1,21 +1,43 @@
+use std::collections::HashMap;
 use database::subscription::{Subscription, SubscriptionAccessType};
 use database::Database;
 use crate::RequestContext;
 use utils::server_error::ServerError;
 use axum::extract::Request;
 use axum::http::StatusCode;
-use std::sync::Arc;
+use std::sync::{Arc};
+use tokio::sync::RwLock;
 use database::repository::DbRepository;
+use types::database_ids::RepositoryId;
 use types::item::Item;
 use types::repository::{Repository, RepositoryStatus};
 
+#[derive(Default)]
+struct PermissionCache {
+    repository_view: HashMap<RepositoryId, PermissionResult>
+}
+
+impl PermissionCache {
+    async fn view_repository(&mut self, owning_permission: &Permissions, db: &Database, repository: &RepositoryId) -> Result<PermissionResult, ServerError> {
+        Ok(if let Some(result) = self.repository_view.get(repository) {
+            result.clone()
+        } else {
+            let result = owning_permission.view_repository(db, &DbRepository::from_id(db, repository).await?).await?;
+            self.repository_view.insert(repository.clone(), result.clone());
+            result
+        })
+    }
+}
+
 pub struct Permissions {
     request_context: Arc<RequestContext>,
+    cache: RwLock<PermissionCache>
 }
 
 unsafe impl Send for Permissions {}
 unsafe impl Sync for Permissions {}
 
+#[derive(Clone)]
 pub enum PermissionResult {
     Granted,
     Denied,
@@ -41,6 +63,7 @@ impl Permissions {
     pub fn new(request: &Request) -> Result<Self, ServerError> {
         Ok(Self {
             request_context: request.extensions().get::<Arc<RequestContext>>().unwrap().clone(),
+            cache: Default::default(),
         })
     }
 
@@ -103,7 +126,7 @@ impl Permissions {
     }
 
     pub async fn view_item(&self, db: &Database, item: &Item) -> Result<PermissionResult, ServerError> {
-        self.view_repository(db, &DbRepository::from_id(db, &item.repository).await?).await
+        self.cache.write().await.view_repository(self, db, &item.repository).await
     }
 
     pub async fn edit_item(&self, db: &Database, item: &Item) -> Result<PermissionResult, ServerError> {
