@@ -407,6 +407,7 @@ class ContentPool {
         if (existing)
             return existing;
         await this.fetch_content(new ContentRequest().item_permissions([id]));
+        console.assert(this._item_permissions.get(id), `Failed to get item permissions ${id}`)
         return this._item_permissions.get(id);
     }
 
