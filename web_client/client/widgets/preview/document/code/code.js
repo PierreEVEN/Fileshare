@@ -14,10 +14,19 @@ class DocumentCode extends HTMLElement {
                 .then(data => data.text())
                 .then(text => {
 
+                    function escapeHtml(str) {
+                        return str
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;")
+                            .replace(/"/g, "&quot;")
+                            .replace(/'/g, "&#039;");
+                    }
+
                     const code = document.createElement('code');
                     code.classList.add(this.getAttribute('class'));
                     code['data-prismjs-copy'] = "Copy code";
-                    code.innerHTML = text.substring(0, Math.min(text.length, 200000));
+                    code.innerHTML = escapeHtml(text.substring(0, Math.min(text.length, 200000)));
 
                     const pre = document.createElement('pre');
                     pre.classList.add('line-numbers')

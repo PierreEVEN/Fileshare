@@ -40,6 +40,9 @@ function get(app, item) {
                 case 'markdown':
                 case 'x-markdown':
                     return `<document-markdown src="${url}"></document-markdown>`;
+                case 'html':
+                case 'x-html':
+                    return `<document-code src="${url}" class="language-html"></document-code>`
                 case 'scss':
                 case 'x-scss':
                     return `<document-code src="${url}" class="language-scss"></document-code>`
