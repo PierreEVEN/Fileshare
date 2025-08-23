@@ -436,6 +436,13 @@ class ContentPool {
         this._repository_permissions.clear();
     }
 
+    /**
+     * @return {Repository[]}
+     */
+    loaded_repositories() {
+        return Array.from(this._repositories.values())
+    }
+
     toJSON() {
         return {}
     }

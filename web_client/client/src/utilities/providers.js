@@ -38,6 +38,16 @@ class ContentProvider {
             return false;
         return other.constructor.name === this.constructor.name;
     }
+
+    /**
+     * @return {Promise<Repository|null>}
+     */
+    async get_repository() { return null; }
+
+    /**
+     * @return {Promise<RemoteItem|null>}
+     */
+    async get_directory() { return null; }
 }
 
 class RepositoryRootProvider extends ContentProvider {
@@ -70,6 +80,8 @@ class RepositoryRootProvider extends ContentProvider {
     is_same(other) {
         return super.is_same(other) && this.repository.id === other.repository.id;
     }
+
+    async get_repository() { return this.repository; }
 }
 
 class DirectoryContentProvider extends ContentProvider {
@@ -113,6 +125,9 @@ class DirectoryContentProvider extends ContentProvider {
     delete() {
         super.delete();
     }
+
+    async get_repository() { return this.directory.get_pool().find_repository(this.directory.repository); }
+    async get_directory() { return this.directory; }
 }
 
 class TrashContentProvider extends ContentProvider {
@@ -149,6 +164,8 @@ class TrashContentProvider extends ContentProvider {
     delete() {
         super.delete();
     }
+
+    async get_repository() { return this.repository; }
 }
 
 class FilterContentProvider extends ContentProvider {
@@ -192,6 +209,20 @@ class FilterContentProvider extends ContentProvider {
 
     delete() {
         super.delete();
+    }
+
+    async get_repository() {
+        const repository = this.filter.first_path().repository;
+        if (repository)
+            return this.pool.find_repository(repository);
+        return null;
+    }
+
+    async get_directory() {
+        const root_item = this.filter.first_path().root_item;
+        if (root_item)
+            return this.pool.find_item(root_item);
+        return null;
     }
 }
 

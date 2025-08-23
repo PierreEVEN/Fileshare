@@ -91,15 +91,14 @@ impl DbItem {
 
         let mut repository_req = String::new();
         for repository in filter.repositories {
-            repository_req += format!("repository = {} AND ", repository.repository).as_str();
-            let mut item_req = String::new();
-            for (i, item) in repository.root_items.iter().enumerate() {
-                item_req += format!("STARTS_WITH(absolute_path, (SELECT absolute_path FROM SCHEMA_NAME.items WHERE id = {item}))").as_str();
-                if i != repository.root_items.len() - 1 { item_req += " OR " }
+            let mut req = format!("repository = {}", repository.repository);
+            for root in &repository.root_items {
+                req += format!(" AND STARTS_WITH(absolute_path, (SELECT absolute_path FROM SCHEMA_NAME.items WHERE id = {root}))").as_str();
             }
-            if !item_req.is_empty() {
-                repository_req += format!("({item_req}) AND").as_str();
+            if !repository_req.is_empty() {
+                repository_req += " OR "
             }
+            repository_req += format!("({req})").as_str();
         }
 
         let name = if let Some(name) = filter.name {
@@ -138,7 +137,7 @@ impl DbItem {
         let result = query_objects!(&db, Item, format!("SELECT * FROM SCHEMA_NAME.item_full_view WHERE {repository_req} {name} {before} {after} {max_size} {min_size} {mimetype} {owners} TRUE"));
         let elapsed = SystemTime::now().duration_since(start)?.as_secs_f64();
         if elapsed > 0.5 {
-            warn!("Long query : \"{repository_req} {name} {before} {after} {max_size} {min_size} {mimetype} {owners} is_regular_file\" in {}s", elapsed);
+            warn!("Long query : \"({repository_req}) AND {name} {before} {after} {max_size} {min_size} {mimetype} {owners} is_regular_file\" in {}s", elapsed);
         }
 
         Ok(result)

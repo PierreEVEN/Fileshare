@@ -277,12 +277,9 @@ class Uploader extends AppWidget {
      * @param item {UploadItem}
      */
     async add_item(item) {
-        const provider = this.viewport.elements().content ? this.viewport.elements().content._provider : null;
+        const provider = this.viewport.get_provider();
         if (provider && provider instanceof DirectoryContentProvider) {
-            /**
-             * @type {RemoteItem}
-             */
-            const directory_item = provider['directory'];
+            const directory_item = await provider.get_directory();
             const directory = await this._add_existing_directory(directory_item);
             directory.add_child(item);
         } else {

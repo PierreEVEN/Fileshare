@@ -153,13 +153,13 @@ class ContentPage extends NavigableAppWidget {
             }
         })
 
-        this.oncontextmenu = (e) => {
+        this.oncontextmenu = async (e) => {
             e.preventDefault();
             if (e.target.classList.contains('container') || e.target === this) {
-                if (this._provider instanceof DirectoryContentProvider)
-                    context_menu_item(this.get_app(), this._provider.directory);
-                else if (this._provider instanceof RepositoryRootProvider)
-                    context_menu_repository(this.get_app(), this._provider.repository);
+                if (this.get_provider() instanceof DirectoryContentProvider)
+                    await context_menu_item(this.get_app(), await this.get_provider().get_directory());
+                else if (this.get_provider() instanceof RepositoryRootProvider)
+                    await context_menu_repository(this.get_app(), await this.get_provider().get_repository());
             }
         }
 
@@ -183,6 +183,9 @@ class ContentPage extends NavigableAppWidget {
         if (this._provider)
             this._provider.delete();
         delete this._provider;
+        if (this.selector)
+            this.selector.delete();
+        this.selector = null;
     }
 
     move_next(e) {
@@ -245,11 +248,11 @@ class ContentPage extends NavigableAppWidget {
                 CLIPBOARD.push(await this.get_app().pool.find_item(item));
             CLIPBOARD.set_move_mode(true);
         } else if (e.key === 'v' && e.ctrlKey) {
-            if (this._provider instanceof DirectoryContentProvider) {
-                let directory = this._provider.directory;
+            if (this.get_provider() instanceof DirectoryContentProvider) {
+                let directory = await this.get_provider().get_directory();
                 await copy_items(this.get_app(), CLIPBOARD.consume(), CLIPBOARD.move_mode(), directory.repository, directory.id);
-            } else if (this._provider instanceof RepositoryRootProvider) {
-                let repository = this._provider.repository;
+            } else if (this.get_provider() instanceof RepositoryRootProvider) {
+                let repository = await this.get_provider().get_repository();
                 await copy_items(this.get_app(), CLIPBOARD.consume(), CLIPBOARD.move_mode(), repository.id, null);
             }
         } else if (e.key === 'Delete') {
@@ -354,6 +357,13 @@ class ContentPage extends NavigableAppWidget {
     _clear() {
         this._items.clear();
         this.container().innerHTML = '';
+    }
+
+    /**
+     * @return {ContentProvider}
+     */
+    get_provider() {
+        return this._provider;
     }
 }
 

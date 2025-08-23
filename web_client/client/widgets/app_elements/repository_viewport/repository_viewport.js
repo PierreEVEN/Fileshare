@@ -1,21 +1,18 @@
-import {
-    DirectoryContentProvider,
-    RepositoryRootProvider,
-    TrashContentProvider
-} from "../../../src/utilities/providers";
+import {DirectoryContentProvider, RepositoryRootProvider, TrashContentProvider} from "../../../src/utilities/providers";
+import {context_menu_item} from "../../misc/context_menu/contexts/context_item";
+import {Repository} from "../../../src/remote_filesystem/repository";
+import {AppWidget} from "../../../src/app_widget";
+import {StateSelection} from "../../../src/state/state_selection";
+import {Permission} from "../../../src/utilities/permissions";
+
 import "../item_view/item_view";
 import "../upload/uploader";
 import "../upload/drop_box";
-import {context_menu_item} from "../../misc/context_menu/contexts/context_item";
 import "../toolbar/toolbar";
-import {Repository} from "../../../src/remote_filesystem/repository";
 import "../carousel/list/carousel_list";
 import "../carousel/viewport/carousel_viewport";
-import {AppWidget} from "../../../src/app_widget";
 import "../global_carousel/global_carousel"
-import {StateSelection} from "../../../src/state/state_selection";
 import "../content_page/content_page"
-import {Permission} from "../../../src/utilities/permissions";
 
 require('./repository_viewport.scss')
 
@@ -33,13 +30,13 @@ class RepositoryViewport extends AppWidget {
             },
             ctx_selection: async () => {
                 const items = [];
-                for (const item_id of this.selector.get_selected_items()) {
-                    items.push(await this.content.get_filesystem().fetch_item(item_id));
+                for (const item_id of this.get_content_page().selector.get_selected_items()) {
+                    items.push(await this.get_app().pool.fetch_item(item_id));
                 }
-                context_menu_item(this.get_app(), items);
+                await context_menu_item(this.get_app(), items);
             },
             unselect_all: async () => {
-                await this.selector.clear_selection();
+                await this.get_content_page().selector.clear_selection();
             },
         });
 
@@ -54,8 +51,8 @@ class RepositoryViewport extends AppWidget {
                 await this._on_state_select(selection)
             })
 
-        this.get_app().state.events.add('user_connected', (user) => {
-            this.update_upload_button_visibility(!!user.new)
+        this.get_app().state.events.add('user_connected', async (user) => {
+            await this.update_upload_button_visibility(!!user.new)
         })
         this.update_upload_button_visibility(!!this.get_app().state.connected_user())
     }
@@ -73,20 +70,17 @@ class RepositoryViewport extends AppWidget {
         if (this.drop_box)
             this.drop_box.delete();
         this.drop_box = null;
-        if (this.selector)
-            this.selector.delete();
-        this.selector = null;
 
         this.close_carousel();
     }
 
     async update_upload_button_visibility() {
         let allow = false;
-        const provider = this.elements().content._provider;
+        const provider = this.get_provider();
         if (provider instanceof DirectoryContentProvider)
-            allow = (await provider.directory.permissions()).allow(Permission.add_content())
+            allow = (await (await provider.get_directory()).permissions()).allow(Permission.add_content())
         else if (provider instanceof RepositoryRootProvider)
-            allow = (await provider.repository.permissions()).allow(Permission.add_content())
+            allow = (await (await provider.get_repository()).permissions()).allow(Permission.add_content())
 
         if (allow && !this.uploader) {
             this.elements().upload_button.style.display = 'flex';
@@ -102,8 +96,8 @@ class RepositoryViewport extends AppWidget {
      * @private
      */
     async _on_state_select(selection) {
-        this.elements().content.set_content_provider(await this._spawn_content_provider(selection));
-        this.elements().content.focus();
+        await this.get_content_page().set_content_provider(await this._spawn_content_provider(selection));
+        this.get_content_page().focus();
 
         if (selection.item) {
             const repository = await this.get_app().pool.fetch_repository(selection.item.repository);
@@ -117,11 +111,11 @@ class RepositoryViewport extends AppWidget {
                 await this.close_carousel();
                 await this._update_description(directory);
             }
-            await this.elements().toolbar.set_toolbar_path(selection.in_trash ? null : directory, selection.in_trash);
+            await this.get_toolbar().set_toolbar_path(selection.in_trash ? null : directory, selection.in_trash);
         } else if (selection.repository) {
             await this._update_description(selection.repository);
             this._set_repository(selection.repository);
-            await this.elements().toolbar.set_toolbar_path(null, selection.in_trash);
+            await this.get_toolbar().set_toolbar_path(null, selection.in_trash);
             await this.close_carousel();
         }
         await this.update_upload_button_visibility();
@@ -172,7 +166,7 @@ class RepositoryViewport extends AppWidget {
 
     _set_repository(repository) {
         this.repository = repository;
-        this.elements().toolbar.set_repository(this.repository)
+        this.get_toolbar().set_repository(this.repository)
     }
 
     close_upload_container() {
@@ -203,21 +197,42 @@ class RepositoryViewport extends AppWidget {
         if (!this.get_app().get_carousel().is_open()) {
             this.get_app().get_carousel().open();
             this._cb_carousel_select_event = this.get_app().get_carousel().list().events.add('select', (item) => {
-                this.elements().content.selector.select_item(item.id, false, false);
+                this.get_content_page().selector.select_item(item.id, false, false);
             });
             this._cb_carousel_close_event = this.get_app().get_carousel().events.add('close', async () => {
-                if (this.elements().content._provider instanceof DirectoryContentProvider)
-                    await this.get_app().state.select(new StateSelection().set_item(this.elements().content._provider.directory));
-                else if (this.elements().content._provider instanceof RepositoryRootProvider)
-                    await this.get_app().state.select(new StateSelection().set_repository(this.elements().content._provider.repository));
+                if (this.get_provider() instanceof DirectoryContentProvider)
+                    await this.get_app().state.select(new StateSelection().set_item(await this.get_provider().get_directory()));
+                else if (this.get_provider() instanceof RepositoryRootProvider)
+                    await this.get_app().state.select(new StateSelection().set_repository(await this.get_provider().get_repository()));
             });
         }
 
-        await this.get_app().get_carousel().list().set_items(await this.elements().content._provider.get_content());
+        await this.get_app().get_carousel().list().set_items(await this.get_provider().get_content());
         await this.get_app().get_carousel().set_item(item);
         await this.get_app().get_carousel().focus();
     }
 
+    /**
+     * @return {ContentProvider}
+     */
+    get_provider() {
+        return this.get_content_page().get_provider()
+    }
+
+    /**
+     * @return {ContentPage}
+     */
+    get_content_page() {
+        return this.elements().content
+    }
+
+    /**
+     * @return {ViewportToolbar}
+     */
+    get_toolbar() {
+        return this.elements().toolbar
+    }
+    
     async close_carousel() {
         if (!this.isConnected)
             return;

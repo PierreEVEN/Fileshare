@@ -123,6 +123,12 @@ class Filter {
             obj.name = new EncString(this._name)
         return obj;
     }
+
+    first_path() {
+        if (this._repositories.length > 0)
+            return this._repositories[0];
+        return {repository: null, root_item: null};
+    }
 }
 
 export {Filter};
