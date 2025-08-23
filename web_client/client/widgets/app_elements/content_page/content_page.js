@@ -338,6 +338,13 @@ class ContentPage extends NavigableAppWidget {
     }
 
     _remove_item(item) {
+        if (item === this._provider.directory) {
+            if (item.parent_item)
+                this.get_app().state.select(new StateSelection().set_item(this.get_app().pool.find_item(item.parent_item)))
+            else
+                this.get_app().state.select(new StateSelection().set_repository(this.get_app().pool.find_repository(item.repository)))
+            return;
+        }
         const div = this._items.get(item.id);
         if (div)
             div.remove();
