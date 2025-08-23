@@ -56,6 +56,18 @@ class ContentRequest {
          * @type {number[]}
          */
         this.indices = [++REQUEST_INDEX];
+
+        /**
+         * @type {Set<number>}
+         * @private
+         */
+        this._item_permissions = new Set();
+
+        /**
+         * @type {Set<number>}
+         * @private
+         */
+        this._repository_permissions = new Set();
     }
 
     /**
@@ -80,6 +92,11 @@ class ContentRequest {
             this._repository_roots.add(key);
         for (const key of other._trash_roots)
             this._trash_roots.add(key);
+        for (const id of other._item_permissions)
+                this._item_permissions.add(id);
+        for (const id of other._repository_permissions)
+            this._repository_permissions.add(id);
+
         this.indices.concat(other.indices);
     }
 
@@ -96,6 +113,8 @@ class ContentRequest {
             repository_roots: [],
             trash_roots: [],
             content_to: [],
+            item_permissions: [],
+            repository_permissions: [],
         }
 
         for (const [item, includes_parents] of this._items) {
@@ -146,13 +165,24 @@ class ContentRequest {
             }
         }
 
+        for (const item of this._item_permissions)
+            if (!content_pool.find_item_permissions(item))
+                result.item_permissions.push(item);
+
+
+        for (const item of this._repository_permissions)
+            if (!content_pool.find_repository_permissions(item))
+                result.repository_permissions.push(item);
+
         if (result.items.length === 0 &&
             result.repositories.length === 0 &&
             result.users.length === 0 &&
             result.directory_content.length === 0 &&
             result.repository_roots.length === 0 &&
             result.trash_roots.length === 0 &&
-            result.content_to.length === 0)
+            result.content_to.length === 0 &&
+            result.item_permissions.length === 0 &&
+            result.repository_permissions.length === 0)
             return null;
         return result;
     }
@@ -221,6 +251,26 @@ class ContentRequest {
     directory_content(directories) {
         for (const directory of directories)
             this._directory_content.add(as_id(directory))
+        return this;
+    }
+
+    /**
+     * @return {ContentRequest}
+     * @param items {number[]}
+     */
+    item_permissions(items) {
+        for (const item of items)
+            this._item_permissions.add(as_id(item))
+        return this;
+    }
+
+    /**
+     * @return {ContentRequest}
+     * @param repositories {number[]}
+     */
+    repository_permissions(repositories) {
+        for (const item of repositories)
+            this._repository_permissions.add(as_id(item))
         return this;
     }
 }

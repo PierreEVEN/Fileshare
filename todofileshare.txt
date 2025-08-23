@@ -3,6 +3,5 @@
 - Améliorer les filtres (filtrer par user etc...)
 - Ajouter les tris (par taille etc...)
 
-- Rework gestion des droits
 - Améliorer le seek du serveur Vidéo
 - Ajouter des popups contextuels

@@ -148,6 +148,13 @@ class RemoteItem {
         return false;
     }
 
+    /**
+     * @returns {Promise<Permission>}
+     */
+    async permissions() {
+        return await this._pool.fetch_item_permissions(this.id);
+    }
+
     async refresh() {
         await this.get_pool().refresh_item(this);
     }

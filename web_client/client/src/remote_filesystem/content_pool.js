@@ -4,6 +4,7 @@ import {User} from "./user";
 import {RemoteItem} from "./remote_item";
 import {Message, NOTIFICATION} from "../../widgets/misc/message_box/notification";
 import {ContentRequest} from "./content_request";
+import {Permission} from "../utilities/permissions";
 
 class ContentPool {
     /**
@@ -38,6 +39,18 @@ class ContentPool {
          * @private
          */
         this._items = new Map();
+
+        /**
+         * @type {Map<number, Permission>}
+         * @private
+         */
+        this._item_permissions = new Map();
+
+        /**
+         * @type {Map<number, Permission>}
+         * @private
+         */
+        this._repository_permissions = new Map();
 
         /**
          * @type {ContentRequest}
@@ -140,6 +153,15 @@ class ContentPool {
                         console.assert(directory, `Fetched content of directory ${data.directory} but base directory does not exists`)
                         directory._children = new Set(data.content);
                     }
+
+                if (request_result.item_permissions)
+                    for (const data of request_result.item_permissions)
+                        this._item_permissions.set(data.item, new Permission(data.perm));
+
+                if (request_result.repository_permissions)
+                    for (const data of request_result.repository_permissions)
+                        this._repository_permissions.set(data.repository, new Permission(data.perm));
+
             }).catch(error => {
                 console.error("Failed to fetch content :", error);
             })
@@ -366,6 +388,51 @@ class ContentPool {
                 NOTIFICATION.error(new Message(error).title(`Impossible de télécharger la liste des dépôts possédés`));
                 return [];
             });
+    }
+
+    /**
+     * @param id {number}
+     * @returns {Permission}
+     */
+    find_item_permissions(id) {
+        return this._item_permissions.get(id);
+    }
+
+    /**
+     * @param id {number}
+     * @returns {Promise<Permission>}
+     */
+    async fetch_item_permissions(id) {
+        const existing = this._item_permissions.get(id);
+        if (existing)
+            return existing;
+        await this.fetch_content(new ContentRequest().item_permissions([id]));
+        return this._item_permissions.get(id);
+    }
+
+    /**
+     * @param id {number}
+     * @returns {Permission}
+     */
+    find_repository_permissions(id) {
+        return this._repository_permissions.get(id);
+    }
+
+    /**
+     * @param id {number}
+     * @returns {Promise<Permission>}
+     */
+    async fetch_repository_permissions(id) {
+        const existing = this._repository_permissions.get(id);
+        if (existing)
+            return existing;
+        await this.fetch_content(new ContentRequest().repository_permissions([id]));
+        return this._repository_permissions.get(id);
+    }
+
+    clear_permissions() {
+        this._item_permissions.clear();
+        this._repository_permissions.clear();
     }
 
     toJSON() {

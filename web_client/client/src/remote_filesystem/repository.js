@@ -113,6 +113,13 @@ class Repository {
     }
 
     /**
+     * @returns {Promise<Permission>}
+     */
+    async permissions() {
+        return await this._pool.fetch_repository_permissions(this.id);
+    }
+
+    /**
      * @return {void}
      */
     download() {

@@ -47,9 +47,13 @@ class AppState {
 
         const old = this._connected_user;
         this._connected_user = new_user;
+        this.app.pool.clear_permissions();
         await this.events.broadcast('user_connected', {old: old, new: new_user});
     }
 
+    /**
+     * @returns {User}
+     */
     connected_user() {
         return this._connected_user;
     }

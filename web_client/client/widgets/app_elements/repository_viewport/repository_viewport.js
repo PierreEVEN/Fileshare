@@ -15,6 +15,7 @@ import {AppWidget} from "../../../src/app_widget";
 import "../global_carousel/global_carousel"
 import {StateSelection} from "../../../src/state/state_selection";
 import "../content_page/content_page"
+import {Permission} from "../../../src/utilities/permissions";
 
 require('./repository_viewport.scss')
 
@@ -29,7 +30,6 @@ class RepositoryViewport extends AppWidget {
         this.set_content(require('./repository_viewport.hbs'), {}, {
             open_upload: () => {
                 this.open_upload_container()
-                this.elements().upload_button.style.display = 'none';
             },
             ctx_selection: async () => {
                 const items = [];
@@ -55,9 +55,9 @@ class RepositoryViewport extends AppWidget {
             })
 
         this.get_app().state.events.add('user_connected', (user) => {
-            this.set_upload_button_visible(!!user.new)
+            this.update_upload_button_visibility(!!user.new)
         })
-        this.set_upload_button_visible(!!this.get_app().state.connected_user())
+        this.update_upload_button_visibility(!!this.get_app().state.connected_user())
     }
 
     disconnectedCallback() {
@@ -80,10 +80,16 @@ class RepositoryViewport extends AppWidget {
         this.close_carousel();
     }
 
-    set_upload_button_visible(visible) {
-        if (visible) {
-            if (!this.uploader)
-                this.elements().upload_button.style.display = 'flex';
+    async update_upload_button_visibility() {
+        let allow = false;
+        const provider = this.elements().content._provider;
+        if (provider instanceof DirectoryContentProvider)
+            allow = (await provider.directory.permissions()).allow(Permission.add_content())
+        else if (provider instanceof RepositoryRootProvider)
+            allow = (await provider.repository.permissions()).allow(Permission.add_content())
+
+        if (allow && !this.uploader) {
+            this.elements().upload_button.style.display = 'flex';
         } else {
             this.close_upload_container();
             this.elements().upload_button.style.display = 'none';
@@ -118,6 +124,7 @@ class RepositoryViewport extends AppWidget {
             await this.elements().toolbar.set_toolbar_path(null, selection.in_trash);
             await this.close_carousel();
         }
+        await this.update_upload_button_visibility();
     }
 
     /**
@@ -180,6 +187,7 @@ class RepositoryViewport extends AppWidget {
     }
 
     open_upload_container() {
+        this.elements().upload_button.style.display = 'none';
         this.elements().upload_container.innerHTML = '';
         if (this.uploader)
             this.uploader.remove();

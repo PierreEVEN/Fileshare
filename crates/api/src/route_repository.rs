@@ -60,7 +60,21 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
         directory_content: Option<Vec<ItemId>>,
         repository_roots: Option<Vec<RepositoryId>>,
         trash_roots: Option<Vec<RepositoryId>>,
-        content_to: Option<Vec<ItemId>>
+        content_to: Option<Vec<ItemId>>,
+        item_permissions: Option<Vec<ItemId>>,
+        repository_permissions: Option<Vec<RepositoryId>>
+    }
+
+    #[derive(Serialize)]
+    pub struct RepositoryPermissionResults {
+        repository: RepositoryId,
+        perm: String
+    }
+
+    #[derive(Serialize)]
+    pub struct ItemPermissionResults {
+        item: ItemId,
+        perm: String
     }
 
     #[derive(Serialize)]
@@ -88,7 +102,11 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
         #[serde(skip_serializing_if = "Option::is_none")]
         trash_roots: Option<Vec<RepositoryContentResult>>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        directory_content: Option<Vec<DirectoryContentResult>>
+        directory_content: Option<Vec<DirectoryContentResult>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        item_permissions: Option<Vec<ItemPermissionResults>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        repository_permissions: Option<Vec<RepositoryPermissionResults>>
     }
 
     let permissions = Permissions::new(&request)?;
@@ -99,6 +117,8 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
     let mut output_directory_contents = HashMap::new();
     let mut output_users = HashMap::new();
     let mut output_items = HashMap::new();
+    let mut output_item_permissions = HashMap::new();
+    let mut output_repository_permissions = HashMap::new();
 
     if let Some(repositories) = &json.repositories {
         for repository in repositories {
@@ -222,6 +242,37 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
             }
         }
     }
+
+
+    if let Some(items) = &json.item_permissions {
+        for item in items {
+            let perm = if !permissions.view_item(&ctx.database, &DbItem::from_id(&ctx.database, &item, Trash::Both).await?).await?.granted() {
+                String::new()
+            } else if !permissions.upload_to_directory(&ctx.database, &DbItem::from_id(&ctx.database, &item, Trash::Both).await?).await?.granted() {
+                String::from("r")
+            } else if !permissions.edit_item(&ctx.database, &DbItem::from_id(&ctx.database, &item, Trash::Both).await?).await?.granted() {
+                String::from("a")
+            } else {
+                String::from("f")
+            };
+            output_item_permissions.insert(item.clone(), perm);
+        }
+    }
+
+    if let Some(repositories) = &json.repository_permissions {
+        for repository in repositories {
+            let perm = if !permissions.view_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.granted() {
+                String::new()
+            } else if !permissions.upload_to_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.granted() {
+                String::from("r")
+            } else if !permissions.edit_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &repository).await?).await?.granted() {
+                String::from("a")
+            } else {
+                String::from("f")
+            };
+            output_repository_permissions.insert(repository.clone(), perm);
+        }
+    }
     
     if !output_repositories.is_empty() {
         result.repositories = Some(output_repositories.values().cloned().collect());
@@ -251,6 +302,20 @@ async fn fetch(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl 
             }})
         }
         result.directory_content = Some(directory_contents);
+    }
+    if !output_item_permissions.is_empty() {
+        let mut perms = vec![];
+        for (item, perm) in output_item_permissions {
+            perms.push(ItemPermissionResults { item, perm });
+        }
+        result.item_permissions = Some(perms);
+    }
+    if !output_repository_permissions.is_empty() {
+        let mut perms = vec![];
+        for (repository, perm) in output_repository_permissions {
+            perms.push(RepositoryPermissionResults { repository, perm });
+        }
+        result.repository_permissions = Some(perms);
     }
     Ok(Json(result))
 }

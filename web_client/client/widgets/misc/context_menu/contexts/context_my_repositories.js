@@ -5,7 +5,9 @@ export {context_menu_my_repositories}
 
 function context_menu_my_repositories(app) {
     const ctx = new ContextMenu();
-    ctx.add_action(new MenuAction("Nouveau Dépôt", "/public/images/icons/icons8-storage-96.png", async () => {
-        await create_repository(app);
-    }, false));
+    const user = app.state.connected_user();
+    if (user && (user.user_role.toString() === 'Vip' || user.user_role.toString() === 'Admin'))
+        ctx.add_action(new MenuAction("Nouveau Dépôt", "/public/images/icons/icons8-storage-96.png", async () => {
+            await create_repository(app);
+        }, false));
 }

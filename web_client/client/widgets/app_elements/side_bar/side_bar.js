@@ -19,7 +19,8 @@ class SideBar extends AppWidget {
 
         this.set_content(require('./side_bar.hbs'), {}, {
             context_my_repositories: (e) => {
-                if (e.target && e.target.parentElement === this.elements().my_repositories) {
+                const field = e.target.closest('.field');
+                if (field && field.parentElement === this.elements().my_repositories) {
                     context_menu_my_repositories(this.get_app());
                     e.preventDefault();
                 }
