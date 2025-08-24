@@ -12,8 +12,6 @@ class Filter {
         this._owners = [];
     }
 
-
-
     /**
      * @param other {Filter}
      * @returns {boolean}
@@ -120,7 +118,23 @@ class Filter {
         const obj = {};
         obj.repositories = this._repositories
         if (this._name)
-            obj.name = new EncString(this._name)
+            obj.name = EncString.from_client(this._name)
+
+        if (this._mime_type)
+            obj.mime_type = EncString.from_client(this._mime_type)
+
+        if (this._owners) {
+            obj.owners = [];
+            for (const owner of this._owners)
+                obj.owners.push(EncString.from_client(owner))
+        }
+
+        if (this._min_size)
+            obj.min_size = EncString.from_client(this._min_size)
+
+        if (this._max_size)
+            obj.max_size = EncString.from_client(this._max_size)
+
         return obj;
     }
 

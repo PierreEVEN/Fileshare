@@ -11,6 +11,7 @@ use std::time::SystemTime;
 use tracing::{info, warn};
 use types::database_ids::{DatabaseIdTrait, ItemId, ObjectId, RepositoryId, UserId};
 use types::item::Item;
+use crate::user::DbUser;
 
 pub enum Trash {
     Yes,
@@ -43,7 +44,7 @@ pub struct ItemSearchData {
     pub max_size: Option<i64>,
     pub min_size: Option<i64>,
     pub mime_type: Option<EncString>,
-    pub owners: Option<Vec<UserId>>,
+    pub owners: Option<Vec<EncString>>,
 }
 
 pub struct DbItem;
@@ -126,8 +127,17 @@ impl DbItem {
         } else { String::new() };
 
         let owners = if let Some(owners) = filter.owners {
+            let mut users = String::new();
+
+            for user in owners {
+                for found in DbUser::search(db, &user, false).await? {
+                    users += format!("{}, ", found.id().to_string()).as_str();
+                }
+            }
             let mut owner_req = String::new();
-            for owner in owners { owner_req += format!("owner = {owner} AND").as_str() }
+            if !users.is_empty() {
+                owner_req += format!("owner IN({}) AND", &users[0..users.len() - 2]).as_str();
+            }
             owner_req
         } else { String::new() };
 

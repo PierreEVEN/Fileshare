@@ -36,17 +36,21 @@ class SearchBarOption extends AppWidget {
     }
 
     set_is_focus(focus) {
+        const search_bar = this.closest('search-bar');
         if (focus) {
             this.elements().text.style.display = 'unset';
             this.elements().display.style.display = 'none';
             this.elements().text.focus();
-            this.closest('search-bar').elements().text.style.display = 'none';
+            if (search_bar)
+                search_bar.elements().text.style.display = 'none';
         } else {
             this.elements().display.innerText = this.elements().text.value;
             this.elements().text.style.display = 'none';
             this.elements().display.style.display = 'unset';
-            this.closest('search-bar').elements().text.style.display = 'flex';
-            this.closest('search-bar').elements().text.focus();
+            if (search_bar) {
+                search_bar.elements().text.style.display = 'flex';
+                search_bar.elements().text.focus();
+            }
         }
     }
 
