@@ -1,7 +1,8 @@
 require('./pdf_viewer.scss')
 const {AppWidget} = require("../../../src/app_widget");
+const {NavigableAppWidget} = require("../../../src/utilities/navigable");
 
-class PdfViewer extends AppWidget {
+class PdfViewer extends NavigableAppWidget {
     constructor() {
         super();
         if (!this.hasAttribute('src'))
@@ -28,6 +29,7 @@ class PdfViewer extends AppWidget {
     }
 
     connectedCallback() {
+        super.connectedCallback();
         this.set_content(require('./pdf-viewer.hbs'), {}, {
             page_next: () => {
             },

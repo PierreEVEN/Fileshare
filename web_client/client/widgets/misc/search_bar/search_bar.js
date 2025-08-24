@@ -101,6 +101,9 @@ class SearchBar extends NavigableAppWidget {
         if (state_repository) {
             const item = this.get_app().state.get_current_item();
             filter.source(state_repository.id, item ? item.id : null);
+        } else if (this.get_app().state.selection().filter) {
+            const old_filter = this.get_app().state.selection().filter;
+            filter._repositories = old_filter._repositories;
         } else {
             for (const repository of this.get_app().pool.loaded_repositories())
                 filter.source(repository.id, null);
