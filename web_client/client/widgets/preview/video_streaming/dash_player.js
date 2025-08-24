@@ -1,7 +1,7 @@
-import {AppWidget} from "../../../src/app_widget";
-require('./controlbar.scss')
+import {NavigableAppWidget} from "../../../src/utilities/navigable";
+require('./dash_player.scss')
 
-class DashPlayer extends AppWidget {
+class DashPlayer extends NavigableAppWidget {
     constructor() {
         super();
         if (this.hasAttribute('item'))
@@ -9,6 +9,7 @@ class DashPlayer extends AppWidget {
     }
 
     connectedCallback() {
+        super.connectedCallback();
         if (!this.item)
             return;
         this._stopped = false;
@@ -87,6 +88,7 @@ class DashPlayer extends AppWidget {
 
             if (!this.player || this._stopped)
                 return;
+            /*
             this.control_bar = new control_bar.ControlBar(this.player, false, elements.hb_elements);
             this.control_bar.initialize();
             video_div.ondblclick = () => {
@@ -94,7 +96,7 @@ class DashPlayer extends AppWidget {
                     this.control_bar.exitFullscreen();
                 else
                     this.control_bar.enterFullscreen();
-            }
+            }*/
         });
     }
 }

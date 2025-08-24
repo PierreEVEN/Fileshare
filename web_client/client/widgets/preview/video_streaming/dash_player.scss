@@ -1,4 +1,5 @@
 dash-player {
+    position: relative;
 
     .controller-container {
         position: absolute;
@@ -23,6 +24,7 @@ dash-player {
     /**************************************************/
     /*Control bar*/
     /**************************************************/
+    /*
     .hide {
         display: none;
     }
@@ -242,7 +244,7 @@ dash-player {
         background: #232528;
         box-shadow: inset 0 1px 0 0 #0d0e0f, inset 0 -1px 0 0 #3a3d42;
         -webkit-box-shadow: inset 0 1px 0 0 #0d0e0f, inset 0 -1px 0 0 #3a3d42;
-        outline: none; /* no focus outline */
+        outline: none;
     }
 
     input[type=range]::-moz-focus-outer {
@@ -256,7 +258,7 @@ dash-player {
 
     input[type="range"]::-ms-track {
         border: inherit;
-        color: transparent; /* don't drawn vertical reference line */
+        color: transparent;
         background: transparent;
     }
 
@@ -269,7 +271,6 @@ dash-player {
         display: none;
     }
 
-    /* thumb */
     input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
         width: 15px;
@@ -344,5 +345,5 @@ dash-player {
         width: 0%;
         height: 7px;
         background: rgb(0, 150, 215);
-    }
+    }*/
 }
