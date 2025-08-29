@@ -2,5 +2,4 @@
 
 - Améliorer les filtres (filtrer par user etc...)
 - Ajouter les tris (par taille etc...)
-
 - Ajouter des popups contextuels
