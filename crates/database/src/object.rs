@@ -2,13 +2,24 @@ use crate::Database;
 use crate::{query_fmt, query_object, query_objects};
 use anyhow::Error;
 use postgres_from_row::FromRow;
-use std::fs;
+use std::{fs, io};
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tracing::{error};
 use types::database_ids::{ItemId, ObjectId};
+
+fn safe_rename(src: &Path, dst: &Path) -> io::Result<()> {
+    match fs::rename(src, dst) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == io::ErrorKind::CrossesDevices => {
+            fs::copy(src, dst)?;
+            fs::remove_file(src)
+        }
+        Err(e) => Err(e),
+    }
+}
 
 #[derive(Debug, FromRow)]
 pub struct Object {
@@ -86,10 +97,10 @@ impl Object {
     }
 
 
-    pub async fn equals_to_file(&self, db: &Database, file: PathBuf) -> Result<bool, Error> {
+    pub async fn equals_to_file(&self, db: &Database, file: &PathBuf) -> Result<bool, Error> {
         if !Object::data_path(self.id(), db).exists() {
             error!("The object {:?} is not pointing to a valid file", self);
-            fs::copy(file, Object::data_path(self.id(), db))?;
+            safe_rename(file, &Object::data_path(self.id(), db))?;
             return Ok(true);
         }
 

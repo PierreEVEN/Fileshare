@@ -13,7 +13,7 @@ use std::fs::exists;
 use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use std::fs;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufWriter};
 use tokio::sync::RwLock;
@@ -27,7 +27,7 @@ use utils::config::BackendConfig;
 use crate::permissions::Permissions;
 
 pub struct UploadContext {
-    uploads: RwLock<HashMap<u64, Arc<RwLock<Upload>>>>,
+    uploads: Arc<RwLock<HashMap<u64, Arc<RwLock<Upload>>>>>,
     upload_path: PathBuf
 }
 
@@ -42,14 +42,32 @@ impl UploadContext {
 }
 
 impl UploadContext {
-    pub async fn find_or_create_from_headers(&self, db: &Database, headers: &HeaderMap, permissions: &Permissions, connected_user: &User) -> Result<Arc<RwLock<Upload>>, Error> {
+    pub async fn receive_request(&self, db: &Database, headers: &HeaderMap, permissions: &Permissions, connected_user: &User) -> Result<UploadStatus, Error> {
+        let upload = self.find_or_register_upload_from_headers(db, headers, permissions, connected_user).await?;
+        let mut upload = upload.write().await;
 
+        match &upload.status {
+            UploadStatus::WaitingForData { .. } => {
+                upload.push_body_data();
+            }
+            UploadStatus::DataHashCollision { .. } => {}
+            UploadStatus::Finished { item } => {
+                return Ok(item);
+            }
+            UploadStatus::Failed { .. } => {}
+        }
+
+
+        Ok()
+    }
+
+    async fn find_or_register_upload_from_headers(&self, db: &Database, headers: &HeaderMap, permissions: &Permissions, connected_user: &User) -> Result<Arc<RwLock<Upload>>, Error> {
         Ok(if let Some(content_id) = headers.get("Content-Id") {
             let id = u64::from_str(content_id.to_str()?)?;
             let upload = self.uploads.read().await.get(&id).ok_or(Error::msg(format!("Upload {id} not found")))?;
 
             // Check permissions
-            let item = upload.read().await.item();
+            let item = &upload.read().await.item;
             if let Some(parent) = &item.parent_item {
                 permissions.upload_to_directory(db, &DbItem::from_id(&db, parent, Both).await?).await?.require()?;
             } else {
@@ -58,6 +76,7 @@ impl UploadContext {
 
             upload.cloned()
         } else {
+            // Create a new upload
             let mut uploads = self.uploads.write().await;
 
             // Create temp dir if needed
@@ -72,54 +91,22 @@ impl UploadContext {
             };
 
             // Parse headers and create upload
-            let upload = Arc::new(RwLock::new(Upload::from_headers(headers, connected_user.id().clone(), self.upload_path.join(id.to_string()))?));
+            let upload = self.new_upload_from_headers(id, headers, connected_user.id().clone(), &self.upload_path).await?;
 
             // Check permissions
-            if let Some(parent) = &upload.item().parent_item {
+            if let Some(parent) = &upload.item.parent_item {
                 permissions.upload_to_directory(db, &DbItem::from_id(&db, parent, Both).await?).await?.require()?;
             } else {
-                permissions.upload_to_repository(&db, &DbRepository::from_id(&db, &upload.item().repository).await?).await?.require()?;
+                permissions.upload_to_repository(&db, &DbRepository::from_id(&db, &upload.item.repository).await?).await?.require()?;
             }
 
+            let upload = Arc::new(RwLock::new(upload));
             uploads.insert(id.clone(), upload.clone());
             upload
         })
     }
 
-    pub async fn get_upload(&self, id: u64) -> Result<Arc<RwLock<Upload>>, Error> {
-        match self.uploads.write().await.get(&id) {
-            None => {Err(Error::msg(format!("Failed to get upload with id {}", id)))}
-            Some(upload) => {Ok(upload.clone())}
-        }
-    }
-
-    pub async fn close_upload(&self, db: &Database, id: u64) -> Result<(), Error> {
-        self.uploads.write().await.remove(&id).ok_or(Error::msg(format!("Upload {id} not found")))?;
-    }
-}
-
-
-#[derive(Serialize, Debug)]
-pub enum UploadStatus {
-    WaitingForData { transferred: u64 },
-    DataHashCollision { other: u64, compared: f64 },
-    Finished { item: Item },
-    Failed { error: String }
-}
-
-pub struct Upload {
-    upload_id: u64,
-    temp_file_path: PathBuf,
-    item: Item,
-    byte_transferred: usize,
-    hasher: blake3::Hasher,
-    status: UploadStatus,
-    temp_file: BufWriter<tokio::fs::File>,
-    compare_task: Option<tokio::task::JoinHandle<Result<(), Error>>>,
-}
-
-impl Upload {
-    async fn from_headers(headers: &HeaderMap, owner: UserId, temp_file_path: PathBuf) -> Result<Self, Error> {
+    async fn new_upload_from_headers(&self, id: u64, headers: &HeaderMap, owner: UserId, temp_directory: &PathBuf) -> Result<Upload, Error> {
         // Create item structure
         let mut item = Item::default();
         item.name = EncString::try_from(headers.get("Content-Name").ok_or(Error::msg("missing Content-Name header"))?)?;
@@ -135,16 +122,16 @@ impl Upload {
             object: Default::default(),
         });
 
+        let temp_file_path = temp_directory.join(id.to_string());
         if temp_file_path.exists() { fs::remove_file(&temp_file_path)?; }
-
         let temp_file = BufWriter::new(tokio::fs::OpenOptions::new()
             .create(true)
             .append(false)
             .open(&temp_file_path)
             .await.map_err(|err| { Error::msg(format!("Cannot open file sink : {err}")) })?);
 
-        Ok(Self {
-            upload_id: 0,
+        Ok(Upload {
+            upload_id: id,
             byte_transferred: 0,
             hasher: blake3::Hasher::new(),
             item,
@@ -154,6 +141,41 @@ impl Upload {
             compare_task: None,
         })
     }
+
+    pub async fn get_upload(&self, id: u64) -> Result<Arc<RwLock<Upload>>, Error> {
+        match self.uploads.write().await.get(&id) {
+            None => {Err(Error::msg(format!("Failed to get upload with id {}", id)))}
+            Some(upload) => {Ok(upload.clone())}
+        }
+    }
+
+    pub async fn close_upload(&self, id: u64) -> Result<(), Error> {
+        self.uploads.write().await.remove(&id).ok_or(Error::msg(format!("Upload {id} not found")))?;
+        Ok(())
+    }
+}
+
+
+#[derive(Serialize, Debug, Clone)]
+pub enum UploadStatus {
+    WaitingForData { transferred: u64 },
+    DataHashCollision { remaining: usize, compared: f64 },
+    Finished { item: Item },
+    Failed { error: String }
+}
+
+pub struct Upload {
+    upload_id: u64,
+    temp_file_path: PathBuf,
+    item: Item,
+    byte_transferred: usize,
+    hasher: blake3::Hasher,
+    status: UploadStatus,
+    temp_file: BufWriter<tokio::fs::File>,
+    compare_task: Option<tokio::task::JoinHandle<Result<(), Error>>>
+}
+
+impl Upload {
 
     pub async fn push_body_data(&mut self, db: &Database, body: Body) -> Result<UploadStatus, Error> {
         if self.data_full() {
@@ -183,7 +205,7 @@ impl Upload {
         self.status = UploadStatus::WaitingForData { transferred: self.byte_transferred };
 
         if self.data_full() {
-            self.store(db).await?;
+            self.check_conflicts(db).await?;
         }
     }
 
@@ -191,33 +213,46 @@ impl Upload {
         self.byte_transferred == self.expected_size()
     }
 
-    async fn store(&mut self, db: &Database) -> Result<(), Error> {
+    async fn check_conflicts(&mut self, db: &Database) -> Result<(), Error> {
         self.temp_file.flush().await?;
+        let hash = self.hasher.clone().finalize().to_string();
 
         // Check file integrity
         assert_eq!(self.byte_transferred, self.expected_size(), "Transferred data overflow : {} > {}", self.byte_transferred, self.expected_size());
 
         // Check for object hash collision
-        let hash = self.hasher.clone().finalize().to_string();
-        for existing in Object::from_hash(db, &hash).await? {
-
-            // Hash collision, we need to investigate and compare the whole file
-            if existing.equals_to_file(db, self.get_file_path()).await? {
-
-                self.status = UploadStatus::DataHashCollision { other: 0, compared: 0.0 };
-                self.compare_task = tokio::task::spawn(async move || {
-                    // On collision, remove the temp file and store
-                    fs::remove_file(self.get_file_path())?;
-                    self.item.file.as_mut().unwrap().object = existing.id().clone();
-                    DbItem::push(&mut self.item, db).await?;
-                    self.status = UploadStatus::Finished { item: self.item.clone() };
-                });
-                return Ok(())
-            }
-            todo!("Check file collision on async task");
+        let mut hash_collisions = Object::from_hash(db, &hash).await?;
+        if !hash_collisions.is_empty() {
+            self.status = UploadStatus::DataHashCollision { remaining: hash_collisions.len(), compared: 0.0 };
+            let temp_file_path = self.temp_file_path.clone();
+            let db = db.clone();
+            let mut item = self.item.clone();
+            self.compare_task = Some(tokio::task::spawn(async move || {
+                for existing_object in hash_collisions {
+                    // Hash collision, we need to investigate and compare the whole file
+                    if existing_object.equals_to_file(db, &temp_file_path).await? {
+                        // On collision, remove the temp file and store
+                        fs::remove_file(temp_file_path)?;
+                        item.file.as_mut().unwrap().object = existing_object.id().clone();
+                        DbItem::push(&mut item, db).await?;
+                        self.status = UploadStatus::Finished { item };
+                        return;
+                    }
+                    self.status = UploadStatus::DataHashCollision { remaining: hash_collisions.len(), compared: 0.0 }
+                }
+                self.status = UploadStatus::DataHashCollision { remaining: 0, compared: 1.0 }
+            }));
+            Ok(())
+        } else {
+            self.store(db, hash).await
         }
+    }
 
+    pub fn store_post_conflict(&self) {
 
+    }
+
+    async fn store(&mut self, db: &Database, hash: String) -> Result<(), Error> {
         // Check for path collision
         if let Ok(mut existing_at_path) = DbItem::from_path(db, &self.item.absolute_path, &self.item.repository, Both).await {
             if existing_at_path.directory.is_some() {
@@ -242,6 +277,7 @@ impl Upload {
         self.item.file.as_mut().unwrap().object = object.id().clone();
         DbItem::push(&mut self.item, db).await?;
         self.status = UploadStatus::Finished { item: self.item.clone() };
+        Ok(())
     }
 
     pub fn item(&self) -> &Item {
@@ -250,6 +286,10 @@ impl Upload {
 
     pub fn id(&self) -> u64 {
         self.upload_id
+    }
+
+    pub async fn status(&self) -> UploadStatus {
+        self.status.clone()
     }
 
     pub fn expected_size(&self) -> usize {
