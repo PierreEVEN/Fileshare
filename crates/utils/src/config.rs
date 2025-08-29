@@ -98,6 +98,9 @@ pub struct BackendConfig {
     #[serde_inline_default(PathBuf::from("data").join("cache"))]
     pub static_cache_storage_path: PathBuf,
 
+    #[serde_inline_default(std::env::temp_dir().join("fileshare"))]
+    pub dynamic_cache_storage_path: PathBuf,
+
     #[serde_inline_default(100)]
     pub thumbnail_size: usize,
 

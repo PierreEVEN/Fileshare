@@ -9,7 +9,6 @@ use database::async_zip::AsyncDirectoryZip;
 use types::enc_string::EncString;
 use crate::permissions::Permissions;
 use utils::server_error::ServerError;
-use crate::upload::Upload;
 use anyhow::Error;
 use axum::body::Body;
 use axum::extract::{FromRequest, Path, Request, State};
@@ -320,33 +319,20 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
     }
 }
 
-
 /// Upload item
 async fn send(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
     let permissions = Permissions::new(&request)?;
     let connected_user = require_connected_user!(request);
-    let headers = request.headers().clone();
-    let id = if let Some(content_id) = headers.get("Content-Id") {
-        content_id.to_str()?.to_string()
-    } else {
-        // Register new upload
-        let upload = Upload::new(headers, connected_user.id().clone())?;
-        if let Some(parent) = &upload.item().parent_item {
-            permissions.upload_to_directory(&ctx.database, &DbItem::from_id(&ctx.database, parent, Trash::Both).await?).await?.require()?;
-        } else {
-            permissions.upload_to_repository(&ctx.database, &DbRepository::from_id(&ctx.database, &upload.item().repository).await?).await?.require()?;
-        }
-        ctx.add_upload(upload).await?
-    };
 
-    let mut state = {
-        let found_upload = ctx.get_upload(&id).await?;
-        let mut upload = found_upload.write().await;
-        upload.push_data(request.into_body()).await?;
-        upload.get_state()
-    };
-    if state.finished {
-        state = ctx.finalize_upload(&id, &ctx.database).await?;
+    let headers = request.headers().clone();
+
+    let upload = ctx.upload_context().find_or_create_from_headers(&ctx.database, &headers, &permissions, &connected_user).await?;
+
+    let mut upload = upload.write().await;
+    let state = upload.push_body_data(&ctx.database, request.into_body()).await?;
+
+    if upload.finished() {
+        ctx.upload_context().close_upload(&ctx.database, upload.id()).await?;
     }
     Ok(Json(state))
 }

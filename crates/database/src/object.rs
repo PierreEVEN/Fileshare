@@ -95,8 +95,8 @@ impl Object {
 
         let mut reader1 = BufReader::new(File::open(Object::data_path(self.id(), db)).map_err(|err| Error::msg(format!("Cannot open object data : {err}")))?);
         let mut reader2 = BufReader::new(File::open(file).map_err(|err| Error::msg(format!("Cannot open tested file : {err}")))?);
-        let mut buf1 = [0; 10000];
-        let mut buf2 = [0; 10000];
+        let mut buf1 = [0; 131072];
+        let mut buf2 = [0; 131072];
 
         while let Ok(n1) = reader1.read(&mut buf1) {
             if n1 > 0 {
