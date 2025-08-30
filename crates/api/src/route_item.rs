@@ -35,7 +35,7 @@ use converter::task::{ConverterResult, ConverterTask, TaskProgress};
 use database::repository::DbRepository;
 use types::database_ids::{DatabaseId, ItemId, RepositoryId};
 use types::item::{CreateDirectoryParams, DirectoryData, Item};
-use crate::upload::UploadStatus;
+use crate::upload::{UploadStatus};
 
 pub struct ItemRoutes {}
 
@@ -324,7 +324,14 @@ async fn thumbnail(State(ctx): State<Arc<AppCtx>>, Path(id): Path<DatabaseId>, r
 async fn send(State(ctx): State<Arc<AppCtx>>, request: Request) -> Result<impl IntoResponse, ServerError> {
     let permissions = Permissions::new(&request)?;
     let connected_user = require_connected_user!(request);
-    Ok(ctx.upload_context().receive_request(&ctx.database, request.headers(), &permissions, &connected_user).await?)
+
+    let (status, id) = ctx.upload_context().receive_request(&ctx, request, &permissions, &connected_user).await?;
+    #[derive(Serialize)]
+    struct Response {
+        status: UploadStatus,
+        id: String
+    }
+    Ok(Json(Response { status, id: id.to_string() }))
 }
 
 /// Download item or directory

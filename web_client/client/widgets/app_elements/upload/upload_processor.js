@@ -8,9 +8,31 @@ class UploadState {
      * @param data {object}
      */
     constructor(pool, data) {
-        this.id = data.id;
-        this.finished = data.finished;
-        this.item = data.item
+        if (!data.id)
+            return console.error('Unknown id in upload response');
+        if (!data.status)
+            return console.error('Unknown status in upload response', data);
+
+        if (data.status['WaitingForData']) {
+            /**
+             * @type {{transferred: Number}}
+             */
+            this.waiting_for_data = data.status['WaitingForData']
+            this.id = data.id;
+        }
+        else if (data.status['DataHashCollision']) {
+            /**
+             * @type {{remaining: Number, compared: Number}}
+             */
+            this.data_hash_collision = data.status['DataHashCollision']
+            this.id = data.id;
+        }
+        else if (data.status['Finished']) {
+            this.finished = data.status['Finished'];
+        }
+        else {
+            console.error("Unhandled upload response :", data)
+        }
     }
 }
 
@@ -30,6 +52,7 @@ class UploadProcessor {
          */
         this.repository = uploader.viewport.repository;
         this.uploader = uploader;
+        this._refresh_freq = 40;
 
         this.upload_signal = new Promise((resolve, reject) => {
             this.upload_finished = resolve;
@@ -66,14 +89,21 @@ class UploadProcessor {
                 if (this._request.status !== 200)
                     return this._fail(this._request.response)
                 this.state = new UploadState(this.item.app.pool, JSON.parse(this._request.response));
-                if (this.state.item)
-                    this.repository.get_pool()._register_item(this.state.item);
                 if (this.state.finished) {
+                    this.repository.get_pool()._register_item(this.state.finished.item);
                     this.uploader.progress(this.item.file.size, this.item.file.size);
                     return this.upload_finished();
+                } else if (this.state.data_hash_collision) {
+                    console.log(`Collision : ${this.state.data_hash_collision.remaining} objects remaining | ${this.state.data_hash_collision.compared * 100}%`);
+                    setTimeout(() => {
+                        this._refresh_freq = Math.min(1000, this._refresh_freq * 2);
+                        this._send_next();
+                    }, this._refresh_freq)
                 }
-                else {
+                else if (this.state.waiting_for_data) {
                     this._send_next();
+                } else {
+                    console.error("Unhandled state : ", this.state)
                 }
             }
         };
