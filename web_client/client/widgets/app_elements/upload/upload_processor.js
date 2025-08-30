@@ -40,7 +40,7 @@ class UploadProcessor {
 
     /**
      * @param item {UploadItem}
-     * @param uploader {Uploader}
+     * @param uploader {Upload_manager}
      */
     constructor(item, uploader) {
         /**

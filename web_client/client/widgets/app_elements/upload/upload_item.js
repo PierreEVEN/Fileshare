@@ -18,7 +18,7 @@ class UploadItem {
         this.children = new Map();
         this.expanded = false;
         /**
-         * @type {UploadItem|Uploader}
+         * @type {UploadItem|Upload_manager}
          */
         this.parent = null;
         /**

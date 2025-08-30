@@ -6,8 +6,8 @@ import {StateSelection} from "../../../src/state/state_selection";
 import {Permission} from "../../../src/utilities/permissions";
 
 import "../item_view/item_view";
-import "../upload/uploader";
 import "../upload/drop_box";
+import "../uploader/upload_window/upload_window";
 import "../toolbar/toolbar";
 import "../carousel/list/carousel_list";
 import "../carousel/viewport/carousel_viewport";
@@ -88,6 +88,8 @@ class RepositoryViewport extends AppWidget {
             this.close_upload_container();
             this.elements().upload_button.style.display = 'none';
         }
+
+        this.open_upload_container()
     }
 
     /**
@@ -186,10 +188,9 @@ class RepositoryViewport extends AppWidget {
         if (this.uploader)
             this.uploader.remove();
 
-        this.uploader = document.createElement('upload-widget').set_viewport(this);
+        this.uploader = document.createElement('upload-window');
         this.elements().upload_container.append(this.uploader);
 
-        this.uploader.expand(true);
         this.elements().current_description.style.display = 'none';
     }
 

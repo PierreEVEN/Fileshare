@@ -23,6 +23,7 @@ import {StateSelection} from "../../src/state/state_selection";
 import {InitData} from "../../src/utilities/app_init_data";
 import {FilterContentProvider} from "../../src/utilities/providers";
 import {AppWidget} from "../../src/app_widget";
+import {UploadManager} from "../app_elements/uploader/upload_manager";
 
 require('./app.scss');
 
@@ -38,6 +39,8 @@ class FileshareApp extends AppWidget {
          * @type {AppState}
          */
         this.state = new AppState(this);
+
+        this.upload_manager = new UploadManager(this);
 
         // Fetch init data
         const raw_data = JSON.parse(document.body.dataset['app_config']);

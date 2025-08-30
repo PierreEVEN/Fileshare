@@ -185,7 +185,6 @@ impl UploadContext {
     async fn push_body_data(&self, upload_rc: &Arc<RwLock<Upload>>, ctx: &Arc<AppCtx>, body: Body) -> Result<UploadStatus, ServerError> {
 
         let mut upload = upload_rc.write().await;
-        upload.temp_file.flush().await?;
 
         let mut body_reader = StreamReader::new(body.into_data_stream().map_err(|err| io::Error::new(io::ErrorKind::Other, err)));
 
@@ -209,9 +208,9 @@ impl UploadContext {
                 return Err(ServerError::msg(StatusCode::INTERNAL_SERVER_ERROR, format!("Data overflow : {} > {}", upload.byte_transferred, upload.expected_size())));
             }
         }
+        upload.temp_file.flush().await?;
 
         if upload.data_full() {
-            upload.temp_file.flush().await?;
             // Check file integrity
             assert_eq!(upload.byte_transferred, upload.expected_size(), "Transferred data overflow : {} > {}", upload.byte_transferred, upload.expected_size());
 

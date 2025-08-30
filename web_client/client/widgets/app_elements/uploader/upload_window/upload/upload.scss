@@ -1,0 +1,82 @@
+@import '../../../../app/palette.scss';
+
+element-upload {
+  width: 100%;
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.06);
+  flex-direction: row;
+  border-bottom: 1px solid transparent;
+  border-top: 1px solid transparent;
+
+  .item-small {
+    height: 35px;
+    margin: 10px;
+  }
+
+  .data {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    .infos {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      .name {
+        flex-grow: 1;
+        margin: 0;
+      }
+
+      .size {
+        text-wrap: nowrap;
+        margin: 0;
+        font-size: smaller;
+        color: hsla(0,0%,100%,.4666666667);
+      }
+
+      button {
+        display: flex;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        margin: 0;
+        img {
+          width: 15px;
+        }
+      }
+    }
+  }
+
+  .progress {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .bar {
+      height: 5px;
+      flex-grow: 1;
+      background-color: $border-color;
+      border-radius: 5px;
+      overflow: clip;
+
+      .filler {
+        background-color: white;
+        width: 44%;
+        height: 100%;
+      }
+    }
+
+    p {
+      width: 50px;
+      margin: 0 0 0 10px;
+      font-size: 13px;
+    }
+  }
+
+  &:hover {
+    border-top: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
+    background-color: rgba(48, 48, 48, 0.08);
+  }
+}
