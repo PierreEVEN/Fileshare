@@ -25,6 +25,18 @@ upload-window {
     height: 35px;
     align-items: center;
     justify-content: center;
+
+    button {
+      margin-left: auto;
+      transition-duration: 0.2s;
+      padding: 5px;
+      width: 35px;
+      height: 35px;
+
+      img {
+        width: 20px;
+      }
+    }
   }
 
   .add-buttons {
@@ -44,5 +56,12 @@ upload-window {
     flex-grow: 1;
     background-color: $secondary;
     overflow: scroll;
+  }
+
+  .start-upload-button {
+    display: none;
+    margin: 10px 40px;
+    font-weight: bold;
+    min-height: 50px;
   }
 }

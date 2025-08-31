@@ -21,30 +21,48 @@ class UploadWindow extends AppWidget {
             add_directory: async () => {
                 await this.add_items(await select_files_or_directories(this.get_app().upload_manager, true));
             },
+            start_upload: async () => {
+                this.get_app().upload_manager.set_uploading(true);
+            },
+            pause: async () => {
+                this.get_app().upload_manager.set_uploading(!this.get_app().upload_manager.uploading());
+            }
         });
 
-        for (const [id, child] of this.get_app().upload_manager.children())
+        for (const [_, child] of this.get_app().upload_manager.children())
             this._add_item(child);
 
-        this.get_app().upload_manager.events.add('add_item', (item) => this._add_item(item))
+        this._add_item_event = this.get_app().upload_manager.events.add('add_item', (item) => this._add_item(item))
+        this._uploading_event = this.get_app().upload_manager.events.add('uploading', (uploading) => {
+            if (uploading) {
+                this.elements().pause_img.src = '/public/images/icons/icons8-pause-30.png';
+                this.elements().upload_button.style.display = 'none';
+            } else {
+                this.elements().pause_img.src = '/public/images/icons/icons8-play-64.png';
+                if (this.get_app().upload_manager.children().size !== 0) {
+                    this.elements().upload_button.style.display = 'flex';
+                }
+            }
+        })
+    }
 
-        this.get_app().upload_manager.events.add('remove_item', (item) => this._remove_item(item))
+    disconnectedCallback() {
+        if (this._add_item_event)
+            this._add_item_event.remove()
+        delete this._add_item_event;
+        if (this._uploading_event)
+            this._uploading_event.remove()
+        delete this._uploading_event;
     }
 
     _add_item(item) {
+        if (!this.get_app().upload_manager.uploading())
+            this.elements().upload_button.style.display = 'flex';
         if (item instanceof UploadRepository) {
             const item_view = document.createElement('upload-tree-item');
             item_view.set_item(item);
             this.elements().pending.append(item_view);
         }
-    }
-
-    _remove_item(item) {
-
-    }
-
-    disconnectedCallback() {
-
     }
 
     /**
@@ -56,7 +74,7 @@ class UploadWindow extends AppWidget {
         if (selection.item) {
             let target = selection.item.is_regular_file ? await this.get_app().pool.fetch_item(selection.item.parent_item) : selection.item;
             for (const item of items)
-                this.get_app().upload_manager.get_directory(target).add_child(item)
+                (await this.get_app().upload_manager.get_directory(target)).add_child(item)
         } else if (selection.repository)
             for (const item of items)
                 this.get_app().upload_manager.get_repository(selection.repository).add_child(item);

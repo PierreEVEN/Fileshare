@@ -11,7 +11,11 @@ class UploadDirectory extends UploadItem {
     constructor(manager, name, directory) {
         super(manager);
 
-        this._directory = null;
+        /**
+         * @type {RemoteItem}
+         * @private
+         */
+        this._directory = directory;
         /**
          * @type {String}
          * @private
@@ -74,6 +78,22 @@ class UploadDirectory extends UploadItem {
 
         console.assert(directories.length === 1)
         this._directory = await this.content_pool._register_item(directories[0]);
+    }
+
+    async create_directories(repository) {
+        await super.create_directories(repository);
+
+        if (!this._directory) {
+            console.log("Create directory ", this.name())
+            const created_directories = await this.manager.app.fetch_api('item/new-directory', 'POST',
+                [{
+                    name: EncString.from_client(this.name()),
+                    repository: repository,
+                    parent_item: this.parent && this.parent._directory ? this.parent._directory.id : null
+                }]);
+            console.assert(created_directories.length === 1, "Didn't create the right amount of directories");
+            this._directory = await this.manager.app.pool._register_item(created_directories[0]);
+        }
     }
 }
 

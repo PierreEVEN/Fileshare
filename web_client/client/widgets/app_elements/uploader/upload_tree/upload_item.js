@@ -62,6 +62,15 @@ class UploadItem {
     name() {
         console.error("Not implemented");
     }
+
+    /**
+     * @param repository {number}
+     * @return {Promise<void>}
+     */
+    async create_directories(repository) {
+        for (const [_, child] of this.children())
+            await child.create_directories(repository);
+    }
 }
 
 export {UploadItem}

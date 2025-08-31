@@ -2,6 +2,8 @@ import {EventManager} from "../../../src/event_manager";
 import {UploadRepository} from "./upload_tree/upload_repository";
 import {UploadFile} from "./upload_tree/upload_file";
 import {UploadDirectory} from "./upload_tree/upload_directory";
+import {EncString} from "../../../src/encstring";
+import {Message, NOTIFICATION} from "../../misc/message_box/notification";
 
 class UploadManager {
     /**
@@ -22,6 +24,31 @@ class UploadManager {
          * @type {Map<number, UploadRepository>}
          */
         this._children = new Map();
+
+        /**
+         * @type {boolean}
+         * @private
+         */
+        this._uploading = false;
+    }
+
+    /**
+     * @param uploading {boolean}
+     */
+    async set_uploading(uploading) {
+        if (this._uploading !== uploading) {
+            this._uploading = uploading;
+            this.events.broadcast('uploading', uploading);
+            if (uploading)
+                await this.start_upload();
+        }
+    }
+
+    /**
+     * @return {boolean}
+     */
+    uploading() {
+        return this._uploading
     }
 
     /**
@@ -50,27 +77,28 @@ class UploadManager {
      * @param directory {RemoteItem}
      * @return {UploadDirectory|void}
      */
-    get_directory(directory) {
+    async get_directory(directory) {
         if (directory.is_regular_file)
             return console.error(`${directory.absolute_path} is a regular file`);
         const repository = this.app.pool.find_repository(directory.repository);
         const upload_repository = this.get_repository(repository);
 
         const path = directory.absolute_path.plain().split('/').filter(Boolean);
-        return this._make_existing_directory_tree(upload_repository, path, repository);
+        return await this._make_existing_directory_tree(upload_repository, path, repository);
     }
 
     /**
      * @param target {UploadItem}
      * @param relative_path {String[]}
      * @param item {RemoteItem|Repository}
-     * @return {UploadDirectory}
+     * @return {Promise<UploadDirectory>}
      */
-    _make_existing_directory_tree(target, relative_path, item) {
+    async _make_existing_directory_tree(target, relative_path, item) {
         let name = relative_path.pop();
-        let child_item = item.find_child(name);
+        let child_item = await item.find_child(name);
         let child = target.children().get(name)
         if (!child) {
+            console.log(child_item)
             child = new UploadDirectory(this, name, child_item);
             target.add_child(child);
         }
@@ -115,6 +143,11 @@ class UploadManager {
             target.add_child(directory);
             return directory;
         }
+    }
+
+    async start_upload() {
+        for (const [id, repository] of this.children())
+            await repository.create_directories(id);
     }
 }
 

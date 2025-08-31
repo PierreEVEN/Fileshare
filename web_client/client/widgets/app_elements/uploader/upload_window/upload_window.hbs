@@ -1,6 +1,8 @@
 <div class="header">
     <p {{object "infos"}}>16879 elements (1.25Go, 4h32 restantes)</p>
-    <button class="pause" tabindex="-1" onclick="{{ctx "pause()"}}"><img src="/public/images/icons/icons8-pause-30.png" {{object "pause_img"}} alt="pause"></button>
+    <button class="pause" tabindex="-1" onclick="{{ctx "pause()"}}">
+        <img src="/public/images/icons/icons8-play-64.png" {{object "pause_img"}} alt="pause">
+    </button>
 </div>
 <div class="add-buttons">
     <button onclick="{{ctx "add_files()"}}" tabindex="-1">
@@ -16,7 +18,7 @@
 
 </div>
 <div class="uploading" {{object "upload_elements"}}>
-    <element-upload></element-upload>
-    <element-upload></element-upload>
-    <element-upload></element-upload>
 </div>
+<button class="start-upload-button" {{object "upload_button"}} tabindex="-1" onclick="{{ctx "start_upload()"}}">
+    ENVOYER
+</button>
