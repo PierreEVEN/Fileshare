@@ -16,10 +16,20 @@ class UploadTreeItem extends AppWidget {
     connectedCallback() {
         this.set_item(this._item);
 
+        this._add_event = this.get_app().upload_manager.events.add('add_item', (item) => this._add_item(item))
+        this._remove_event = this.get_app().upload_manager.events.add('remove_item', (item) => {
+            if (item === this._item)
+                this.remove();
+        })
+    }
 
-        this.get_app().upload_manager.events.add('add_item', (item) => this._add_item(item))
-
-        this.get_app().upload_manager.events.add('remove_item', (item) => this._remove_item(item))
+    disconnectedCallback() {
+        if (this._add_event)
+            this._add_event.remove();
+        delete this._add_event;
+        if (this._remove_event)
+            this._remove_event.remove();
+        delete this._remove_event;
     }
 
     /**
@@ -44,7 +54,7 @@ class UploadTreeItem extends AppWidget {
                 this.set_expanded(!this._expanded)
             },
             remove: () => {
-
+                this._item.remove();
             }
         });
     }
@@ -58,9 +68,29 @@ class UploadTreeItem extends AppWidget {
             return;
 
         if (item.parent === this._item) {
+            /**
+             * @param a {UploadItem}
+             * @param b {UploadItem}
+             * @return number
+             * @private
+             */
+            const compare_sort = (a, b) => {
+                if (a instanceof UploadFile && b instanceof UploadDirectory)
+                    return -1;
+                if (b instanceof UploadFile && a instanceof UploadDirectory)
+                    return 1;
+                return -a.name().localeCompare(b.name());
+            }
+
             const item_view = document.createElement('upload-tree-item');
             item_view.set_item(item);
-            this.elements().content.append(item_view);
+            let existing_children = Array.from(this.elements().content.children);
+            let insertIndex = existing_children.findIndex(child => compare_sort(child._item, item) < 0);
+            if (insertIndex === -1) {
+                this.elements().content.appendChild(item_view);
+            } else {
+                this.elements().content.insertBefore(item_view, this.elements().content.children[insertIndex]);
+            }
         }
     }
 

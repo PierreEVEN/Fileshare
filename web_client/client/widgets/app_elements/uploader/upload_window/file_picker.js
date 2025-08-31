@@ -33,7 +33,7 @@ async function select_files_or_directories(upload_manager, directory) {
                 if (remaining_path.length === 0)
                     return null;
                 let dir_name = remaining_path.pop();
-                let available = parent ? parent.children : roots;
+                let available = parent ? parent.children() : roots;
                 if (!available.has(dir_name)) {
                     let directory = new UploadDirectory(upload_manager, dir_name, null);
                     if (!parent)

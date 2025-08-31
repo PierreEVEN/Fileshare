@@ -43,8 +43,6 @@ upload-window {
   .pending {
     flex-grow: 1;
     background-color: $secondary;
-  }
-
-  .uploading {
+    overflow: scroll;
   }
 }

@@ -15,6 +15,20 @@ class UploadItem {
         this.parent = null;
     }
 
+    remove() {
+        if (this.parent) {
+            if (this.parent.children().has(this.name())) {
+                this.parent.children().delete(this.name());
+                this.parent = null;
+                this.manager.events.broadcast('remove_item', this);
+            }
+        }
+        else if (this._repository && this.manager.children().has(this._repository.id)) {
+            this.manager.children().delete(this._repository.id);
+            this.manager.events.broadcast('remove_item', this);
+        }
+    }
+
     /**
      * @return {boolean}
      */
