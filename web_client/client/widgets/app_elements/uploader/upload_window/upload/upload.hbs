@@ -1,16 +1,13 @@
-
 {{item_thumbnail data}}
 <div class="data">
     <div class="infos">
-        <p class="name">Beyond Galaxy - PreAlpha 0.3.4.0.zip</p>
-        <p class="size">113.5 Mo</p>
-        <button class="pause" tabindex="-1"><img src="/public/images/icons/icons8-pause-30.png" {{object "pause_img"}}
-                                                 alt="pause"></button>
-        <button class="delete" tabindex="-1">x</button>
+        <p class="name" {{object "name"}}>Beyond Galaxy - PreAlpha 0.3.4.0.zip</p>
+        <p class="size" {{object "size"}}>113.5 Mo</p>
+        <button class="pause" tabindex="-1" onclick="{{ctx "pause()"}}"><img src="/public/images/icons/icons8-pause-30.png" {{object "pause_img"}} alt="pause"></button>
+        <button class="delete" tabindex="-1" onclick="{{ctx "remove()"}}">x</button>
     </div>
-
     <div class="progress">
-        <div class="bar"><div class="filler"></div></div>
-        <p>44%</p>
+        <div class="bar"><div class="filler" {{object "progress_bar"}}></div></div>
+        <p {{object "progress_percent"}}>44%</p>
     </div>
 </div>

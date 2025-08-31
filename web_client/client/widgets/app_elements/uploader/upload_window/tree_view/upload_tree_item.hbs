@@ -1,0 +1,14 @@
+<button class="field" onclick="{{ctx "expand()"}}" tabindex="-1">
+    {{#if repository}}
+        <p class="arrow">▸</p><img src="/public/images/icons/icons8-storage-96.png">
+    {{else}}
+        {{#if directory}}
+            <p class="arrow">▸</p><img src="/public/images/icons/icons8-folder-96.png">
+        {{else}}
+            <img class="item-small" src="{{mime_icon}}" alt="document: {{name}}"/>
+        {{/if}}
+    {{/if}}
+    <p class="title">{{name}}</p>
+    <div class="remove-item" onclick="{{ctx "remove()"}}">×</div>
+</button>
+<div {{object "content"}} class="content"></div>

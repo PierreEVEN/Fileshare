@@ -1,10 +1,21 @@
 <div class="header">
-    <p>16879 elements (1.25Go, 4h32 restantes)</p>
-    <button class="pause" tabindex="-1"><img src="/public/images/icons/icons8-pause-30.png" {{object "pause_img"}} alt="pause"></button>
+    <p {{object "infos"}}>16879 elements (1.25Go, 4h32 restantes)</p>
+    <button class="pause" tabindex="-1" onclick="{{ctx "pause()"}}"><img src="/public/images/icons/icons8-pause-30.png" {{object "pause_img"}} alt="pause"></button>
 </div>
-<div class="pending">
+<div class="add-buttons">
+    <button onclick="{{ctx "add_files()"}}" tabindex="-1">
+        <img alt="new_file" src="/public/images/icons/icons8-add-file-48.png">
+        <p> ajouter des fichiers</p>
+    </button>
+    <button onclick="{{ctx "add_directory()"}}" tabindex="-1">
+        <img alt="new_file" src="/public/images/icons/icons8-add-folder-48.png">
+        <p> ajouter un dossier</p>
+    </button>
 </div>
-<div class="uploading">
+<div class="pending" {{object "pending"}}>
+
+</div>
+<div class="uploading" {{object "upload_elements"}}>
     <element-upload></element-upload>
     <element-upload></element-upload>
     <element-upload></element-upload>

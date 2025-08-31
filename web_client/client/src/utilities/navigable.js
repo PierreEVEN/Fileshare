@@ -19,7 +19,7 @@ document.addEventListener('focusin', e => {
             FOCUSED_ITEM.focus_in(e);
         //console.log("Focus", FOCUSED_ITEM)
     } else {
-        console.warn("Item", e.target, "is not focusable")
+        //console.warn("Item", e.target, "is not focusable")
     }
 });
 

@@ -27,6 +27,19 @@ upload-window {
     justify-content: center;
   }
 
+  .add-buttons {
+    display: flex;
+    flex-direction: row;
+    button {
+      flex-grow: 1;
+      display: flex;
+      img {
+        width: 20px;
+        margin-right: 5px;
+      }
+    }
+  }
+
   .pending {
     flex-grow: 1;
     background-color: $secondary;

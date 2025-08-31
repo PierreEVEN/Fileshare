@@ -25,6 +25,13 @@ class UploadManager {
     }
 
     /**
+     * @returns {Map<number, UploadRepository>}
+     */
+    children() {
+        return this._children;
+    }
+
+    /**
      * @param repository {Repository}
      * @return {UploadRepository}
      */
@@ -32,8 +39,9 @@ class UploadManager {
         if (this._children.has(repository.id))
             return this._children.get(repository.id);
         else {
-            const new_repository = new UploadRepository(repository);
-            this._children.set(repository.id, new_repository)
+            const new_repository = new UploadRepository(this, repository);
+            this._children.set(repository.id, new_repository);
+            this.events.broadcast('add_item', new_repository);
             return new_repository;
         }
     }
@@ -52,7 +60,25 @@ class UploadManager {
         return this._make_existing_directory_tree(upload_repository, path, repository);
     }
 
-
+    /**
+     * @param target {UploadItem}
+     * @param relative_path {String[]}
+     * @param item {RemoteItem|Repository}
+     * @return {UploadDirectory}
+     */
+    _make_existing_directory_tree(target, relative_path, item) {
+        let name = relative_path.pop();
+        let child_item = item.find_child(name);
+        let child = target.children().get(name)
+        if (!child) {
+            child = new UploadDirectory(this, name, child_item);
+            target.add_child(child);
+        }
+        if (relative_path.length === 0)
+            return child;
+        else
+            return this._make_existing_directory_tree(child, relative_path, child_item);
+    }
 
     /**
      * @param target {UploadItem}
@@ -81,13 +107,7 @@ class UploadManager {
      */
     async add_item_from_file(target, name, file = null) {
         if (!!file) {
-            let mimetype;
-            if (file.type)
-                mimetype = file.type;
-            else
-                mimetype = (await import('mime')).default.getType(file.name);
-
-            const new_file = new UploadFile(this, file, name, mimetype);
+            const new_file = new UploadFile(this, file, name);
             target.add_child(new_file);
             return new_file;
         } else {
@@ -95,26 +115,6 @@ class UploadManager {
             target.add_child(directory);
             return directory;
         }
-    }
-
-    /**
-     * @param target {UploadItem}
-     * @param relative_path {String[]}
-     * @param item {RemoteItem|Repository}
-     * @return {UploadDirectory}
-     */
-    _make_existing_directory_tree(target, relative_path, item) {
-        let name = relative_path.pop();
-        let child_item = item.find_child(name);
-        let child = target.children().get(name)
-        if (!child) {
-            child = new UploadDirectory(this, name, child_item);
-            target.add_child(child);
-        }
-        if (relative_path.length === 0)
-            return child;
-        else
-            return this._make_existing_directory_tree(child, relative_path, child_item);
     }
 }
 
